@@ -756,7 +756,7 @@
       "parent": "E-repo",
       "props": {
         "provenance": "doc",
-        "description": "各サブシステムの成果物 home。learning/ 配下と diagrams/ が公開スライスを持つ"
+        "description": "各サブシステムの成果物 home。learning/・diagrams/・research/ が公開スライスを持つ"
       }
     },
     {
@@ -790,6 +790,17 @@
         "provenance": "human",
         "status": "active",
         "description": "/manga スキル。EPOCH 漫画制作（MulmoScript / 画像生成 / キャラ一貫性）"
+      }
+    },
+    {
+      "id": "E-ra",
+      "type": "block",
+      "name": "RA リサーチ成果",
+      "parent": "E-outputs",
+      "props": {
+        "provenance": "human",
+        "status": "active",
+        "description": "/research スキル。outputs/research/。interactive/ を公開スライスとして持つ（Oceanic Constellations 資料集・スタートアップ解説）"
       }
     },
     {
@@ -879,6 +890,15 @@
       "to": "E-viewer",
       "props": {
         "note": "manga_epoch/interactive/ を viewer へ公開"
+      }
+    },
+    {
+      "id": "R-ra-viewer",
+      "rel": "flow",
+      "from": "E-ra",
+      "to": "E-viewer",
+      "props": {
+        "note": "research/interactive/ を viewer /review/oceanic/ へ公開"
       }
     }
   ]

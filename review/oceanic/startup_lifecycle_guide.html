@@ -1,0 +1,286 @@
+<title>スタートアップの一生</title>
+<style>
+  :root{
+    --bg:#F5F4F0; --surface:#FFFFFF; --surface-2:#EFEDE6;
+    --ink:#20242B; --muted:#61656E; --faint:#8A8E97;
+    --line:#E2DFD6; --line-strong:#CFCabb;
+    --accent:#B5642A; --accent-ink:#8F4B1C; --sea:#2C6E77; --gold:#B08324;
+    --good:#3f7d54; --warn:#a9791f; --bad:#a5493f;
+    --shadow:0 1px 2px rgba(32,36,43,.05),0 8px 22px rgba(32,36,43,.06);
+    --maxw:780px;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#15130F; --surface:#1D1B16; --surface-2:#26231C;
+      --ink:#ECE7DC; --muted:#A59E8E; --faint:#7C7566;
+      --line:#332F26; --line-strong:#4A4436;
+      --accent:#E0975A; --accent-ink:#EBB37E; --sea:#5FB4BE; --gold:#DCB259;
+      --good:#7fb98f; --warn:#d7b46a; --bad:#d99187;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 28px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#15130F; --surface:#1D1B16; --surface-2:#26231C;
+    --ink:#ECE7DC; --muted:#A59E8E; --faint:#7C7566;
+    --line:#332F26; --line-strong:#4A4436;
+    --accent:#E0975A; --accent-ink:#EBB37E; --sea:#5FB4BE; --gold:#DCB259;
+    --good:#7fb98f; --warn:#d7b46a; --bad:#d99187;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 28px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,"Noto Sans JP",system-ui,sans-serif;
+    line-height:1.78; font-size:16px; -webkit-font-smoothing:antialiased;}
+  .mincho{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;}
+  .wrap{max-width:var(--maxw); margin:0 auto; padding:0 20px 100px;}
+  a{color:var(--accent-ink); text-decoration:none; border-bottom:1px solid color-mix(in srgb,var(--accent) 45%,transparent);}
+  a:hover{border-bottom-color:var(--accent);}
+  a:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  header.hero{border-bottom:1px solid var(--line); background:
+    radial-gradient(120% 80% at 90% -10%, color-mix(in srgb,var(--accent) 12%,transparent), transparent 60%);}
+  .hero-inner{max-width:var(--maxw); margin:0 auto; padding:56px 20px 40px;}
+  .eyebrow{font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent-ink); font-weight:700;}
+  h1{font-size:clamp(30px,6vw,48px); line-height:1.12; margin:.35em 0 .25em; text-wrap:balance;}
+  .lede{color:var(--muted); font-size:17px; max-width:62ch;}
+  .updated{margin-top:18px; font-size:13px; color:var(--faint);}
+
+  section{margin-top:56px;}
+  h2{font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); font-weight:700; margin:0 0 20px; display:flex; align-items:center; gap:10px;}
+  h2::before{content:""; width:18px; height:1px; background:var(--line-strong);}
+  .intro-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); padding:20px 22px;}
+  .intro-card p{margin:0 0 10px;}
+  .intro-card p:last-child{margin:0;}
+  .intro-card b{color:var(--accent-ink);}
+
+  /* Stage rail */
+  .rail{position:relative; margin-left:8px; padding-left:34px;}
+  .rail::before{content:""; position:absolute; left:12px; top:8px; bottom:8px; width:2px; background:linear-gradient(var(--accent),var(--sea));}
+  .stage{position:relative; margin-bottom:20px;}
+  .stage::before{content:attr(data-n); position:absolute; left:-34px; top:0; width:26px; height:26px; border-radius:50%;
+    background:var(--surface); border:2px solid var(--accent); color:var(--accent-ink);
+    font-size:12.5px; font-weight:800; display:flex; align-items:center; justify-content:center; font-variant-numeric:tabular-nums;}
+  .stage.exit::before{border-color:var(--sea); color:var(--sea); content:"◎";}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); overflow:hidden;}
+  .card > .top{padding:16px 18px 14px; display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 12px; border-bottom:1px solid var(--line);}
+  .card .stg-name{font-size:20px; font-weight:800; letter-spacing:.01em;}
+  .card .stg-sub{font-size:12.5px; color:var(--faint);}
+  .chip{margin-left:auto; font-size:12px; font-weight:700; padding:3px 10px; border-radius:999px; white-space:nowrap;
+    background:color-mix(in srgb,var(--gold) 16%,transparent); color:var(--gold);}
+  .card .body{padding:14px 18px 18px; display:grid; gap:14px;}
+  @media (min-width:620px){.card .body{grid-template-columns:1fr 1fr;}}
+  .blk h4{margin:0 0 5px; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:700;}
+  .blk p, .blk ul{margin:0; font-size:14px; color:var(--ink);}
+  .blk ul{padding-left:1.05em;}
+  .blk li{margin:2px 0;}
+  .blk.you{grid-column:1/-1; background:var(--surface-2); margin:0 -18px -18px; padding:14px 18px; border-top:1px solid var(--line);}
+  .blk.you h4{color:var(--accent-ink);}
+  .blk.you p{color:var(--muted);}
+
+  /* Exit branches */
+  .branches{display:grid; gap:12px; grid-template-columns:1fr 1fr;}
+  @media (max-width:560px){.branches{grid-template-columns:1fr;}}
+  .branch{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:var(--shadow); border-top:3px solid var(--bt,var(--accent));}
+  .branch .bt{font-size:15px; font-weight:800; margin-bottom:3px;}
+  .branch .bd{font-size:13.5px; color:var(--muted);}
+  .branch.ipo{--bt:var(--sea);} .branch.ma{--bt:var(--gold);}
+  .branch.flat{--bt:var(--warn);} .branch.fail{--bt:var(--bad);}
+
+  /* glossary mini */
+  .terms{display:grid; gap:0; background:var(--surface); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); overflow:hidden;}
+  .term{display:grid; grid-template-columns:auto 1fr; gap:14px; padding:12px 16px; border-top:1px solid var(--line);}
+  .term:first-child{border-top:0;}
+  .term dt{font-weight:700; font-size:14px; color:var(--accent-ink); white-space:nowrap;}
+  .term dd{margin:0; font-size:14px; color:var(--muted);}
+
+  .callout{border:1px solid color-mix(in srgb,var(--sea) 40%,var(--line)); background:color-mix(in srgb,var(--sea) 8%,var(--surface)); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow);}
+  .callout .k{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--sea); font-weight:800;}
+  .callout p{margin:6px 0 0; font-size:14.5px;}
+  .callout b{color:var(--ink);}
+
+  .note{font-size:12.5px; color:var(--faint); margin-top:14px;}
+  footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line); font-size:12.5px; color:var(--faint);}
+  .toggle{position:fixed; top:14px; right:14px; z-index:5; width:38px; height:38px; border-radius:50%; border:1px solid var(--line-strong); background:var(--surface); color:var(--muted); cursor:pointer; font-size:16px; box-shadow:var(--shadow);}
+  .toggle:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  @media print{.toggle{display:none;}}
+</style>
+
+<button class="toggle" id="tg" aria-label="テーマ切替">◑</button>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">A Field Guide</div>
+    <h1 class="mincho">スタートアップの一生<br>― 立ち上げから出口まで</h1>
+    <p class="lede">会社が生まれ、資金を調達し、成長し、やがて出口（IPO や M&A）へ向かう。その道のりに現れる<strong>段階・イベント・専門用語</strong>を、これから中に入る人の目線で一枚に地図化した解説書。</p>
+    <div class="updated">作成 2026-08-11 ／ スタートアップ入門の副読本</div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section>
+    <h2>この地図の読み方</h2>
+    <div class="intro-card">
+      <p>スタートアップは「赤字を出しながら外部資本で先行投資し、急成長で後から大きく回収する」前提の会社。だから普通の会社と違い、<b>資金調達ラウンド</b>という一定のリズムで成長段階が進む。</p>
+      <p>各段階には「典型的な資金の入り方」「そこで起きるイベント」があり、そして<b>あなたが従業員として入るなら見るべきポイント</b>がある。番号 ①〜⑥ が成長段階、◎ が出口。下へ読み進めるほど会社は大きく、リスクは下がり、その代わり入社時のストックオプションの妙味は小さくなっていく。</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>成長の段階（ステージ）</h2>
+    <div class="rail">
+
+      <div class="stage" data-n="0">
+        <div class="card">
+          <div class="top"><span class="stg-name mincho">創業前 ― アイデアとチーム</span><span class="stg-sub">Pre-seed / Founding</span><span class="chip">資金：自己資金〜数百万</span></div>
+          <div class="body">
+            <div class="blk"><h4>この段階の目的</h4><p>「解くべき課題」と「創業メンバー」を固める。誰と、どんな痛みを、なぜ今解くのか。</p></div>
+            <div class="blk"><h4>主なイベント</h4><ul><li>共同創業者の組成</li><li>課題仮説・初期プロトタイプ</li><li>創業株主間契約・持分の設計</li></ul></div>
+            <div class="blk you"><h4>従業員として見るなら</h4><p>ほぼ「創業メンバー」の世界。夢と株の比率は最大だが、給料も安定も最小。</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage" data-n="1">
+        <div class="card">
+          <div class="top"><span class="stg-name mincho">法人設立</span><span class="stg-sub">Incorporation</span><span class="chip">資本金：数十万〜1000万</span></div>
+          <div class="body">
+            <div class="blk"><h4>この段階の目的</h4><p>会社という器を作り、株式（所有権）を発行できる状態にする。</p></div>
+            <div class="blk"><h4>主なイベント</h4><ul><li>株式会社の設立登記</li><li><b>キャップテーブル</b>（誰が何%持つかの表）の開始</li><li>定款・機関設計</li></ul></div>
+            <div class="blk you"><h4>従業員として見るなら</h4><p>ここから「株の分け方」の歴史が始まる。後のSOの土台。</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage" data-n="2">
+        <div class="card">
+          <div class="top"><span class="stg-name mincho">シード / エンジェル</span><span class="stg-sub">Seed</span><span class="chip">資金：数百万〜数億</span></div>
+          <div class="body">
+            <div class="blk"><h4>この段階の目的</h4><p>最初の外部資金で、プロダクト仮説を形にし、初期チームを雇う。</p></div>
+            <div class="blk"><h4>主なイベント</h4><ul><li>エンジェル投資家・シードVCが出資</li><li><b>J-KISS／コンバーティブル</b>など簡易な形も</li><li>MVP（必要最小限の製品）着手</li></ul></div>
+            <div class="blk you"><h4>従業員として見るなら</h4><p>10人未満の世界。SO比率は大きい（数十bp〜%）が、倒産確率も一番高い。</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage" data-n="3">
+        <div class="card">
+          <div class="top"><span class="stg-name mincho">プロダクト開発 & PMF探索</span><span class="stg-sub">Traction</span><span class="chip">売上：初期の受注・PoC</span></div>
+          <div class="body">
+            <div class="blk"><h4>この段階の目的</h4><p><b>PMF（製品が市場に刺さる状態）</b>を探す。顧客の反応で仮説を磨く。</p></div>
+            <div class="blk"><h4>主なイベント</h4><ul><li>顧客開発・PoC（試験導入）</li><li>初期の受注・LOI</li><li>必要ならピボット（方針転換）</li></ul></div>
+            <div class="blk you"><h4>従業員として見るなら</h4><p>「実売上・実契約」が出ているかが最重要。PoC止まりか、本契約かを見分ける。</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage" data-n="4">
+        <div class="card">
+          <div class="top"><span class="stg-name mincho">シリーズA</span><span class="stg-sub">Build</span><span class="chip">資金：数億〜十数億</span></div>
+          <div class="body">
+            <div class="blk"><h4>この段階の目的</h4><p>手応えのある事業を「ちゃんとした製品・組織」に育てる。</p></div>
+            <div class="blk"><h4>主なイベント</h4><ul><li><b>リードVC</b>が主導、<b>タームシート→DD→優先株で出資</b></li><li>取締役会（ボード）組成</li><li><b>ストックオプション制度</b>の整備</li></ul></div>
+            <div class="blk you"><h4>従業員として見るなら</h4><p>会社の「型」ができる時期。ここで幹部級に入ると影響力とSOの両取りが狙える。</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage" data-n="5">
+        <div class="card">
+          <div class="top"><span class="stg-name mincho">シリーズB ― スケール</span><span class="stg-sub">Scale / ギアチェンジ</span><span class="chip">資金：十数億〜数十億</span></div>
+          <div class="body">
+            <div class="blk"><h4>この段階の目的</h4><p>「作れる」を「量産できる・売れる・運用できる」へ。<b>組織と生産のギアチェンジ</b>。</p></div>
+            <div class="blk"><h4>主なイベント</h4><ul><li>量産移管・GTM（市場投入）体制づくり</li><li>急な人員拡大（組織マネジメントの壁）</li><li>評価額の大きなステップアップ</li></ul></div>
+            <div class="blk you"><h4>従業員として見るなら</h4><p>「拡大の痛み」を制御できる人材（量産・HW・組織運営）の価値が跳ね上がる段階。</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage" data-n="6">
+        <div class="card">
+          <div class="top"><span class="stg-name mincho">シリーズC＋ / レイター</span><span class="stg-sub">Expand</span><span class="chip">資金：数十億〜</span></div>
+          <div class="body">
+            <div class="blk"><h4>この段階の目的</h4><p>事業を面で広げ、黒字化と上場（または大型M&A）への助走をつける。</p></div>
+            <div class="blk"><h4>主なイベント</h4><ul><li>大型調達・海外展開・M&Aによる取り込み</li><li>ユニットエコノミクスの証明</li><li>上場準備（監査・内部統制）</li></ul></div>
+            <div class="blk you"><h4>従業員として見るなら</h4><p>リスクは下がり待遇は安定。SOの妙味は縮むが、上場益の現実味は増す。</p></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stage exit">
+        <div class="card">
+          <div class="top"><span class="stg-name mincho">出口（EXIT）</span><span class="stg-sub">株を現金化できるイベント</span><span class="chip" style="background:color-mix(in srgb,var(--sea) 16%,transparent);color:var(--sea)">ここが回収点</span></div>
+          <div class="body" style="display:block">
+            <p style="margin:0 0 12px; font-size:14px; color:var(--muted)">投資家も従業員も、株が現金になるのはこの瞬間。道は主に4つに分岐する。</p>
+            <div class="branches">
+              <div class="branch ipo"><div class="bt">IPO（上場）</div><div class="bd">証券取引所に株を公開。SO現金化の代表格。日本は上場しやすい反面、上場時の規模は小さめの傾向。</div></div>
+              <div class="branch ma"><div class="bt">M&A（買収）</div><div class="bd">他社に買われる。ディープテックでは重工・海運・防衛・商社などが買い手。日本では現実的な出口。</div></div>
+              <div class="branch flat"><div class="bt">横ばい / ダウンラウンド</div><div class="bd">成長が鈍り、低い評価額で追加調達。既存株・SOの妙味が薄れる、従業員リスクの本丸。</div></div>
+              <div class="branch fail"><div class="bt">清算 / 事業縮小</div><div class="bd">次の資金が続かず終了。SOは0円になるが、そこで得た経験（キャリア資本）は残る。</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <p class="note">① 〜 ⑥ は成長段階（下ほど大きく安全）、◎ は出口。ラウンド名や金額は目安で、業種（特にディープテック/ハードは重い）で大きく変わる。</p>
+  </section>
+
+  <section>
+    <h2>各ラウンドで実際に起きること（共通メカニクス）</h2>
+    <div class="terms">
+      <div class="term"><dt>タームシート</dt><dd>投資条件の要約書。金額・評価額・優先株の条件などを合意する「握り」の紙。</dd></div>
+      <div class="term"><dt>DD（デューデリ）</dt><dd>出資前の精査。事業・財務・法務・技術を投資家が調べる。</dd></div>
+      <div class="term"><dt>プレ／ポスト評価額</dt><dd>調達<em>前</em>の会社の値段がプレ、<em>後</em>がポスト。ポスト＝プレ＋調達額。</dd></div>
+      <div class="term"><dt>優先株</dt><dd>投資家が取得する、倒産時に先に回収できる等の優先権付き株。従業員/SOは普通株。</dd></div>
+      <div class="term"><dt>希薄化（ダイリューション）</dt><dd>新株発行のたび、既存株主やSOの持分%が薄まること。SO%は必ず希薄化後で確認。</dd></div>
+      <div class="term"><dt>バリュエーションのステップアップ</dt><dd>ラウンドごとに評価額が上がること。早く入るほど安い行使価格＝上振れが大きい。</dd></div>
+      <div class="term"><dt>ブリッジ</dt><dd>本ラウンドまでの「つなぎ」調達。連発は資金繰りが苦しいサイン。</dd></div>
+      <div class="term"><dt>バーン / ランウェイ</dt><dd>月々溶かす現金がバーン。現預金÷月次バーン＝あと何ヶ月もつか（ランウェイ）。18ヶ月+で安心圏。</dd></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>ストックオプション（SO）― 入社時期がすべて</h2>
+    <div class="terms">
+      <div class="term"><dt>ストックオプション</dt><dd>将来、決めた安い価格（行使価格）で自社株を買える権利。株価が上がれば差額が利益。</dd></div>
+      <div class="term"><dt>ベスティング</dt><dd>SOが少しずつ自分のものになる仕組み。例：4年で全部・最初の1年は「クリフ」で0。</dd></div>
+      <div class="term"><dt>税制適格SO</dt><dd>最も有利。買うとき非課税、売って利益が出たときだけ約20%課税（要件あり）。</dd></div>
+      <div class="term"><dt>信託型SO</dt><dd>2023年に「行使時に給与課税・最大約55%」との国税庁見解。提示されたら税金要確認。</dd></div>
+      <div class="term"><dt>アクセラレーション</dt><dd>買収・上場時にベスティングが一気に進む特約。あると有利。</dd></div>
+    </div>
+    <p class="note">試算：0.1%付与で IPO 時価500億なら理論約5,000万、1,000億なら約1億。失敗すれば0円 ―― だから現金年収も妥協しすぎない。</p>
+  </section>
+
+  <section>
+    <h2>いつ入るのが得か（リスクとリターンの交換）</h2>
+    <div class="intro-card">
+      <p><b>早い段階（シード〜A）</b>：SO比率は大きく上振れも大きいが、倒産確率が最も高い。裁量と「0→1」の経験は最大。</p>
+      <p><b>中盤（B〜C）</b>：会社は形になり、量産・組織の課題が主役に。<b>スケールを支えられる専門人材の価値が跳ねる</b>。SOは中程度、リスクは中。</p>
+      <p><b>後期（レイター）</b>：安定と待遇は良いが、SOの妙味は縮む。上場益の現実味は増す。</p>
+      <p style="margin-top:6px">加えて重要なのが<b>キャリア資本</b>＝会社が失敗しても残る、市場価値のある経験・人脈・スキル。金銭リターンが0でも、ここが積み上がる会社なら「負けにくい」。</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>この地図で「Oceanic Constellations」は今どこ？</h2>
+    <div class="callout">
+      <div class="k">現在地：⑤ シリーズB ― スケール / ギアチェンジ</div>
+      <p>OC は 2026年2月にシリーズB1（約20億円）を完了し、<b>「量産移管」と「急な組織拡大」というシリーズB特有の壁</b>のまっただ中。防衛省案件の受注（実売上）や日本郵船との海×宇宙提携で<b>実トラクション</b>も出ている。</p>
+      <p>＝つまり、この段階でもっとも価値が跳ねる<b>「量産・ハードウェア・組織運営を支えられる人材」</b>が、まさに今求められている局面。SO・年収・ランウェイの条件を正式選考で確認しつつ、非対称なリターン（上に大きく・下にキャリア資本が残る）を取りにいける位置にある。</p>
+    </div>
+  </section>
+
+  <footer>
+    スタートアップの一生 ― 立ち上げから出口まで ／ 一般的な解説。金額・税制は目安であり、個別の条件・最新の税制は専門家と一次情報で確認のこと。
+  </footer>
+</div>
+
+<script>
+(function(){
+  var tg=document.getElementById('tg');
+  function cur(){var e=document.documentElement.getAttribute('data-theme'); if(e)return e; return matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';}
+  tg.addEventListener('click',function(){document.documentElement.setAttribute('data-theme', cur()==='dark'?'light':'dark');});
+})();
+</script>
