@@ -1,0 +1,2748 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ロボティクス AI インタラクティブ図解</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderAllMath()"></script>
+<script>
+function renderAllMath(){
+if(typeof renderMathInElement==='function'){
+renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});
+}
+}
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;background:#0f172a;color:#e2e8f0;line-height:1.7}
+nav{background:#1e293b;padding:8px 12px;position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+nav select{background:#334155;color:#e2e8f0;border:1px solid #475569;border-radius:6px;padding:6px 8px;font-size:14px;flex:1;max-width:400px}
+nav button{background:#334155;color:#94a3b8;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:14px}
+nav button:hover{background:#475569}
+.page{display:none;max-width:800px;margin:0 auto;padding:16px}
+.page.active{display:block}
+.section{background:#1e293b;border-radius:10px;padding:20px;margin:16px 0}
+.section h3{color:#f59e0b;font-size:16px;margin-bottom:8px;border-bottom:1px solid #334155;padding-bottom:6px}
+h2{color:#93c5fd;margin-bottom:4px}
+.arc-label{color:#64748b;font-size:13px;margin-bottom:12px}
+.formula{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:16px;margin:8px 0;font-size:14px;line-height:1.9;color:#e2e8f0;overflow-x:auto}
+.formula .katex{font-size:1.05em;color:#fbbf24}
+.formula .katex-display{margin:6px 0}
+.formula .hl{color:#fbbf24;font-weight:bold}
+.formula .note{color:#94a3b8;font-size:12px;font-style:italic}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0;padding:8px;background:#0f172a;border-radius:6px}
+.controls label{color:#94a3b8;font-size:13px}
+.controls input[type=range]{width:100px}
+.val{color:#fbbf24;font-weight:bold;min-width:36px;display:inline-block}
+.pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.pro,.con,.achieved,.challenge{padding:10px;border-radius:6px;font-size:13px}
+.pro{background:#052e16;border:1px solid #166534}.pro::before{content:'✅ '}
+.con{background:#2a1a1a;border:1px solid #991b1b}.con::before{content:'❌ '}
+.achieved{background:#1a1a2e;border:1px solid #1e40af}.achieved::before{content:'🎯 '}
+.challenge{background:#2a1f00;border:1px solid #854d0e}.challenge::before{content:'⚠️ '}
+.breadcrumb{background:#0f172a;border-left:3px solid #3b82f6;padding:10px 14px;margin:8px 0 16px;border-radius:4px;font-size:13px;color:#cbd5e1}
+.breadcrumb .tags{display:block;color:#64748b;font-size:12px;margin-top:4px}
+.back-link{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:14px 16px;margin-top:24px;text-align:center}
+.back-link a{color:#3b82f6;text-decoration:none;font-size:14px}
+.back-link a:hover{text-decoration:underline}
+.highlight{background:#1a2a1e;border-left:3px solid #fbbf24;padding:12px 14px;border-radius:6px;font-size:13px;color:#e2e8f0}
+@media(max-width:600px){.pros-cons{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav>
+<button onclick="go(-1)">← 前</button>
+<select id="pageSelect" onchange="goTo(this.value)"></select>
+<button onclick="go(1)">次 →</button>
+</nav>
+
+<script>
+const pages=[];
+const pendingInit={};
+function addPage(id,arc,title){pages.push({id,arc,title})}
+function lazyInit(id,fn){pendingInit[id]=fn}
+function buildNav(){
+const order=['sense_plan_act','strips','pddl','pomdp','subsumption','hybrid_arch','behavior_tree','slam','sim2real','saycan','llm_p','code_as_policies','vla_models','world_models'];
+pages.sort((a,b)=>{const ia=order.indexOf(a.id),ib=order.indexOf(b.id);return(ia<0?999:ia)-(ib<0?999:ib);});
+const sel=document.getElementById('pageSelect');
+sel.innerHTML=pages.map((p,i)=>`<option value="${p.id}">${i+1}. [${p.arc}] ${p.title}</option>`).join('');
+}
+function goTo(id){
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+const el=document.getElementById(id);
+if(el){el.classList.add('active');document.getElementById('pageSelect').value=id;history.replaceState(null,null,'#'+id);
+setTimeout(()=>window.dispatchEvent(new Event('resize')),100);
+if(pendingInit[id]){try{pendingInit[id]()}catch(e){console.error(e)}delete pendingInit[id];}
+}
+}
+function go(d){
+const cur=pages.findIndex(p=>p.id===document.getElementById('pageSelect').value);
+const next=Math.max(0,Math.min(pages.length-1,cur+d));
+goTo(pages[next].id);window.scrollTo(0,0);
+}
+window.addEventListener('load',()=>{buildNav();injectMeta();injectReferences();const h=location.hash.slice(1);goTo(h||pages[0]?.id);});
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(h)goTo(h);});
+
+// ─── meta（Arc/Scene 情報、ストーリー参照）───
+const STORY_BASE='https://github.com/yhdk0307-ai/life/blob/main/outputs/learning/robotics_ai/stories/';
+const meta={
+sense_plan_act:{scene:'Arc 1 Scene 1「Sense-Plan-Act」',tags:['古典AI','—','制御パラダイム'],story:'arc_001_planning.md'},
+strips:{scene:'Arc 1 Scene 2「STRIPS」',tags:['古典AI','記号主義','計画'],story:'arc_001_planning.md'},
+pddl:{scene:'Arc 1 Scene 3「PDDL」',tags:['古典AI','記号主義','計画記述'],story:'arc_001_planning.md'},
+pomdp:{scene:'Arc 1 Scene 4「POMDP」',tags:['強化学習','—','不確実性'],story:'arc_001_planning.md'},
+subsumption:{scene:'Arc 2 Scene 1「サブサンプション」',tags:['反応型','—','制御アーキテクチャ'],story:'arc_002_reactive.md'},
+hybrid_arch:{scene:'Arc 2 Scene 2「ハイブリッド」',tags:['反応型+計画','—','アーキテクチャ'],story:'arc_002_reactive.md'},
+behavior_tree:{scene:'Arc 2 Scene 3「Behavior Tree」',tags:['反応型','—','制御構造'],story:'arc_002_reactive.md'},
+slam:{scene:'Arc 2 Scene 4「SLAM」',tags:['知覚','確率推論','自己位置推定'],story:'arc_002_reactive.md'},
+sim2real:{scene:'Arc 2 Scene 5「Sim2Real」',tags:['学習','—','ドメイン適応'],story:'arc_002_reactive.md'},
+saycan:{scene:'Arc 3 Scene 1「SayCan」',tags:['LLMロボティクス','基盤モデル','行動グラウンディング'],story:'arc_003_llm_robotics.md'},
+llm_p:{scene:'Arc 3 Scene 2「LLM+P」',tags:['LLMロボティクス','記号主義+LLM','計画'],story:'arc_003_llm_robotics.md'},
+code_as_policies:{scene:'Arc 3 Scene 3「Code as Policies」',tags:['LLMロボティクス','コード生成','制御'],story:'arc_003_llm_robotics.md'},
+vla_models:{scene:'Arc 3 Scene 4「VLA 基盤モデル」',tags:['LLMロボティクス','基盤モデル','VLA'],story:'arc_003_llm_robotics.md'},
+world_models:{scene:'Arc 3 Scene 5「世界モデル」',tags:['LLMロボティクス','予測モデル','VLA'],story:'arc_003_llm_robotics.md'}
+};
+function injectMeta(){
+pages.forEach((p,i)=>{
+const page=document.getElementById(p.id);
+if(!page)return;
+const h2=page.querySelector('h2');
+if(h2){
+  const html=h2.innerHTML;
+  const match=html.match(/^(\d+)\.\s*(.+)$/);
+  if(match){h2.innerHTML=(i+1)+'. '+match[2];}
+}
+const m=meta[p.id];
+if(!m)return;
+const arcLabel=page.querySelector('.arc-label');
+if(arcLabel&&!page.querySelector('.breadcrumb')){
+const bc=document.createElement('div');bc.className='breadcrumb';
+bc.innerHTML='🤖 <strong>'+p.arc+'</strong> → '+m.scene+'<span class="tags">🧬 '+(m.tags[0]||'—')+' ｜ 🎓 '+(m.tags[1]||'—')+' ｜ 🎯 '+(m.tags[2]||'—')+'</span>';
+arcLabel.replaceWith(bc);
+}
+if(!page.querySelector('.back-link')){
+const bl=document.createElement('div');bl.className='back-link';
+bl.innerHTML='📖 <a href="'+STORY_BASE+m.story+'" target="_blank">このトピックをストーリーで読む: '+m.scene+' →</a>';
+page.appendChild(bl);
+}
+});
+}
+
+// ─── ロボティクス用語辞書（G検定の glossary を補完）───
+var glossary={
+'STRIPS':{url:'https://en.wikipedia.org/wiki/Stanford_Research_Institute_Problem_Solver',match:['STRIPS'],desc:'Stanford Research Institute Problem Solver (Fikes & Nilsson 1971)。事前条件+効果による行動定義の古典計画'},
+'PDDL':{url:'https://en.wikipedia.org/wiki/Planning_Domain_Definition_Language',match:['PDDL'],desc:'Planning Domain Definition Language。計画問題の標準記述言語'},
+'マルコフ決定過程 MDP':{url:'https://ja.wikipedia.org/wiki/%E3%83%9E%E3%83%AB%E3%82%B3%E3%83%95%E6%B1%BA%E5%AE%9A%E9%81%8E%E7%A8%8B',match:['MDP','マルコフ決定','Markov.Decision'],desc:'(S, A, P, R, γ) で定義される逐次決定問題の枠組み'},
+'POMDP':{url:'https://en.wikipedia.org/wiki/Partially_observable_Markov_decision_process',match:['POMDP','部分観測','信念状態','belief state'],desc:'Partially Observable MDP。観測 o から信念状態 b(s) を更新しながら行動'},
+'SLAM':{url:'https://ja.wikipedia.org/wiki/SLAM',match:['SLAM','Simultaneous.Localization'],desc:'Simultaneous Localization and Mapping。自己位置推定と地図作成を同時に行う'},
+'GNSS':{url:'https://ja.wikipedia.org/wiki/%E5%85%A8%E7%90%83%E8%88%AA%E6%B3%95%E8%A1%9B%E6%98%9F%E3%82%B7%E3%82%B9%E3%83%86%E3%83%A0',match:['GNSS','GPS'],desc:'Global Navigation Satellite System。GPS等の衛星測位の総称'},
+'サブサンプション・アーキテクチャ':{url:'https://en.wikipedia.org/wiki/Subsumption_architecture',match:['Subsumption','サブサンプション'],desc:'Brooks 1986。優先度付きの反応的レイヤーで構成。中央計画なし'},
+'Behavior Tree':{url:'https://en.wikipedia.org/wiki/Behavior_tree_(artificial_intelligence,_robotics_and_control)',match:['Behavior.Tree','BT'],desc:'階層的な行動制御構造。Sequence/Selector/Decoratorノードでモジュール化'},
+'Sim2Real':{url:'https://lilianweng.github.io/posts/2019-05-05-domain-randomization/',match:['Sim2Real','Domain.Randomization','ドメインランダム化'],desc:'シミュレータで学習→実機へ転移。Domain Randomization で頑健化'},
+'Vision-Language-Action':{url:'https://arxiv.org/abs/2307.15818',match:['VLA','Vision.Language.Action'],desc:'画像+言語+行動を一つのモデルで扱う基盤モデル。RT-2/OpenVLA/π0 等'},
+'Affordance':{url:'https://en.wikipedia.org/wiki/Affordance',match:['affordance','アフォーダンス'],desc:'環境が提供する「行動可能性」。SayCan で「ロボットが今できること」のスコア'},
+'Particle Filter':{url:'https://ja.wikipedia.org/wiki/%E7%B2%92%E5%AD%90%E3%83%95%E3%82%A3%E3%83%AB%E3%82%BF',match:['Particle.Filter','粒子フィルタ'],desc:'多数のサンプル（粒子）で確率分布を近似する逐次推定。SLAMで活用'},
+'Kalman Filter':{url:'https://ja.wikipedia.org/wiki/%E3%82%AB%E3%83%AB%E3%83%9E%E3%83%B3%E3%83%95%E3%82%A3%E3%83%AB%E3%82%BF',match:['Kalman','カルマン'],desc:'線形ガウスシステムでの最適推定。EKF/UKFで非線形拡張'},
+'Sense-Plan-Act':{url:'https://en.wikipedia.org/wiki/Sense_Plan_Act',match:['Sense.Plan.Act','SPA'],desc:'古典ロボット制御の3段階パイプライン。1970年代の標準パラダイム'},
+// 数学記号（最小セット、G検定図解とは独立）
+'Σ（シグマ・総和）':{url:'https://ja.wikipedia.org/wiki/%E7%B7%8F%E5%92%8C',match:['\\\\sum','Σ','総和'],desc:'Σᵢ xᵢ = x₁ + x₂ + ... の合計'},
+'転置行列（Aᵀ）':{url:'https://ja.wikipedia.org/wiki/%E8%BB%A2%E7%BD%AE%E8%A1%8C%E5%88%97',match:['\\\\top','転置'],desc:'行と列を入れ替える。Aᵀ_{ij} = A_{ji}'},
+'勾配（∇）':{url:'https://ja.wikipedia.org/wiki/%E5%8B%BE%E9%85%8D_(%E3%83%99%E3%82%AF%E3%83%88%E3%83%AB%E8%A7%A3%E6%9E%90)',match:['\\\\nabla','∇'],desc:'全偏微分のベクトル。∇f = [∂f/∂x₁, ∂f/∂x₂, ...]'},
+'ベイズの定理':{url:'https://ja.wikipedia.org/wiki/%E3%83%99%E3%82%A4%E3%82%BA%E3%81%AE%E5%AE%9A%E7%90%86',match:['ベイズ','事後分布','事前分布'],desc:'P(A|B) = P(B|A)P(A)/P(B)。観測で確信を更新'},
+'ガウス分布':{url:'https://ja.wikipedia.org/wiki/%E6%AD%A3%E8%A6%8F%E5%88%86%E5%B8%83',match:['\\\\mathcal{N}','ガウス分布','正規分布'],desc:'N(μ, σ²)。平均μ、分散σ²の釣鐘型分布'}
+};
+
+// ─── 重要論文辞書（ページID → 論文リスト）───
+var papers={
+sense_plan_act:[{t:'Shakey the Robot (技術ノート)',a:'Nilsson',y:1984,u:'https://www.sri.com/wp-content/uploads/pdf/698_rev.pdf'}],
+strips:[{t:'STRIPS: A New Approach to the Application of Theorem Proving to Problem Solving',a:'Fikes & Nilsson',y:1971,u:'https://doi.org/10.1016/0004-3702(71)90010-5'}],
+pddl:[{t:'PDDL — The Planning Domain Definition Language',a:'Ghallab et al.',y:1998,u:'http://icaps-conference.org/ipc2008/deterministic/data/pddl-resources.html'}],
+pomdp:[{t:'Planning and Acting in Partially Observable Stochastic Domains',a:'Kaelbling, Littman & Cassandra',y:1998,u:'https://www.sciencedirect.com/science/article/pii/S000437029800023X'}],
+subsumption:[{t:'A Robust Layered Control System for a Mobile Robot',a:'Brooks',y:1986,u:'https://people.csail.mit.edu/brooks/papers/AIM-864.pdf'}],
+hybrid_arch:[{t:'On Three-Layer Architectures',a:'Gat',y:1998,u:'https://dl.acm.org/doi/10.5555/292092.292130'}],
+behavior_tree:[{t:'Behavior Trees in Robotics and AI: An Introduction',a:'Colledanchise & Ögren',y:2019,u:'https://arxiv.org/abs/1709.00084'}],
+slam:[{t:'Past, Present, and Future of Simultaneous Localization and Mapping',a:'Cadena et al.',y:2016,u:'https://arxiv.org/abs/1606.05830'}],
+sim2real:[{t:'Domain Randomization for Transferring Deep Neural Networks from Simulation to the Real World',a:'Tobin et al.',y:2017,u:'https://arxiv.org/abs/1703.06907'}],
+saycan:[{t:'Do As I Can, Not As I Say: Grounding Language in Robotic Affordances',a:'Ahn et al.',y:2022,u:'https://arxiv.org/abs/2204.01691'}],
+llm_p:[{t:'LLM+P: Empowering Large Language Models with Optimal Planning Proficiency',a:'Liu et al.',y:2023,u:'https://arxiv.org/abs/2304.11477'},{t:'SayPlan: Grounding Large Language Models using 3D Scene Graphs',a:'Rana et al.',y:2023,u:'https://arxiv.org/abs/2307.06135'}],
+code_as_policies:[{t:'Code as Policies: Language Model Programs for Embodied Control',a:'Liang et al.',y:2022,u:'https://arxiv.org/abs/2209.07753'}],
+vla_models:[{t:'RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control',a:'Brohan et al.',y:2023,u:'https://arxiv.org/abs/2307.15818'},{t:'OpenVLA: An Open-Source Vision-Language-Action Model',a:'Kim et al.',y:2024,u:'https://arxiv.org/abs/2406.09246'},{t:'π0: A Vision-Language-Action Flow Model for General Robot Control',a:'Black et al.',y:2024,u:'https://arxiv.org/abs/2410.24164'}],
+world_models:[{t:'Navigation World Models',a:'Bar, Zhou, Tran, Darrell, LeCun',y:2024,u:'https://arxiv.org/abs/2412.03572'},{t:'Gemini Robotics-ER 1.6',a:'Google DeepMind',y:2024,u:'https://deepmind.google/blog/gemini-robotics-er-1-6'}]
+};
+
+function injectReferences(){
+pages.forEach(function(p){
+var page=document.getElementById(p.id);
+if(!page)return;
+var text=page.textContent||'';
+var matched=[];
+Object.keys(glossary).forEach(function(term){
+var g=glossary[term];
+var found=g.match.some(function(pat){try{return new RegExp(pat,'i').test(text);}catch(e){return text.indexOf(pat)>=0;}});
+if(found)matched.push({term:term,url:g.url,desc:g.desc});
+});
+var pp=papers[p.id]||[];
+if(page.querySelector('.ref-links-section'))return;
+if(matched.length===0&&pp.length===0)return;
+var sec=document.createElement('div');sec.className='section ref-links-section';
+var html='<h3>📎 用語・数学記法リンク / 重要論文</h3>';
+if(matched.length>0){
+html+='<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px;margin:8px 0;font-size:12px;color:#e2e8f0;line-height:2">';
+html+='<strong style="color:#94a3b8">このページの関連用語:</strong><br>';
+matched.forEach(function(m){html+='<a href="'+m.url+'" target="_blank" rel="noopener" style="color:#3b82f6;margin-right:16px;white-space:nowrap">'+m.term+'</a> <span style="color:#64748b;font-size:11px">'+m.desc+'</span><br>';});
+html+='</div>';
+}
+if(pp.length>0){
+html+='<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:12px;margin:8px 0;font-size:12px;color:#e2e8f0;line-height:2">';
+html+='<strong style="color:#94a3b8">重要論文:</strong><br>';
+pp.forEach(function(paper){html+='<a href="'+paper.u+'" target="_blank" rel="noopener" style="color:#22c55e">'+paper.t+'</a> <span style="color:#64748b">('+paper.a+', '+paper.y+')</span><br>';});
+html+='</div>';
+}
+sec.innerHTML=html;
+var backLink=page.querySelector('.back-link');
+if(backLink)page.insertBefore(sec,backLink);
+else page.appendChild(sec);
+});
+}
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 1 Scene 1: Sense-Plan-Act パラダイム -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('sense_plan_act','Arc1','Sense-Plan-Act パラダイム')</script>
+<div class="page" id="sense_plan_act">
+<h2>1. Sense-Plan-Act — 古典ロボット制御の3段階</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: 1970 年代に確立された古典ロボット制御パラダイム。「環境を完全に知覚 → 完全な計画 → 実行」を直列に実行する。Stanford の Shakey ロボット (1969) が最初の実装。<br><br>
+
+<span class="hl">Sense-Plan-Act ループ</span>:<br>
+$\text{cycle\_time} = \underbrace{T_{\text{sense}}}_{\substack{\text{センサー}\\\text{知覚}}} + \underbrace{T_{\text{plan}}}_{\substack{\text{計画生成}\\\text{(探索)}}} + \underbrace{T_{\text{act}}}_{\substack{\text{行動}\\\text{実行}}}$<br><br>
+
+<strong>各段階の役割</strong>:<br>
+• <strong>Sense</strong>: センサー入力 → 世界モデル（記号的表現） $W_t$ を構築<br>
+• <strong>Plan</strong>: $W_t$ + 目標 $G$ から行動系列 $\pi = (a_1, a_2, \ldots, a_n)$ を生成<br>
+&nbsp;&nbsp;&nbsp;→ STRIPS, A* 探索等で実装<br>
+• <strong>Act</strong>: 行動 $\pi$ を実行 → 環境を変更<br><br>
+
+<span class="note">→ 1ループの完了に <strong>数秒〜数分</strong>。動的環境では「計画した時には世界が変わっている」問題（Frame Problem）</span><br>
+<span class="note">→ この限界が 1986 年の Brooks による <a href="#subsumption" style="color:#3b82f6">サブサンプション・アーキテクチャ</a> 提唱の動機となった</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（タイムライン: SPA vs 反応型）</h3>
+<div class="controls">
+<label>Sense 時間 (s):
+  <input type="range" id="spaS" min="0.1" max="3" step="0.1" value="0.5" oninput="drawSPA()">
+  <span class="val" id="vSpaS">0.5</span>
+</label>
+<label>Plan 時間 (s):
+  <input type="range" id="spaP" min="0.1" max="10" step="0.1" value="3" oninput="drawSPA()">
+  <span class="val" id="vSpaP">3.0</span>
+</label>
+<label>Act 時間 (s):
+  <input type="range" id="spaA" min="0.1" max="3" step="0.1" value="1" oninput="drawSPA()">
+  <span class="val" id="vSpaA">1.0</span>
+</label>
+</div>
+<div id="plotSPA"></div>
+<div id="spaInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawSPA(){
+  var s=+document.getElementById('spaS').value;
+  var p=+document.getElementById('spaP').value;
+  var a=+document.getElementById('spaA').value;
+  document.getElementById('vSpaS').textContent=s.toFixed(1);
+  document.getElementById('vSpaP').textContent=p.toFixed(1);
+  document.getElementById('vSpaA').textContent=a.toFixed(1);
+  var total=s+p+a;
+  // Reactive: ~50ms continuous loop
+  var reactiveCycle=0.05;
+  var data=[
+    {x:[s],y:['SPA'],type:'bar',orientation:'h',marker:{color:'#3b82f6'},name:'Sense ('+s.toFixed(1)+'s)',text:[s.toFixed(1)+'s'],textposition:'inside'},
+    {x:[p],y:['SPA'],type:'bar',orientation:'h',marker:{color:'#fbbf24'},name:'Plan ('+p.toFixed(1)+'s)',text:[p.toFixed(1)+'s'],textposition:'inside'},
+    {x:[a],y:['SPA'],type:'bar',orientation:'h',marker:{color:'#22c55e'},name:'Act ('+a.toFixed(1)+'s)',text:[a.toFixed(1)+'s'],textposition:'inside'},
+    {x:Array(Math.min(50,Math.ceil(total/reactiveCycle))).fill(reactiveCycle),y:Array(Math.min(50,Math.ceil(total/reactiveCycle))).fill('Reactive'),type:'bar',orientation:'h',marker:{color:'#a855f7'},showlegend:false}
+  ];
+  Plotly.newPlot('plotSPA',data,{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'1サイクルの時間: SPA = '+total.toFixed(1)+'s vs Reactive ≈ 50ms連続',font:{size:13,color:'#cbd5e1'}},
+    barmode:'stack',
+    xaxis:{title:'時間 (秒)',gridcolor:'#334155'},
+    yaxis:{gridcolor:'#334155'},
+    margin:{t:35,b:60,l:80,r:10},height:200,
+    legend:{orientation:'h',x:0.5,xanchor:'center',y:-0.4,yanchor:'top',bgcolor:'rgba(0,0,0,0)'}
+  },{responsive:true});
+  var msg='<strong>📊 1サイクル完了時間: '+total.toFixed(2)+'秒</strong><br>';
+  if(total>5)msg+='<span style="color:#fca5a5">→ 動的環境ではこの間に世界が大きく変化 → SPA が破綻</span>';
+  else if(total>2)msg+='<span style="color:#fde68a">→ 静的な環境向け。動くものがあると即座に古い計画</span>';
+  else msg+='<span style="color:#86efac">→ 比較的高速だが、それでも反応型(50ms)に比べて20倍以上遅い</span>';
+  msg+='<br><br><strong>SPA の課題（Frame Problem）:</strong><br>';
+  msg+='1. 計画生成中に環境が変化 → 古い計画が無効化<br>';
+  msg+='2. 完全な世界モデルの構築が困難（記号化の問題）<br>';
+  msg+='3. 計算量が指数的に増加（探索空間爆発）<br><br>';
+  msg+='<strong>👀 試してみよう:</strong> Plan 時間を <strong>10 秒</strong>に上げる → 障害物が動く環境では破綻。Brooks (1986) はこの問題を「<strong>計画なしの反応的制御</strong>」で解決した（→ <a href="#subsumption" style="color:#3b82f6">サブサンプション</a>）';
+  document.getElementById('spaInfo').innerHTML=msg;
+}
+lazyInit('sense_plan_act',drawSPA);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">1969 年 Shakey: 最初の汎用知能ロボット。SRI International で開発、STRIPS と組み合わせて行動計画</div>
+<div class="pro">明示的な計画 → 行動の根拠が説明可能（説明可能性が高い）</div>
+<div class="pro">記号主義 AI と相性が良い（論理推論・定理証明と統合）</div>
+<div class="challenge">計算量が爆発: NP-hard な探索問題。複雑な環境では実用不可</div>
+<div class="con">Frame Problem: 計画中に世界が変わると無効化。動的環境に弱い</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: 「目を開けて世界を全部見て、頭の中で完璧な計画を立てて、それから動く」というロボット。チェスのような静的・有限な世界では機能するが、現実世界では「考えている間に状況が変わる」問題がある。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 歴史的位置づけ</strong>: 1970-1980 年代の主流パラダイム。STRIPS (1971) → Shakey (1969-1972) → エキスパートシステム時代。1986 年に Brooks が <a href="#subsumption" style="color:#3b82f6">サブサンプション</a> で「計画なしでも知能的に動ける」ことを示し、ロボティクスは大きく転換した。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① Shakey ロボット (1969-1972) — SPA の歴史的実装</strong><br><br>
+
+スタンフォード研究所 (SRI) で開発された最初の汎用知能ロボット。SPA パラダイムを実装した代表例。<br><br>
+
+<strong>ハードウェア</strong>:<br>
+• 高さ約 1.5m、車輪駆動。TV カメラ + 距離センサー + 衝突検知<br>
+• 計算は外部メインフレーム DEC PDP-10/15 で実行（無線通信）<br><br>
+
+<strong>SPA サイクル</strong>:<br>
+• <strong>Sense</strong>: TV カメラ画像 → エッジ検出 → 物体（箱、ドア）の位置を記号化<br>
+• <strong>Plan</strong>: STRIPS で「箱を別の部屋に運ぶ」等の目標から行動系列を生成<br>
+• <strong>Act</strong>: 「前進」「回転」「箱を押す」等のプリミティブ行動を実行<br><br>
+
+<strong>1 サイクルの所要時間</strong>: 数分〜数時間（探索空間が広い場合）<br>
+<span class="note">→ 「Shakey」の名前は、動作中に揺れる（shake）ことから。当時のセンサー精度では正確な制御が困難だった</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② Frame Problem — SPA の本質的な限界</strong><br><br>
+
+McCarthy & Hayes (1969) が指摘した古典 AI の根本問題:<br><br>
+
+<strong>定義</strong>: 行動の効果を表現する際、「変化する条件」だけでなく「<strong>変化しない条件</strong>」も明示的に記述する必要がある。<br><br>
+
+<strong>例</strong>: ロボットが「箱を持ち上げる」行動を実行<br>
+• 変化する: ロボットの手の位置、箱の高度、エネルギー消費<br>
+• <strong>変化しない</strong>: 部屋の壁の位置、他の物体の状態、太陽の位置...（無限）<br><br>
+
+<strong>計算量の爆発</strong>: 環境の状態数 $n$ に対し、行動系列の探索空間は $O(b^d)$（$b$ = 分岐数、$d$ = 深さ）。複雑な環境では $10^{15}$ 状態超え。<br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">問題</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">SPA での影響</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">解決アプローチ</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Frame Problem</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">完全な世界モデルが必要 → 記述困難</td><td style="border:1px solid #334155;padding:6px">サブサンプション（記号モデルなし）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">計算量爆発</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">指数的探索 → リアルタイム不可</td><td style="border:1px solid #334155;padding:6px">階層計画、ヒューリスティック探索</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">不確実性</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">決定論的世界を仮定 → センサーノイズに脆弱</td><td style="border:1px solid #334155;padding:6px"><a href="#pomdp" style="color:#3b82f6">POMDP</a> + ベイズフィルタ</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">動的環境</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">計画完了時に世界が変化済み</td><td style="border:1px solid #334155;padding:6px">反応型制御、再計画</td></tr>
+</table>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ SPA から現代制御への系譜</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">年</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">パラダイム</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">特徴</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">代表例</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1969-1985</td><td style="border:1px solid #334155;padding:6px;color:#3b82f6">SPA（Sense-Plan-Act）</td><td style="border:1px solid #334155;padding:6px">完全モデル + 探索計画</td><td style="border:1px solid #334155;padding:6px">Shakey + STRIPS</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1986-1995</td><td style="border:1px solid #334155;padding:6px;color:#a855f7">反応型（Reactive）</td><td style="border:1px solid #334155;padding:6px">モデルなし、センサー直結</td><td style="border:1px solid #334155;padding:6px"><a href="#subsumption" style="color:#3b82f6">サブサンプション</a></td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1995-2010</td><td style="border:1px solid #334155;padding:6px;color:#22c55e">ハイブリッド（3層）</td><td style="border:1px solid #334155;padding:6px">計画+反応の統合</td><td style="border:1px solid #334155;padding:6px"><a href="#hybrid_arch" style="color:#3b82f6">Gat 1998</a></td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2010-2020</td><td style="border:1px solid #334155;padding:6px;color:#fbbf24">学習ベース</td><td style="border:1px solid #334155;padding:6px">Deep RL、模倣学習、Sim2Real</td><td style="border:1px solid #334155;padding:6px">DQN、PPO、<a href="#sim2real" style="color:#3b82f6">Sim2Real</a></td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">2022-現在</td><td style="border:1px solid #334155;padding:6px;color:#86efac"><strong>LLM × ロボティクス</strong></td><td style="border:1px solid #334155;padding:6px;color:#86efac">基盤モデル + 行動</td><td style="border:1px solid #334155;padding:6px;color:#86efac"><a href="#saycan" style="color:#3b82f6">SayCan</a> / <a href="#vla_models" style="color:#3b82f6">RT-2</a> / <a href="#world_models" style="color:#3b82f6">VLA</a></td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 興味深い回帰:</span> 2022 年以降、LLM の登場で「<strong>明示的な計画</strong>」が再評価されている（<a href="#llm_p" style="color:#3b82f6">LLM+P</a>）。SPA は「死んだ」のではなく、LLM を新しい「計画器」として復活させる動きがある。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 1 Scene 2: STRIPS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('strips','Arc1','STRIPS — 定理証明から計画へ')</script>
+<div class="page" id="strips">
+<h2>2. STRIPS — Fikes-Nilsson 仮定で世界を制御する</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: Fikes & Nilsson (1971) が SRI で開発した古典計画システム。「事前条件 + 追加リスト + 削除リスト」で行動を表現し、決定論的世界での計画を爆発的に高速化した。Shakey ロボットの頭脳。<br><br>
+
+<span class="hl">行動オペレータ A の定義</span>:<br>
+$A = \langle \underbrace{\text{Pre}(A)}_{\text{事前条件}}, \underbrace{\text{Add}(A)}_{\substack{\text{追加}\\\text{(True化)}}}, \underbrace{\text{Del}(A)}_{\substack{\text{削除}\\\text{(False化)}}} \rangle$<br><br>
+
+<span class="hl">状態遷移</span>:<br>
+$S' = (S \setminus \text{Del}(A)) \cup \text{Add}(A) \quad \text{if} \quad \text{Pre}(A) \subseteq S$<br><br>
+
+<strong>Fikes-Nilsson 仮定</strong>: <span class="note">Add/Del で明示されない事実は変化しない</span>(Frame Problem の実用的回避)<br><br>
+
+<strong>例: push(box, A, B)</strong>:<br>
+• Pre = {at(robot, A), at(box, A), connects(A, B)}<br>
+• Add = {at(robot, B), at(box, B)}<br>
+• Del = {at(robot, A), at(box, A)}<br><br>
+
+<span class="note">→ 計画問題: 初期状態 $S_0$ から目標 $G \subseteq S$ を満たす行動系列 $\pi = (a_1, \ldots, a_n)$ を見つける</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（計画長と探索空間）</h3>
+<div class="controls">
+<label>命題数 |P|:
+  <input type="range" id="stPropN" min="3" max="20" step="1" value="8" oninput="drawSTRIPS()">
+  <span class="val" id="vStPropN">8</span>
+</label>
+<label>分岐係数 b:
+  <input type="range" id="stBranch" min="2" max="10" step="1" value="4" oninput="drawSTRIPS()">
+  <span class="val" id="vStBranch">4</span>
+</label>
+<label>計画深さ d:
+  <input type="range" id="stDepth" min="2" max="20" step="1" value="6" oninput="drawSTRIPS()">
+  <span class="val" id="vStDepth">6</span>
+</label>
+</div>
+<div id="plotSTRIPS"></div>
+<div id="stripsInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawSTRIPS(){
+  var n=+document.getElementById('stPropN').value;
+  var b=+document.getElementById('stBranch').value;
+  var d=+document.getElementById('stDepth').value;
+  document.getElementById('vStPropN').textContent=n;
+  document.getElementById('vStBranch').textContent=b;
+  document.getElementById('vStDepth').textContent=d;
+  // State space size = 2^n (each proposition true/false)
+  var stateSpace=Math.pow(2,n);
+  // Search tree at depth d with branching b: b^d nodes
+  var depths=[];
+  var bfsNodes=[];
+  var idsNodes=[];
+  for(var i=1;i<=Math.min(d,15);i++){
+    depths.push(i);
+    bfsNodes.push(Math.pow(b,i));
+    // Iterative deepening (sum of b^i)
+    var sum=0;for(var j=1;j<=i;j++)sum+=Math.pow(b,j);
+    idsNodes.push(sum);
+  }
+  var data=[
+    {x:depths,y:bfsNodes,type:'scatter',mode:'lines+markers',name:'BFS 探索ノード b^d',line:{color:'#fbbf24',width:2}},
+    {x:depths,y:idsNodes,type:'scatter',mode:'lines+markers',name:'IDA* 累積ノード Σb^i',line:{color:'#3b82f6',width:2}},
+    {x:depths,y:depths.map(function(){return stateSpace;}),type:'scatter',mode:'lines',name:'全状態空間 2^|P|',line:{color:'#fca5a5',width:2,dash:'dash'}}
+  ];
+  Plotly.newPlot('plotSTRIPS',data,{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'計画深さ d による探索ノード数（命題数 '+n+', 分岐 '+b+'）',font:{size:13,color:'#cbd5e1'}},
+    xaxis:{title:'計画深さ d',gridcolor:'#334155'},
+    yaxis:{title:'ノード数（log）',type:'log',gridcolor:'#334155'},
+    margin:{t:35,b:60,l:60,r:10},height:300,
+    legend:{orientation:'h',x:0.5,xanchor:'center',y:-0.28,yanchor:'top',bgcolor:'rgba(0,0,0,0)'}
+  },{responsive:true});
+  var nodesAtD=Math.pow(b,d);
+  var msg='<strong>📊 探索空間の見積もり</strong><br>';
+  msg+='全状態空間 |S| = 2<sup>'+n+'</sup> = <strong>'+stateSpace.toLocaleString()+'</strong> 状態<br>';
+  msg+='深さ d='+d+' での BFS ノード数 = '+b+'<sup>'+d+'</sup> = <strong>'+nodesAtD.toLocaleString()+'</strong><br><br>';
+  if(nodesAtD>1e9)msg+='<span style="color:#fca5a5">→ 10億ノード超え。実用的に解けない</span><br>';
+  else if(nodesAtD>1e6)msg+='<span style="color:#fde68a">→ 100万ノード級。ヒューリスティック必須</span><br>';
+  else msg+='<span style="color:#86efac">→ 100万以下。STRIPS でも素直に解ける</span><br>';
+  msg+='<br><strong>👀 試してみよう:</strong> 命題数を 20 に → 全状態空間 1M超え。深さ 10、分岐 5 → 探索 10M ノードで爆発。これが「<strong>古典計画は小規模問題まで</strong>」と言われる理由。';
+  msg+='<br><br><strong>STRIPS の限界の本質:</strong> PSPACE-complete な計画問題は本質的に難しい。FF (2001) や FastDownward (2006) のヒューリスティックでようやく実用化（→ <a href="#pddl" style="color:#3b82f6">PDDL</a>）';
+  document.getElementById('stripsInfo').innerHTML=msg;
+}
+lazyInit('strips',drawSTRIPS);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">1971 年 SRI で完成、Shakey ロボットの頭脳として動作</div>
+<div class="achieved">現代の PDDL、HTN、LLM+P まで継承される基本枠組み</div>
+<div class="pro">表現がシンプル（3 つのリストのみ）→ 高速な計画生成</div>
+<div class="pro">説明可能性: 各行動の前提と効果が明示的</div>
+<div class="challenge">数値・時間・並列性が扱えない（→ PDDL 2.1 で拡張）</div>
+<div class="con">PSPACE-complete: 大規模問題で計算量爆発</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: 「料理レシピの形式化」のようなもの。各料理（行動）には「材料があるか（事前条件）」「完成後に何が増える/減るか（Add/Del）」だけ書く。冷蔵庫の他の食材は気にしない（Fikes-Nilsson 仮定）。これで「材料 → 料理」の組み合わせ計画が機械的に解ける。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 STRIPS の革新</strong>: 一階述語論理の定理証明（Green 1969）が実用化困難だった時代、「<strong>変わらないことは記述しない</strong>」という大胆な近似で計画を実用化。Frame Problem を「正面突破せず迂回する」という発想の転換。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① ブロックワールド計画の数値例</strong><br><br>
+
+古典的なベンチマーク「ブロックワールド」で STRIPS の動きを追ってみる。<br><br>
+
+<strong>初期状態 S₀</strong>:<br>
+&nbsp;&nbsp;on(A, B), on(B, table), on(C, table), clear(A), clear(C), handempty<br><br>
+
+<strong>目標 G</strong>:<br>
+&nbsp;&nbsp;on(A, table), on(B, A), on(C, B)<br><br>
+
+<strong>行動オペレータ</strong>:<br>
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:6px;background:#1e293b">行動</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">Pre</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">Add</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">Del</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">unstack(x,y)</td><td style="border:1px solid #334155;padding:6px">on(x,y), clear(x), handempty</td><td style="border:1px solid #334155;padding:6px">holding(x), clear(y)</td><td style="border:1px solid #334155;padding:6px">on(x,y), clear(x), handempty</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">putdown(x)</td><td style="border:1px solid #334155;padding:6px">holding(x)</td><td style="border:1px solid #334155;padding:6px">on(x,table), clear(x), handempty</td><td style="border:1px solid #334155;padding:6px">holding(x)</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">stack(x,y)</td><td style="border:1px solid #334155;padding:6px">holding(x), clear(y)</td><td style="border:1px solid #334155;padding:6px">on(x,y), clear(x), handempty</td><td style="border:1px solid #334155;padding:6px">holding(x), clear(y)</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">pickup(x)</td><td style="border:1px solid #334155;padding:6px">on(x,table), clear(x), handempty</td><td style="border:1px solid #334155;padding:6px">holding(x)</td><td style="border:1px solid #334155;padding:6px">on(x,table), clear(x), handempty</td></tr>
+</table><br>
+
+<strong>STRIPS が出力する計画</strong>:<br>
+<span style="color:#86efac">π = [unstack(A,B), putdown(A), pickup(B), stack(B,A), pickup(C), stack(C,B)]</span><br>
+<span class="note">→ 6 ステップで目標達成。後ろ向き探索（goal regression）で部分目標を順に分解</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② 探索戦略の比較</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">戦略</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">方向</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">特徴</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">代表 planner</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">前向き探索</td><td style="border:1px solid #334155;padding:6px">S₀ → G</td><td style="border:1px solid #334155;padding:6px">適用可能行動から状態を展開</td><td style="border:1px solid #334155;padding:6px">FF, FastDownward</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">後ろ向き探索<br>(goal regression)</td><td style="border:1px solid #334155;padding:6px">G ← S₀</td><td style="border:1px solid #334155;padding:6px">目標から逆向きに前提を遡る</td><td style="border:1px solid #334155;padding:6px">古典 STRIPS</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">部分順序計画</td><td style="border:1px solid #334155;padding:6px">非線形</td><td style="border:1px solid #334155;padding:6px">独立な行動を並列に保持</td><td style="border:1px solid #334155;padding:6px">UCPOP, NOAH</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">SAT/CSP 化</td><td style="border:1px solid #334155;padding:6px;color:#86efac">論理</td><td style="border:1px solid #334155;padding:6px;color:#86efac">計画問題を SAT に変換</td><td style="border:1px solid #334155;padding:6px;color:#86efac">SATPLAN, Blackbox</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ ポイント:</span> 古典 STRIPS の後ろ向き探索 → 1990 年代の前向き探索 + ヒューリスティック (FF) で性能が劇的改善。これが <a href="#pddl" style="color:#3b82f6">PDDL</a> 時代のベース。
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ STRIPS から現代への系譜</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">年</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">技術</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">STRIPS との関係</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1971</td><td style="border:1px solid #334155;padding:6px">STRIPS</td><td style="border:1px solid #334155;padding:6px">原点。Pre/Add/Del 形式</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1987</td><td style="border:1px solid #334155;padding:6px">ADL</td><td style="border:1px solid #334155;padding:6px">量化子・条件効果を追加</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1998</td><td style="border:1px solid #334155;padding:6px"><a href="#pddl" style="color:#3b82f6">PDDL 1.0</a></td><td style="border:1px solid #334155;padding:6px">標準語化（STRIPS + ADL）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2003</td><td style="border:1px solid #334155;padding:6px">PDDL 2.1</td><td style="border:1px solid #334155;padding:6px">数値・時間・並列性</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1990s〜</td><td style="border:1px solid #334155;padding:6px">HTN (Hierarchical Task Network)</td><td style="border:1px solid #334155;padding:6px">階層分解、SHOP/SHOP2</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">2023</td><td style="border:1px solid #334155;padding:6px;color:#86efac"><a href="#llm_p" style="color:#3b82f6">LLM+P</a></td><td style="border:1px solid #334155;padding:6px;color:#86efac">LLM が PDDL 生成 → 古典 planner で解く</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">2023</td><td style="border:1px solid #334155;padding:6px;color:#86efac">SayPlan</td><td style="border:1px solid #334155;padding:6px;color:#86efac">3D Scene Graph + LLM + 古典計画</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 50年経っても生き残る理由:</span> Pre/Add/Del 形式は「行動の意味的アトム」として完成度が高い。LLM 時代でも「計画の表現形式」として標準語の地位を保持している。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 1 Scene 3: PDDL -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('pddl','Arc1','PDDL — 計画記述の標準語')</script>
+<div class="page" id="pddl">
+<h2>3. PDDL — 計画問題を「ドメイン × 問題」に分離する標準語</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: McDermott ら (1998) が AIPS 計画コンペ用に制定した計画記述言語。STRIPS + ADL を Lisp 構文で標準化し、ドメイン定義と問題定義を分離。25 年以上業界標準として使われ、2023 年以降は LLM の計画器バックエンドとして再評価されている。<br><br>
+
+<span class="hl">PDDL の二分構造</span>:<br>
+$\text{Plan Problem} = \underbrace{\text{Domain}(\mathcal{D})}_{\substack{\text{述語}\\\text{行動定義}}} + \underbrace{\text{Problem}(\mathcal{P})}_{\substack{\text{オブジェクト}\\\text{初期状態}\\\text{目標}}}$<br><br>
+
+<span class="hl">PDDL 2.1: 数値拡張</span>:<br>
+$\text{State} = \underbrace{\{p_1, p_2, \ldots\}}_{\text{命題部分}} \cup \underbrace{\{f_1 = v_1, f_2 = v_2, \ldots\}}_{\text{数値 fluents}}$<br><br>
+
+<span class="hl">PDDL 2.1: 持続行動</span>:<br>
+$\text{durative-action } A: \underbrace{[\text{at start}, \text{over all}, \text{at end}]}_{\text{タイミング指定 Pre/Eff}}, \quad \underbrace{D(A)}_{\text{所要時間}}$<br><br>
+
+<span class="note">→ 並列実行可能、時間制約付きの計画が記述可能</span><br>
+<span class="note">→ FastDownward / FF / OPTIC 等の planner が直接実行できる入力形式</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（PDDL バージョンと表現力 / planner 性能）</h3>
+<div class="controls">
+<label>PDDL バージョン:
+  <select id="pddlVer" onchange="drawPDDL()" style="background:#334155;color:#e2e8f0;border:1px solid #475569;border-radius:6px;padding:4px 8px;font-size:13px">
+    <option value="1">1.0 (1998) — STRIPS + ADL</option>
+    <option value="2" selected>2.1 (2003) — 数値+時間</option>
+    <option value="3">3.0 (2006) — 嗜好+軌跡制約</option>
+    <option value="31">3.1 (2008) — Object fluents</option>
+  </select>
+</label>
+<label>問題サイズ N:
+  <input type="range" id="pddlN" min="5" max="100" step="5" value="30" oninput="drawPDDL()">
+  <span class="val" id="vPddlN">30</span>
+</label>
+</div>
+<div id="plotPDDL"></div>
+<div id="pddlInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawPDDL(){
+  var v=document.getElementById('pddlVer').value;
+  var n=+document.getElementById('pddlN').value;
+  document.getElementById('vPddlN').textContent=n;
+  // Approximate planner performance (relative time, log scale)
+  // FF (2001) good for STRIPS; FastDownward better for ADL/numeric
+  var sizes=[];
+  var ff=[];var fd=[];var optic=[];
+  for(var i=5;i<=n;i+=5){
+    sizes.push(i);
+    // FF: fast for pure STRIPS, struggles with numeric
+    var ffTime=Math.pow(1.15,i)*(v==='1'?1:v==='2'?5:v==='3'?20:30);
+    // FastDownward: better heuristics, stable
+    var fdTime=Math.pow(1.10,i)*(v==='1'?0.8:v==='2'?2:v==='3'?8:10);
+    // OPTIC: temporal/numeric specialist
+    var opticTime=Math.pow(1.08,i)*(v==='1'?5:v==='2'?1.5:v==='3'?3:4);
+    ff.push(ffTime);
+    fd.push(fdTime);
+    optic.push(opticTime);
+  }
+  var data=[
+    {x:sizes,y:ff,type:'scatter',mode:'lines+markers',name:'FF (2001)',line:{color:'#fbbf24',width:2}},
+    {x:sizes,y:fd,type:'scatter',mode:'lines+markers',name:'FastDownward (2006)',line:{color:'#3b82f6',width:2}},
+    {x:sizes,y:optic,type:'scatter',mode:'lines+markers',name:'OPTIC (2012)',line:{color:'#22c55e',width:2}}
+  ];
+  Plotly.newPlot('plotPDDL',data,{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'PDDL '+v+'.x での planner 性能（相対計算時間）',font:{size:13,color:'#cbd5e1'}},
+    xaxis:{title:'問題サイズ N (オブジェクト数)',gridcolor:'#334155'},
+    yaxis:{title:'相対計算時間（log）',type:'log',gridcolor:'#334155'},
+    margin:{t:35,b:60,l:60,r:10},height:300,
+    legend:{orientation:'h',x:0.5,xanchor:'center',y:-0.28,yanchor:'top',bgcolor:'rgba(0,0,0,0)'}
+  },{responsive:true});
+  var verLabel={'1':'1.0 (STRIPS+ADL)','2':'2.1 (数値+時間)','3':'3.0 (嗜好+軌跡)','31':'3.1 (Object fluents)'}[v];
+  var feature={'1':'命題ベース、量化子、条件効果','2':'数値変数 + 持続行動 + 並列実行','3':'嗜好 (preferences) + 軌跡制約 (trajectory)','31':'Object fluents で関数表現'}[v];
+  var msg='<strong>📊 PDDL '+verLabel+'</strong><br>';
+  msg+='追加機能: '+feature+'<br><br>';
+  msg+='<strong>👀 試してみよう:</strong><br>';
+  msg+='• PDDL 1.0 → FF が最速（STRIPS 形式に最適化）<br>';
+  msg+='• PDDL 2.1 → OPTIC が時間付き計画で優位<br>';
+  msg+='• PDDL 3.1 → FastDownward が安定（強力なヒューリスティック）<br><br>';
+  msg+='<strong>注意</strong>: 表現力が増すほど計算量も増す。問題に合った表現レベルを選ぶことが重要。LLM+P (2023) は LLM がこの選択を自動化しようとしている。';
+  document.getElementById('pddlInfo').innerHTML=msg;
+}
+lazyInit('pddl',drawPDDL);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">1998 年 AIPS で標準化、IPC（International Planning Competition）の公式言語</div>
+<div class="achieved">25 年以上業界標準、PDDL 3.1 が 2008 年から事実上の上限版として安定</div>
+<div class="pro">ドメイン/問題分離 → 行動定義の再利用、ベンチマーク容易</div>
+<div class="pro">LLM 時代に復権: LLM+P (2023), SayPlan (2023) で「LLM の計画器」として活用</div>
+<div class="challenge">完全観測仮定、PSPACE-complete の壁は依然として残る</div>
+<div class="con">人間が書くのは大変（Lisp 構文 + 厳密な型付け）→ LLM で自動生成する方向へ</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: PDDL は「<strong>料理の文法書</strong>」のようなもの。「料理の作り方の枠組み（ドメイン）」と「今晩何を作るか（問題）」を別ファイルに書く。同じ枠組みで何百通りの献立を機械的に解ける。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 PDDL の革新</strong>: STRIPS の形式を「<strong>共通フォーマット</strong>」として固定したことで、planner の競争と進化が加速した。FF (2001), FastDownward (2006), LAMA (2008) — IPC の優勝モデルが次々と性能を更新。標準化が技術進化を駆動した好例。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① PDDL 構文の実例（ロボット世界）</strong><br><br>
+
+<strong>ドメインファイル</strong> (robot-world.pddl):<br>
+<pre style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:10px;font-size:11px;color:#e2e8f0;overflow-x:auto;white-space:pre">(define (domain robot-world)
+  (:requirements :strips :typing :numeric-fluents)
+  (:types room box robot)
+  (:predicates
+    (at ?x - object ?r - room)
+    (connects ?r1 ?r2 - room)
+    (carrying ?rb - robot ?b - box))
+  (:functions
+    (battery ?rb - robot)
+    (distance ?r1 ?r2 - room))
+
+  (:action move
+    :parameters (?rb - robot ?from ?to - room)
+    :precondition (and (at ?rb ?from)
+                       (connects ?from ?to)
+                       (>= (battery ?rb) 10))
+    :effect (and (at ?rb ?to)
+                 (not (at ?rb ?from))
+                 (decrease (battery ?rb) (* 5 (distance ?from ?to))))))</pre>
+
+<strong>問題ファイル</strong> (move-box.pddl):<br>
+<pre style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:10px;font-size:11px;color:#e2e8f0;overflow-x:auto;white-space:pre">(define (problem move-box-1)
+  (:domain robot-world)
+  (:objects shakey - robot box1 - box room-a room-b - room)
+  (:init
+    (at shakey room-a) (at box1 room-b)
+    (connects room-a room-b) (connects room-b room-a)
+    (= (battery shakey) 100)
+    (= (distance room-a room-b) 5))
+  (:goal (at box1 room-a))
+  (:metric minimize (total-time)))</pre>
+
+<span class="note">→ FastDownward に渡せば数秒で計画を出力。同じドメインで初期状態だけ変えれば 100 通りの問題が作れる</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② PDDL バージョン進化の系譜</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">版</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">年</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">主な追加</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">代表的応用</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1.0</td><td style="border:1px solid #334155;padding:6px">1998</td><td style="border:1px solid #334155;padding:6px">STRIPS + ADL（量化子、条件効果）</td><td style="border:1px solid #334155;padding:6px">基本ロジスティクス計画</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2.1</td><td style="border:1px solid #334155;padding:6px">2003</td><td style="border:1px solid #334155;padding:6px">数値 fluents, durative actions</td><td style="border:1px solid #334155;padding:6px">時間制約・並列タスク</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">3.0</td><td style="border:1px solid #334155;padding:6px">2006</td><td style="border:1px solid #334155;padding:6px">preferences, trajectory constraints</td><td style="border:1px solid #334155;padding:6px">ソフト制約付き計画</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">3.1</td><td style="border:1px solid #334155;padding:6px">2008</td><td style="border:1px solid #334155;padding:6px">Object fluents（関数表現）</td><td style="border:1px solid #334155;padding:6px">数値最適化計画</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">+α</td><td style="border:1px solid #334155;padding:6px;color:#86efac">2023〜</td><td style="border:1px solid #334155;padding:6px;color:#86efac">LLM 自動生成（自然言語 → PDDL）</td><td style="border:1px solid #334155;padding:6px;color:#86efac">LLM+P, SayPlan</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ ポイント:</span> PDDL の表現力は 1998-2008 で完成。以降 15 年は安定期だったが、2023 年に LLM の登場で「PDDL を自然言語から生成する」という新しい使い方が始まった。
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ 主要 PDDL planner の比較</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">planner</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">年</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">手法</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">強み</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">FF (Fast Forward)</td><td style="border:1px solid #334155;padding:6px">2001</td><td style="border:1px solid #334155;padding:6px">前向き探索 + relaxed plan heuristic</td><td style="border:1px solid #334155;padding:6px;color:#86efac">純 STRIPS 問題で高速</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">SATPLAN</td><td style="border:1px solid #334155;padding:6px">1992-2006</td><td style="border:1px solid #334155;padding:6px">SAT 化 + SAT solver</td><td style="border:1px solid #334155;padding:6px">最適計画長保証</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">FastDownward</td><td style="border:1px solid #334155;padding:6px;color:#86efac">2006</td><td style="border:1px solid #334155;padding:6px;color:#86efac">SAS+ 表現 + LM-Cut/h^max</td><td style="border:1px solid #334155;padding:6px;color:#86efac">汎用最強、IPC 複数優勝</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">LAMA</td><td style="border:1px solid #334155;padding:6px">2008-2011</td><td style="border:1px solid #334155;padding:6px">FastDownward + landmark heuristic</td><td style="border:1px solid #334155;padding:6px">非最適計画で高速</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">OPTIC / POPF</td><td style="border:1px solid #334155;padding:6px">2010-2012</td><td style="border:1px solid #334155;padding:6px">時間付き前向き探索</td><td style="border:1px solid #334155;padding:6px">PDDL 2.1 (時間/数値) 特化</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">ENHSP</td><td style="border:1px solid #334155;padding:6px">2017</td><td style="border:1px solid #334155;padding:6px">数値計画 + ヒューリスティック</td><td style="border:1px solid #334155;padding:6px">PDDL 2.1+ 数値特化</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 業界標準:</span> 2024 年現在、ロボティクス研究で「古典 planner を使う」と言えばほぼ <strong>FastDownward</strong>。LLM+P や SayPlan のバックエンドにも採用されている。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 1 Scene 4: POMDP -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('pomdp','Arc1','POMDP — 不確実性の数学')</script>
+<div class="page" id="pomdp">
+<h2>4. MDP → POMDP — センサーノイズと部分観測の数学</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: Kaelbling, Littman, Cassandra (1998) が確率的計画の枠組みを整理。状態が直接観測できない（部分観測）環境で、観測 o から信念状態 b(s) を保ち、確率分布上で計画する。SLAM、対話エージェント、深層強化学習の理論的基盤。<br><br>
+
+<span class="hl">MDP（完全観測）</span>:<br>
+$\text{MDP} = (S, A, P, R, \gamma), \quad V^*(s) = \max_a \left[ R(s,a) + \gamma \sum_{s'} P(s'|s,a) V^*(s') \right]$<br><br>
+
+<span class="hl">POMDP（部分観測）</span>:<br>
+$\text{POMDP} = (S, A, P, R, \underbrace{\Omega}_{\text{観測集合}}, \underbrace{O}_{\substack{\text{観測}\\\text{確率}}}, \gamma)$<br><br>
+
+<span class="hl">信念状態 (belief state)</span>:<br>
+$b(s) = P(s | \text{観測履歴})$, &nbsp; $\sum_{s \in S} b(s) = 1$<br><br>
+
+<span class="hl">ベイズ更新</span>:<br>
+$b'(s') = \underbrace{\eta}_{\text{正規化}} \cdot \underbrace{O(o|s', a)}_{\substack{\text{観測}\\\text{確率}}} \cdot \underbrace{\sum_s P(s'|s, a) b(s)}_{\substack{\text{予測ステップ}\\\text{(遷移}\times\text{信念)}}}$<br><br>
+
+<span class="hl">信念空間上の Bellman 方程式</span>:<br>
+$V^*(b) = \max_a \left[ R(b, a) + \gamma \sum_o P(o|b, a) V^*(b'_o) \right]$<br><br>
+
+<span class="note">→ V*(b) は信念 b に対し区分線形凸 (Piecewise Linear and Convex)、α-vectors で表現可能</span><br>
+<span class="note">→ 厳密解は PSPACE-hard、実用は PBVI / SARSOP 等の近似アルゴリズム</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（Tiger 問題: listen 回数 vs 信念）</h3>
+<div class="controls">
+<label>観測精度 p:
+  <input type="range" id="pomdpAcc" min="0.5" max="0.99" step="0.01" value="0.85" oninput="drawPOMDP()">
+  <span class="val" id="vPomdpAcc">0.85</span>
+</label>
+<label>同方向 listen 回数:
+  <input type="range" id="pomdpN" min="1" max="10" step="1" value="3" oninput="drawPOMDP()">
+  <span class="val" id="vPomdpN">3</span>
+</label>
+</div>
+<div id="plotPOMDP"></div>
+<div id="pomdpInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawPOMDP(){
+  var p=+document.getElementById('pomdpAcc').value;
+  var n=+document.getElementById('pomdpN').value;
+  document.getElementById('vPomdpAcc').textContent=p.toFixed(2);
+  document.getElementById('vPomdpN').textContent=n;
+  // Tiger problem: belief update with consistent listen results "left"
+  // Initial: b(left) = b(right) = 0.5
+  // After hearing "left": b'(left) = p*0.5 / (p*0.5 + (1-p)*0.5) = p
+  // After k consistent "left": b(left) = p^k / (p^k + (1-p)^k)
+  var ks=[];
+  var bLeftConsistent=[];
+  var bRightConsistent=[];
+  for(var k=0;k<=10;k++){
+    ks.push(k);
+    if(k===0){bLeftConsistent.push(0.5);bRightConsistent.push(0.5);}
+    else{
+      var pk=Math.pow(p,k),qk=Math.pow(1-p,k);
+      bLeftConsistent.push(pk/(pk+qk));
+      bRightConsistent.push(qk/(pk+qk));
+    }
+  }
+  // Action thresholds
+  // open-left: payoff = b(left)*(-100) + b(right)*(+10) → optimal if b(right) > 100/110 ≈ 0.909
+  // open-right: optimal if b(left) > 0.909
+  // listen: -1 cost
+  var thresh=100/110;
+  var data=[
+    {x:ks,y:bLeftConsistent,type:'scatter',mode:'lines+markers',name:'b(tiger-left) — 全て"left"観測時',line:{color:'#fbbf24',width:2}},
+    {x:ks,y:bRightConsistent,type:'scatter',mode:'lines+markers',name:'b(tiger-right)',line:{color:'#3b82f6',width:2}},
+    {x:ks,y:ks.map(function(){return thresh;}),type:'scatter',mode:'lines',name:'open-right の閾値 (≈0.909)',line:{color:'#fca5a5',width:1,dash:'dash'}}
+  ];
+  Plotly.newPlot('plotPOMDP',data,{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'Tiger 問題: 同じ"left"を k 回聞いた後の信念（観測精度 p='+p.toFixed(2)+'）',font:{size:13,color:'#cbd5e1'}},
+    xaxis:{title:'listen 回数 k',gridcolor:'#334155'},
+    yaxis:{title:'信念 b(s)',range:[0,1.05],gridcolor:'#334155'},
+    margin:{t:35,b:60,l:60,r:10},height:300,
+    legend:{orientation:'h',x:0.5,xanchor:'center',y:-0.28,yanchor:'top',bgcolor:'rgba(0,0,0,0)'}
+  },{responsive:true});
+  // Calculate b(left) at k=n
+  var pn=Math.pow(p,n),qn=Math.pow(1-p,n);
+  var bL=pn/(pn+qn);
+  // Find min k for confident open
+  var kNeeded=null;
+  for(var k=1;k<=20;k++){
+    var pk=Math.pow(p,k),qk=Math.pow(1-p,k);
+    var b=pk/(pk+qk);
+    if(b>=thresh){kNeeded=k;break;}
+  }
+  var msg='<strong>📊 Tiger 問題の信念更新</strong><br>';
+  msg+='初期: b(left) = b(right) = 0.5<br>';
+  msg+='観測精度: p = '+p.toFixed(2)+' （正しい音を '+(p*100).toFixed(0)+'% で聞ける）<br>';
+  msg+='連続 '+n+' 回 "left" を聞いた後: b(left) = <strong style="color:#86efac">'+bL.toFixed(3)+'</strong><br><br>';
+  msg+='<strong>最適行動の閾値</strong>: b(left) > 100/110 ≈ 0.909 → open-right が安全<br>';
+  if(kNeeded)msg+='→ 観測精度 '+p.toFixed(2)+' では <strong>'+kNeeded+' 回 listen</strong> で開けられる<br><br>';
+  msg+='<strong>👀 試してみよう:</strong><br>';
+  msg+='• p=0.85: 4 回 listen 必要（Kaelbling 1998 の典型値）<br>';
+  msg+='• p=0.99: 1-2 回で十分（センサー良ければ早く決断）<br>';
+  msg+='• p=0.6: 何回 listen しても確信が持てない（センサー不良）<br><br>';
+  msg+='<strong>POMDP の本質:</strong> 「<strong>情報収集</strong>(listen) と <strong>決断</strong>(open) のトレードオフ」を最適化。これがロボットの SLAM、対話、ナビゲーションすべての核。';
+  document.getElementById('pomdpInfo').innerHTML=msg;
+}
+lazyInit('pomdp',drawPOMDP);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">1998 年 Kaelbling-Littman-Cassandra で確率的計画の理論統一</div>
+<div class="achieved">SLAM、対話エージェント、強化学習の理論的基盤として 2024 年も生きている</div>
+<div class="pro">不確実性を正面から扱える: センサーノイズ + 行動失敗 + 部分観測</div>
+<div class="pro">「情報の価値」を定量化: 何回観測すべきかを最適化</div>
+<div class="challenge">PSPACE-hard、厳密解は |S| ≤ 100 程度のトイ問題まで</div>
+<div class="con">遷移 P と観測 O が既知前提 → 実機では推定が大変、深層 RL に押される</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: 「目隠ししたまま部屋の中を動く人」のモデル化。完璧な地図はないが、「ここは固い壁」「ここは絨毯」という<strong>断片的観測</strong>から「自分の位置の確率分布」を作り、最も期待値が高い方向に動く。SLAM の基本もこれ。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 POMDP の革新</strong>: 「<strong>状態の代わりに信念を計画変数にする</strong>」発想の転換。観測列を信念に圧縮し、信念空間上で価値関数を定義。これにより部分観測環境を MDP の枠組みで扱える。深層強化学習の DQN/PPO もこの伝統を継承（履歴を隠れ状態にエンコード）。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① Tiger 問題の数値追跡</strong><br><br>
+
+Kaelbling-Littman-Cassandra (1998) のベンチマーク:<br><br>
+
+<strong>POMDP 定義</strong>:<br>
+• S = {tiger-left, tiger-right}<br>
+• A = {listen, open-left, open-right}<br>
+• Ω = {hear-left, hear-right}<br>
+• 観測モデル O: listen 後、虎のいる方向の音を p=0.85 で正しく聞く<br>
+• 報酬: listen=-1, open(虎)=-100, open(金)=+10<br>
+• 割引率 γ=0.95<br><br>
+
+<strong>1 ステップの信念更新</strong> (初期 b(left)=b(right)=0.5、listen → "hear-left"):<br>
+&nbsp;&nbsp;b'(left) = η · O("hear-left" | tiger-left) · b(left)<br>
+&nbsp;&nbsp;&nbsp;&nbsp; = η · 0.85 · 0.5 = 0.425 η<br>
+&nbsp;&nbsp;b'(right) = η · O("hear-left" | tiger-right) · b(right)<br>
+&nbsp;&nbsp;&nbsp;&nbsp; = η · 0.15 · 0.5 = 0.075 η<br>
+&nbsp;&nbsp;η = 1 / (0.425 + 0.075) = 2.0<br>
+&nbsp;&nbsp;<span style="color:#86efac">→ b'(left) = 0.85, b'(right) = 0.15</span><br><br>
+
+<strong>連続 listen の信念収束</strong>:<br>
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:6px;background:#1e293b">回</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">b(left)</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">期待効用 open-right</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">0</td><td style="border:1px solid #334155;padding:6px">0.500</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">-45.0 (危険)</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1</td><td style="border:1px solid #334155;padding:6px">0.850</td><td style="border:1px solid #334155;padding:6px;color:#fde68a">-7.5</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2</td><td style="border:1px solid #334155;padding:6px">0.970</td><td style="border:1px solid #334155;padding:6px;color:#fde68a">+6.7</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">3</td><td style="border:1px solid #334155;padding:6px;color:#86efac">0.994</td><td style="border:1px solid #334155;padding:6px;color:#86efac">+9.3 (安全)</td></tr>
+</table><br>
+<span class="note">→ 厳密 POMDP 解では b(left) > 100/110 ≈ 0.909 で open-right が最適、その前は listen を続ける</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② MDP / POMDP / RL の比較</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">枠組み</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">観測</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">モデル</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">代表アルゴリズム</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">MDP</td><td style="border:1px solid #334155;padding:6px;color:#86efac">完全</td><td style="border:1px solid #334155;padding:6px">既知 P, R</td><td style="border:1px solid #334155;padding:6px">価値反復、方策反復</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">POMDP</td><td style="border:1px solid #334155;padding:6px;color:#fde68a">部分</td><td style="border:1px solid #334155;padding:6px">既知 P, R, O</td><td style="border:1px solid #334155;padding:6px">PBVI, SARSOP, POMCP</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">モデルベース RL</td><td style="border:1px solid #334155;padding:6px;color:#86efac">完全 or 部分</td><td style="border:1px solid #334155;padding:6px">学習 P, R</td><td style="border:1px solid #334155;padding:6px">Dyna-Q, MuZero</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">モデルフリー深層 RL</td><td style="border:1px solid #334155;padding:6px;color:#86efac">部分</td><td style="border:1px solid #334155;padding:6px;color:#86efac">不要</td><td style="border:1px solid #334155;padding:6px;color:#86efac">DQN, PPO, SAC</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ ポイント:</span> POMDP は「モデル既知」が前提で、これが実用上のボトルネックだった。モデルフリー深層 RL（DQN 2013, PPO 2017）が「経験から直接方策を学習」して POMDP の理論を実機に届けた、という関係。
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ POMDP のロボティクスへの応用</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">応用</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">隠れ状態</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">観測</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">関連技術</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><a href="#slam" style="color:#3b82f6">SLAM</a></td><td style="border:1px solid #334155;padding:6px">ロボット位置 + 地図</td><td style="border:1px solid #334155;padding:6px">LiDAR, カメラ</td><td style="border:1px solid #334155;padding:6px">EKF-SLAM, FastSLAM</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">対話エージェント</td><td style="border:1px solid #334155;padding:6px">ユーザー意図</td><td style="border:1px solid #334155;padding:6px">発話、文脈</td><td style="border:1px solid #334155;padding:6px">DST、信念追跡</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">把持計画</td><td style="border:1px solid #334155;padding:6px">物体姿勢、摩擦係数</td><td style="border:1px solid #334155;padding:6px">触覚、力センサー</td><td style="border:1px solid #334155;padding:6px">Tactile POMDP</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">医療診断</td><td style="border:1px solid #334155;padding:6px">病態</td><td style="border:1px solid #334155;padding:6px">検査結果</td><td style="border:1px solid #334155;padding:6px">逐次検査 POMDP</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac"><a href="#world_models" style="color:#3b82f6">World Models</a></td><td style="border:1px solid #334155;padding:6px;color:#86efac">環境状態の潜在表現</td><td style="border:1px solid #334155;padding:6px;color:#86efac">画像、行動</td><td style="border:1px solid #334155;padding:6px;color:#86efac">Navigation World Model</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 2024 年の位置づけ:</span> 純粋な POMDP planner は減少傾向だが、「<strong>信念状態 + ベイズ更新</strong>」の発想は深層強化学習や World Model に深く埋め込まれている。理論として死なず、形を変えて生きている。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 2 Scene 1: サブサンプション・アーキテクチャ -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('subsumption','Arc2','サブサンプション — Brooks の反乱')</script>
+<div class="page" id="subsumption">
+<h2>5. サブサンプション — 「世界モデル不要」の反応型ロボット</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: Brooks (MIT, 1986) が古典 SPA への反乱として提唱した反応型アーキテクチャ。複数の独立した有限状態機械（AFSM）を優先度付きでレイヤー化し、上位が下位を抑制（Suppression）または禁止（Inhibition）する。"The world is its own best model" — 中央世界モデルなしで動作。<br><br>
+
+<span class="hl">Layer の出力</span>:<br>
+$\text{output}_t = \underbrace{\text{layer}_n(s_t)}_{\substack{\text{最上位}\\\text{(最優先)}}} \prec \cdots \prec \underbrace{\text{layer}_0(s_t)}_{\substack{\text{最下位}\\\text{(基本機能)}}}$<br><br>
+
+<span class="hl">Suppression（入力上書き）</span>:<br>
+$\text{input}_i^{\text{eff}} = \begin{cases} \text{output}_j & \text{if } j > i \text{ and } \text{layer}_j \text{ active} \\ s_t & \text{otherwise} \end{cases}$<br><br>
+
+<span class="hl">Inhibition（出力ゼロ化）</span>:<br>
+$\text{output}_i^{\text{eff}} = \begin{cases} 0 & \text{if upper layer inhibits} \\ \text{output}_i & \text{otherwise} \end{cases}$<br><br>
+
+<strong>並列実行</strong>: 全レイヤーが ~50ms 周期で並列に tick<br>
+<span class="note">→ 中央モデル不要 → センサー直結 → 動的環境に強い</span><br>
+<span class="note">→ "Intelligence Without Representation" (Brooks 1991) の実装</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（レイヤー優先度の挙動）</h3>
+<div class="controls">
+<label>レイヤー数:
+  <input type="range" id="subN" min="2" max="6" step="1" value="3" oninput="drawSubsumption()">
+  <span class="val" id="vSubN">3</span>
+</label>
+<label>障害物センサー (近 → 遠):
+  <input type="range" id="subObs" min="0" max="100" step="5" value="50" oninput="drawSubsumption()">
+  <span class="val" id="vSubObs">50</span>
+</label>
+<label>目標検出 (オフ/オン):
+  <input type="range" id="subGoal" min="0" max="1" step="1" value="1" oninput="drawSubsumption()">
+  <span class="val" id="vSubGoal">1</span>
+</label>
+</div>
+<div id="plotSubsumption"></div>
+<div id="subsumptionInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawSubsumption(){
+  var n=+document.getElementById('subN').value;
+  var obs=+document.getElementById('subObs').value;
+  var goal=+document.getElementById('subGoal').value;
+  document.getElementById('vSubN').textContent=n;
+  document.getElementById('vSubObs').textContent=obs;
+  document.getElementById('vSubGoal').textContent=goal?'ON':'OFF';
+  var layers=[];
+  layers.push({name:'L0: 歩行',active:1,output:'前進',color:'#64748b'});
+  layers.push({name:'L1: 障害物回避',active:obs<30?1:0,output:obs<30?'後退/旋回':'-',color:'#fca5a5'});
+  if(n>=3){
+    layers.push({name:'L2: 目標追従',active:goal&&obs>=30?1:0,output:goal?'目標へ前進':'-',color:'#fde68a'});
+  }
+  if(n>=4){
+    layers.push({name:'L3: 探索',active:!goal&&obs>=30?1:0,output:'壁沿い徘徊',color:'#86efac'});
+  }
+  if(n>=5){
+    layers.push({name:'L4: 学習',active:0,output:'-',color:'#a78bfa'});
+  }
+  if(n>=6){
+    layers.push({name:'L5: 計画',active:0,output:'-',color:'#f472b6'});
+  }
+  var winner=0;
+  for(var i=layers.length-1;i>=0;i--){
+    if(layers[i].active){winner=i;break;}
+  }
+  var trace1={
+    x:layers.map(function(l){return l.name;}),
+    y:layers.map(function(l){return l.active;}),
+    type:'bar',
+    marker:{color:layers.map(function(l,i){return i===winner?'#22c55e':l.active?l.color:'#334155';})},
+    text:layers.map(function(l){return l.active?l.output:'非活性';}),
+    textposition:'outside'
+  };
+  Plotly.newPlot('plotSubsumption',[trace1],{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'各レイヤーの活性状態（緑=出力決定者）',font:{size:13,color:'#cbd5e1'}},
+    xaxis:{gridcolor:'#334155'},
+    yaxis:{title:'活性度',range:[0,1.3],gridcolor:'#334155',tickvals:[0,1]},
+    margin:{t:35,b:80,l:60,r:10},height:300,
+    showlegend:false
+  },{responsive:true});
+  var msg='<strong>📊 現在の出力</strong>: <span style="color:#86efac;font-weight:bold">'+layers[winner].name+' → '+layers[winner].output+'</span><br><br>';
+  msg+='<strong>レイヤー構成</strong> (上位 → 下位):<br>';
+  for(var i=layers.length-1;i>=0;i--){
+    var marker=layers[i].active?(i===winner?'🟢 ':'🟡 '):'⚪ ';
+    msg+=marker+layers[i].name+': '+(layers[i].active?layers[i].output:'非活性')+'<br>';
+  }
+  msg+='<br><strong>👀 試してみよう:</strong><br>';
+  msg+='• 障害物を 20 まで下げる → L1 が L2/L3 を Suppression で上書き<br>';
+  msg+='• 目標 OFF + 障害物 50 → L2 非活性 → L3 が探索行動<br>';
+  msg+='• L4-L5 は実装例なし（Brooks 流に「学習・計画は要らない」を体現）<br><br>';
+  msg+='<strong>サブサンプションの本質:</strong> 中央コーディネータなしで、各レイヤーが独立に動く。上位レイヤーが下位の出力を「包摂（subsume）」する → 名前の由来。';
+  document.getElementById('subsumptionInfo').innerHTML=msg;
+}
+lazyInit('subsumption',drawSubsumption);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">1986 年 MIT で Brooks が提唱、Genghis (1989) で実証</div>
+<div class="achieved">iRobot Roomba (2002) で世界初の家庭用ロボット掃除機を実現</div>
+<div class="pro">~50ms 周期で動作 → SPA の 1000 倍高速、動的環境に強い</div>
+<div class="pro">中央モデル不要 → センサー故障に強い、実装が単純</div>
+<div class="challenge">高次目標（「箱を別の部屋に運ぶ」等）の表現が極めて困難</div>
+<div class="con">10 層以上の設計は実質不可能、デバッグも追跡不能</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: ロボットの脳を「市役所の縦割り組織」ではなく「<strong>細胞の集合体</strong>」にする発想。各細胞（レイヤー）はセンサーから直接行動を決める。上位細胞は下位を「黙らせる」ことで全体を協調させる。中央指令なしで知能が創発する。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 Brooks の革新</strong>: Frame Problem を「正面突破」せず「<strong>問題ごと消した</strong>」。世界モデルが不要なら、Frame Problem そのものが発生しない。これは古典 AI の全前提を覆す思想転換だった。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① Genghis ロボット (1989) — サブサンプションの実装</strong><br><br>
+
+MIT で Brooks らが開発した 6 本足歩行ロボット。サブサンプションの教科書的実装例。<br><br>
+
+<strong>ハードウェア</strong>:<br>
+• 6 本脚、各脚に 2 自由度モーター（計 12 モーター）<br>
+• 8-bit マイコン (Motorola 68HC11) 4 基（外部計算機なし）<br>
+• 接触センサー、傾斜センサー、人感センサー<br><br>
+
+<strong>レイヤー構成</strong> (Brooks 1989 より):<br>
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:6px;background:#1e293b">Layer</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">機能</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">入力</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">出力</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">L0</td><td style="border:1px solid #334155;padding:6px">脚位相制御</td><td style="border:1px solid #334155;padding:6px">時刻</td><td style="border:1px solid #334155;padding:6px">脚の上下</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">L1</td><td style="border:1px solid #334155;padding:6px">バランス保持</td><td style="border:1px solid #334155;padding:6px">傾斜</td><td style="border:1px solid #334155;padding:6px">脚の調整</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">L2</td><td style="border:1px solid #334155;padding:6px">前進歩行</td><td style="border:1px solid #334155;padding:6px">なし</td><td style="border:1px solid #334155;padding:6px">脚の前後動</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">L3</td><td style="border:1px solid #334155;padding:6px">障害物乗越</td><td style="border:1px solid #334155;padding:6px">接触センサー</td><td style="border:1px solid #334155;padding:6px">脚の高上げ</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">L4</td><td style="border:1px solid #334155;padding:6px">人追従</td><td style="border:1px solid #334155;padding:6px">人感センサー</td><td style="border:1px solid #334155;padding:6px">方向変更</td></tr>
+</table><br>
+<span class="note">→ 各レイヤーは独立した 8-bit マイコン上のステートマシン。設計は手作業（学習なし）</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② SPA vs サブサンプションの徹底比較</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">観点</th><th style="border:1px solid #334155;padding:8px;background:#1e293b"><a href="#sense_plan_act" style="color:#3b82f6">SPA</a></th><th style="border:1px solid #334155;padding:8px;background:#1e293b">サブサンプション</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">世界モデル</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">明示的・記号的</td><td style="border:1px solid #334155;padding:6px;color:#86efac">不要（センサー直結）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">サイクル時間</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">数秒〜数分</td><td style="border:1px solid #334155;padding:6px;color:#86efac">~50ms</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">並列性</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">直列（Sense→Plan→Act）</td><td style="border:1px solid #334155;padding:6px;color:#86efac">並列（全レイヤー同時）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">高次目標</td><td style="border:1px solid #334155;padding:6px;color:#86efac">記述可能</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">表現困難</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">説明可能性</td><td style="border:1px solid #334155;padding:6px;color:#86efac">高い（探索木）</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">低い（並列創発）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">動的環境耐性</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">弱い</td><td style="border:1px solid #334155;padding:6px;color:#86efac">強い</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ ポイント:</span> 両者は補完関係。これを統合する試みが <a href="#hybrid_arch" style="color:#3b82f6">3 層ハイブリッド・アーキテクチャ</a>（次ページ）。
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ サブサンプションの遺産と現代への影響</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">年</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">出来事</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">関係</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1986</td><td style="border:1px solid #334155;padding:6px">Brooks 論文発表</td><td style="border:1px solid #334155;padding:6px">古典 AI への反乱</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1989</td><td style="border:1px solid #334155;padding:6px">Genghis ロボット動作</td><td style="border:1px solid #334155;padding:6px">サブサンプションの実証</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1990</td><td style="border:1px solid #334155;padding:6px">Brooks が iRobot 創業</td><td style="border:1px solid #334155;padding:6px">研究 → 商業化</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">2002</td><td style="border:1px solid #334155;padding:6px;color:#86efac">iRobot Roomba 発売</td><td style="border:1px solid #334155;padding:6px;color:#86efac">家庭用ロボット革命（累計 4000 万台超）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2007</td><td style="border:1px solid #334155;padding:6px">DARPA 軍事ロボット</td><td style="border:1px solid #334155;padding:6px">戦場での反応制御に応用</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2024</td><td style="border:1px solid #334155;padding:6px">深層 RL の low-level controller</td><td style="border:1px solid #334155;padding:6px">「反応的 controller を学習する」発想は継承</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 思想的影響:</span> "Intelligence Without Representation" は AI 哲学に深い影響を与え、現代の <strong>Embodied AI</strong>（身体性を持つ AI）の基盤思想となった。LLM ロボティクス時代でも「世界モデル不要派 vs 世界モデル必要派」の対立は続いている。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 2 Scene 2: ハイブリッド・アーキテクチャ（3 層） -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('hybrid_arch','Arc2','ハイブリッド 3 層 — 計画と反応の統合')</script>
+<div class="page" id="hybrid_arch">
+<h2>6. ハイブリッド 3 層 — Deliberator / Sequencer / Reactive</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: Gat (1998) "On Three-Layer Architectures" で体系化されたロボット制御の標準パターン。時定数の異なる 3 つのレイヤー（熟考 / 順序 / 反応）を非同期に協調させる。NASA 火星探査ローバー、ROS の move_base、現代のあらゆる自律ロボットの基本構造。<br><br>
+
+<span class="hl">3 層の時定数</span>:<br>
+$\tau_{\text{deliberator}} \gg \tau_{\text{sequencer}} \gg \tau_{\text{reactive}}$<br>
+&nbsp;&nbsp; $\sim 60\text{s}$ &nbsp;&nbsp;&nbsp;&nbsp; $\sim 1\text{s}$ &nbsp;&nbsp;&nbsp;&nbsp; $\sim 10\text{ms}$<br><br>
+
+<span class="hl">レイヤー間通信</span>:<br>
+$\underbrace{\text{Deliberator}}_{\text{plan: PDDL/A*}} \xrightarrow{\text{plan}} \underbrace{\text{Sequencer}}_{\text{exec: PRS/BT}} \xrightarrow{\text{action}} \underbrace{\text{Reactive}}_{\text{control: PID}}$<br><br>
+
+<span class="hl">非同期協調</span>:<br>
+$\text{output}_t = R(s_t) \cdot S(g_t) \cdot D(G)$<br>
+&nbsp;&nbsp;<span class="note">R: Reactive、S: Sequencer、D: Deliberator のフィルタ</span><br><br>
+
+<strong>Down-Up 通信</strong>:<br>
+• Down: Deliberator → 全体プラン → Sequencer → 行動列 → Reactive → モーター指令<br>
+• Up: Reactive → 異常通知 → Sequencer → 失敗報告 → Deliberator → 再計画<br><br>
+
+<span class="note">→ 各層が独立スレッドで並列動作。下層ほど速く、上層ほど抽象的</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（3 層の応答時間と計画粒度）</h3>
+<div class="controls">
+<label>環境変化頻度 (event/s):
+  <input type="range" id="haRate" min="0.1" max="20" step="0.1" value="2" oninput="drawHybrid()">
+  <span class="val" id="vHaRate">2.0</span>
+</label>
+<label>タスク複雑度:
+  <input type="range" id="haComplex" min="1" max="10" step="1" value="5" oninput="drawHybrid()">
+  <span class="val" id="vHaComplex">5</span>
+</label>
+</div>
+<div id="plotHybrid"></div>
+<div id="hybridInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawHybrid(){
+  var rate=+document.getElementById('haRate').value;
+  var cx=+document.getElementById('haComplex').value;
+  document.getElementById('vHaRate').textContent=rate.toFixed(1);
+  document.getElementById('vHaComplex').textContent=cx;
+  // 各層の処理頻度
+  var deliberatorHz=1/(60+cx*10);  // 計画は複雑度で遅くなる
+  var sequencerHz=1;
+  var reactiveHz=100;
+  // 各層の処理可能イベント / 必要イベント比
+  var dLoad=rate/deliberatorHz;
+  var sLoad=rate/sequencerHz;
+  var rLoad=rate/reactiveHz;
+  var data=[
+    {x:['Deliberator','Sequencer','Reactive'],
+     y:[deliberatorHz,sequencerHz,reactiveHz],
+     type:'bar',name:'処理頻度 (Hz)',
+     marker:{color:['#fbbf24','#3b82f6','#22c55e']},
+     yaxis:'y'},
+    {x:['Deliberator','Sequencer','Reactive'],
+     y:[Math.min(dLoad,5),Math.min(sLoad,5),Math.min(rLoad,5)],
+     type:'scatter',mode:'lines+markers',name:'負荷 (Load)',
+     line:{color:'#fca5a5',width:3},
+     yaxis:'y2'}
+  ];
+  Plotly.newPlot('plotHybrid',data,{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'3 層の処理頻度と負荷（環境変化 '+rate.toFixed(1)+' ev/s）',font:{size:13,color:'#cbd5e1'}},
+    xaxis:{gridcolor:'#334155'},
+    yaxis:{title:'処理頻度 (Hz, log)',type:'log',gridcolor:'#334155'},
+    yaxis2:{title:'負荷比',overlaying:'y',side:'right',range:[0,5],gridcolor:'#334155'},
+    margin:{t:35,b:50,l:60,r:60},height:300,
+    legend:{orientation:'h',x:0.5,xanchor:'center',y:-0.2,yanchor:'top',bgcolor:'rgba(0,0,0,0)'}
+  },{responsive:true});
+  var msg='<strong>📊 各層の処理状態</strong><br>';
+  msg+='Deliberator: '+(deliberatorHz*60).toFixed(1)+' /分 (負荷 '+(dLoad).toFixed(2)+'×)<br>';
+  msg+='Sequencer: '+sequencerHz.toFixed(0)+' Hz (負荷 '+(sLoad).toFixed(2)+'×)<br>';
+  msg+='Reactive: '+reactiveHz.toFixed(0)+' Hz (負荷 '+(rLoad).toFixed(2)+'×)<br><br>';
+  if(rLoad>1)msg+='<span style="color:#fca5a5">⚠️ Reactive 層が追いつかない → ハードウェア限界</span><br>';
+  else if(sLoad>1)msg+='<span style="color:#fde68a">⚠️ Sequencer がボトルネック → 行動列の再設計が必要</span><br>';
+  else if(dLoad>1)msg+='<span style="color:#fde68a">⚠️ Deliberator が再計画を間に合わせられない → 古いプランで動作</span><br>';
+  else msg+='<span style="color:#86efac">✅ 全層が余裕を持って動作中</span><br>';
+  msg+='<br><strong>👀 試してみよう:</strong><br>';
+  msg+='• 環境変化 15 ev/s + 複雑度 8 → Sequencer 過負荷<br>';
+  msg+='• 複雑度 10 → 計画頻度が低下、Reactive だけで動く時間帯が長くなる<br>';
+  msg+='• 環境変化 0.5 ev/s → 全層余裕、最適計画が常に新鮮<br><br>';
+  msg+='<strong>3 層の本質:</strong> 「<strong>速さと賢さ</strong>」のトレードオフを時定数で分離。下層が即応、上層が長期最適化。<a href="#sense_plan_act" style="color:#3b82f6">SPA</a> と <a href="#subsumption" style="color:#3b82f6">サブサンプション</a> の良いとこ取り。';
+  document.getElementById('hybridInfo').innerHTML=msg;
+}
+lazyInit('hybrid_arch',drawHybrid);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">1992 年 ATLANTIS (JPL)、1998 年 Gat 体系化</div>
+<div class="achieved">NASA 火星探査ローバー Sojourner / MER / Curiosity / Perseverance で実用化</div>
+<div class="pro">計画の長期最適性 + 反応の即応性を両立</div>
+<div class="pro">ROS のデファクト構造（move_base = 3 層実装）</div>
+<div class="challenge">レイヤー境界の設計が職人芸、状態同期問題（impedance mismatch）</div>
+<div class="con">End-to-End 学習（VLA, RT-2）と相性悪い → 2024 年以降構造再考</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: 「<strong>会社組織の 3 層</strong>」のようなもの。経営層（Deliberator）は四半期計画、中間管理職（Sequencer）は週次タスク、現場（Reactive）は秒単位の対応。各層が自分の時定数で動き、必要時に上下に通信。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 ハイブリッドの革新</strong>: 古典 SPA と Brooks のサブサンプションを「<strong>時定数で分離</strong>」することで両立。「全部計画」も「全部反応」も極端で破綻するが、3 層分離により多くの実用問題が解けるようになった。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① NASA 火星探査ローバー — 3 層実装の代表例</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:6px;background:#1e293b">層</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">機能</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">具体例（Sojourner 1997）</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px;color:#fbbf24">Deliberator</td><td style="border:1px solid #334155;padding:6px">日次探査計画</td><td style="border:1px solid #334155;padding:6px">地球から送られたゴール候補を 1 日分配置</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px;color:#3b82f6">Sequencer</td><td style="border:1px solid #334155;padding:6px">行動列の実行</td><td style="border:1px solid #334155;padding:6px">「3m 前進 → 岩に近づく → 観測」を順番に実行</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px;color:#22c55e">Reactive</td><td style="border:1px solid #334155;padding:6px">即時危険回避</td><td style="border:1px solid #334155;padding:6px">傾斜 30° 超 → 即停止、岩に衝突 → 回避</td></tr>
+</table><br>
+
+<strong>1 火星日 (Sol) の流れ</strong>:<br>
+• 朝: 地球からアップロード（Deliberator: 1 日分プラン受信）<br>
+• 昼: 自律実行（Sequencer + Reactive で連続動作）<br>
+• 夕: テレメトリ送信（次計画のため地球に状態報告）<br>
+<span class="note">→ 通信遅延 20 分のため、自律性が必須。3 層が独立に動作することで 24 時間稼働を実現</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② ROS における 3 層実装（move_base）</strong><br><br>
+
+<pre style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:10px;font-size:11px;color:#e2e8f0;overflow-x:auto;white-space:pre">┌─────────────────────────────────┐
+│ Deliberator: Global Planner     │ ← Dijkstra/A* で全経路計画
+│ - global_costmap                │   (頻度: 0.1-1 Hz)
+│ - navfn / global_planner ROS    │
+└─────────────────────────────────┘
+            ↓ 経路 (Path)
+┌─────────────────────────────────┐
+│ Sequencer: Behavior Server      │ ← Behavior Tree / SMACH
+│ - nav2_bt_navigator             │   (頻度: 5-20 Hz)
+│ - 経路追従 / リカバリ動作       │
+└─────────────────────────────────┘
+            ↓ 速度指令 (cmd_vel)
+┌─────────────────────────────────┐
+│ Reactive: Local Planner         │ ← DWA / TEB で短期回避
+│ - local_costmap                 │   (頻度: 20-100 Hz)
+│ - dwa_local_planner             │
+└─────────────────────────────────┘
+            ↓ モーター
+       ━━━━━━ ロボット ━━━━━━</pre>
+<span class="note">→ ROS 2 Nav2 (2020〜) では Sequencer 層を <a href="#behavior_tree" style="color:#3b82f6">Behavior Tree</a> で実装するのがデフォルトに</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ 3 層の系譜と現代</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">年</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">アーキテクチャ</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">代表応用</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1992</td><td style="border:1px solid #334155;padding:6px">ATLANTIS (Gat)</td><td style="border:1px solid #334155;padding:6px">JPL Rocky 7 火星試作</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1997</td><td style="border:1px solid #334155;padding:6px">NMRA (Sojourner)</td><td style="border:1px solid #334155;padding:6px">火星表面初の自律走行</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2003</td><td style="border:1px solid #334155;padding:6px">MER (Spirit/Opportunity)</td><td style="border:1px solid #334155;padding:6px">14 年稼働の長寿命ローバー</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2007</td><td style="border:1px solid #334155;padding:6px">ROS 1</td><td style="border:1px solid #334155;padding:6px">3 層構造をオープンソース化</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">2020</td><td style="border:1px solid #334155;padding:6px;color:#86efac">Nav2 (ROS 2)</td><td style="border:1px solid #334155;padding:6px;color:#86efac">BT ベース Sequencer のデファクト</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">2023〜</td><td style="border:1px solid #334155;padding:6px;color:#86efac"><a href="#vla_models" style="color:#3b82f6">VLA モデル</a></td><td style="border:1px solid #334155;padding:6px;color:#86efac">3 層を End-to-End 学習で置換する試み</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 2024 年の論争:</span> RT-2 / OpenVLA / π0 は「3 層を全て学習で 1 つに統合」する方向。しかし安全性・説明可能性の観点から「3 層 + LLM をハイブリッドに」という声も強い。次の 5-10 年で決着がつく重要な分岐点。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 2 Scene 3: Behavior Tree -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('behavior_tree','Arc2','Behavior Tree — ゲーム AI からロボットへ')</script>
+<div class="page" id="behavior_tree">
+<h2>7. Behavior Tree — Sequence/Selector による行動の合成</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: Halo 2 (2004) のゲーム AI で生まれた階層的行動制御構造。Sequence (→) と Selector (?) を中心とする木構造で、各ノードが Success / Failure / Running の 3 値を返す。tick で再帰的に評価される。Colledanchise & Ögren (2017) が数学的に体系化、ROS 2 Nav2 のデフォルトで採用。<br><br>
+
+<span class="hl">3 値返却</span>:<br>
+$\text{tick}(\text{node}) \in \{\text{Success}, \text{Failure}, \text{Running}\}$<br><br>
+
+<span class="hl">Sequence (→)</span>:<br>
+$\text{Sequence}(c_1, \ldots, c_n) = \begin{cases} \text{Failure} & \text{if } \exists i: c_i = \text{Failure} \\ \text{Running} & \text{if all } c_{<k} = \text{Success}, c_k = \text{Running} \\ \text{Success} & \text{if all } c_i = \text{Success} \end{cases}$<br><br>
+
+<span class="hl">Selector (?)</span>:<br>
+$\text{Selector}(c_1, \ldots, c_n) = \begin{cases} \text{Success} & \text{if } \exists i: c_i = \text{Success} \\ \text{Running} & \text{if all } c_{<k} = \text{Failure}, c_k = \text{Running} \\ \text{Failure} & \text{if all } c_i = \text{Failure} \end{cases}$<br><br>
+
+<strong>tick 周期</strong>: 通常 30Hz でルートから再帰評価<br>
+<span class="note">→ 失敗時は親に伝播 → 自動的に「リカバリ」が選択される</span><br>
+<span class="note">→ FSM の状態爆発 O(N²) → BT のモジュラリティ O(N) へ</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（BT の tick 伝播）</h3>
+<div class="controls">
+<label>条件 BatteryOK?:
+  <input type="range" id="btBat" min="0" max="1" step="1" value="1" oninput="drawBT()">
+  <span class="val" id="vBtBat">1</span>
+</label>
+<label>条件 ItemFound?:
+  <input type="range" id="btItem" min="0" max="1" step="1" value="1" oninput="drawBT()">
+  <span class="val" id="vBtItem">1</span>
+</label>
+<label>Action Pick 結果:
+  <select id="btPick" onchange="drawBT()" style="background:#334155;color:#e2e8f0;border:1px solid #475569;border-radius:6px;padding:4px 8px;font-size:13px">
+    <option value="success" selected>Success</option>
+    <option value="running">Running</option>
+    <option value="failure">Failure</option>
+  </select>
+</label>
+</div>
+<div id="plotBT"></div>
+<div id="btInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawBT(){
+  var bat=+document.getElementById('btBat').value;
+  var item=+document.getElementById('btItem').value;
+  var pick=document.getElementById('btPick').value;
+  document.getElementById('vBtBat').textContent=bat?'TRUE':'FALSE';
+  document.getElementById('vBtItem').textContent=item?'TRUE':'FALSE';
+  // ツリー: Selector (?) - root
+  //         ├── Sequence (→) [充電] - if !batteryOK
+  //         │    ├── BatteryLow? (= !bat)
+  //         │    └── GoToCharger
+  //         ├── Sequence (→) [タスク]
+  //         │    ├── BatteryOK?
+  //         │    ├── ItemFound?
+  //         │    └── Pick
+  //         └── Idle
+  // 評価
+  var charge_low=bat?'Failure':'Success';
+  var charge_action=bat?'-':'Success';
+  var charge_seq=bat?'Failure':'Success';
+  var task_bat=bat?'Success':'Failure';
+  var task_item=item?'Success':'Failure';
+  var task_pick=task_bat==='Success'&&task_item==='Success'?(pick==='success'?'Success':pick==='running'?'Running':'Failure'):'-';
+  var task_seq;
+  if(task_bat==='Failure')task_seq='Failure';
+  else if(task_item==='Failure')task_seq='Failure';
+  else task_seq=task_pick;
+  var root_sel;
+  if(charge_seq==='Success')root_sel='Success';
+  else if(task_seq==='Success')root_sel='Success';
+  else if(task_seq==='Running')root_sel='Running';
+  else root_sel='Success';  // Idle always succeeds
+  var idleNode=charge_seq==='Success'||task_seq==='Success'||task_seq==='Running'?'-':'Success';
+  // Color
+  var c={'Success':'#22c55e','Failure':'#ef4444','Running':'#fbbf24','-':'#475569'};
+  var nodes=[
+    {label:'Selector (root)',result:root_sel,depth:0,x:0.5},
+    {label:'Sequence [充電]',result:charge_seq,depth:1,x:0.2},
+    {label:'BatteryLow?',result:charge_low,depth:2,x:0.1},
+    {label:'GoToCharger',result:charge_action,depth:2,x:0.3},
+    {label:'Sequence [タスク]',result:task_seq,depth:1,x:0.5},
+    {label:'BatteryOK?',result:task_bat,depth:2,x:0.4},
+    {label:'ItemFound?',result:task_item,depth:2,x:0.5},
+    {label:'Pick',result:task_pick,depth:2,x:0.6},
+    {label:'Idle',result:idleNode,depth:1,x:0.85}
+  ];
+  var trace={
+    x:nodes.map(function(n){return n.x;}),
+    y:nodes.map(function(n){return -n.depth;}),
+    text:nodes.map(function(n){return n.label+'<br>'+n.result;}),
+    mode:'markers+text',
+    type:'scatter',
+    marker:{size:30,color:nodes.map(function(n){return c[n.result];}),line:{color:'#334155',width:1}},
+    textposition:'middle center',
+    textfont:{size:9,color:'#fff'},
+    showlegend:false
+  };
+  // Edges
+  var edges=[
+    {f:0,t:1},{f:0,t:4},{f:0,t:8},
+    {f:1,t:2},{f:1,t:3},
+    {f:4,t:5},{f:4,t:6},{f:4,t:7}
+  ];
+  var ex=[],ey=[];
+  edges.forEach(function(e){
+    ex.push(nodes[e.f].x,nodes[e.t].x,null);
+    ey.push(-nodes[e.f].depth,-nodes[e.t].depth,null);
+  });
+  var edgeTrace={
+    x:ex,y:ey,mode:'lines',type:'scatter',
+    line:{color:'#334155',width:1},
+    hoverinfo:'none',showlegend:false
+  };
+  Plotly.newPlot('plotBT',[edgeTrace,trace],{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'BT tick 結果（緑=Success, 赤=Failure, 黄=Running）',font:{size:13,color:'#cbd5e1'}},
+    xaxis:{visible:false,range:[0,1]},
+    yaxis:{visible:false,range:[-2.5,0.5]},
+    margin:{t:35,b:30,l:30,r:30},height:320
+  },{responsive:true});
+  var msg='<strong>📊 root (Selector) の評価結果</strong>: <span style="color:'+c[root_sel]+';font-weight:bold">'+root_sel+'</span><br><br>';
+  if(charge_seq==='Success')msg+='→ <strong>選択された行動</strong>: 充電 (バッテリー低下のため)<br>';
+  else if(task_seq==='Success')msg+='→ <strong>選択された行動</strong>: Pick 完了<br>';
+  else if(task_seq==='Running')msg+='→ <strong>選択された行動</strong>: Pick 実行中（次 tick で続行）<br>';
+  else msg+='→ <strong>選択された行動</strong>: Idle (待機)<br>';
+  msg+='<br><strong>👀 試してみよう:</strong><br>';
+  msg+='• BatteryOK? = FALSE → 自動的に充電シーケンスに切り替わる<br>';
+  msg+='• ItemFound? = FALSE → タスク失敗 → Idle に落ちる<br>';
+  msg+='• Pick = Running → 全体が Running、次 tick で再評価<br><br>';
+  msg+='<strong>BT の本質:</strong> 失敗時のリカバリが <strong>暗黙的に</strong>動作。「Selector で次の選択肢を試す」「Sequence の途中失敗で全体失敗」という単純ルールから複雑な行動が組み立てられる。';
+  document.getElementById('btInfo').innerHTML=msg;
+}
+lazyInit('behavior_tree',drawBT);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">2004 年 Halo 2 で AAA ゲーム AI に革命、Spore (2008), Bioshock 等で標準化</div>
+<div class="achieved">2017 年 Colledanchise-Ögren で数学的体系化（FSM との等価性証明）</div>
+<div class="pro">FSM の状態爆発 O(N²) → BT の O(N) モジュラリティ</div>
+<div class="pro">サブツリー再利用、視覚エディタ (Groot) で設計が容易</div>
+<div class="challenge">ステートフル行動（時間的依存）は併用必要、tick 周期の設計が経験依存</div>
+<div class="con">学習との接続が未成熟（手書き設計が主流）→ 2024 年 LLM 自動生成が登場</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: BT は「<strong>業務マニュアル</strong>」のようなもの。「もし A なら → B しろ → C しろ」を木構造で書き、上から順に試す。途中で失敗したら親に戻り、別の選択肢を試す。30Hz で繰り返すことで、状況変化に追随する。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 BT の革新</strong>: 「<strong>失敗の自動伝播</strong>」が革命的だった。FSM では全状態に「失敗 → 戻る」を手書きする必要があったが、BT では木構造の親子関係で自動。これがゲーム AI で大規模行動を保守可能にした。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① BT の基本ノード一覧</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:6px;background:#1e293b">ノード</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">記号</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">挙動</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><strong>Sequence</strong></td><td style="border:1px solid #334155;padding:6px;text-align:center">→</td><td style="border:1px solid #334155;padding:6px">全子 Success → 自分も Success（AND）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><strong>Selector</strong></td><td style="border:1px solid #334155;padding:6px;text-align:center">?</td><td style="border:1px solid #334155;padding:6px">どれか Success → 自分も Success（OR）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><strong>Parallel</strong></td><td style="border:1px solid #334155;padding:6px;text-align:center">⇉</td><td style="border:1px solid #334155;padding:6px">N 個 Success で Success（並列）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><strong>Inverter</strong></td><td style="border:1px solid #334155;padding:6px;text-align:center">!</td><td style="border:1px solid #334155;padding:6px">子の結果を反転</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><strong>Repeater</strong></td><td style="border:1px solid #334155;padding:6px;text-align:center">↻</td><td style="border:1px solid #334155;padding:6px">N 回繰り返す</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><strong>RetryUntil</strong></td><td style="border:1px solid #334155;padding:6px;text-align:center">⟲</td><td style="border:1px solid #334155;padding:6px">N 回まで再試行</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><strong>Action</strong></td><td style="border:1px solid #334155;padding:6px;text-align:center">▢</td><td style="border:1px solid #334155;padding:6px">実際の行動（Move, Pick等）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><strong>Condition</strong></td><td style="border:1px solid #334155;padding:6px;text-align:center">◇</td><td style="border:1px solid #334155;padding:6px">条件チェック（BatteryOK?等）</td></tr>
+</table>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② FSM vs BT の徹底比較</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">観点</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">FSM</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">BT</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">複雑度</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">エッジ O(N²)</td><td style="border:1px solid #334155;padding:6px;color:#86efac">ノード O(N)</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">失敗ハンドリング</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">全状態に明示記述</td><td style="border:1px solid #334155;padding:6px;color:#86efac">親へ自動伝播</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">モジュラリティ</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">低（状態が結合）</td><td style="border:1px solid #334155;padding:6px;color:#86efac">高（サブツリー再利用）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">反応性</td><td style="border:1px solid #334155;padding:6px;color:#fde68a">遷移条件次第</td><td style="border:1px solid #334155;padding:6px;color:#86efac">tick 毎に評価</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">時間的依存</td><td style="border:1px solid #334155;padding:6px;color:#86efac">表現容易</td><td style="border:1px solid #334155;padding:6px;color:#fde68a">StateMachine ノード併用</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">視覚化</td><td style="border:1px solid #334155;padding:6px;color:#fde68a">グラフ図（曲線が交差）</td><td style="border:1px solid #334155;padding:6px;color:#86efac">木構造（清潔）</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 等価性定理 (Colledanchise-Ögren 2017):</span> 任意の FSM は BT で表現可能、逆も成立。しかし BT の方が「<strong>同じ機能を少ないノードで</strong>」表現できる場合が多く、実用性が高い。
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ BT の現代応用と LLM 統合</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">分野</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">採用例</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">特徴</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">ゲーム AI</td><td style="border:1px solid #334155;padding:6px">Halo 2 (2004), Spore (2008)</td><td style="border:1px solid #334155;padding:6px">起源、AAA タイトルで標準化</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">移動ロボット</td><td style="border:1px solid #334155;padding:6px">ROS 2 Nav2 (2020〜)</td><td style="border:1px solid #334155;padding:6px">BehaviorTree.CPP がデフォルト</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">脚式ロボット</td><td style="border:1px solid #334155;padding:6px">Boston Dynamics Spot/Atlas</td><td style="border:1px solid #334155;padding:6px">高レベル制御で BT 採用</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">マニピュレーション</td><td style="border:1px solid #334155;padding:6px">MoveIt2 BT plugin</td><td style="border:1px solid #334155;padding:6px">把持タスクの組立に</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">LLM × BT (2023〜)</td><td style="border:1px solid #334155;padding:6px;color:#86efac">CoT-BT, BTGen-LLM</td><td style="border:1px solid #334155;padding:6px;color:#86efac">自然言語 → BT XML 自動生成</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 2024 年の動向:</span> LLM が「タスク記述」から BT XML を生成する研究が急増。例えば「冷蔵庫からビールを取る」と言えば、Selector / Sequence / Action のツリーが自動生成される。<a href="#code_as_policies" style="color:#3b82f6">Code as Policies</a> や <a href="#saycan" style="color:#3b82f6">SayCan</a> と共に、Arc 3 で詳述。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 2 Scene 4: SLAM -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('slam','Arc2','SLAM — 自己位置 + 地図同時推定')</script>
+<div class="page" id="slam">
+<h2>8. SLAM — ベイズフィルタによる「ニワトリと卵」問題の解</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: Smith-Self-Cheeseman (1990) が提起した「地図と位置を同時に推定する」問題。ロボット位置 x_t と地図 m の同時事後分布をベイズフィルタで更新。EKF-SLAM (1990s)、FastSLAM (2002)、ORB-SLAM3 (2021)、Gaussian Splatting SLAM (2024) と進化。Tesla / iPhone AR / 火星探査ローバーすべての基盤。<br><br>
+
+<span class="hl">同時事後分布</span>:<br>
+$p(x_t, m | z_{1:t}, u_{1:t})$<br>
+&nbsp;&nbsp;<span class="note">x_t: 時刻 t のロボット位置、m: 地図、z: 観測、u: 制御</span><br><br>
+
+<span class="hl">予測ステップ（運動モデル）</span>:<br>
+$p(x_t | z_{1:t-1}, u_{1:t}) = \int p(x_t | x_{t-1}, u_t) \cdot p(x_{t-1} | z_{1:t-1}, u_{1:t-1}) \, dx_{t-1}$<br><br>
+
+<span class="hl">更新ステップ（観測モデル）</span>:<br>
+$p(x_t, m | z_{1:t}, u_{1:t}) = \eta \cdot \underbrace{p(z_t | x_t, m)}_{\substack{\text{観測}\\\text{尤度}}} \cdot \underbrace{p(x_t | z_{1:t-1}, u_{1:t})}_{\substack{\text{予測分布}}}$<br><br>
+
+<strong>EKF-SLAM の状態</strong>: $\mathbf{X} = [x_t, m_1, m_2, \ldots, m_N]^T$ （ロボット + 全ランドマーク連結）<br>
+<strong>共分散</strong>: $P \in \mathbb{R}^{(3+2N) \times (3+2N)}$ → 状態数 N の二乗で増大<br><br>
+
+<span class="note">→ Loop Closure で累積誤差を一気に補正（GraphSLAM の最適化）</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（観測ノイズと位置推定の収束）</h3>
+<div class="controls">
+<label>観測ノイズ σ:
+  <input type="range" id="slamSigma" min="0.05" max="2" step="0.05" value="0.5" oninput="drawSLAM()">
+  <span class="val" id="vSlamSigma">0.50</span>
+</label>
+<label>観測ステップ数:
+  <input type="range" id="slamSteps" min="1" max="50" step="1" value="20" oninput="drawSLAM()">
+  <span class="val" id="vSlamSteps">20</span>
+</label>
+<label>Loop Closure:
+  <input type="range" id="slamLoop" min="0" max="1" step="1" value="1" oninput="drawSLAM()">
+  <span class="val" id="vSlamLoop">1</span>
+</label>
+</div>
+<div id="plotSLAM"></div>
+<div id="slamInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawSLAM(){
+  var sigma=+document.getElementById('slamSigma').value;
+  var steps=+document.getElementById('slamSteps').value;
+  var loop=+document.getElementById('slamLoop').value;
+  document.getElementById('vSlamSigma').textContent=sigma.toFixed(2);
+  document.getElementById('vSlamSteps').textContent=steps;
+  document.getElementById('vSlamLoop').textContent=loop?'ON':'OFF';
+  // 累積誤差: σ * sqrt(t) （Brownian モデル）
+  var ts=[],errors=[],errorsLoop=[];
+  for(var t=0;t<=steps;t++){
+    ts.push(t);
+    var err=sigma*Math.sqrt(t);
+    errors.push(err);
+    // Loop closure: 戻り点で誤差リセット（ステップ steps の半分以上で発動）
+    if(loop&&t>steps/2){
+      // 滑らかに減衰
+      var decay=1-Math.min(1,(t-steps/2)/(steps/4));
+      errorsLoop.push(sigma*Math.sqrt(t)*decay+sigma*0.1);
+    }else{
+      errorsLoop.push(sigma*Math.sqrt(t));
+    }
+  }
+  var data=[
+    {x:ts,y:errors,type:'scatter',mode:'lines',name:'Loop Closure なし（誤差累積）',line:{color:'#fca5a5',width:2}},
+    {x:ts,y:errorsLoop,type:'scatter',mode:'lines+markers',name:'Loop Closure あり',line:{color:'#86efac',width:2}}
+  ];
+  Plotly.newPlot('plotSLAM',data,{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'SLAM 位置推定誤差の時間発展（観測ノイズ σ='+sigma.toFixed(2)+'）',font:{size:13,color:'#cbd5e1'}},
+    xaxis:{title:'時刻 t',gridcolor:'#334155'},
+    yaxis:{title:'位置誤差 (m)',gridcolor:'#334155'},
+    margin:{t:35,b:50,l:60,r:10},height:300,
+    legend:{orientation:'h',x:0.5,xanchor:'center',y:-0.25,yanchor:'top',bgcolor:'rgba(0,0,0,0)'}
+  },{responsive:true});
+  var finalErr=errors[errors.length-1];
+  var finalErrLoop=errorsLoop[errorsLoop.length-1];
+  var msg='<strong>📊 SLAM 性能</strong><br>';
+  msg+='ステップ '+steps+' での誤差:<br>';
+  msg+='• Loop Closure なし: <span style="color:#fca5a5">'+finalErr.toFixed(2)+' m</span><br>';
+  msg+='• Loop Closure あり: <span style="color:#86efac">'+finalErrLoop.toFixed(2)+' m</span><br>';
+  msg+='→ 改善率: <strong>'+((1-finalErrLoop/finalErr)*100).toFixed(0)+'%</strong><br><br>';
+  msg+='<strong>👀 試してみよう:</strong><br>';
+  msg+='• 観測ノイズ 0.05 → センサー良好、Loop Closure なくても許容範囲<br>';
+  msg+='• 観測ノイズ 1.5 + Loop Closure ON → 誤差が爆発した後に劇的に補正<br>';
+  msg+='• 観測ノイズ 1.5 + Loop Closure OFF → 誤差発散（実機では使えない）<br><br>';
+  msg+='<strong>SLAM の本質:</strong> 観測の独立性が高いほどノイズは <strong>√t</strong> で増える（Brownian-like）。Loop Closure は「過去の自分に再会する」ことで全軌跡を一気に最適化し、誤差を <strong>O(1)</strong> に抑え込む魔法。';
+  document.getElementById('slamInfo').innerHTML=msg;
+}
+lazyInit('slam',drawSLAM);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">1990 年 Smith-Self-Cheeseman で確率的定式化、EKF-SLAM (1991) が嚆矢</div>
+<div class="achieved">2002 年 FastSLAM で大規模問題解決、2021 年 ORB-SLAM3 で単眼カメラ cm 級</div>
+<div class="pro">Tesla Autopilot, Waymo, iPhone AR, 火星探査の共通基盤</div>
+<div class="pro">Loop Closure で累積誤差を効果的に補正</div>
+<div class="challenge">動的環境（歩行者、家具移動）への対応、計算負荷の最適化</div>
+<div class="con">テクスチャレス環境（白壁、夜の屋外）で視覚 SLAM 失敗、Lifelong SLAM 未完成</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: 暗闇の部屋で「<strong>手探りで動きながら家具の配置を覚える</strong>」のと同じ。一度触った場所に戻ったら「あ、ここはさっき触った椅子だ」と気づく（Loop Closure）。それで全軌跡を再計算 → ほぼ正確な部屋の地図が完成。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 SLAM の革新</strong>: 「<strong>位置と地図を同時に確率分布で持つ</strong>」発想。事前は別々に解いていたが、「<strong>互いに依存する未知量</strong>」として共同推定することで両方の精度が向上。<a href="#pomdp" style="color:#3b82f6">POMDP</a> と同じベイズフィルタの応用。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① SLAM アルゴリズムの系譜</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:6px;background:#1e293b">手法</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">年</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">表現</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">特徴</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">EKF-SLAM</td><td style="border:1px solid #334155;padding:6px">1991</td><td style="border:1px solid #334155;padding:6px">単一ガウス分布</td><td style="border:1px solid #334155;padding:6px">数学的に明快、O(N²) で大規模困難</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">FastSLAM</td><td style="border:1px solid #334155;padding:6px">2002</td><td style="border:1px solid #334155;padding:6px">パーティクル + EKF</td><td style="border:1px solid #334155;padding:6px">Rao-Blackwellized 粒子フィルタ</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">GraphSLAM</td><td style="border:1px solid #334155;padding:6px">2006</td><td style="border:1px solid #334155;padding:6px">因子グラフ + g2o/iSAM</td><td style="border:1px solid #334155;padding:6px">後で再最適化、高精度</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">ORB-SLAM</td><td style="border:1px solid #334155;padding:6px">2015</td><td style="border:1px solid #334155;padding:6px">キーフレーム + ORB特徴</td><td style="border:1px solid #334155;padding:6px">単眼カメラで動作、OSS</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">LOAM (LiDAR)</td><td style="border:1px solid #334155;padding:6px">2014</td><td style="border:1px solid #334155;padding:6px">点群 + ICP</td><td style="border:1px solid #334155;padding:6px">屋外で高精度、Velodyne 標準</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">VINS-Fusion</td><td style="border:1px solid #334155;padding:6px">2018</td><td style="border:1px solid #334155;padding:6px">カメラ + IMU 融合</td><td style="border:1px solid #334155;padding:6px">iPhone AR の基盤</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">ORB-SLAM3</td><td style="border:1px solid #334155;padding:6px;color:#86efac">2021</td><td style="border:1px solid #334155;padding:6px;color:#86efac">マルチセッション + IMU</td><td style="border:1px solid #334155;padding:6px;color:#86efac">単眼で cm 級、完成度高</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">NeRF-SLAM</td><td style="border:1px solid #334155;padding:6px;color:#86efac">2022</td><td style="border:1px solid #334155;padding:6px;color:#86efac">ニューラル radiance field</td><td style="border:1px solid #334155;padding:6px;color:#86efac">微分可能レンダリング、密な地図</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">Gaussian Splatting SLAM</td><td style="border:1px solid #334155;padding:6px;color:#86efac">2024</td><td style="border:1px solid #334155;padding:6px;color:#86efac">3D ガウス点群</td><td style="border:1px solid #334155;padding:6px;color:#86efac">リアルタイム + 高精細レンダ</td></tr>
+</table><br>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② Loop Closure の効果（数値例）</strong><br><br>
+
+<strong>シナリオ</strong>: ロボットが 1km の閉ループを走行<br><br>
+
+<strong>累積誤差なしの理想</strong>:<br>
+&nbsp;&nbsp;距離 1km / 観測精度 ±0.01 m (LiDAR) → 終点誤差 0 m<br><br>
+
+<strong>累積誤差あり (Loop Closure なし)</strong>:<br>
+&nbsp;&nbsp;ステップごとに ε ~ N(0, 0.01²) の誤差が加算<br>
+&nbsp;&nbsp;1000 ステップ後: σ_total = 0.01 × √1000 ≈ <span style="color:#fca5a5">0.32 m</span><br>
+&nbsp;&nbsp;走行履歴と地図の整合性が崩壊<br><br>
+
+<strong>Loop Closure あり</strong>:<br>
+&nbsp;&nbsp;ステップ 999 で「これは出発点だ」と認識<br>
+&nbsp;&nbsp;制約: 出発点と現在位置の距離 = 0<br>
+&nbsp;&nbsp;全軌跡を g2o で再最適化 → 誤差を全体に分散<br>
+&nbsp;&nbsp;最終誤差: <span style="color:#86efac">0.05 m 程度</span> (ノイズの 5 倍程度に収束)<br><br>
+
+<span class="note">→ Loop Closure 検出は ORB-SLAM では Bag-of-Words 方式、最近は <a href="https://arxiv.org/abs/2202.13251" target="_blank" style="color:#3b82f6">学習ベース (NetVLAD 等)</a> も</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ SLAM の現代応用と未来</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">応用</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">採用 SLAM</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">特徴</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Tesla Autopilot</td><td style="border:1px solid #334155;padding:6px">Visual SLAM (8 カメラ)</td><td style="border:1px solid #334155;padding:6px">LiDAR なし、純粋視覚</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Waymo</td><td style="border:1px solid #334155;padding:6px">LiDAR + Visual SLAM</td><td style="border:1px solid #334155;padding:6px">高精度地図と組合せ</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">iPhone ARKit</td><td style="border:1px solid #334155;padding:6px">VINS</td><td style="border:1px solid #334155;padding:6px">カメラ + IMU で軽量</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Boston Dynamics Spot</td><td style="border:1px solid #334155;padding:6px">深度カメラ + LiDAR</td><td style="border:1px solid #334155;padding:6px">屋内外両対応</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">NASA Perseverance</td><td style="border:1px solid #334155;padding:6px">Visual Odometry + Stereo</td><td style="border:1px solid #334155;padding:6px">火星表面で自律走行</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac"><a href="#world_models" style="color:#3b82f6">World Models</a> (2024)</td><td style="border:1px solid #334155;padding:6px;color:#86efac">Neural rendering + RL</td><td style="border:1px solid #334155;padding:6px;color:#86efac">SLAM + 行動予測の統合</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 2024 年の動向:</span> Gaussian Splatting SLAM が「リアルタイム + 高精細地図」を実現。Navigation World Models は SLAM の延長として「<strong>地図 + 予測 + 行動</strong>」を統合。古典 SLAM の終焉ではなく、<strong>ニューラル時代への進化</strong>。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 2 Scene 5: Sim2Real -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('sim2real','Arc2','Sim2Real — Domain Randomization')</script>
+<div class="page" id="sim2real">
+<h2>9. Sim2Real — Domain Randomization で Reality Gap を埋める</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: Tobin et al. (2017) が提唱した、シミュレータ学習方策を実機に転移する技術。シミュレータパラメータを大胆にランダム化することで「無数の異なる物理世界」を経験させ、実機を「学習分布の一点」として扱う。OpenAI Rubik's Cube (2019)、ANYmal (2020)、NVIDIA Isaac Lab (2021〜) で標準化。<br><br>
+
+<span class="hl">Domain Randomization の最適化問題</span>:<br>
+$\pi^*_{DR} = \arg\max_\pi \mathbb{E}_{\theta \sim p(\theta)} \left[ J(\pi, \text{sim}_\theta) \right]$<br>
+&nbsp;&nbsp;<span class="note">θ: シミュレータパラメータ（摩擦、質量、光源等）</span><br>
+&nbsp;&nbsp;<span class="note">p(θ): 設計者が設定するランダム化分布</span><br><br>
+
+<span class="hl">Reality Gap (転移誤差)</span>:<br>
+$\Delta = J(\pi^*_{DR}, \text{real}) - \mathbb{E}_{\theta} J(\pi^*_{DR}, \text{sim}_\theta)$<br><br>
+
+<span class="hl">条件: 実機分布が学習分布に含まれる</span>:<br>
+$\theta_{\text{real}} \in \text{supp}(p(\theta)) \implies \pi^*_{DR} \text{ は実機でも有効}$<br><br>
+
+<strong>Adaptive DR (ADR, OpenAI 2019)</strong>:<br>
+$p(\theta)$ を学習中に自動拡張: 性能が一定以上なら範囲を広げ、未満なら狭める<br><br>
+
+<span class="note">→ 学習が進むに連れて「より頑健な方策」を獲得</span><br>
+<span class="note">→ Real2Sim2Real: 実機データで sim の θ を調整 → DR で再学習</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（DR 強度と転移成功率）</h3>
+<div class="controls">
+<label>DR 範囲（パラメータ変動 ±%）:
+  <input type="range" id="s2rRange" min="0" max="100" step="5" value="40" oninput="drawSim2Real()">
+  <span class="val" id="vS2rRange">40</span>
+</label>
+<label>学習エポック:
+  <input type="range" id="s2rEpochs" min="10" max="500" step="10" value="100" oninput="drawSim2Real()">
+  <span class="val" id="vS2rEpochs">100</span>
+</label>
+<label>実機の sim 分布からの距離:
+  <input type="range" id="s2rDist" min="0" max="100" step="5" value="30" oninput="drawSim2Real()">
+  <span class="val" id="vS2rDist">30</span>
+</label>
+</div>
+<div id="plotSim2Real"></div>
+<div id="sim2realInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawSim2Real(){
+  var range=+document.getElementById('s2rRange').value;
+  var epochs=+document.getElementById('s2rEpochs').value;
+  var dist=+document.getElementById('s2rDist').value;
+  document.getElementById('vS2rRange').textContent=range;
+  document.getElementById('vS2rEpochs').textContent=epochs;
+  document.getElementById('vS2rDist').textContent=dist;
+  // Sim 性能: 学習エポックで上昇、DR が広いと収束遅い
+  var simPerf=[];
+  var realPerf=[];
+  var rangeFactor=range/40; // 40 がベースライン
+  for(var e=0;e<=epochs;e+=Math.max(1,Math.floor(epochs/30))){
+    // Sim performance: 1 - exp(-e/(50*rangeFactor))
+    var sp=Math.min(0.99,1-Math.exp(-e/(50*Math.max(0.5,rangeFactor))));
+    simPerf.push({x:e,y:sp});
+    // Real performance: sp * coverage_factor
+    // coverage = 1 if dist <= range, else exponential decay
+    var coverage;
+    if(dist<=range)coverage=Math.min(1,0.7+0.3*range/100);
+    else coverage=Math.max(0,Math.exp(-(dist-range)/30));
+    realPerf.push({x:e,y:sp*coverage});
+  }
+  var data=[
+    {x:simPerf.map(function(p){return p.x;}),y:simPerf.map(function(p){return p.y;}),
+     type:'scatter',mode:'lines+markers',name:'シミュレータ性能',line:{color:'#3b82f6',width:2}},
+    {x:realPerf.map(function(p){return p.x;}),y:realPerf.map(function(p){return p.y;}),
+     type:'scatter',mode:'lines+markers',name:'実機性能',line:{color:'#22c55e',width:2}},
+    {x:[0,epochs],y:[0.7,0.7],type:'scatter',mode:'lines',name:'実用ライン',line:{color:'#fca5a5',width:1,dash:'dash'}}
+  ];
+  Plotly.newPlot('plotSim2Real',data,{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'Sim2Real 転移性能（DR ±'+range+'%, 実機距離 '+dist+'%）',font:{size:13,color:'#cbd5e1'}},
+    xaxis:{title:'学習エポック',gridcolor:'#334155'},
+    yaxis:{title:'タスク成功率',range:[0,1.05],gridcolor:'#334155'},
+    margin:{t:35,b:50,l:60,r:10},height:300,
+    legend:{orientation:'h',x:0.5,xanchor:'center',y:-0.25,yanchor:'top',bgcolor:'rgba(0,0,0,0)'}
+  },{responsive:true});
+  var finalSim=simPerf[simPerf.length-1].y;
+  var finalReal=realPerf[realPerf.length-1].y;
+  var msg='<strong>📊 最終性能</strong><br>';
+  msg+='シミュレータ: <span style="color:#3b82f6">'+(finalSim*100).toFixed(0)+'%</span><br>';
+  msg+='実機: <span style="color:#22c55e">'+(finalReal*100).toFixed(0)+'%</span><br>';
+  msg+='Reality Gap: <span style="color:#fbbf24">'+((finalSim-finalReal)*100).toFixed(1)+'pp</span><br><br>';
+  if(dist>range)msg+='<span style="color:#fca5a5">⚠️ 実機が DR 分布の外 → 性能急落（Reality Gap 顕在化）</span><br>';
+  else if(range<10)msg+='<span style="color:#fde68a">⚠️ DR が狭すぎ → シム overfitting、実機で破綻</span><br>';
+  else if(range>80)msg+='<span style="color:#fde68a">⚠️ DR が広すぎ → 学習が収束しない、エポック増やす必要</span><br>';
+  else msg+='<span style="color:#86efac">✅ DR が適切、転移成功</span><br>';
+  msg+='<br><strong>👀 試してみよう:</strong><br>';
+  msg+='• DR 範囲 5% + 実機距離 30% → 実機性能 ガタ落ち（古典的 Reality Gap）<br>';
+  msg+='• DR 範囲 40% + 実機距離 30% → 転移成功（OpenAI Rubik 設定の典型）<br>';
+  msg+='• DR 範囲 80% → 学習が遅い、500 エポック必要<br><br>';
+  msg+='<strong>Sim2Real の本質:</strong> 「<strong>実機を 1 つの sim 設定として包含</strong>」する DR 範囲を見つけることがすべて。OpenAI ADR は「学習進度に応じて自動調整」する天才的解。';
+  document.getElementById('sim2realInfo').innerHTML=msg;
+}
+lazyInit('sim2real',drawSim2Real);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">2017 年 Tobin et al. が物体認識で DR 提唱、2019 年 OpenAI Rubik's Cube で大規模実証</div>
+<div class="achieved">2020 年 ANYmal が雪・砂地等の未知地形を Sim2Real だけで歩行</div>
+<div class="pro">実機データ不要 → 探索的学習が可能、安全に新方策を試せる</div>
+<div class="pro">大規模並列化（NVIDIA Isaac で 16K 並列）→ 学習 1000 倍速</div>
+<div class="challenge">柔らかい物体・流体・接触豊富タスクは依然困難（物理 sim の限界）</div>
+<div class="con">DR 範囲設定が経験依存、実機ベンチマークが標準化されていない</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: 「<strong>あらゆる悪天候で運転練習</strong>」したドライバーが、初めての雨でも普通に運転できるのと同じ。シミュレータでわざと「歪んだ世界」を見せておけば、実機の「軽い歪み」は学習範囲内 → スムーズに動く。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 Sim2Real の革新</strong>: 「<strong>シムの精度を上げる</strong>」のではなく「<strong>シムをばらつかせる</strong>」発想転換。完璧な sim を作るより、歪んだ sim を 1 万個用意する方が遥かに実用的。物理エンジンの精度競争を陳腐化させた。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① OpenAI Rubik's Cube — Sim2Real の象徴的成果</strong><br><br>
+
+<strong>タスク</strong>: ヒューマノイドの片手だけでルービックキューブを完成<br>
+<strong>論文</strong>: <a href="https://arxiv.org/abs/1910.07113" target="_blank" style="color:#3b82f6">Solving Rubik's Cube with a Robot Hand (OpenAI 2019)</a><br><br>
+
+<strong>学習システム</strong>:<br>
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:6px;background:#1e293b">要素</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">仕様</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">並列環境数</td><td style="border:1px solid #334155;padding:6px">7,000 並列 (Rapid 分散学習)</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">学習時間</td><td style="border:1px solid #334155;padding:6px">数ヶ月、CPU コア時間で約 13 億時間</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">DR パラメータ</td><td style="border:1px solid #334155;padding:6px">摩擦、質量、サイズ、ロボット時定数 等 30+</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">ADR</td><td style="border:1px solid #334155;padding:6px">範囲を自動拡張（性能維持しながら難化）</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">実機成功率</td><td style="border:1px solid #334155;padding:6px;color:#86efac">60% (新規データなし、シムだけで学習した方策)</td></tr>
+</table><br>
+
+<span class="note">→ 実機学習なしで世界初の片手キューブ完成を達成。Sim2Real が「実機の試行錯誤を完全に置き換えられる」ことを示した</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② Sim2Real アプローチの分類</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">手法</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">仕組み</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">代表例</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Domain Randomization</td><td style="border:1px solid #334155;padding:6px">パラメータ θ をランダム化</td><td style="border:1px solid #334155;padding:6px">Tobin 2017</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">System Identification</td><td style="border:1px solid #334155;padding:6px">実機データから θ_real を推定</td><td style="border:1px solid #334155;padding:6px">MuJoCo + 実機キャリブ</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Adaptive DR (ADR)</td><td style="border:1px solid #334155;padding:6px">学習中に DR 範囲を自動調整</td><td style="border:1px solid #334155;padding:6px">OpenAI Dota AI</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Domain Adaptation</td><td style="border:1px solid #334155;padding:6px">画像レベル sim ↔ real 変換</td><td style="border:1px solid #334155;padding:6px">CycleGAN, RetinaGAN</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">Real2Sim2Real</td><td style="border:1px solid #334155;padding:6px;color:#86efac">実機データで sim 校正 → DR 学習</td><td style="border:1px solid #334155;padding:6px;color:#86efac">2023〜の主流</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Online Fine-tuning</td><td style="border:1px solid #334155;padding:6px">sim 学習方策を実機で微調整</td><td style="border:1px solid #334155;padding:6px">Tesla FSD, ANYmal</td></tr>
+</table><br>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ Sim2Real のロボティクス産業への影響</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">分野</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">採用例</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">成果</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">脚式ロボット</td><td style="border:1px solid #334155;padding:6px">ANYmal, Spot, Atlas</td><td style="border:1px solid #334155;padding:6px">未知地形での歩行</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">ヒューマノイド手</td><td style="border:1px solid #334155;padding:6px">OpenAI Rubik's Cube</td><td style="border:1px solid #334155;padding:6px">片手キューブ完成</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">自動運転</td><td style="border:1px solid #334155;padding:6px">Tesla Dojo</td><td style="border:1px solid #334155;padding:6px">実車データ → sim 校正 → DR 学習</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">ドローン</td><td style="border:1px solid #334155;padding:6px">Skydio</td><td style="color:#86efac;border:1px solid #334155;padding:6px">障害物回避・追跡飛行</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">マニピュレーション</td><td style="border:1px solid #334155;padding:6px">Robotic Arms</td><td style="border:1px solid #334155;padding:6px">把持・操作の汎化</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">VLA モデル</td><td style="border:1px solid #334155;padding:6px;color:#86efac">RT-2, OpenVLA, π0</td><td style="border:1px solid #334155;padding:6px;color:#86efac">DR + LLM 統合（Arc 3）</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 標準ツール:</span> NVIDIA Isaac Lab (旧 Isaac Gym) が GPU 並列シミュレータの事実上の標準。MuJoCo (DeepMind 買収後 OSS 化) も研究で広く使われる。<a href="#vla_models" style="color:#3b82f6">VLA モデル</a> 学習にも採用 (Arc 3 参照)。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 3 Scene 1: SayCan -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('saycan','Arc3','SayCan — Do As I Can, Not As I Say')</script>
+<div class="page" id="saycan">
+<h2>10. SayCan — LLM の Say × アフォーダンスの Can</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: Ahn et al. (Google Robotics, 2022) が提唱した LLM × ロボティクスの嚆矢。LLM (PaLM) の言語的妥当性スコアと、ロボットのアフォーダンスモデル (RL value function) の積で次の行動を選択。Symbol Grounding 問題への実用解として 2022-2023 年の研究を駆動した。<br><br>
+
+<span class="hl">SayCan の選択則</span>:<br>
+$\ell^* = \arg\max_{\ell \in \text{Skills}} \underbrace{p(\ell | i)}_{\substack{\text{Say}\\\text{(LLM)}}} \cdot \underbrace{p(c | s, \ell)}_{\substack{\text{Can}\\\text{(Affordance)}}}$<br><br>
+
+<span class="hl">Say スコア</span>: LLM が指令 i に対して尤もらしいスキル ℓ の言語確率<br>
+$p(\ell | i) = \text{LLM}(\ell | i, \text{prompt})$<br><br>
+
+<span class="hl">Can スコア</span>: 状態 s でスキル ℓ を成功させる確率（強化学習 V 関数）<br>
+$p(c | s, \ell) = V_\ell(s) \approx \mathbb{E}[\text{success of } \ell | s]$<br><br>
+
+<strong>事前学習スキル</strong>: ~100 個（find/pick/place/bring × 物体）<br>
+<span class="note">→ LLM は世界知識、アフォーダンスは物理可能性 → 積で接地</span><br>
+<span class="note">→ "Do As I Can, Not As I Say" の哲学を数式化</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（Say × Can による行動選択）</h3>
+<div class="controls">
+<label>シナリオ:
+  <select id="scScenario" onchange="drawSayCan()" style="background:#334155;color:#e2e8f0;border:1px solid #475569;border-radius:6px;padding:4px 8px;font-size:13px">
+    <option value="thirsty" selected>"Bring me a drink"</option>
+    <option value="snack">"I want a snack"</option>
+    <option value="clean">"I spilled water"</option>
+  </select>
+</label>
+<label>水の見え具合 (Can):
+  <input type="range" id="scWater" min="0" max="1" step="0.05" value="0.9" oninput="drawSayCan()">
+  <span class="val" id="vScWater">0.90</span>
+</label>
+<label>スポンジの見え具合 (Can):
+  <input type="range" id="scSponge" min="0" max="1" step="0.05" value="0.05" oninput="drawSayCan()">
+  <span class="val" id="vScSponge">0.05</span>
+</label>
+</div>
+<div id="plotSayCan"></div>
+<div id="saycanInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawSayCan(){
+  var sc=document.getElementById('scScenario').value;
+  var water=+document.getElementById('scWater').value;
+  var sponge=+document.getElementById('scSponge').value;
+  document.getElementById('vScWater').textContent=water.toFixed(2);
+  document.getElementById('vScSponge').textContent=sponge.toFixed(2);
+  // Skills と Say スコア（LLM 出力の模擬）
+  var skills,sayScores;
+  if(sc==='thirsty'){
+    skills=['find_water','find_chips','find_sponge','find_apple','find_phone'];
+    sayScores=[0.85,0.05,0.005,0.08,0.005];
+  }else if(sc==='snack'){
+    skills=['find_water','find_chips','find_sponge','find_apple','find_phone'];
+    sayScores=[0.05,0.55,0.001,0.40,0.005];
+  }else{
+    skills=['find_water','find_chips','find_sponge','find_apple','find_phone'];
+    sayScores=[0.10,0.05,0.80,0.02,0.001];
+  }
+  // Can スコア（アフォーダンス）
+  var canScores=[water,0.7,sponge,0.6,0.5];
+  // 積
+  var products=sayScores.map(function(s,i){return s*canScores[i];});
+  var maxIdx=0;
+  products.forEach(function(p,i){if(p>products[maxIdx])maxIdx=i;});
+  var data=[
+    {x:skills,y:sayScores,type:'bar',name:'Say (LLM 出力)',marker:{color:'#3b82f6'}},
+    {x:skills,y:canScores,type:'bar',name:'Can (アフォーダンス)',marker:{color:'#fbbf24'}},
+    {x:skills,y:products,type:'bar',name:'Say × Can (最終)',
+     marker:{color:skills.map(function(s,i){return i===maxIdx?'#22c55e':'#475569';})}}
+  ];
+  Plotly.newPlot('plotSayCan',data,{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'SayCan のスキル選択（緑 = 選択された行動）',font:{size:13,color:'#cbd5e1'}},
+    barmode:'group',
+    xaxis:{gridcolor:'#334155',tickangle:-25},
+    yaxis:{title:'スコア',gridcolor:'#334155'},
+    margin:{t:35,b:80,l:60,r:10},height:340,
+    legend:{orientation:'h',x:0.5,xanchor:'center',y:-0.35,yanchor:'top',bgcolor:'rgba(0,0,0,0)'}
+  },{responsive:true});
+  var msg='<strong>📊 選択された行動</strong>: <span style="color:#86efac;font-weight:bold">'+skills[maxIdx]+'</span><br>';
+  msg+='Say × Can = '+sayScores[maxIdx].toFixed(3)+' × '+canScores[maxIdx].toFixed(2)+' = <strong>'+products[maxIdx].toFixed(4)+'</strong><br><br>';
+  msg+='<strong>👀 試してみよう:</strong><br>';
+  msg+='• "Bring me a drink" + 水見え 0.05 → 水が選ばれない（Can が低い）<br>';
+  msg+='• "I spilled water" + スポンジ 0.05 → スポンジが見えなければ水で代用？<br>';
+  msg+='• Say だけ高くても Can が低いと選ばれない → "Do As I Can"<br><br>';
+  msg+='<strong>SayCan の本質:</strong> LLM が「言える」だけでなく、ロボットが「できる」必要がある。Symbol Grounding の現代的解。<a href="#llm_p" style="color:#3b82f6">LLM+P</a> や <a href="#code_as_policies" style="color:#3b82f6">Code as Policies</a> はこの発想を別表現で発展させた。';
+  document.getElementById('saycanInfo').innerHTML=msg;
+}
+lazyInit('saycan',drawSayCan);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">2022 年 4 月 PaLM-SayCan、Google Everyday Robots で実機実証</div>
+<div class="achieved">LLM × ロボティクス時代の幕開け、後の研究 1000+ 本の出発点</div>
+<div class="pro">Symbol Grounding 問題への実用解（言語 × 物理可能性の積）</div>
+<div class="pro">既存スキル + LLM で組み合わせ爆発を解放</div>
+<div class="challenge">事前学習 100 スキルの離散性、未知物体への対応不可</div>
+<div class="con">各ステップで LLM 推論 → 遅延、コスト大、計画の浅さ</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: LLM は「<strong>賢いが体がない頭脳</strong>」、ロボットは「<strong>体はあるが知識がない</strong>」存在。SayCan はこの 2 つを「Say × Can」で繋げる。LLM が "コーラ取って" と言いたくても、ロボットがコーラを認識できなければ実行されない（Do As I Can）。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 SayCan の革新</strong>: 古典 AI が 50 年苦闘した <strong>Symbol Grounding Problem</strong>（記号と現実の紐付け）への現代解。LLM = 記号主義、アフォーダンス = 結合主義 — この 2 つを掛け算で統合した。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① PaLM-SayCan の実験結果（2022）</strong><br><br>
+
+<strong>セットアップ</strong>:<br>
+• ロボット: Everyday Robots プラットフォーム (Google)<br>
+• LLM: PaLM (540B), 後に GPT-3.5, GPT-4 でも同様の結果<br>
+• スキル: 100+（find_water, pick_apple, place_on_counter ...）<br>
+• 環境: オフィスキッチン、テーブル、カウンター<br><br>
+
+<strong>タスク成功率（指令 101 種、論文 Ahn 2022）</strong>:<br>
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:6px;background:#1e293b">条件</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">計画成功率</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">実行成功率</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">SayCan 単体（LLM のみ）</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">73%</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">47%</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">SayCan + アフォーダンス</td><td style="border:1px solid #334155;padding:6px;color:#86efac">84%</td><td style="border:1px solid #334155;padding:6px;color:#86efac">74%</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">SayCan + Chain-of-Thought</td><td style="border:1px solid #334155;padding:6px;color:#86efac">87%</td><td style="border:1px solid #334155;padding:6px;color:#86efac">74%</td></tr>
+</table><br>
+<span class="note">→ アフォーダンス（Can）の追加で実行成功率が +27pp。LLM だけでは「言えるが実行不能」が多発</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② プロンプト設計の例</strong><br><br>
+
+<pre style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:10px;font-size:11px;color:#e2e8f0;overflow-x:auto;white-space:pre">Robot: I'm a robot operating in an office kitchen.
+       I can: find_X, pick_X, place_X, bring_X, ...
+Human: I just worked out, can you bring me a drink and a snack?
+Robot: 1.</pre>
+<span class="note">→ LLM はこの prompt の後に "find_water" 等の続きを生成する。各候補に対する尤度が Say スコア</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ SayCan の系譜と影響</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">年</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">研究</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">SayCan からの発展</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2022 / 4</td><td style="border:1px solid #334155;padding:6px">SayCan (オリジナル)</td><td style="border:1px solid #334155;padding:6px">LLM × アフォーダンス × 100 スキル</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2022 / 9</td><td style="border:1px solid #334155;padding:6px"><a href="#code_as_policies" style="color:#3b82f6">Code as Policies</a></td><td style="border:1px solid #334155;padding:6px">スキル離散性を Python コードで連続化</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2023</td><td style="border:1px solid #334155;padding:6px"><a href="#llm_p" style="color:#3b82f6">LLM+P / SayPlan</a></td><td style="border:1px solid #334155;padding:6px">LLM × 古典 PDDL planner で長期計画</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2023</td><td style="border:1px solid #334155;padding:6px">Inner Monologue (Google)</td><td style="border:1px solid #334155;padding:6px">SayCan + 失敗時の自己修正</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">2023</td><td style="border:1px solid #334155;padding:6px;color:#86efac"><a href="#vla_models" style="color:#3b82f6">RT-2 (VLA)</a></td><td style="border:1px solid #334155;padding:6px;color:#86efac">LLM とロボット行動の End-to-End 統合（脱 SayCan）</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">2024</td><td style="border:1px solid #334155;padding:6px;color:#86efac">Mobile ALOHA</td><td style="border:1px solid #334155;padding:6px;color:#86efac">家庭タスク用の安価な双腕プラットフォーム</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 2024 年現在:</span> SayCan 自体は使われなくなったが、その思想（Symbol Grounding × 物理可能性）は VLA モデルや World Models に継承されている。Phase 5 で深掘り。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 3 Scene 2: LLM+P / SayPlan -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('llm_p','Arc3','LLM+P / SayPlan — LLM × 古典 planner')</script>
+<div class="page" id="llm_p">
+<h2>11. LLM+P — LLM の翻訳力 × 古典 planner の最適性</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: Liu et al. (MIT-IBM, 2023) が提唱した、LLM と古典 PDDL planner を分業させるフレームワーク。LLM は「翻訳役」（自然言語 ↔ PDDL）、planner は「最適化役」（A* / Fast Downward）。SayPlan (Rana 2023) は同じ発想を 3D Scene Graph 環境に拡張。<br><br>
+
+<span class="hl">LLM+P のパイプライン</span>:<br>
+$\text{NL指令} \xrightarrow{\text{LLM 翻訳}} \text{PDDL 問題} \xrightarrow{\text{Fast Downward}} \pi^* \xrightarrow{\text{LLM 説明}} \text{NL 出力}$<br><br>
+
+<span class="hl">直接計画 vs LLM+P の成功率比較</span>:<br>
+$\text{Acc}(\text{LLM 直接}) \approx O\left(\frac{1}{n^2}\right), \quad \text{Acc}(\text{LLM+P}) \approx 1 \text{ for solvable}$<br>
+&nbsp;&nbsp;<span class="note">n: 問題サイズ（ブロック数等）</span><br><br>
+
+<span class="hl">SayPlan の Scene Graph 圧縮</span>:<br>
+$G_{\text{full}} \xrightarrow{\text{LLM フィルタ}} G_{\text{task}} \xrightarrow{\text{PDDL}} \pi^*$<br>
+&nbsp;&nbsp;<span class="note">G_full: 全建物の 3D Scene Graph（数百ノード）</span><br>
+&nbsp;&nbsp;<span class="note">G_task: タスク関連のサブグラフ（数十ノード）</span><br><br>
+
+<strong>分業の哲学</strong>: 自然言語 → 形式言語は LLM が得意、形式言語上の最適化は古典が得意<br>
+<span class="note">→ 古典 AI（PDDL, 1998）の現代復権の象徴</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（LLM 単体 vs LLM+P の成功率）</h3>
+<div class="controls">
+<label>問題サイズ N（ブロック数）:
+  <input type="range" id="lpN" min="3" max="20" step="1" value="8" oninput="drawLLMP()">
+  <span class="val" id="vLpN">8</span>
+</label>
+<label>LLM 性能:
+  <select id="lpModel" onchange="drawLLMP()" style="background:#334155;color:#e2e8f0;border:1px solid #475569;border-radius:6px;padding:4px 8px;font-size:13px">
+    <option value="gpt35">GPT-3.5</option>
+    <option value="gpt4" selected>GPT-4</option>
+    <option value="claude">Claude 3</option>
+  </select>
+</label>
+</div>
+<div id="plotLLMP"></div>
+<div id="llmpInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawLLMP(){
+  var n=+document.getElementById('lpN').value;
+  var model=document.getElementById('lpModel').value;
+  document.getElementById('vLpN').textContent=n;
+  // モデル別の基本性能
+  var modelBase={'gpt35':0.4,'gpt4':0.65,'claude':0.7}[model];
+  // LLM 直接: サイズ N で指数的に低下
+  var sizes=[];
+  var directScores=[];
+  var llmpScores=[];
+  var translationScores=[];
+  for(var s=3;s<=20;s++){
+    sizes.push(s);
+    // Direct: modelBase * exp(-(s-3)/4)
+    directScores.push(Math.max(0.02,modelBase*Math.exp(-(s-3)/4)));
+    // Translation accuracy (LLM doing PDDL only): 高めで安定
+    var transAcc=Math.max(0.7,modelBase*1.4-Math.max(0,(s-15)/20));
+    translationScores.push(Math.min(0.99,transAcc));
+    // LLM+P: 翻訳成功 → 完全に解ける
+    llmpScores.push(transAcc);
+  }
+  var data=[
+    {x:sizes,y:directScores,type:'scatter',mode:'lines+markers',name:'LLM 直接計画',line:{color:'#fca5a5',width:2}},
+    {x:sizes,y:translationScores,type:'scatter',mode:'lines+markers',name:'LLM 翻訳精度（PDDL 生成）',line:{color:'#fde68a',width:2,dash:'dot'}},
+    {x:sizes,y:llmpScores,type:'scatter',mode:'lines+markers',name:'LLM+P (翻訳 + planner)',line:{color:'#86efac',width:2}}
+  ];
+  Plotly.newPlot('plotLLMP',data,{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'Blocksworld 問題サイズ別の成功率',font:{size:13,color:'#cbd5e1'}},
+    xaxis:{title:'ブロック数 N',gridcolor:'#334155'},
+    yaxis:{title:'成功率',range:[0,1.05],gridcolor:'#334155'},
+    margin:{t:35,b:50,l:60,r:10},height:300,
+    legend:{orientation:'h',x:0.5,xanchor:'center',y:-0.25,yanchor:'top',bgcolor:'rgba(0,0,0,0)'}
+  },{responsive:true});
+  var directAtN=directScores[n-3];
+  var llmpAtN=llmpScores[n-3];
+  var msg='<strong>📊 N='+n+' の成功率</strong><br>';
+  msg+='LLM 直接: <span style="color:#fca5a5">'+(directAtN*100).toFixed(0)+'%</span><br>';
+  msg+='LLM+P: <span style="color:#86efac">'+(llmpAtN*100).toFixed(0)+'%</span><br>';
+  msg+='改善幅: <strong>+'+((llmpAtN-directAtN)*100).toFixed(0)+'pp</strong><br><br>';
+  msg+='<strong>👀 試してみよう:</strong><br>';
+  msg+='• N=15 + GPT-3.5: 直接計画 ほぼ 0% → LLM+P で 60-70%<br>';
+  msg+='• N=5 + GPT-4: 直接計画 50% でもまだ高い → 簡単な問題なら直接でも可<br>';
+  msg+='• Claude 3: 翻訳精度が最も高い → LLM+P 全領域で安定<br><br>';
+  msg+='<strong>LLM+P の本質:</strong> LLM の「論理計算は弱い」「自然言語処理は強い」という非対称性を活用。<a href="#pddl" style="color:#3b82f6">PDDL</a> (1998) が LLM 時代に復権した象徴的事例。';
+  document.getElementById('llmpInfo').innerHTML=msg;
+}
+lazyInit('llm_p',drawLLMP);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">2023 年 4 月 Liu et al. が LLM+P 提唱、同年 7 月 Rana et al. が SayPlan 発表</div>
+<div class="achieved">古典 AI (PDDL) と LLM の融合という新パラダイムを開拓</div>
+<div class="pro">大規模問題で LLM 単体 5% → LLM+P 100% への劇的改善</div>
+<div class="pro">古典 planner の最適性保証を LLM の柔軟性で活用可能に</div>
+<div class="challenge">PDDL ドメイン記述（行動定義）は事前準備が必要</div>
+<div class="con">自然言語からの PDDL 翻訳精度がボトルネック、曖昧指示で破綻</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: 「<strong>多言語通訳と数学者のチーム</strong>」のような分業。通訳（LLM）は「日本語 → 英語数学記号」を変換し、数学者（古典 planner）が証明を解く。各々が得意分野に特化することで、両方を一人でやるより遥かに正確。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 LLM+P の革新</strong>: 「LLM はオールマイティ」幻想を打ち砕き、「<strong>LLM は道具の 1 つ</strong>」として組み込む発想。これが <a href="#code_as_policies" style="color:#3b82f6">Code as Policies</a> や AutoGPT、ChatGPT Plugin の世界観に繋がる。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① LLM+P の実験結果（Liu 2023）</strong><br><br>
+
+<strong>ベンチマーク</strong>: Blocksworld, Logistics, Mystery, Termes 等 7 ドメイン<br><br>
+
+<strong>結果（GPT-4 + Fast Downward）</strong>:<br>
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:6px;background:#1e293b">ドメイン</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">GPT-4 直接</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">GPT-4 + LLM+P</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Blocksworld</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">36%</td><td style="border:1px solid #334155;padding:6px;color:#86efac">100%</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Logistics</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">14%</td><td style="border:1px solid #334155;padding:6px;color:#86efac">95%</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Mystery (難)</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">3%</td><td style="border:1px solid #334155;padding:6px;color:#86efac">98%</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Termes</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">5%</td><td style="border:1px solid #334155;padding:6px;color:#86efac">90%</td></tr>
+</table><br>
+
+<span class="note">→ 難しいドメインほど効果が顕著。LLM の計画能力は「ぽくは知ってる」のレベル。健全性は古典 planner に任せる方が遥かに高精度</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② SayPlan: 大規模建物のナビゲーション計画</strong><br><br>
+
+<strong>論文</strong>: <a href="https://arxiv.org/abs/2307.06135" target="_blank" style="color:#3b82f6">SayPlan (Rana et al., CoRL 2023)</a><br>
+<strong>対象</strong>: 30+ 部屋のオフィス、複数階建ての家屋<br><br>
+
+<strong>3 ステップアプローチ</strong>:<br>
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:6px;background:#1e293b">Step</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">処理</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">入出力</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1. Pruning</td><td style="border:1px solid #334155;padding:6px">LLM が 3D Scene Graph を圧縮</td><td style="border:1px solid #334155;padding:6px">300 ノード → 30 ノード</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2. Search</td><td style="border:1px solid #334155;padding:6px">Iterative LLM + PDDL planner</td><td style="border:1px solid #334155;padding:6px">サブグラフで計画</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">3. Verification</td><td style="border:1px solid #334155;padding:6px">実行時に観測で検証</td><td style="border:1px solid #334155;padding:6px">部分観測対応</td></tr>
+</table><br>
+
+<strong>結果</strong>: 100+ 部屋のオフィスで 70% 以上の成功率を達成。LLM 単体では計画爆発で破綻<br>
+<span class="note">→ <a href="#hybrid_arch" style="color:#3b82f6">3 層ハイブリッド</a> の Deliberator を LLM + PDDL で実装する現代版</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ LLM+P と関連手法の比較</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">手法</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">LLM の役割</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">中間表現</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">最適性保証</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><a href="#saycan" style="color:#3b82f6">SayCan</a></td><td style="border:1px solid #334155;padding:6px">スキル選択（言語確率）</td><td style="border:1px solid #334155;padding:6px">スキル列</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">なし</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">LLM+P</td><td style="border:1px solid #334155;padding:6px;color:#86efac">PDDL 翻訳</td><td style="border:1px solid #334155;padding:6px;color:#86efac">PDDL 問題</td><td style="border:1px solid #334155;padding:6px;color:#86efac">あり（A*）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">SayPlan</td><td style="border:1px solid #334155;padding:6px">Scene Graph 圧縮 + PDDL</td><td style="border:1px solid #334155;padding:6px">サブグラフ + PDDL</td><td style="border:1px solid #334155;padding:6px;color:#fde68a">圧縮で部分損失</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><a href="#code_as_policies" style="color:#3b82f6">Code as Policies</a></td><td style="border:1px solid #334155;padding:6px">Python コード生成</td><td style="border:1px solid #334155;padding:6px">Python コード</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">なし（コード次第）</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 棲み分け:</span> 大規模・厳密問題 → LLM+P、空間ナビゲーション → SayPlan、柔軟タスク → Code as Policies。3 つは補完関係。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 3 Scene 3: Code as Policies -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('code_as_policies','Arc3','Code as Policies — LLM がコードを書く')</script>
+<div class="page" id="code_as_policies">
+<h2>12. Code as Policies — Python コードでロボット制御</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: Liang et al. (Google Robotics, 2022) が提唱したロボット制御パラダイム。LLM が自然言語指令から Python コードを生成し、それがロボットの Perception/Manipulation API を呼び出す。コードは数式・条件分岐・ループ・関数定義を自由に使え、PDDL より柔軟で自然言語より厳密。Voyager, AutoGPT 等の発想源。<br><br>
+
+<span class="hl">Code as Policies の生成則</span>:<br>
+$\text{code} = \text{LLM}(\text{prompt}_{\text{API}} + \text{NL指令})$<br><br>
+
+<span class="hl">few-shot プロンプトの構造</span>:<br>
+$\text{prompt}_{\text{API}} = \text{API ドキュメント} + \text{例 1} + \text{例 2} + \ldots$<br><br>
+
+<span class="hl">階層的コード生成（複雑タスク）</span>:<br>
+$\text{code}_{\text{top}} \to \{\text{code}_{\text{sub}_1}, \text{code}_{\text{sub}_2}, \ldots\} \to \text{API 呼び出し}$<br><br>
+
+<strong>API 例</strong>:<br>
+• Perception: <code>detect_objects(color, category)</code>, <code>get_pose(obj)</code><br>
+• Manipulation: <code>pick(obj)</code>, <code>place(obj, target)</code>, <code>push(dir, dist)</code><br><br>
+
+<span class="note">→ コード = ロボット制御の中間表現（PDDL より柔軟、NL より明確）</span><br>
+<span class="note">→ LLM の学習データの 50%+ がコード → 最も得意な出力形式</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（タスク複雑度別の成功率比較）</h3>
+<div class="controls">
+<label>タスク種類:
+  <select id="capTask" onchange="drawCAP()" style="background:#334155;color:#e2e8f0;border:1px solid #475569;border-radius:6px;padding:4px 8px;font-size:13px">
+    <option value="simple">単純（Pick & Place）</option>
+    <option value="conditional" selected>条件分岐（"赤いだけ"）</option>
+    <option value="loop">ループ（"全ての"）</option>
+    <option value="numeric">数値制約（"10cm 以上離す"）</option>
+    <option value="hierarchical">階層的（"夕食の準備"）</option>
+  </select>
+</label>
+<label>API 完備度:
+  <input type="range" id="capAPI" min="20" max="100" step="5" value="80" oninput="drawCAP()">
+  <span class="val" id="vCapAPI">80</span>
+</label>
+</div>
+<div id="plotCAP"></div>
+<div id="capInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawCAP(){
+  var task=document.getElementById('capTask').value;
+  var api=+document.getElementById('capAPI').value;
+  document.getElementById('vCapAPI').textContent=api;
+  var apiFactor=api/100;
+  // タスク種類別の各手法成功率
+  var data_table={
+    'simple':       {nl:0.85,pddl:0.95,code:0.95,saycan:0.90},
+    'conditional':  {nl:0.40,pddl:0.70,code:0.95,saycan:0.50},
+    'loop':         {nl:0.30,pddl:0.60,code:0.90,saycan:0.40},
+    'numeric':      {nl:0.20,pddl:0.50,code:0.85,saycan:0.30},
+    'hierarchical': {nl:0.15,pddl:0.30,code:0.75,saycan:0.25}
+  };
+  var d=data_table[task];
+  var methods=['LLM 直接 (NL)','LLM+P (PDDL)','SayCan','Code as Policies'];
+  var values=[d.nl,d.pddl*apiFactor,d.saycan*apiFactor,d.code*apiFactor];
+  var colors=['#fca5a5','#fbbf24','#a78bfa','#22c55e'];
+  var maxIdx=0;
+  values.forEach(function(v,i){if(v>values[maxIdx])maxIdx=i;});
+  var trace={
+    x:methods,y:values,type:'bar',
+    marker:{color:methods.map(function(m,i){return i===maxIdx?'#22c55e':colors[i];})},
+    text:values.map(function(v){return (v*100).toFixed(0)+'%';}),
+    textposition:'outside'
+  };
+  Plotly.newPlot('plotCAP',[trace],{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'各手法の成功率（API 完備度 '+api+'%）',font:{size:13,color:'#cbd5e1'}},
+    xaxis:{gridcolor:'#334155',tickangle:-15},
+    yaxis:{title:'成功率',range:[0,1.1],gridcolor:'#334155'},
+    margin:{t:35,b:80,l:60,r:10},height:320,
+    showlegend:false
+  },{responsive:true});
+  var taskLabel={
+    'simple':'単純な Pick & Place（"リンゴを皿に"）',
+    'conditional':'条件分岐（"赤いブロックだけ"）',
+    'loop':'ループ（"全ての本を本棚に"）',
+    'numeric':'数値制約（"10cm 以上離す"）',
+    'hierarchical':'階層的タスク（"夕食の準備"）'
+  }[task];
+  var msg='<strong>📊 タスク</strong>: '+taskLabel+'<br>';
+  msg+='<strong>最も成功した手法</strong>: <span style="color:#86efac;font-weight:bold">'+methods[maxIdx]+' ('+(values[maxIdx]*100).toFixed(0)+'%)</span><br><br>';
+  msg+='<strong>👀 試してみよう:</strong><br>';
+  msg+='• 単純タスク → どの手法も 80%+、差が少ない<br>';
+  msg+='• 数値制約 → Code as Policies が圧倒的（"if dist > 0.1" で記述容易）<br>';
+  msg+='• 階層タスク → ネスト関数で表現できる Code が優位<br>';
+  msg+='• API 完備度を 30% に下げると Code も性能落ちる（API がボトルネック）<br><br>';
+  msg+='<strong>Code as Policies の本質:</strong> プログラマブルな世界では <strong>コードが最も自然な表現</strong>。LLM の最大の強み（コード生成）を活用しつつ、API で物理ロボットと結びつける。';
+  document.getElementById('capInfo').innerHTML=msg;
+}
+lazyInit('code_as_policies',drawCAP);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">2022 年 9 月 Liang et al.（Google Robotics）が提唱、即座に研究コミュニティで採用</div>
+<div class="achieved">Voyager (Minecraft AI, 2023), AutoGPT (2023), ChatGPT Plugin に発想伝搬</div>
+<div class="pro">数式・条件分岐・ループ・関数定義の自然な記述</div>
+<div class="pro">既存ロボフレームワーク（ROS）と容易に統合</div>
+<div class="challenge">事前定義 API のカバレッジ依存、未知能力は実行不能</div>
+<div class="con">LLM 生成コードの直接実行は安全性リスク → サンドボックス必要</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: ロボット制御を「<strong>API を呼ぶプログラミング</strong>」として捉える。LLM は「優秀なプログラマ」、ロボット API は「ライブラリ」。"赤いブロックを全部積み重ねて" と言えば、LLM が for ループとピックを組み合わせたコードを書く。
+</div>
+<div class="highlight" style="margin-form:12px">
+<strong>💡 Code as Policies の革新</strong>: コードは「<strong>新しいロボット制御言語</strong>」。<a href="#pddl" style="color:#3b82f6">PDDL</a> より柔軟（数式・ループ）、自然言語より厳密、人間とロボットの中間表現として最適。後の <a href="#vla_models" style="color:#3b82f6">VLA</a> 時代でも tool use として残る。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① 実例: 階層的コード生成</strong><br><br>
+
+<strong>指令</strong>: "赤いブロックを 3 つ、青いブロックから 10cm 以上離して並べて"<br><br>
+
+<strong>LLM (Codex / GPT-4) が生成するコード</strong>:<br>
+<pre style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:10px;font-size:11px;color:#e2e8f0;overflow-x:auto;white-space:pre">
+import numpy as np
+
+def arrange_blocks_with_distance():
+    # Step 1: 物体検出
+    red_blocks = detect_objects(color='red', category='block')[:3]
+    blue_blocks = detect_objects(color='blue', category='block')
+
+    # Step 2: 各赤ブロックを配置
+    for i, red in enumerate(red_blocks):
+        # 青ブロックから 10cm 以上離れた位置を探す
+        target = find_clear_position(
+            min_dist_from=blue_blocks,
+            threshold=0.10,
+            constraint='on_table'
+        )
+        pick(red)
+        place(red, target)
+        print(f"Placed red block {i+1} at {target}")
+
+    return f"Placed {len(red_blocks)} red blocks successfully"
+
+result = arrange_blocks_with_distance()
+print(result)</pre>
+
+<span class="note">→ 数式制約（threshold=0.10）、ループ、関数定義、リスト操作 — Python の力を全活用</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② Code as Policies の系譜</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">年</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">研究</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">発展</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2022 / 9</td><td style="border:1px solid #334155;padding:6px">Code as Policies</td><td style="border:1px solid #334155;padding:6px">原典：LLM が Python で API 呼び出し</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2023 / 1</td><td style="border:1px solid #334155;padding:6px">ProgPrompt</td><td style="border:1px solid #334155;padding:6px">階層的コード生成、家庭タスク</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2023 / 5</td><td style="border:1px solid #334155;padding:6px">Voyager (Minecraft)</td><td style="border:1px solid #334155;padding:6px">LLM が自分のスキル（コード）を作る</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2023</td><td style="border:1px solid #334155;padding:6px">AutoGPT / OpenAI ChatGPT Plugin</td><td style="border:1px solid #334155;padding:6px">「LLM がツールを呼ぶ」発想を一般化</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2023</td><td style="border:1px solid #334155;padding:6px">ChatGPT Code Interpreter</td><td style="border:1px solid #334155;padding:6px">サンドボックスでコード実行</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">2024</td><td style="border:1px solid #334155;padding:6px;color:#86efac">VoxPoser, RoboCat</td><td style="border:1px solid #334155;padding:6px;color:#86efac">空間制約をコードで表現する次世代</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 思想的影響:</span> "コードは新しい言語" は、ロボティクスを超えて AI エージェント全般のパラダイムに。LangChain, ReAct, ToolFormer も同じ系譜。
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ LLM × ロボティクスの中間表現比較（Phase 4 まとめ）</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">手法</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">中間表現</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">強み</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">弱み</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><a href="#saycan" style="color:#3b82f6">SayCan</a></td><td style="border:1px solid #334155;padding:6px">スキルラベル</td><td style="border:1px solid #334155;padding:6px;color:#86efac">アフォーダンス統合</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">100 スキル限定</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px"><a href="#llm_p" style="color:#3b82f6">LLM+P</a></td><td style="border:1px solid #334155;padding:6px">PDDL</td><td style="border:1px solid #334155;padding:6px;color:#86efac">最適性保証</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">ドメイン記述必要</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">Code as Policies</td><td style="border:1px solid #334155;padding:6px;color:#86efac">Python コード</td><td style="border:1px solid #334155;padding:6px;color:#86efac">柔軟、数式・ループ自然</td><td style="border:1px solid #334155;padding:6px;color:#86efac">API 設計依存</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px;color:#fde68a">VLA (Phase 5)</td><td style="border:1px solid #334155;padding:6px;color:#fde68a">直接モーター指令</td><td style="border:1px solid #334155;padding:6px;color:#fde68a">中間表現不要</td><td style="border:1px solid #334155;padding:6px;color:#fde68a">説明可能性低</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ Phase 5 への接続:</span> ここまでは「LLM + 外部エンジン」だが、2023 年の RT-2 が「LLM そのものに行動を出力させる」End-to-End VLA の世界へ突入する。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 3 Scene 4: VLA 基盤モデル -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('vla_models','Arc3','VLA 基盤モデル — RT-2 / OpenVLA / π0')</script>
+<div class="page" id="vla_models">
+<h2>13. VLA 基盤モデル — Vision + Language → 直接 Action</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: Brohan et al. (Google DeepMind, 2023) の RT-2 を嚆矢とする End-to-End ロボット制御モデル。視覚 + 言語入力から、中間表現を経ず直接モーター指令を出力。Web 規模 LLM の知識をロボット行動に転移。OpenVLA (2024-06) でオープンソース化、π0 (2024-10) で Flow Matching 導入。<br><br>
+
+<span class="hl">VLA の生成則</span>:<br>
+$\pi(a_t | I_t, \ell) = \text{LLM}_\theta(I_t, \ell) \to a_t$<br>
+&nbsp;&nbsp;<span class="note">I_t: 画像、ℓ: 言語指令、a_t: 7-DOF モーター指令</span><br><br>
+
+<span class="hl">RT-2 の行動トークン化</span>:<br>
+$a_t = [\Delta x, \Delta y, \Delta z, \Delta\phi, \Delta\theta, \Delta\psi, \text{grip}] \xrightarrow{\text{bin}_{256}} [t_1, \ldots, t_7]$<br>
+&nbsp;&nbsp;<span class="note">256 段階の離散トークン → LLM 語彙に埋め込み</span><br><br>
+
+<span class="hl">π0 の Flow Matching</span>:<br>
+$\frac{da_t^{(s)}}{ds} = v_\theta(a_t^{(s)}, s, I_t, \ell), \quad a_t^{(0)} \sim \mathcal{N}(0, I)$<br>
+&nbsp;&nbsp;<span class="note">s ∈ [0,1] のフローで連続行動を生成（Diffusion 派生）</span><br><br>
+
+<strong>事前学習</strong>: VL モデル（PaLM, Llama 2）を Web で → ロボデータでファインチューニング<br>
+<span class="note">→ Web 知識（"絶滅した動物"）がロボット行動に直接転移</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（VLA モデル比較）</h3>
+<div class="controls">
+<label>比較軸:
+  <select id="vlaAxis" onchange="drawVLA()" style="background:#334155;color:#e2e8f0;border:1px solid #475569;border-radius:6px;padding:4px 8px;font-size:13px">
+    <option value="params" selected>パラメータ数 (B)</option>
+    <option value="data">訓練データ (K traj)</option>
+    <option value="success">タスク成功率 (%)</option>
+    <option value="latency">推論遅延 (ms)</option>
+  </select>
+</label>
+<label>タスク種別:
+  <select id="vlaTask" onchange="drawVLA()" style="background:#334155;color:#e2e8f0;border:1px solid #475569;border-radius:6px;padding:4px 8px;font-size:13px">
+    <option value="seen">学習済みタスク</option>
+    <option value="unseen" selected>未知物体（汎化）</option>
+    <option value="reasoning">推論タスク（"絶滅した動物"等）</option>
+  </select>
+</label>
+</div>
+<div id="plotVLA"></div>
+<div id="vlaInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawVLA(){
+  var axis=document.getElementById('vlaAxis').value;
+  var task=document.getElementById('vlaTask').value;
+  // モデルデータ
+  var models=['RT-1','RT-2','OpenVLA','RoboFlamingo','π0'];
+  var years=[2022,2023,2024,2024,2024];
+  var data_table={
+    'params':  [0.035,55,7,9,3],
+    'data':    [130,5000,970,970,3000],
+    'latency': [50,800,300,400,150],
+    // 成功率（タスク種別ごと）
+    'success_seen':      [85,92,88,80,93],
+    'success_unseen':    [40,75,68,50,80],
+    'success_reasoning': [10,65,55,40,75]
+  };
+  var values;
+  if(axis==='success'){
+    values=data_table['success_'+task];
+  }else{
+    values=data_table[axis];
+  }
+  var labels={
+    'params':'パラメータ数 (B)',
+    'data':'訓練データ規模 (K trajectories)',
+    'success':'タスク成功率 (%)',
+    'latency':'推論遅延 (ms)'
+  };
+  var taskLabels={
+    'seen':'学習済みタスク',
+    'unseen':'未知物体への汎化',
+    'reasoning':'推論を要するタスク'
+  };
+  var maxIdx=0;
+  values.forEach(function(v,i){
+    if(axis==='latency'){if(v<values[maxIdx])maxIdx=i;}
+    else{if(v>values[maxIdx])maxIdx=i;}
+  });
+  var trace={
+    x:models,y:values,type:'bar',
+    marker:{color:models.map(function(m,i){return i===maxIdx?'#22c55e':'#3b82f6';})},
+    text:values.map(function(v){return v;}),
+    textposition:'outside'
+  };
+  var titleText=labels[axis];
+  if(axis==='success')titleText+=' ('+taskLabels[task]+')';
+  Plotly.newPlot('plotVLA',[trace],{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:titleText,font:{size:13,color:'#cbd5e1'}},
+    xaxis:{gridcolor:'#334155'},
+    yaxis:{title:labels[axis],gridcolor:'#334155',type:axis==='data'||axis==='params'?'log':'linear'},
+    margin:{t:35,b:50,l:60,r:10},height:300,
+    showlegend:false
+  },{responsive:true});
+  var msg='<strong>📊 '+titleText+'</strong><br>';
+  msg+='最優: <span style="color:#86efac">'+models[maxIdx]+' = '+values[maxIdx]+'</span><br><br>';
+  msg+='<strong>各モデルの特徴</strong>:<br>';
+  msg+='• RT-1 (2022): EfficientNet ベース、軽量だが汎化弱い<br>';
+  msg+='• RT-2 (2023): 55B PaLM、Web 知識転移、推論遅延大<br>';
+  msg+='• OpenVLA (2024): Llama 2 7B、オープンソースの嚆矢<br>';
+  msg+='• π0 (2024): 3B + Flow Matching、最高性能 + 省サイズ<br><br>';
+  msg+='<strong>👀 試してみよう:</strong><br>';
+  msg+='• 推論タスク + RT-2/π0 → Web 知識が効く（汎化）<br>';
+  msg+='• パラメータ数で対数比較 → RT-2 が桁違いに大きい<br>';
+  msg+='• π0 は推論遅延 150ms とリアルタイム制御に近い<br><br>';
+  msg+='<strong>VLA の本質:</strong> 「<strong>言語と行動の境界をなくす</strong>」発想。LLM の Web 学習がロボットに転移。次は <a href="#world_models" style="color:#3b82f6">世界モデル</a> との統合へ。';
+  document.getElementById('vlaInfo').innerHTML=msg;
+}
+lazyInit('vla_models',drawVLA);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">2023 年 RT-2 が VLA パラダイムを確立、Web 知識転移を実証</div>
+<div class="achieved">2024 年 OpenVLA / π0 で研究コミュニティに普及</div>
+<div class="pro">End-to-End 学習で中間表現の情報損失なし</div>
+<div class="pro">Web 規模 LLM の創発能力（chain-of-thought, math, 物体知識）を継承</div>
+<div class="challenge">推論コスト（55B モデルで数百 ms）、リアルタイム制御に未達</div>
+<div class="con">ロボデータ枯渇、接触豊富タスク（組立・micro-manipulation）で性能落ち</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: 従来は「<strong>視覚 → 言語 → 行動</strong>」を別モジュールで処理した。VLA は「<strong>視覚 = 言語 = 行動</strong>」を 1 つのトークン列として扱う。LLM が "Hello" を生成するように、ロボットが "右に 10cm" を生成する。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 VLA の革新</strong>: <a href="#saycan" style="color:#3b82f6">SayCan</a> や <a href="#code_as_policies" style="color:#3b82f6">Code as Policies</a> は「LLM + 外部エンジン」だったが、VLA は「<strong>LLM 自体がエンジン</strong>」。中間表現の人手設計を完全排除し、Web 学習がそのままロボット汎化に効く。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① RT-2 の技術詳細（Google DeepMind 2023）</strong><br><br>
+
+<strong>論文</strong>: <a href="https://arxiv.org/abs/2307.15818" target="_blank" style="color:#3b82f6">RT-2: Vision-Language-Action Models Transfer Web Knowledge to Robotic Control</a><br>
+<strong>共同訓練データ</strong>: ロボデータ (RT-1, 130K traj) + Web (LAION, COCO 等)<br><br>
+
+<strong>行動の離散トークン化（核心アイデア）</strong>:<br>
+<pre style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:10px;font-size:11px;color:#e2e8f0;overflow-x:auto;white-space:pre">Action: [Δx=0.05, Δy=-0.02, Δz=0.10, Δϕ=0, Δθ=0, Δψ=0.5, grip=1.0]
+   ↓ 各次元を 256 段階で離散化（上限-下限を 256 等分）
+Tokens: [128, 102, 156, 128, 128, 192, 255]
+   ↓ 既存 LLM 語彙の "special token" として埋め込み
+LLM 出力: <action_128> <action_102> <action_156> ...
+   ↓ デコードして連続値復元
+Continuous Action: [0.05, -0.02, 0.10, 0.0, 0.0, 0.5, 1.0]</pre>
+
+<span class="note">→ これにより既存 LLM をそのまま使える。Web の数十億 tokens の事前学習を完全流用</span><br><br>
+
+<strong>性能</strong>:<br>
+• 学習済みタスク: 92% 成功率<br>
+• 未知物体: 75%（前世代 RT-1 の 40% から大幅向上）<br>
+• 推論タスク（"絶滅した動物"等）: 65%（Web 知識転移の実証）<br>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② OpenVLA — 民主化の達成（Stanford / UCB 2024）</strong><br><br>
+
+<strong>論文</strong>: <a href="https://arxiv.org/abs/2406.09246" target="_blank" style="color:#3b82f6">OpenVLA: An Open-Source Vision-Language-Action Model</a><br><br>
+
+<strong>構成</strong>:<br>
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:6px;background:#1e293b">コンポーネント</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">採用</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">言語モデル</td><td style="border:1px solid #334155;padding:6px">Llama 2 7B（オープン）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">視覚エンコーダ</td><td style="border:1px solid #334155;padding:6px">DINOv2 + SigLIP（融合）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">訓練データ</td><td style="border:1px solid #334155;padding:6px">Open X-Embodiment 970K traj</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">行動表現</td><td style="border:1px solid #334155;padding:6px">RT-2 同様の離散トークン</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">公開度</td><td style="border:1px solid #334155;padding:6px;color:#86efac">モデル重み + コード + データ全公開</td></tr>
+</table><br>
+
+<strong>影響</strong>: LoRA でファインチューニング可能 → 各研究室が独自タスク用に適応<br>
+2024 年後半から VLA 研究の事実上の出発点に<br>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ π0 — Flow Matching の革新（Physical Intelligence 2024）</strong><br><br>
+
+<strong>論文</strong>: <a href="https://arxiv.org/abs/2410.24164" target="_blank" style="color:#3b82f6">π0: A Vision-Language-Action Flow Model for General Robot Control</a><br>
+<strong>会社</strong>: Physical Intelligence（旧 Google Robotics の Brohan 等が独立）<br><br>
+
+<strong>核心: Flow Matching</strong>:<br>
+<pre style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:10px;font-size:11px;color:#e2e8f0;overflow-x:auto;white-space:pre">従来の RT-2/OpenVLA: 行動を離散化 → 量子化誤差大
+π0 の Flow Matching:
+  v_θ(a_t, s, I_t, ℓ) = "速度場"
+  da/ds = v_θ → 連続的な行動生成
+
+  ノイズから始めて
+   ↓ 速度場に従って
+  目標行動へ滑らかに収束</pre>
+
+<strong>結果</strong>: 連続値の精度が大幅向上 → 複数ロボット形態（双腕、四足、人型）で動作<br>
+3B パラメータと小型ながら 55B RT-2 を上回るタスクも<br>
+<span class="note">→ Diffusion Policy (2023) の系譜だが、Flow Matching でより安定・高速</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">④ VLA の制限と次世代（World Models へ）</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">制限</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">次世代の解</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">推論コスト大</td><td style="border:1px solid #334155;padding:6px">蒸留・量子化（π0 が前進）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">「現在しか見ない」反射性</td><td style="border:1px solid #334155;padding:6px;color:#86efac"><a href="#world_models" style="color:#3b82f6">世界モデル</a>で予測（次ページ）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">物理理解の欠如</td><td style="border:1px solid #334155;padding:6px;color:#86efac">Embodied Reasoning（Gemini-ER）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">データ枯渇</td><td style="border:1px solid #334155;padding:6px">テレオペ収集 + Sim2Real (<a href="#sim2real" style="color:#3b82f6">Phase 3</a>)</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 2024 年の動向:</span> VLA 単体ではなく、世界モデル（次ページ）と統合して「予測 + 推論 + 行動」の三位一体を目指す方向。Phase 5 で完結。
+</div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- Arc 3 Scene 5: 世界モデル -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>addPage('world_models','Arc3','世界モデル — 予測しながら動く知能')</script>
+<div class="page" id="world_models">
+<h2>14. 世界モデル — Navigation World Models / Gemini Robotics-ER</h2>
+<div class="arc-label">_</div>
+<div class="section"><h3>📐 数式</h3>
+<div class="formula">
+<strong>概要</strong>: 2024 年に登場した「**未来を予測しながら動く**」ロボティクスの最先端。Bar et al. (Meta AI, NeurIPS 2024) の Navigation World Models が拡散モデルで未来画像を生成。Google DeepMind の Gemini Robotics-ER が物理直感 + Chain-of-Thought をロボット制御に統合。<a href="#pomdp" style="color:#3b82f6">POMDP</a> の信念計画が深層学習で復活した姿。<br><br>
+
+<span class="hl">世界モデルの基本式</span>:<br>
+$p(s_{t+1} | s_t, a_t) = \text{World Model}(s_t, a_t)$<br>
+&nbsp;&nbsp;<span class="note">s_t: 状態（画像）、a_t: 行動、s_{t+1}: 予測される次状態</span><br><br>
+
+<span class="hl">Conditional Diffusion による未来予測 (NWM)</span>:<br>
+$p_\theta(I_{t+1} | I_t, a_t) = \int p_\theta(I_{t+1} | I_t, a_t, \epsilon) \, p(\epsilon) \, d\epsilon$<br><br>
+
+<span class="hl">Action Planning（H 手先まで予測）</span>:<br>
+$a_t^* = \arg\max_{a_t} \sum_{h=1}^{H} \gamma^h \cdot V(\hat{I}_{t+h} | I_t, a_{t:t+h})$<br>
+&nbsp;&nbsp;<span class="note">複数行動候補で未来をシミュレート、価値関数 V で評価</span><br><br>
+
+<span class="hl">Embodied Reasoning (Gemini-ER)</span>:<br>
+$a_t = \text{LLM}_\theta(I_t, \ell, \underbrace{\text{CoT}}_{\substack{\text{Chain of}\\\text{Thought}}})$<br><br>
+
+<strong>パラダイム転換</strong>: 反射的 VLA → 予測 + 推論 + 行動 の三位一体<br>
+<span class="note">→ Mental Simulation を機械で実装、Bar 2024 の MuZero (2019) 系譜</span>
+</div></div>
+
+<div class="section"><h3>📊 グラフ（予測ホライズン × 性能 × 計算量）</h3>
+<div class="controls">
+<label>予測ホライズン H (steps):
+  <input type="range" id="wmH" min="1" max="20" step="1" value="5" oninput="drawWM()">
+  <span class="val" id="vWmH">5</span>
+</label>
+<label>行動候補数 K:
+  <input type="range" id="wmK" min="1" max="50" step="1" value="10" oninput="drawWM()">
+  <span class="val" id="vWmK">10</span>
+</label>
+<label>環境動性:
+  <select id="wmDyn" onchange="drawWM()" style="background:#334155;color:#e2e8f0;border:1px solid #475569;border-radius:6px;padding:4px 8px;font-size:13px">
+    <option value="static">静的</option>
+    <option value="dynamic" selected>動的（歩行者あり）</option>
+    <option value="adversarial">敵対的（高速移動物）</option>
+  </select>
+</label>
+</div>
+<div id="plotWM"></div>
+<div id="wmInfo" style="margin-top:12px;padding:12px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#cbd5e1;font-size:12px;line-height:1.8"></div>
+<script>
+function drawWM(){
+  var H=+document.getElementById('wmH').value;
+  var K=+document.getElementById('wmK').value;
+  var dyn=document.getElementById('wmDyn').value;
+  document.getElementById('vWmH').textContent=H;
+  document.getElementById('vWmK').textContent=K;
+  // 環境動性別の Pure VLA vs WM+VLA 性能カーブ
+  var dynFactor={'static':1.0,'dynamic':0.7,'adversarial':0.4}[dyn];
+  // Pure VLA: H に依存しない（反射的）
+  var hs=[];
+  var pureVLA=[];
+  var wmVLA=[];
+  var compute=[];
+  for(var h=1;h<=20;h++){
+    hs.push(h);
+    // Pure VLA: 環境動性で性能落ちる、固定値
+    pureVLA.push(0.85*dynFactor);
+    // WM+VLA: H が増えると性能向上（飽和）+ 累積誤差で減衰
+    var benefit=Math.min(1,h/5)*(1.0-dynFactor*0.5);
+    var degradation=Math.max(0,(h-10)/30);  // 10 steps 超で誤差増
+    wmVLA.push(Math.min(0.97,0.85*dynFactor+benefit-degradation));
+    // 計算量: K * H * (1 step diffusion cost)
+    compute.push(K*h*100);  // ms
+  }
+  var data=[
+    {x:hs,y:pureVLA,type:'scatter',mode:'lines+markers',name:'Pure VLA (反射的)',line:{color:'#fca5a5',width:2}},
+    {x:hs,y:wmVLA,type:'scatter',mode:'lines+markers',name:'World Model + VLA (予測的)',line:{color:'#86efac',width:2}}
+  ];
+  Plotly.newPlot('plotWM',data,{
+    paper_bgcolor:'#1e293b',plot_bgcolor:'#0f172a',font:{color:'#94a3b8'},
+    title:{text:'予測ホライズン × タスク成功率（'+{'static':'静的','dynamic':'動的','adversarial':'敵対的'}[dyn]+'環境）',font:{size:13,color:'#cbd5e1'}},
+    xaxis:{title:'予測ホライズン H',gridcolor:'#334155'},
+    yaxis:{title:'タスク成功率',range:[0,1.05],gridcolor:'#334155'},
+    margin:{t:35,b:50,l:60,r:10},height:300,
+    legend:{orientation:'h',x:0.5,xanchor:'center',y:-0.25,yanchor:'top',bgcolor:'rgba(0,0,0,0)'}
+  },{responsive:true});
+  var pureScore=pureVLA[H-1];
+  var wmScore=wmVLA[H-1];
+  var computeMs=compute[H-1];
+  var msg='<strong>📊 H='+H+', K='+K+' での性能</strong><br>';
+  msg+='Pure VLA: <span style="color:#fca5a5">'+(pureScore*100).toFixed(0)+'%</span><br>';
+  msg+='WM+VLA: <span style="color:#86efac">'+(wmScore*100).toFixed(0)+'%</span><br>';
+  msg+='計算遅延: <strong>'+computeMs+' ms</strong><br><br>';
+  if(computeMs>1000)msg+='<span style="color:#fca5a5">⚠️ 1秒以上の遅延 → リアルタイム制御困難</span><br>';
+  else if(H>10)msg+='<span style="color:#fde68a">⚠️ 長期予測は累積誤差で発散しやすい</span><br>';
+  else if(dyn==='static'&&H>3)msg+='<span style="color:#fde68a">⚠️ 静的環境では予測は過剰投資</span><br>';
+  else msg+='<span style="color:#86efac">✅ 適切な予測ホライズン</span><br>';
+  msg+='<br><strong>👀 試してみよう:</strong><br>';
+  msg+='• 静的環境: WM の利得は小さい（Pure VLA で十分）<br>';
+  msg+='• 動的環境 + H=5: WM の利得最大（NWM 論文の典型設定）<br>';
+  msg+='• 敵対的環境 + H=10: WM が必須、Pure VLA は破綻<br>';
+  msg+='• H=15+ で誤差発散 → 階層的世界モデルが必要<br><br>';
+  msg+='<strong>世界モデルの本質:</strong> 「<strong>歩く前に考える</strong>」を機械で実装。<a href="#pomdp" style="color:#3b82f6">POMDP</a> の信念計画が深層学習で復活した姿。<a href="#vla_models" style="color:#3b82f6">VLA</a> + WM が次世代ロボティクスの方向性。';
+  document.getElementById('wmInfo').innerHTML=msg;
+}
+lazyInit('world_models',drawWM);
+</script>
+</div>
+
+<div class="section"><h3>💡 解説</h3>
+<div class="pros-cons">
+<div class="achieved">2024 年 Bar et al. NWM (NeurIPS Best Paper) で拡散ベース未来予測実現</div>
+<div class="achieved">Google DeepMind Gemini Robotics-ER 1.6 で Embodied Reasoning 製品化</div>
+<div class="pro">動的環境・長期計画・衝突回避で Pure VLA より圧倒的優位</div>
+<div class="pro">Self-supervised 学習でラベルなし動画から学べる</div>
+<div class="challenge">推論コスト大（Diffusion で 1 ステップ数百 ms）、リアルタイム性</div>
+<div class="con">長期予測（H>10）で誤差累積、物理精度（接触・流体）が課題</div>
+</div><div class="highlight" style="margin-top:12px">
+<strong>💡 直感的に</strong>: 人間が「コップを倒さないように手を伸ばす」とき、無意識に "もし手が当たったら..." とシミュレートしている。世界モデルはこれを機械で実装。<strong>頭の中の映画を再生して、最良の脚本を選ぶ</strong>。
+</div>
+<div class="highlight" style="margin-top:12px">
+<strong>💡 世界モデルの革新</strong>: <a href="#pomdp" style="color:#3b82f6">POMDP</a> の信念計画（1998）が深層学習で復活。古典 AI 時代の「未来を予測する planner」が、Diffusion + LLM の力で 2024 年に実用レベルに到達。<a href="#sense_plan_act" style="color:#3b82f6">SPA</a> パラダイムの 21 世紀版。
+</div>
+</div>
+
+<div class="section"><h3>📖 詳細解説</h3>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">① Navigation World Models（Bar et al. NeurIPS 2024 Best Paper）</strong><br><br>
+
+<strong>論文</strong>: <a href="https://arxiv.org/abs/2412.03572" target="_blank" style="color:#3b82f6">Navigation World Models</a><br>
+<strong>著者</strong>: Amir Bar, Gaoyue Zhou, Danny Tran, Trevor Darrell, Yann LeCun<br><br>
+
+<strong>核心アイデア</strong>:<br>
+<pre style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:10px;font-size:11px;color:#e2e8f0;overflow-x:auto;white-space:pre">入力: 現在画像 I_t + 行動候補 a_t
+   ↓
+Conditional Diffusion Model
+   ↓
+出力: I_{t+1} の高解像度画像予測
+
+複数の a_t を試行し、各未来画像を評価
+   ↓
+最も目標に近づく行動を選択</pre>
+
+<strong>性能（屋内ナビゲーション）</strong>:<br>
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:6px;background:#1e293b">手法</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">成功率</th><th style="border:1px solid #334155;padding:6px;background:#1e293b">SPL（経路効率）</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">Pure VLA (RT-2 like)</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">52%</td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">0.41</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">NWM (H=5, K=8)</td><td style="border:1px solid #334155;padding:6px;color:#86efac">78%</td><td style="border:1px solid #334155;padding:6px;color:#86efac">0.65</td></tr>
+</table><br>
+
+<strong>学習データ</strong>: 大規模屋内ビデオデータ（YouTube + 専用収集）<br>
+<span class="note">→ ラベルなしで自己教師学習 → "次の画像予測" タスクで世界モデル獲得</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">② Gemini Robotics-ER 1.6（Google DeepMind 2024）</strong><br><br>
+
+<strong>発表</strong>: <a href="https://deepmind.google/blog/gemini-robotics-er-1-6" target="_blank" style="color:#3b82f6">Gemini Robotics-ER 1.6</a><br><br>
+
+<strong>"ER" = Embodied Reasoning</strong>:<br>
+<pre style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:10px;font-size:11px;color:#e2e8f0;overflow-x:auto;white-space:pre">タスク: "コーヒーを淹れる準備をして"
+
+従来 VLA: いきなり手を動かす → カップ位置で混乱
+
+Gemini-ER の Chain-of-Thought:
+   思考 1: "カップが机の端にある"
+   思考 2: "ロボットの動きで振動 → 落下リスク"
+   思考 3: "まずカップを中央に動かそう"
+   行動: pick(cup) → place(cup, center)
+   思考 4: "コーヒーマシンが見える"
+   行動: power_on(machine)
+   ...</pre>
+
+<strong>能力</strong>:<br>
+• 物理直感（重力、慣性、摩擦）の理解<br>
+• 複数ステップの推論<br>
+• 失敗時の自己修正<br>
+• 安全性の事前考慮<br>
+
+<span class="note">→ "考えながら動く" を製品レベルで実現。Phase 4 の SayCan の正統進化版</span>
+</div>
+
+<div style="background:#0f172a;border:1px solid #334155;border-radius:8px;padding:14px;margin:10px 0;font-size:13px;color:#e2e8f0;line-height:1.9">
+<strong style="color:#fbbf24">③ 世界モデルとロボティクス AI 史の螺旋</strong><br><br>
+
+<table style="width:100%;border-collapse:collapse;font-size:12px">
+<tr><th style="border:1px solid #334155;padding:8px;background:#1e293b">年</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">パラダイム</th><th style="border:1px solid #334155;padding:8px;background:#1e293b">予測の扱い</th></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1969</td><td style="border:1px solid #334155;padding:6px"><a href="#sense_plan_act" style="color:#3b82f6">SPA</a> (Shakey)</td><td style="border:1px solid #334155;padding:6px">明示的計画（探索）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1986</td><td style="border:1px solid #334155;padding:6px"><a href="#subsumption" style="color:#3b82f6">サブサンプション</a></td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">予測なし（反応のみ）</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">1998</td><td style="border:1px solid #334155;padding:6px"><a href="#pomdp" style="color:#3b82f6">POMDP</a></td><td style="border:1px solid #334155;padding:6px">信念分布で予測</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2019</td><td style="border:1px solid #334155;padding:6px">MuZero (DeepMind)</td><td style="border:1px solid #334155;padding:6px">価値ベース世界モデル</td></tr>
+<tr><td style="border:1px solid #334155;padding:6px">2023</td><td style="border:1px solid #334155;padding:6px"><a href="#vla_models" style="color:#3b82f6">VLA (RT-2)</a></td><td style="border:1px solid #334155;padding:6px;color:#fca5a5">予測なし（反射的）</td></tr>
+<tr style="background:#1a3a2e"><td style="border:1px solid #334155;padding:6px;color:#86efac">2024</td><td style="border:1px solid #334155;padding:6px;color:#86efac">NWM / Gemini-ER</td><td style="border:1px solid #334155;padding:6px;color:#86efac">深層拡散 + CoT で予測</td></tr>
+</table><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 螺旋の構造:</span> 1969 年 SPA の「予測 → 行動」が、Brooks の反乱で「予測なし反応」へ。POMDP で確率的予測復活、VLA で再び反射的に。そして 2024 年、世界モデルで「<strong>深層予測 + 推論 + 行動</strong>」へと進化した。<br><br>
+
+<span style="color:#fbbf24;font-weight:bold">★ 次の 5 年で何が起きるか:</span><br>
+• 完全 Embodied AGI（VLA + 世界モデル + 強化学習）<br>
+• 大規模ロボデータ（Tesla Optimus, BD Atlas）<br>
+• 家庭・産業への普及（Mobile ALOHA, Figure 01）<br>
+• そして我々が、この物語の<strong>続きを書く</strong>側に
+</div>
+</div>
+</div>
+
+<script>buildNav()</script>
+</body>
+</html>

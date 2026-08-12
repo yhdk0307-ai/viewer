@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数学導出 詳細</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;background:#0f172a;color:#e2e8f0;line-height:1.8;padding:16px;max-width:800px;margin:0 auto}
+h1{color:#f59e0b;margin-bottom:16px;font-size:22px}
+h2{color:#93c5fd;margin:32px 0 8px;border-bottom:1px solid #334155;padding-bottom:4px}
+h3{color:#fbbf24;margin:20px 0 8px}
+.section{background:#1e293b;border-radius:10px;padding:20px;margin:16px 0}
+.formula{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:16px;margin:10px 0;font-size:14px;line-height:2;overflow-x:auto}
+.formula .katex{font-size:1.05em;color:#fbbf24}
+.note{color:#94a3b8;font-size:13px;font-style:italic}
+.highlight{background:#1e3a5f;border-left:3px solid #3b82f6;padding:12px;border-radius:4px;margin:10px 0}
+.back{display:inline-block;background:#334155;color:#93c5fd;padding:8px 16px;border-radius:6px;text-decoration:none;margin:8px 4px}
+.back:hover{background:#475569}
+a{color:#3b82f6}
+</style>
+</head>
+<body>
+
+<h1>📐 数学導出 詳細</h1>
+<p style="color:#94a3b8">回帰モデルの数式がなぜそうなるかを、ステップバイステップで導出します。</p>
+<p>
+<a class="back" href="index.html#linear_reg">← 線形回帰に戻る</a>
+<a class="back" href="index.html#ridge_reg">← Ridge に戻る</a>
+<a class="back" href="index.html#lasso_reg">← Lasso に戻る</a>
+</p>
+
+<!-- ==================== 1. 線形回帰 ==================== -->
+<h2>1. 線形回帰の最小二乗法 — なぜこの式で解けるのか</h2>
+
+<div class="section">
+<h3 id="matrix_x">行列 $X$ とは何か</h3>
+<div class="formula">
+$n$ 個のデータ、$p$ 個の特徴量があるとき:<br><br>
+
+$$X = \begin{pmatrix} x_{11} & x_{12} & \cdots & x_{1p} & 1 \\ x_{21} & x_{22} & \cdots & x_{2p} & 1 \\ \vdots & \vdots & \ddots & \vdots & \vdots \\ x_{n1} & x_{n2} & \cdots & x_{np} & 1 \end{pmatrix} \in \mathbb{R}^{n \times (p+1)}$$
+
+<span class="note">各行 = 1つのデータサンプル。各列 = 1つの特徴量。最後の列の「1」はバイアス項 $b$ のため。</span><br><br>
+
+$$y = \begin{pmatrix} y_1 \\ y_2 \\ \vdots \\ y_n \end{pmatrix}, \quad w = \begin{pmatrix} w_1 \\ w_2 \\ \vdots \\ w_p \\ b \end{pmatrix}$$
+
+<span class="note">$y$ = 正解ベクトル、$w$ = 求めたい重み+バイアス。</span>
+</div>
+
+<div class="highlight">
+<strong>具体例</strong>: 家の価格予測 (面積, 築年数 → 価格)<br>
+$X = \begin{pmatrix} 80 & 5 & 1 \\ 120 & 10 & 1 \\ 60 & 20 & 1 \end{pmatrix}$, $y = \begin{pmatrix} 3000 \\ 4500 \\ 2000 \end{pmatrix}$<br>
+$Xw = y$ → $w = [w_{\text{面積}}, w_{\text{築年数}}, b]^T$ を見つけたい。
+</div>
+</div>
+
+<div class="section">
+<h3>なぜ $(X^TX)^{-1}X^Ty$ で解けるのか — 導出</h3>
+
+<div class="formula">
+<strong>Step 1: 損失関数を行列形式で書く</strong><br><br>
+$L(w) = \displaystyle\sum_{i=1}^n (y_i - \hat{y}_i)^2 = \|y - Xw\|^2 = (y - Xw)^\top (y - Xw)$<br><br>
+<span class="note">各データ点の二乗誤差の合計 = ベクトルのノルムの二乗</span><br><br>
+
+<strong>Step 2: 展開する</strong><br><br>
+$L(w) = y^\top y - 2 w^\top X^\top y + w^\top X^\top X w$<br><br>
+<span class="note">$(a-b)^2 = a^2 - 2ab + b^2$ の行列版</span><br><br>
+
+<strong>Step 3: $w$ で微分して 0 に設定する</strong><br><br>
+$\dfrac{\partial L}{\partial w} = -2 X^\top y + 2 X^\top X w = 0$<br><br>
+<span class="note">「最小値では微分=0」（凸関数なので最小値が唯一）</span><br><br>
+
+<strong>Step 4: $w$ について解く</strong><br><br>
+$X^\top X w = X^\top y$<br>
+$\hat{w} = (X^\top X)^{-1} X^\top y$ ← <span style="color:#fbbf24">これが最小二乗法の解析解</span><br><br>
+<span class="note">$(X^\top X)^{-1}$ が存在する = $X^\top X$ が正則（逆行列を持つ）場合のみ成立。</span><br>
+<span class="note">→ 正則でない場合（多重共線性）は解けない → Ridge で解決。</span>
+</div>
+</div>
+
+<!-- ==================== 2. Ridge ==================== -->
+<h2>2. Ridge 回帰 — なぜ $\lambda I$ で正則になるのか</h2>
+
+<div class="section">
+<h3 id="ridge_derive">多重共線性 (Multicollinearity) とは</h3>
+
+<div class="highlight">
+<strong>問題</strong>: 特徴量 $x_1$ と $x_2$ が強く相関している場合。<br><br>
+例: 「家の面積(m²)」と「部屋数」は強く相関する。<br>
+→ $X^TX$ の行列式がほぼ0になる（正則でない = 逆行列が不安定）。<br><br>
+結果: $\hat{w} = (X^TX)^{-1}X^Ty$ の値が<strong>極端に大きく振れる</strong>（不安定な解）。<br>
+→ 学習データにはフィットするが、新しいデータで<strong>予測が暴走する</strong>。
+</div>
+</div>
+
+<div class="section">
+<h3>Ridge の解析解と「正則になる」の意味</h3>
+
+<div class="formula">
+<strong>Ridge の損失関数</strong>:<br>
+$L(w) = \|y - Xw\|^2 + \lambda \|w\|^2$<br><br>
+<span class="note">第2項 $\lambda\|w\|^2 = \lambda w^\top w$ がペナルティ。大きな重みを罰する。</span><br><br>
+
+<strong>微分して0に設定</strong>:<br>
+$\dfrac{\partial L}{\partial w} = -2X^\top y + 2X^\top X w + 2\lambda w = 0$<br><br>
+
+$(X^\top X + \lambda I) w = X^\top y$<br><br>
+
+$\hat{w} = (X^\top X + \lambda I)^{-1} X^\top y$ ← <span style="color:#fbbf24">Ridge の解析解</span>
+</div>
+
+<div class="highlight">
+<strong>なぜ $+\lambda I$ で正則になるのか？</strong><br><br>
+
+$X^\top X$ の固有値が $\lambda_1, \lambda_2, \dots, \lambda_p$ だとすると:<br>
+$(X^\top X + \lambda I)$ の固有値は $\lambda_1 + \lambda, \lambda_2 + \lambda, \dots, \lambda_p + \lambda$<br><br>
+
+$\lambda > 0$ なので、<strong>全ての固有値が必ず正になる</strong>。<br>
+→ 行列式 $\neq 0$ → <strong>逆行列が常に存在する</strong> (= 正則)。<br><br>
+
+言い換え: $\lambda I$ を足すことで、行列の対角成分が底上げされ、<br>
+「ほぼ0の固有値」が「$\lambda$ 以上の正の値」に引き上げられる。<br>
+→ 逆行列の計算が安定する。
+</div>
+
+<div class="highlight">
+<strong>直感的な説明</strong>:<br><br>
+<strong>$\lambda = 0$</strong>: 普通の線形回帰。データにピッタリ合わせようとする。<br>
+<strong>$\lambda$ が大きい</strong>: 重みを小さく保とうとする力が強い。データへのフィットより「重みの小ささ」を優先。<br>
+<strong>$\lambda \to \infty$</strong>: 全ての重みが 0 に → 何も学習しない（未学習）。<br><br>
+→ $\lambda$ は「データへのフィット」と「モデルの単純さ」のトレードオフを制御する。<br>
+→ 最適な $\lambda$ は<strong>Cross Validation</strong>で見つける。
+</div>
+</div>
+
+<!-- ==================== 3. Lasso ==================== -->
+<h2>3. Lasso 回帰 — 座標降下法と ISTA</h2>
+
+<div class="section">
+<h3 id="lasso_derive">なぜ解析解がないのか</h3>
+
+<div class="formula">
+<strong>Lasso の損失関数</strong>:<br>
+$L(w) = \|y - Xw\|^2 + \lambda \displaystyle\sum_j |w_j|$<br><br>
+
+$|w_j|$ (絶対値) は $w_j = 0$ で<strong>微分不可能</strong>（尖った点）。<br><br>
+→ 「微分=0に設定して解く」という手法が使えない。<br>
+→ <strong>反復的最適化</strong>（座標降下法やISTA）で近似的に解く。
+</div>
+</div>
+
+<div class="section">
+<h3>座標降下法 (Coordinate Descent) とは</h3>
+
+<div class="formula">
+<strong>アイデア</strong>: 全ての $w_j$ を同時に最適化するのは難しい。<br>
+→ <strong>1つの $w_j$ だけを最適化し、他は固定</strong>する。これを全 $j$ で繰り返す。<br><br>
+
+<strong>1変数の Lasso 解（ソフト閾値関数）</strong>:<br>
+$\hat{w}_j = S_{\lambda'}(z_j) = \begin{cases} z_j - \lambda' & (z_j > \lambda') \\ 0 & (|z_j| \leq \lambda') \\ z_j + \lambda' & (z_j < -\lambda') \end{cases}$<br><br>
+
+$z_j = \dfrac{1}{n} \displaystyle\sum_i x_{ij} (y_i - \hat{y}_i^{(-j)})$ ← $w_j$ 以外での残差<br><br>
+
+<span class="note">$S$ = ソフト閾値関数。$|z_j|$ が $\lambda'$ より小さければ<strong>ちょうど 0 にする</strong>（スパース化の仕組み）。</span>
+</div>
+
+<div class="highlight">
+<strong>直感的な説明</strong>:<br><br>
+1. $w_1$ 以外を固定して、$w_1$ だけを最適化<br>
+2. $w_2$ 以外を固定して、$w_2$ だけを最適化<br>
+3. ... $w_p$ まで繰り返す<br>
+4. 1に戻る（収束するまで繰り返し）<br><br>
+各ステップで1変数だけの問題になるので、<strong>ソフト閾値関数で解析的に解ける</strong>。<br>
+→ 全体は反復的だが、各ステップは高速。scikit-learn の Lasso はこの方法。
+</div>
+</div>
+
+<div class="section">
+<h3>ISTA (Iterative Shrinkage-Thresholding Algorithm)</h3>
+
+<div class="formula">
+<strong>アイデア</strong>: 勾配降下 + ソフト閾値の組合せ。<br><br>
+
+$w^{(t+1)} = S_{\lambda \eta} \left( w^{(t)} - \eta \nabla_w \|y - Xw^{(t)}\|^2 \right)$<br><br>
+
+1. 勾配降下で1ステップ進む（MSE部分の勾配）<br>
+2. ソフト閾値関数で L1 ペナルティを適用（$|w_j|$ 部分）<br><br>
+
+<span class="note">近接勾配法 (Proximal Gradient Method) の特殊ケース。</span><br>
+<span class="note">改良版 FISTA (Fast ISTA) は Nesterov の加速勾配を使い、収束が $O(1/t^2)$ に改善。</span>
+</div>
+
+<div class="highlight">
+<strong>座標降下 vs ISTA</strong>:<br><br>
+• <strong>座標降下</strong>: 実用的に最速。scikit-learn の標準。小〜中データ向き<br>
+• <strong>ISTA/FISTA</strong>: 大規模データ・分散計算向き。理論的に収束保証あり<br><br>
+実務では scikit-learn の Lasso (座標降下) をそのまま使えばOK。
+</div>
+</div>
+
+<!-- ==================== 4. 各項の物理的意味 ==================== -->
+<h2>4. 回帰モデル6種 — 各項の物理的意味</h2>
+
+<div class="section">
+<h3 id="meaning_linear">① 線形回帰</h3>
+<div class="formula">
+$$\underbrace{\hat{y}}_{\text{予測値}} = \underbrace{w_1}_{\substack{\text{面積の}\\\text{影響度}}} x_1 + \underbrace{w_2}_{\substack{\text{築年数の}\\\text{影響度}}} x_2 + \underbrace{b}_{\substack{\text{ベース値}\\\text{(切片)}}}$$
+</div>
+<div class="highlight">
+<strong>各項の意味</strong>:<br>
+• $w_j$ = 特徴量 $x_j$ が1単位増えたとき、予測がどれだけ変わるか（<strong>偏回帰係数</strong>）<br>
+• $b$ = 全特徴量が0のときの予測値（<strong>切片/バイアス</strong>）<br>
+• 例: $w_{\text{面積}} = 40$ → 面積が1m²増えると価格が40万円上がる<br><br>
+<strong>損失関数</strong>:
+$$\underbrace{L(w)}_{\substack{\text{全体の}\\\text{ダメさ}}} = \frac{1}{n} \sum_{i=1}^n \underbrace{(y_i - \hat{y}_i)^2}_{\substack{\text{各データ点の}\\\text{予測ズレの二乗}}}$$
+• 二乗する理由: ①正負を相殺させない ②大きなズレをより強く罰する<br>
+• $\frac{1}{n}$: データ数で割って平均化
+</div>
+</div>
+
+<div class="section">
+<h3 id="meaning_ridge">② Ridge 回帰 (L2 正則化)</h3>
+<div class="formula">
+$$L(w) = \underbrace{\frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2}_{\substack{\text{データフィット項}\\\text{予測精度を上げたい}}} + \underbrace{\lambda}_{\substack{\text{ペナルティ}\\\text{の強さ}}} \underbrace{\sum_{j=1}^p w_j^2}_{\substack{\text{重みの二乗和}\\\text{大きい重みを罰する}}}$$
+</div>
+<div class="highlight">
+<strong>各項の意味</strong>:<br>
+• <strong>第1項 (データフィット)</strong>: 予測と正解のズレ → 小さくしたい<br>
+• <strong>第2項 (L2ペナルティ)</strong>: 重みの大きさ → 小さく保ちたい<br>
+• <strong>$\lambda$ (ラムダ)</strong>: 2つのバランスを制御する「つまみ」<br><br>
+$\lambda = 0$ → 線形回帰と同じ（ペナルティなし）<br>
+$\lambda$ 大 → 重みが小さくなる（過学習防止、しかし未学習リスク）<br>
+$\lambda \to \infty$ → 全重みが0に（何も学ばない）<br><br>
+• <strong>$w_j^2$ (二乗)</strong>を使うのは: 全ての重みを均等に小さくする力が働く。<br>
+&nbsp;&nbsp;→ どの特徴量も少しずつ使い、<strong>完全に0にはならない</strong>。
+</div>
+</div>
+
+<div class="section">
+<h3 id="meaning_lasso">③ Lasso 回帰 (L1 正則化)</h3>
+<div class="formula">
+$$L(w) = \underbrace{\frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2}_{\text{データフィット}} + \underbrace{\lambda}_{\text{強さ}} \underbrace{\sum_{j=1}^p |w_j|}_{\substack{\text{重みの絶対値和}\\\text{→ 0にする力}}}$$
+</div>
+<div class="highlight">
+<strong>Ridge との決定的な違い</strong>:<br>
+• Ridge は $w_j^2$（放物線状）→ 0に近づけるが、<strong>ちょうど0にはならない</strong><br>
+• Lasso は $|w_j|$（V字型）→ <strong>ちょうど0になる</strong>（尖った先端にハマる）<br><br>
+<strong>なぜ0になると嬉しいか</strong>:<br>
+→ $w_j = 0$ は「特徴量 $j$ を使わない」と同義 = <strong>自動的な特徴選択</strong><br>
+→ 100個の特徴量 → 実は重要な10個だけ残る → 解釈しやすいモデルに
+</div>
+</div>
+
+<div class="section">
+<h3 id="meaning_elastic">④ Elastic Net</h3>
+<div class="formula">
+$$L(w) = \underbrace{\text{MSE}}_{\text{フィット}} + \lambda \left[ \underbrace{\alpha \sum_j |w_j|}_{\substack{\text{L1部分}\\\text{スパース化}}} + \underbrace{(1-\alpha) \sum_j w_j^2}_{\substack{\text{L2部分}\\\text{安定化}}} \right]$$
+</div>
+<div class="highlight">
+<strong>$\alpha$ の意味</strong>:<br>
+• $\alpha = 1$ → 純粋な Lasso (スパース化重視)<br>
+• $\alpha = 0$ → 純粋な Ridge (安定性重視)<br>
+• $0 < \alpha < 1$ → 両方のいいとこ取り<br><br>
+<strong>Lasso の弱点を補完</strong>:<br>
+Lasso は相関する特徴量グループ (面積 ↔ 部屋数) から1つしか選ばない。<br>
+Elastic Net の L2 部分が「グループをまとめて残す」ことを可能にする。
+</div>
+</div>
+
+<div class="section">
+<h3 id="meaning_logistic">⑤ ロジスティック回帰</h3>
+<div class="formula">
+$$\underbrace{P(y=1 \mid x)}_{\substack{\text{クラス1の}\\\text{確率}}} = \underbrace{\sigma}_{\substack{\text{シグモイド}\\\text{関数}}} \left( \underbrace{w \cdot x + b}_{\substack{\text{線形回帰と同じ}\\\text{(実数を出力)}}} \right) = \frac{1}{1 + e^{-(w \cdot x + b)}}$$
+</div>
+<div class="highlight">
+<strong>各部分の意味</strong>:<br>
+• <strong>$w \cdot x + b$</strong>: 線形回帰と全く同じ計算。<strong>実数 $(-\infty, +\infty)$</strong> を出力<br>
+• <strong>$\sigma(\cdot)$</strong>: シグモイド関数で <strong>$[0, 1]$ に圧縮</strong> → 確率として解釈可能<br>
+• $w \cdot x + b > 0$ → $\sigma > 0.5$ → クラス1と予測<br>
+• $w \cdot x + b < 0$ → $\sigma < 0.5$ → クラス0と予測<br>
+• $w \cdot x + b = 0$ → $\sigma = 0.5$ → <strong>決定境界</strong> (ちょうど半々)<br><br>
+
+<strong>多クラス版 (Softmax)</strong>:
+$$P(y=k) = \frac{e^{z_k}}{\sum_{j=1}^K e^{z_j}}$$
+• 各クラスのスコア $z_k$ を指数関数で正にし、合計が1になるよう正規化<br>
+• <strong>NN の最終層と完全に同じ操作</strong><br><br>
+
+<strong>クロスエントロピー損失</strong>:
+$$L = -\frac{1}{n}\sum_{i=1}^n \underbrace{y_i \log \hat{y}_i}_{\substack{\text{正解=1の時}\\\text{予測が1に近いほど}\\\text{損失小}}} + \underbrace{(1-y_i) \log(1-\hat{y}_i)}_{\substack{\text{正解=0の時}\\\text{予測が0に近いほど}\\\text{損失小}}}$$
+• $y_i=1$ のとき: $\hat{y}_i \to 1$ で $\log(1) = 0$ (損失ゼロ = 完璧)<br>
+• $y_i=1$ のとき: $\hat{y}_i \to 0$ で $\log(0) = -\infty$ (損失爆発 = 最悪)<br>
+• MSE ではなくクロスエントロピーを使う理由: <strong>勾配がシンプルになる</strong> ($\hat{y} - y$)
+</div>
+</div>
+
+<div class="section">
+<h3 id="meaning_ar">⑥ 自己回帰 AR / ARIMA</h3>
+<div class="formula">
+$$\underbrace{x_t}_{\substack{\text{今の値}}} = \underbrace{c}_{\substack{\text{定数}\\\text{(トレンド)}}} + \underbrace{\phi_1 x_{t-1}}_{\substack{\text{1ステップ前}\\\text{の影響}}} + \underbrace{\phi_2 x_{t-2}}_{\substack{\text{2ステップ前}\\\text{の影響}}} + \cdots + \underbrace{\varepsilon_t}_{\substack{\text{ノイズ}\\\text{(予測不能な}\\\text{ランダム成分)}}}$$
+</div>
+<div class="highlight">
+<strong>各項の意味</strong>:<br>
+• <strong>$c$</strong>: 定数項。時系列の長期的トレンド（例: 株価の長期上昇傾向）<br>
+• <strong>$\phi_k$</strong>: $k$ ステップ前の値の影響度。$|\phi_k| < 1$ で安定（定常）<br>
+• <strong>$\varepsilon_t$</strong>: ホワイトノイズ（予測不能なランダム成分）<br><br>
+<strong>ARIMA(p,d,q) の3つの数字</strong>:<br>
+• <strong>p</strong> = AR の次数（何ステップ前まで見るか）<br>
+• <strong>d</strong> = 差分の回数（非定常 → 定常に変換する回数）<br>
+• <strong>q</strong> = MA の次数（過去ノイズの影響）<br><br>
+<strong>例</strong>: ARIMA(2,1,1) → 1回差分を取り、2ステップ前まで参照、1つ前のノイズも使う<br><br>
+<strong>GPT との関係</strong>:<br>
+GPT は「次の<strong>単語</strong>を予測する自己回帰モデル」。<br>
+AR が「次の<strong>数値</strong>を予測する」のと本質的に同じ構造。
+</div>
+</div>
+
+<p style="margin-top:24px">
+<a class="back" href="index.html#linear_reg">← 線形回帰に戻る</a>
+<a class="back" href="index.html#ridge_reg">← Ridge に戻る</a>
+<a class="back" href="index.html#lasso_reg">← Lasso に戻る</a>
+<a class="back" href="index.html#elastic_net">← Elastic Net に戻る</a>
+<a class="back" href="index.html#logistic_reg">← ロジスティックに戻る</a>
+<a class="back" href="index.html#ar_model">← AR/ARIMA に戻る</a>
+</p>
+
+</body>
+</html>
