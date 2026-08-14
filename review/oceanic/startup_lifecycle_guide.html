@@ -99,6 +99,11 @@
   .callout p{margin:6px 0 0; font-size:14.5px;}
   .callout b{color:var(--ink);}
 
+  .pipe{display:grid; gap:12px; align-items:stretch; grid-template-columns:1fr auto 1fr;}
+  @media (max-width:600px){.pipe{grid-template-columns:1fr;}}
+  .arrowbox{display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:800; color:var(--faint);}
+  @media (max-width:600px){.arrowbox{transform:rotate(90deg); padding:2px 0;}}
+  ul.clean{margin:0; padding-left:1.1em;} ul.clean li{margin:3px 0;}
   .note{font-size:12.5px; color:var(--faint); margin-top:14px;}
   footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line); font-size:12.5px; color:var(--faint);}
   .toggle{position:fixed; top:14px; right:14px; z-index:5; width:38px; height:38px; border-radius:50%; border:1px solid var(--line-strong); background:var(--surface); color:var(--muted); cursor:pointer; font-size:16px; box-shadow:var(--shadow);}
@@ -124,6 +129,76 @@
     <div class="intro-card">
       <p>スタートアップは「赤字を出しながら外部資本で先行投資し、急成長で後から大きく回収する」前提の会社。だから普通の会社と違い、<b>資金調達ラウンド</b>という一定のリズムで成長段階が進む。</p>
       <p>各段階には「典型的な資金の入り方」「そこで起きるイベント」があり、そして<b>あなたが従業員として入るなら見るべきポイント</b>がある。番号 ①〜⑥ が成長段階、◎ が出口。下へ読み進めるほど会社は大きく、リスクは下がり、その代わり入社時のストックオプションの妙味は小さくなっていく。</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>お金の超基礎 ― “借りる”より“株を売る”</h2>
+    <p class="sublead">普通の会社は「資金調達＝銀行融資（借金）」。スタートアップは違い、主に「出資（株を売る）」で集める。ここが最初のつまずきポイント。</p>
+    <div class="intro-card" style="margin-bottom:14px;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <thead><tr>
+          <th style="text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px;"></th>
+          <th style="text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px;">融資（デット＝借金）</th>
+          <th style="text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px;">出資（エクイティ＝株）</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:8px 6px;border-bottom:1px solid var(--line);color:var(--muted);">誰から</td><td style="padding:8px 6px;border-bottom:1px solid var(--line);">銀行など</td><td style="padding:8px 6px;border-bottom:1px solid var(--line);">投資家（VC）など</td></tr>
+          <tr><td style="padding:8px 6px;border-bottom:1px solid var(--line);color:var(--muted);">返す？</td><td style="padding:8px 6px;border-bottom:1px solid var(--line);"><b>返す</b>（利息つき）</td><td style="padding:8px 6px;border-bottom:1px solid var(--line);"><b>返さない</b></td></tr>
+          <tr><td style="padding:8px 6px;border-bottom:1px solid var(--line);color:var(--muted);">引き換え</td><td style="padding:8px 6px;border-bottom:1px solid var(--line);">なし</td><td style="padding:8px 6px;border-bottom:1px solid var(--line);"><b>会社の株（所有権）</b></td></tr>
+          <tr><td style="padding:8px 6px;color:var(--muted);">向く相手</td><td style="padding:8px 6px;">黒字で返せる会社</td><td style="padding:8px 6px;">赤字先行で急成長を狙う会社</td></tr>
+        </tbody>
+      </table>
+      <p style="margin:12px 0 0;font-size:13.5px;color:var(--muted);">スタートアップは赤字先行で返済原資がない→<b>融資は使わず、株を売って（出資で）集める</b>。返さなくてよい代わりに、会社の一部を投資家に持たれる。</p>
+    </div>
+
+    <div class="intro-card" style="margin-bottom:14px;">
+      <p style="margin:0 0 8px;"><b>ラウンドの中身（例：20億円調達）</b></p>
+      <ul class="clean" style="margin:0;padding-left:1.1em;font-size:14px;">
+        <li>会社の値段を決める：例「調達<em>前</em>で100億」（プレ）</li>
+        <li>投資家が20億出す → 会社は「100+20＝<b>120億</b>」（ポスト）／投資家の持分＝20÷120＝<b>約16.7%</b></li>
+        <li>株は<b>新しく発行</b>して渡す（既存株主から奪うのではない）→ 既存の持分％は<b>希薄化</b>する</li>
+      </ul>
+      <div style="overflow-x:auto;margin-top:12px;">
+        <table style="width:100%;min-width:380px;border-collapse:collapse;font-size:13.5px;">
+          <thead><tr>
+            <th style="text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px;">時点</th>
+            <th style="text-align:right;padding:7px 6px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px;">会社の値段</th>
+            <th style="text-align:right;padding:7px 6px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px;">あなたの持分</th>
+            <th style="text-align:right;padding:7px 6px;border-bottom:1px solid var(--line);color:var(--muted);font-size:12px;">その価値</th>
+          </tr></thead>
+          <tbody style="font-variant-numeric:tabular-nums;">
+            <tr><td style="padding:7px 6px;border-bottom:1px solid var(--line);">入社時</td><td style="text-align:right;padding:7px 6px;border-bottom:1px solid var(--line);">100億</td><td style="text-align:right;padding:7px 6px;border-bottom:1px solid var(--line);">1.0%</td><td style="text-align:right;padding:7px 6px;border-bottom:1px solid var(--line);">1.0億</td></tr>
+            <tr><td style="padding:7px 6px;">次の調達後</td><td style="text-align:right;padding:7px 6px;">300億</td><td style="text-align:right;padding:7px 6px;">0.7%</td><td style="text-align:right;padding:7px 6px;color:var(--good);font-weight:700;">2.1億</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin:10px 0 0;font-size:13px;color:var(--faint);">＝％は薄まるが、会社の値段が上がれば価値は増える（<b>パイの取り分は小さく、でもパイ自体が大きく</b>）。ラウンドごとに値段が上がる＝アップラウンドが理想。</p>
+    </div>
+
+    <div class="callout">
+      <div class="k">なぜ投資家は“返らないかもしれないお金”を出す？</div>
+      <p><b>べき乗則：</b>10〜30社に分散し、多くが失敗(0)でも1〜2社が数十〜数百倍になれば全体で大勝ち（打率でなくホームラン）。<b>損は投資額まで・利益は青天井</b>の非対称。VCは他人の資金(LP)を預かり成功報酬で稼ぐため、化ける可能性に賭ける。さらに<b>優先株</b>で「安く売れても投資額を先に回収」する下方保護も持つ。</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>SOはどうやって“現金”になる？（IPO / M&A）</h2>
+    <p class="sublead">SOは持っているだけでは“権利”。現金化は2ステップ＝①権利行使（行使価格を払って株にする）→②その株を売る。売れる場所＝EXITが要る。</p>
+    <div class="pipe" style="grid-template-columns:1fr auto 1fr;">
+      <div class="card" style="border-top:3px solid var(--sea);">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sea);">IPO（上場）</div>
+        <p style="margin:5px 0 0;font-size:13.5px;color:var(--muted);">市場で株が売買可能に→①行使（例：100円×1万株＝100万円払う）②市場で売却（5,000円×1万株＝5,000万円）＝差額約4,900万円。<b>ロックアップ</b>（90〜180日は売却制限）に注意。</p>
+      </div>
+      <div class="arrowbox" style="color:var(--faint);">／</div>
+      <div class="card" style="border-top:3px solid var(--gold);">
+        <div style="font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);">M&A（買収）</div>
+        <p style="margin:5px 0 0;font-size:13.5px;color:var(--muted);">会社が買われ、全株主の株が現金等で買い取られる。SOは行使して対価を受けるか現金で買い取り。<b>⚠ 優先株が先に取り分</b>を取るため、安値売却だと普通株(社員)の取り分は薄く/0のことも。</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:14px;border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:color-mix(in srgb,var(--warn) 8%,var(--surface));">
+      <div class="k" style="color:var(--warn);">現金にならないパターン（正直に）</div>
+      <p>EXITが来ない（ずっと非上場）／退職（未ベスティング分は失効）／<b>株価が行使価格を下回る（アンダーウォーター＝行使する意味なし）</b>。最近は<b>セカンダリー</b>（未上場で一部を二次流通）も増えたが、主流はIPO/M&A。<br>＝SOは「<b>EXITが来て、株価が行使価格より上</b>」で初めて意味を持つ。だから“次はアップか・出口はいつか”を気にする。</p>
     </div>
   </section>
 
