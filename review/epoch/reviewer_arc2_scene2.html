@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes">
+<!-- 制作中のレビュー用ページ。有料本編（Arc2 S2 以降）を含むので検索結果には出さない。
+     viewer はサブパス配信（/viewer/...）で robots.txt がクローラに読まれないため、
+     検索避けはこの meta が唯一の防御。消さないこと。 -->
+<meta name="robots" content="noindex,nofollow">
 <title>EPOCH Arc 2 Scene 2 — Reviewer</title>
 <style>
   * { box-sizing: border-box; }
@@ -85,7 +89,7 @@
 <div class="container">
   <div class="image-pane">
     <h1 id="page-title">Page 01</h1>
-    <div class="img-wrap"><img id="page-image" alt="page"></div>
+    <div class="img-wrap"><img id="page-image" alt=""></div>
     <div class="nav">
       <button id="next">← 次</button>
       <span class="counter" id="counter">1 / 12</span>
@@ -217,6 +221,23 @@ function render() {
   const p = PAGES[idx];
   $('page-title').textContent = `Page ${String(idx + 1).padStart(2, '0')} — ${p.title}`;
   $('page-image').src = p.image;
+  // 画像の代替テキスト。セリフはページ画像に焼き込まれているので、これが無いと
+  // 読み上げにも検索エンジンにも「文字が 1 つも無いページ」に見える。
+  // dialogue から組み立てる（長すぎると読み上げが冗長になるので 200 字で切る）。
+  (function(){
+    const lines = (p.dialogue || [])
+      // text は 1 コマに複数吹き出しがあると配列になる（getBubbleText と同じ扱い）
+      .flatMap(d => Array.isArray(d.text) ? d.text : [d.text])
+      .map(t => (t || '').replace(/\s+/g, ' ').trim())
+      .filter(Boolean);
+    let alt = `${p.title}`;
+    if (lines.length) {
+      let body = lines.join(' / ');
+      if (body.length > 200) body = body.slice(0, 200) + '…';
+      alt += ` — ${body}`;
+    }
+    $('page-image').alt = alt;
+  })();
   $('counter').textContent = `${idx + 1} / ${PAGES.length}`;
   $('prev').disabled = idx === 0;
   $('next').disabled = idx === PAGES.length - 1;

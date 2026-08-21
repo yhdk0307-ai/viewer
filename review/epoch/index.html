@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- 制作中のレビュー用ページ。有料本編（Arc2 S2 以降）を含むので検索結果には出さない。
+     viewer はサブパス配信（/viewer/...）で robots.txt がクローラに読まれないため、
+     検索避けはこの meta が唯一の防御。消さないこと。 -->
+<meta name="robots" content="noindex,nofollow">
 <title>EPOCH Manga Reviewer — Index</title>
 <style>
   body {
