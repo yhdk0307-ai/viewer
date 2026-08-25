@@ -18,30 +18,7 @@
     --ink-chart:#0B0B0B; --muted-chart:#898781;
     --s1:#2A78D6; --s2:#EB6834; --s3:#1BAF7A; --s4:#EDA100; --s5:#E87BA4; --s7:#4A3AA7;
   }
-  @media (prefers-color-scheme:dark){
-    :root:not([data-theme="light"]){
-      --bg:#0C151B; --surface:#121F27; --surface2:#182835;
-      --ink:#E4EDF2; --muted:#93A8B4; --faint:#6B8290;
-      --line:#22333E; --line2:#33495A;
-      --accent:#8FC1D4; --accent-ink:#B4D8E6;
-      --warn-bg:#2A2414; --warn-line:#6E5A28; --warn-ink:#D9A84E;
-      --ok:#0CA30C; --ng:#E66767;
-      --chart-surface:#1A1A19; --grid:#2C2C2A; --axis:#383835;
-      --ink-chart:#FFFFFF; --muted-chart:#898781;
-      --s1:#3987E5; --s2:#D95926; --s3:#199E70; --s4:#C98500; --s5:#D55181; --s7:#9085E9;
-    }
-  }
-  :root[data-theme="dark"]{
-    --bg:#0C151B; --surface:#121F27; --surface2:#182835;
-    --ink:#E4EDF2; --muted:#93A8B4; --faint:#6B8290;
-    --line:#22333E; --line2:#33495A;
-    --accent:#8FC1D4; --accent-ink:#B4D8E6;
-    --warn-bg:#2A2414; --warn-line:#6E5A28; --warn-ink:#D9A84E;
-    --ok:#0CA30C; --ng:#E66767;
-    --chart-surface:#1A1A19; --grid:#2C2C2A; --axis:#383835;
-    --ink-chart:#FFFFFF; --muted-chart:#898781;
-    --s1:#3987E5; --s2:#D95926; --s3:#199E70; --s4:#C98500; --s5:#D55181; --s7:#9085E9;
-  }
+  /* ライト調固定（2026-08-25 ユーザー指定）。ダークテーマ定義は撤去 */
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
     font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,"Noto Sans JP",system-ui,sans-serif;
@@ -1001,7 +978,6 @@ if (typeof module !== 'undefined') module.exports = USV;
   }
   $('btn-recalc').addEventListener('click',recalc);
   document.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',recalc));
-  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',recalc);
 
   toUI(); recalc(); runValidation();
 })();
