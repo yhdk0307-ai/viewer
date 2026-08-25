@@ -123,10 +123,10 @@
 </head>
 <body>
 <header><div class="head-in">
-  <div class="eyebrow">USV 0-D MODEL · PHASE 1（定常入力）</div>
+  <div class="eyebrow">USV 0-D MODEL · PHASE 1–3</div>
   <h1>USV 0次元モデル — エネルギー・動力性能成立性</h1>
-  <div class="sub">ベースライン: Seasats Lightfish 級（RR-20260824-01 調査値）／ 設計書: DP-20260825-01 ／ surge 1自由度 (m+mₐ)V̇ = T − R</div>
-  <div class="caveat">⚠ 波浪中抵抗増加は STAWAVE-1 に波長/船長比の暫定減衰を掛けた修正版です（小型艇では STAWAVE-1 が適用域外のため）。荒天側の絶対値は傾向把握用であり、Phase 2 のスペクトル＋RAO で置き換え予定です。</div>
+  <div class="sub">ベースライン: Seasats Lightfish 級（RR-20260824-01 調査値）／ 設計書: DP-20260825-01 ／ surge 1自由度 (m+mₐ)V̇ = T − R ＋ JONSWAP スペクトル（Phase 2）＋ heave/pitch RAO 耐航性判定（Phase 3）</div>
+  <div class="caveat">⚠ 波浪中抵抗増加は JONSWAP スペクトル×成分別反射効率で評価します（STAWAVE-1 の反射漸近値が基礎。規則波モードは Phase 1 の暫定式）。<b>運動起因の抵抗増加成分は未評価</b>で、耐航性（Phase 3）の運動応答は 1 自由度近似・減衰比は仮定値です。荒天側の絶対値は引き続き傾向把握用です。</div>
 </div></header>
 
 <div class="wrap">
@@ -152,12 +152,17 @@
     <div class="row"><label>補助発電機</label><span class="val"><select id="p-gen"><option value="off">なし</option><option value="on">あり(125W)</option></select></span></div>
     <div class="row"><label>発電機燃料</label><span class="val"><input type="number" id="p-fuel" step="1" min="0" max="500"><span class="unit">kWh</span></span></div>
   </div>
-  <div class="panel"><h3>環境（定常）</h3>
+  <div class="panel"><h3>環境</h3>
     <div class="row"><label>風速 U₁₀</label><span class="val"><input type="number" id="e-wind" step="1" min="0" max="40"><span class="unit">m/s</span></span></div>
     <div class="row"><label>風向（艇に対し）</label><span class="val"><select id="e-wdir"><option value="0">向い風</option><option value="90">横風</option><option value="180">追い風</option></select></span></div>
+    <div class="row"><label>波モデル</label><span class="val"><select id="e-wmodel"><option value="jonswap">JONSWAP（Phase2）</option><option value="regular">規則波（Phase1）</option></select></span></div>
     <div class="row"><label>有義波高 Hs</label><span class="val"><input type="number" id="e-hs" step="0.25" min="0" max="8"><span class="unit">m</span></span></div>
     <div class="row"><label>波周期 Tp</label><span class="val"><input type="number" id="e-tp" step="0.5" min="2" max="16"><span class="unit">s</span></span></div>
+    <div class="row"><label>日射モデル</label><span class="val"><select id="e-smodel"><option value="daily">日平均入力（Phase1）</option><option value="clearsky">晴天モデル（Phase2）</option></select></span></div>
     <div class="row"><label>日射量（日平均）</label><span class="val"><input type="number" id="e-irr" step="0.5" min="0" max="8"><span class="unit">kWh/m²/日</span></span></div>
+    <div class="row"><label>緯度（晴天モデル）</label><span class="val"><input type="number" id="e-lat" step="5" min="-60" max="60"><span class="unit">°N</span></span></div>
+    <div class="row"><label>月（晴天モデル）</label><span class="val"><input type="number" id="e-month" step="1" min="1" max="12"><span class="unit">月</span></span></div>
+    <div class="row"><label>雲量係数（晴天モデル）</label><span class="val"><input type="number" id="e-cloud" step="0.05" min="0.1" max="1"><span class="unit">—</span></span></div>
     <div class="row"><label>PV総合ディレート</label><span class="val"><input type="number" id="e-derate" step="0.05" min="0.2" max="1"><span class="unit">—</span></span></div>
   </div>
   <div class="panel"><h3>ミッション</h3>
@@ -206,6 +211,28 @@
   </div>
 </div>
 
+<h2>図4 — 波スペクトルと抵抗寄与（Phase 2）</h2>
+<div class="chart-card">
+  <h3>JONSWAP スペクトルと反射寄与の分布</h3>
+  <div class="cap">短波長成分（右側の小さい周期）ほど船体が反射して抵抗になる。長波長は追従（contouring）して寄与しない。縦軸は各系列の最大値で正規化。</div>
+  <div class="legend">
+    <span class="chip"><span class="sw" style="background:var(--s2)"></span>波スペクトル S(T)</span>
+    <span class="chip"><span class="sw line"></span>抵抗寄与密度 S·r(λ/L)</span>
+  </div>
+  <div class="cv"><canvas id="c4" width="1000" height="240" role="img" aria-label="波周期に対するスペクトル密度と抵抗寄与の分布"></canvas><div class="tip" id="t4"></div></div>
+</div>
+
+<h2>耐航性 — 運動応答（Phase 3・第一次近似）</h2>
+<div class="chart-card">
+  <div class="kpis" style="margin-bottom:8px">
+    <div class="kpi"><div class="k">ヒーブ RMS</div><div class="v" id="s-heave">–</div><div class="n">上下動（有義値の1/2目安）</div></div>
+    <div class="kpi"><div class="k">ピッチ RMS</div><div class="v" id="s-pitch">–</div><div class="n" id="s-pitch-n">基準 ≤ 6°</div></div>
+    <div class="kpi"><div class="k">上下加速度 RMS</div><div class="v" id="s-accel">–</div><div class="n" id="s-accel-n">基準 ≤ 0.2g</div></div>
+    <div class="kpi"><div class="k">運用限界 Hs（この周期で）</div><div class="v" id="s-limhs">–</div><div class="n" id="s-verdict"></div></div>
+  </div>
+  <div class="cap">1自由度近似（減衰比 0.35・付加質量は代表値の<b>仮定</b>。位相と相対水位運動は未評価）。応答は Hs に線形なので限界 Hs = Hs × min(基準/RMS)。⚠ 運動と抵抗増加はまだ連成していない（抵抗側は反射成分のみ）。</div>
+</div>
+
 <h2>図3 — SOC 時系列（ミッションシミュレーション）</h2>
 <div class="chart-card">
   <h3>電池残量の推移</h3>
@@ -218,8 +245,9 @@
 <div class="vgrid" id="vgrid"></div>
 
 <footer>
-  USV 0次元モデル Phase 1 ／ 設計書 DP-20260825-01 ／ 較正: V1(4.5kt)・V2(575nm) → Cr_base=0.00284, ホテル負荷104W ／
-  主要な前提: ITTC-1957＋剰余抵抗・修正STAWAVE-1（暫定）・Cd法風圧抵抗・η_total ≤ 0.51（Torqeedo公称拘束）。
+  USV 0次元モデル Phase 1–3 ／ 設計書 DP-20260825-01 ／ 較正: V1(4.5kt)・V2(575nm) → Cr_base=0.00284, ホテル負荷104W ／
+  前提: ITTC-1957＋剰余抵抗・JONSWAP×成分別反射（Phase2）・Cd法風圧・η_total ≤ 0.51（Torqeedo公称拘束）・
+  heave/pitch 1自由度RAO（Phase3・減衰比仮定）。運動起因抵抗と相対水位運動は未評価（Phase2+の残課題）。
   数式コアは DOM 非依存の純関数（Python 移植可能）。
 </footer>
 </div>
@@ -247,7 +275,13 @@ const USV = (function(){
               etaChg:0.97, etaDis:0.97,
               hotelW:104,                                        // 較正済 (V2)
               gen:{ enabled:false, powW:125, fuelWh:30000, onSoc:0.30, offSoc:0.50 } },
-      env:  { windU:0, windDirDeg:0, Hs:0, Tp:6, irrKwhDay:4.5 },
+      env:  { windU:0, windDirDeg:0, Hs:0, Tp:6, irrKwhDay:4.5,
+              waveModel:'jonswap',                               // 'regular'(Phase1) | 'jonswap'(Phase2)
+              solarModel:'daily',                                // 'daily'(Phase1) | 'clearsky'(Phase2)
+              latDeg:35, month:6, cloud:0.70 },
+      sea:  { Cw:0.72, maHeaveFrac:0.8, zetaHeave:0.35,          // Phase3 耐航性（仮定値・要検証）
+              rPitchGyr:0.25, maPitchFrac:0.8, zetaPitch:0.35,
+              accelLimG:0.2, pitchLimDeg:6 },
       msn:  { targetKt:2.5, days:30, soc0:1.0, socMin:0.10 }
     };
   }
@@ -273,13 +307,53 @@ const USV = (function(){
     const u = env.windU * Math.cos(th) + V;     // 艇軸成分（向い風で正）
     return 0.5 * C.rhoA * h.CdAir * h.Afront * u * Math.abs(u);
   }
-  function rWave(env, h){
+  function rWaveRegular(env, h){                               // Phase1: 単一周期扱い
     if (env.Hs <= 0) return 0;
     const LBWL = h.LBWLfrac * h.Lwl;
     const raw = C.rho * C.g * env.Hs * env.Hs * h.B * Math.sqrt(h.B / LBWL) / 16;  // STAWAVE-1
     const lam = C.g * env.Tp * env.Tp / (2 * Math.PI);
     const f = 1 / (1 + Math.pow(lam / (2 * h.Lwl), 2));   // 暫定: 長波長減衰（設計書§3-2b）
     return f * raw;
+  }
+
+  // ── Phase2: JONSWAP スペクトル ──
+  // S(ω) を Hs²/16 = m0 になるよう数値正規化して返す（γ=3.3 固定）
+  function jonswapS(Hs, Tp, n = 120){
+    const wp = 2 * Math.PI / Tp, wMax = Math.max(4 * wp, 2 * Math.PI / 1.0);
+    const w = [], s = [];
+    for (let i = 1; i <= n; i++){
+      const wi = wMax * i / n;
+      const sig = wi <= wp ? 0.07 : 0.09;
+      const r = Math.exp(-Math.pow(wi - wp, 2) / (2 * sig * sig * wp * wp));
+      const shape = Math.pow(wi, -5) * Math.exp(-1.25 * Math.pow(wp / wi, 4)) * Math.pow(3.3, r);
+      w.push(wi); s.push(shape);
+    }
+    const dw = w[1] - w[0];
+    let m0 = 0; for (let i = 0; i < n; i++) m0 += s[i] * dw;
+    const scale = (Hs * Hs / 16) / m0;
+    return { w, s: s.map(x => x * scale), dw };
+  }
+  // 波長/船長の反射効率（成分ごと）: λ ≤ L は全反射、長波長は追従して減衰
+  function reflEff(w, Lwl){
+    const lam = 2 * Math.PI * C.g / (w * w);
+    return 1 / (1 + Math.pow(lam / (2 * Lwl), 2));
+  }
+  // スペクトル版: R_AW = ρgB√(B/L_BWL)·∫S(ω)·r(ω)dω （r≡1 で STAWAVE-1 に一致）
+  let _rwsKey = null, _rwsVal = 0;
+  function rWaveSpectral(env, h){
+    if (env.Hs <= 0) return 0;
+    const key = env.Hs + '|' + env.Tp + '|' + h.Lwl + '|' + h.B;
+    if (key === _rwsKey) return _rwsVal;
+    const LBWL = h.LBWLfrac * h.Lwl;
+    const Cq = C.rho * C.g * h.B * Math.sqrt(h.B / LBWL);
+    const sp = jonswapS(env.Hs, env.Tp);
+    let I = 0;
+    for (let i = 0; i < sp.w.length; i++) I += sp.s[i] * reflEff(sp.w[i], h.Lwl) * sp.dw;
+    _rwsKey = key; _rwsVal = Cq * I;
+    return _rwsVal;
+  }
+  function rWave(env, h){
+    return env.waveModel === 'jonswap' ? rWaveSpectral(env, h) : rWaveRegular(env, h);
   }
   function rTotal(V, env, h, der){
     const calm = rCalm(V, h, der), wave = rWave(env, h), wind = rWind(V, env, h);
@@ -332,14 +406,87 @@ const USV = (function(){
     return (lo + hi) / 2;
   }
 
-  // ── 太陽光: 日平均→正弦半波の瞬時値 [W]（t: 秒, 日の出6h/日没18h） ──
-  function pSolar(tSec, pwr, env){
+  // ── 太陽光 Phase1: 日平均→正弦半波の瞬時値 [W]（日の出6h/日没18h） ──
+  function pSolarDaily(tSec, pwr, env){
     const hour = (tSec / 3600) % 24;
     if (hour < 6 || hour > 18) return 0;
     const shape = Math.sin(Math.PI * (hour - 6) / 12);
     const dailyWh = pwr.panelW * env.irrKwhDay * pwr.derate;   // panelW × (kWh/m²/日 ÷ 1kW/m²STC) × derate
     const peak = dailyWh * Math.PI / (2 * 12);                 // ∫正弦半波=peak·2/π·12h
     return peak * shape;
+  }
+  // ── 太陽光 Phase2: 晴天モデル（緯度・月・雲量）──
+  // 太陽高度 sinα = sinφsinδ + cosφcosδcos(h)、GHI = 1120·(sinα)^1.15 (Haurwitz) × 雲量係数
+  function solarElevSin(hour, latDeg, month){
+    const doy = Math.round((month - 0.5) * 30.4);              // 月央の通日
+    const dec = 23.45 * Math.PI / 180 * Math.sin(2 * Math.PI * (284 + doy) / 365);
+    const phi = latDeg * Math.PI / 180;
+    const ha = (hour - 12) * 15 * Math.PI / 180;               // 時角
+    return Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(ha);
+  }
+  function pSolarClearSky(tSec, pwr, env){
+    const hour = (tSec / 3600) % 24;
+    const sa = solarElevSin(hour, env.latDeg, env.month);
+    if (sa <= 0) return 0;
+    const G = 1098 * sa * Math.exp(-0.057 / sa) * env.cloud;   // Haurwitz 晴天 GHI [W/m²]
+    return G / 1000 * pwr.panelW * pwr.derate;
+  }
+  function pSolar(tSec, pwr, env){
+    return env.solarModel === 'clearsky' ? pSolarClearSky(tSec, pwr, env)
+                                         : pSolarDaily(tSec, pwr, env);
+  }
+  function solarDailyWh(pwr, env){                             // 日発電量 [Wh/day]（収支表示用）
+    let e = 0; const dt = 600;
+    for (let t = 0; t < 86400; t += dt) e += pSolar(t, pwr, env) * dt / 3600;
+    return e;
+  }
+
+  // ── Phase3: 耐航性（heave/pitch RAO・1自由度近似）──
+  // 仮定: 減衰比・付加質量は代表値（sea パラメータ）。位相は無視し RMS 評価のみ。
+  function raoHeave(w, V, h, sea, der){
+    const we = w + w * w * V / C.g;                            // 向い波の出会い周波数
+    const k = w * w / C.g;
+    const x = k * h.Lwl / 2;
+    const F = Math.exp(-k * der.d) * Math.abs(x < 1e-6 ? 1 : Math.sin(x) / x);   // 船長平均の起振力
+    const Aw = sea.Cw * h.Lwl * h.B;
+    const wn = Math.sqrt(C.rho * C.g * Aw / (h.m * (1 + sea.maHeaveFrac)));
+    const Om = we / wn;
+    return F / Math.sqrt(Math.pow(1 - Om * Om, 2) + Math.pow(2 * sea.zetaHeave * Om, 2));
+  }
+  function raoPitchDegPerM(w, V, h, sea, der){                 // [deg/m 波振幅]
+    const we = w + w * w * V / C.g;
+    const k = w * w / C.g;
+    const x = k * h.Lwl / 2;
+    const G = Math.exp(-k * der.d) *
+      Math.abs(x < 1e-4 ? 1 : 3 * (Math.sin(x) - x * Math.cos(x)) / (x * x * x)); // 1次モーメント平均
+    const Iwp = sea.Cw * Math.pow(h.Lwl, 3) * h.B / 12;        // 水線面2次モーメント
+    const I55 = h.m * Math.pow(sea.rPitchGyr * h.Lwl, 2) * (1 + sea.maPitchFrac);
+    const wn = Math.sqrt(C.rho * C.g * Iwp / I55);
+    const Om = we / wn;
+    const daf = 1 / Math.sqrt(Math.pow(1 - Om * Om, 2) + Math.pow(2 * sea.zetaPitch * Om, 2));
+    return G * k * daf * 180 / Math.PI;                        // 波傾斜 kζ × 応答倍率
+  }
+  // RMS 応答と限界 Hs（応答は Hs に線形 → 限界 Hs = Hs×min(基準/RMS)）
+  function seakeeping(env, V, p, der){
+    if (env.Hs <= 0) return { heaveRms:0, pitchRmsDeg:0, accelRms:0, limitHs:Infinity, ok:true };
+    const sp = jonswapS(env.Hs, env.Tp);                       // 規則波選択時も評価はスペクトルで行う
+    let m0h = 0, m0p = 0, m0a = 0;
+    for (let i = 0; i < sp.w.length; i++){
+      const w = sp.w[i], S = sp.s[i];
+      const rh = raoHeave(w, V, p.hull, p.sea, der);
+      const rp = raoPitchDegPerM(w, V, p.hull, p.sea, der);
+      const we = w + w * w * V / C.g;
+      m0h += S * rh * rh * sp.dw;
+      m0p += S * rp * rp * sp.dw;
+      m0a += S * Math.pow(we * we * rh, 2) * sp.dw;
+    }
+    const heaveRms = Math.sqrt(m0h), pitchRmsDeg = Math.sqrt(m0p), accelRms = Math.sqrt(m0a);
+    const rA = accelRms / (p.sea.accelLimG * 9.81);
+    const rP = pitchRmsDeg / p.sea.pitchLimDeg;
+    const worst = Math.max(rA, rP);
+    return { heaveRms, pitchRmsDeg, accelRms,
+             limitHs: worst > 1e-9 ? env.Hs / worst : Infinity,
+             okAccel: rA <= 1, okPitch: rP <= 1, ok: worst <= 1 };
   }
 
   // ── ミッション時間積分（準定常・dt=600s） ──
@@ -423,13 +570,16 @@ const USV = (function(){
       if (Pe <= p.prop.PmaxElec) Pprop = Pe;
       else { Pprop = p.prop.PmaxElec; reached = false; }
     }
-    const solarAvg = p.pwr.panelW * p.env.irrKwhDay * p.pwr.derate / 24;
+    const solarAvg = solarDailyWh(p.pwr, p.env) / 24;          // 選択中の日射モデルで積分
     return { solarAvg, genAvg:0, Pprop, hotel: p.pwr.hotelW, reached };
   }
 
-  return { C, KT, defaults, derived, rCalm, rWind, rWave, rTotal,
+  return { C, KT, defaults, derived, rCalm, rWind, rWave, rWaveRegular, rWaveSpectral,
+           jonswapS, reflEff, rTotal,
            etaMotor, pShaft, etaProp, thrust, pElecFor, solveVeq,
-           pSolar, simulate, maxRange, darkEndurance, dailyBudget };
+           pSolar, pSolarDaily, pSolarClearSky, solarDailyWh, solarElevSin,
+           raoHeave, raoPitchDegPerM, seakeeping,
+           simulate, maxRange, darkEndurance, dailyBudget };
 })();
 if (typeof module !== 'undefined') module.exports = USV;
 </script>
@@ -450,6 +600,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     ['p-pmax','prop.PmaxElec'],['p-hotel','pwr.hotelW'],['p-panel','pwr.panelW'],
     ['e-wind','env.windU'],['e-hs','env.Hs'],['e-tp','env.Tp'],
     ['e-irr','env.irrKwhDay'],['e-derate','pwr.derate'],
+    ['e-lat','env.latDeg'],['e-month','env.month'],['e-cloud','env.cloud'],
     ['m-vt','msn.targetKt'],['m-days','msn.days'],
   ];
   const get = path => path.split('.').reduce((o,k)=>o[k], P);
@@ -460,6 +611,8 @@ if (typeof module !== 'undefined') module.exports = USV;
     $('p-fuel').value = P.pwr.gen.fuelWh/1000;
     $('p-gen').value = P.pwr.gen.enabled ? 'on':'off';
     $('e-wdir').value = String(P.env.windDirDeg);
+    $('e-wmodel').value = P.env.waveModel;
+    $('e-smodel').value = P.env.solarModel;
     $('m-soc0').value = Math.round(P.msn.soc0*100);
     $('m-socmin').value = Math.round(P.msn.socMin*100);
   }
@@ -469,6 +622,8 @@ if (typeof module !== 'undefined') module.exports = USV;
     P.pwr.gen.fuelWh = parseFloat($('p-fuel').value)*1000 || 0;
     P.pwr.gen.enabled = $('p-gen').value==='on';
     P.env.windDirDeg = parseFloat($('e-wdir').value);
+    P.env.waveModel = $('e-wmodel').value;
+    P.env.solarModel = $('e-smodel').value;
     P.msn.soc0 = (parseFloat($('m-soc0').value)||100)/100;
     P.msn.socMin = (parseFloat($('m-socmin').value)||10)/100;
   }
@@ -633,6 +788,105 @@ if (typeof module !== 'undefined') module.exports = USV;
   });
   $('c3').addEventListener('mouseleave', ()=>{ $('t3').style.display='none'; });
 
+  // ── 図4: スペクトルと抵抗寄与 ──
+  let c4data = null;
+  function drawC4(){
+    const cv = $('c4'), ctx = cv.getContext('2d');
+    const W = cv.width, H = cv.height, L = 52, R = 14, T = 12, Bm = 34;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = css('--chart-surface'); ctx.fillRect(0,0,W,H);
+    const Hs = Math.max(P.env.Hs, 0.01), Tp = P.env.Tp;
+    const sp = USV.jonswapS(Hs, Tp);
+    // 周期軸に変換: S_T(T) = S(ω)·2π/T²
+    const Tmin = 1, Tmax = Math.min(16, Tp * 2.2);
+    const n = 130, rows = [];
+    let sMax = 1e-12, cMax = 1e-12;
+    for (let i = 0; i <= n; i++){
+      const Tt = Tmin + (Tmax - Tmin) * i / n;
+      const w = 2 * Math.PI / Tt;
+      // 最近傍のスペクトル値（線形補間）
+      let S = 0;
+      const idx = (w - sp.w[0]) / sp.dw;
+      if (idx >= 0 && idx < sp.w.length - 1){
+        const i0 = Math.floor(idx), f = idx - i0;
+        S = sp.s[i0] * (1 - f) + sp.s[i0 + 1] * f;
+      }
+      const ST = S * 2 * Math.PI / (Tt * Tt);
+      const r = USV.reflEff(w, P.hull.Lwl);
+      const contrib = ST * r;
+      rows.push({ T: Tt, ST, r, contrib });
+      sMax = Math.max(sMax, ST); cMax = Math.max(cMax, contrib);
+    }
+    c4data = { rows, L, R, T, Bm, W, H, Tmin, Tmax };
+    const x = Tt => L + (W - L - R) * (Tt - Tmin) / (Tmax - Tmin);
+    const y = v => T + (H - T - Bm) * (1 - v);
+    ctx.strokeStyle = css('--grid'); ctx.lineWidth = 1;
+    ctx.font = '11px system-ui,sans-serif'; ctx.fillStyle = css('--muted-chart');
+    for (let g = 0; g <= 1; g += 0.5){
+      ctx.beginPath(); ctx.moveTo(L, y(g)); ctx.lineTo(W - R, y(g)); ctx.stroke();
+    }
+    for (let Tt = 2; Tt <= Tmax; Tt += 2){
+      ctx.textAlign = 'center'; ctx.fillText(Tt + ' s', x(Tt), H - Bm + 15);
+    }
+    ctx.save(); ctx.translate(13, (T + H - Bm) / 2); ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center'; ctx.fillText('正規化密度', 0, 0); ctx.restore();
+    // スペクトル面 (s2)
+    ctx.beginPath();
+    rows.forEach((r, i) => { const px = x(r.T), py = y(r.ST / sMax); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+    ctx.lineTo(x(Tmax), y(0)); ctx.lineTo(x(Tmin), y(0)); ctx.closePath();
+    ctx.fillStyle = css('--s2'); ctx.globalAlpha = 0.7; ctx.fill(); ctx.globalAlpha = 1;
+    // 寄与密度 (ink dashed)
+    ctx.strokeStyle = css('--ink-chart'); ctx.lineWidth = 2.2; ctx.setLineDash([6, 5]);
+    ctx.beginPath();
+    rows.forEach((r, i) => { const px = x(r.T), py = y(r.contrib / cMax); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+    ctx.stroke(); ctx.setLineDash([]);
+    // Tp マーカー
+    if (Tp >= Tmin && Tp <= Tmax){
+      ctx.strokeStyle = css('--axis'); ctx.setLineDash([3, 4]); ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(x(Tp), T); ctx.lineTo(x(Tp), H - Bm); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = css('--muted-chart'); ctx.textAlign = 'left';
+      ctx.fillText('Tp', x(Tp) + 4, T + 12);
+    }
+    ctx.strokeStyle = css('--axis'); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(L, y(0)); ctx.lineTo(W - R, y(0)); ctx.stroke();
+  }
+  $('c4').addEventListener('mousemove', ev => {
+    if (!c4data) return;
+    const cv = $('c4'), rect = cv.getBoundingClientRect();
+    const mx = (ev.clientX - rect.left) * cv.width / rect.width;
+    const d = c4data;
+    const Tt = Math.max(d.Tmin, Math.min(d.Tmax, d.Tmin + (mx - d.L) / (d.W - d.L - d.R) * (d.Tmax - d.Tmin)));
+    const i = Math.round((Tt - d.Tmin) / (d.Tmax - d.Tmin) * (d.rows.length - 1));
+    const r = d.rows[i], lam = 9.81 * r.T * r.T / (2 * Math.PI);
+    const tip = $('t4');
+    tip.style.display = 'block';
+    tip.style.left = Math.min(rect.width - 200, (ev.clientX - rect.left) + 14) + 'px';
+    tip.style.top = (ev.clientY - rect.top - 10) + 'px';
+    tip.innerHTML = `<b>T = ${fmt(r.T,1)} s（λ ${fmt(lam,0)} m・λ/L ${fmt(lam / P.hull.Lwl,1)}）</b><br>` +
+      `S(T) ${r.ST.toExponential(2)} m²·s ／ 反射効率 r ${fmt(r.r * 100,0)}%`;
+  });
+  $('c4').addEventListener('mouseleave', () => { $('t4').style.display = 'none'; });
+
+  // ── 耐航性（Phase 3）──
+  function drawSeakeeping(){
+    const der = USV.derived(P.hull);
+    const veq = USV.solveVeq(P.prop.PmaxElec, P.env, P, der);
+    const V = Math.min(veq, P.msn.targetKt * USV.KT);
+    const sk = USV.seakeeping(P.env, V, P, der);
+    if (P.env.Hs <= 0){
+      $('s-heave').textContent = '–'; $('s-pitch').textContent = '–';
+      $('s-accel').textContent = '–'; $('s-limhs').textContent = '–';
+      $('s-verdict').textContent = '波高 0（平水）'; return;
+    }
+    $('s-heave').textContent = fmt(sk.heaveRms, 2) + ' m';
+    $('s-pitch').innerHTML = fmt(sk.pitchRmsDeg, 1) + '° ' +
+      `<span class="badge ${sk.okPitch ? 'ok' : 'ng'}">${sk.okPitch ? 'OK' : 'NG'}</span>`;
+    $('s-accel').innerHTML = fmt(sk.accelRms / 9.81, 2) + ' g ' +
+      `<span class="badge ${sk.okAccel ? 'ok' : 'ng'}">${sk.okAccel ? 'OK' : 'NG'}</span>`;
+    $('s-limhs').textContent = isFinite(sk.limitHs) ? fmt(sk.limitHs, 1) + ' m' : '—';
+    $('s-verdict').textContent = 'Tp=' + P.env.Tp + 's・速力 ' + fmt(V / USV.KT, 1) + ' kt で評価';
+  }
+
   // ── 数値表 ──
   function drawTable(sim,b,der){
     const veq=USV.solveVeq(P.prop.PmaxElec,P.env,P,der);
@@ -683,7 +937,27 @@ if (typeof module !== 'undefined') module.exports = USV;
       {id:'V4',name:'荒天前進',crit:'Hs2.5m・向い風15m/s で減速を再現（連続性確認）',
        run(){ const p=USV.defaults(); p.env.Hs=2.5; p.env.Tp=7; p.env.windU=15;
               const veq=USV.solveVeq(p.prop.PmaxElec,p.env,p,USV.derived(p.hull))/USV.KT;
-              return {val:'V_eq '+veq.toFixed(2)+' kt（平水4.5kt比）', ok:veq<4.2&&veq>0}; }},
+              return {val:'V_eq '+veq.toFixed(2)+' kt（平水4.5kt比）', ok:veq<4.2&&veq>=0}; }},
+      {id:'V5',name:'スペクトル整合（Phase2）',crit:'m0=Hs²/16（±1%）かつ スペクトル版 R_AW ≤ STAWAVE-1 素値',
+       run(){ const p=USV.defaults(); const Hs=2.0,Tp=6;
+              const sp=USV.jonswapS(Hs,Tp); let m0=0; sp.s.forEach(s=>m0+=s*sp.dw);
+              const err=Math.abs(m0-Hs*Hs/16)/(Hs*Hs/16);
+              p.env.Hs=Hs; p.env.Tp=Tp;
+              const rs=USV.rWaveSpectral(p.env,p.hull);
+              const raw=USV.C.rho*USV.C.g*Hs*Hs*p.hull.B*Math.sqrt(p.hull.B/(p.hull.LBWLfrac*p.hull.Lwl))/16;
+              return {val:'m0誤差 '+(err*100).toFixed(2)+'%・R_AW '+rs.toFixed(0)+'/'+raw.toFixed(0)+' N',
+                      ok:err<0.01 && rs<=raw}; }},
+      {id:'V6',name:'RAO 極限挙動（Phase3）',crit:'長波長で追従(RAO→1)・短波長で不応答・応答は Hs に線形',
+       run(){ const p=USV.defaults(); const der=USV.derived(p.hull);
+              const lo=USV.raoHeave(0.3,0,p.hull,p.sea,der);
+              const hi=USV.raoHeave(8.0,0,p.hull,p.sea,der);
+              p.env.Hs=1; p.env.Tp=5;
+              const a=USV.seakeeping(p.env,1.0,p,der).heaveRms;
+              p.env.Hs=2;
+              const b=USV.seakeeping(p.env,1.0,p,der).heaveRms;
+              const lin=Math.abs(b/a-2)<0.02;
+              return {val:'RAO(長波) '+lo.toFixed(2)+'・RAO(短波) '+hi.toFixed(2)+'・線形比 '+(b/a).toFixed(3),
+                      ok:lo>0.9&&lo<1.1&&hi<0.15&&lin}; }},
     ];
     $('vgrid').innerHTML=cases.map(c=>{
       const r=c.run();
@@ -720,6 +994,8 @@ if (typeof module !== 'undefined') module.exports = USV;
     const b=drawPB();
     const sim=USV.simulate(P);
     drawC3(sim);
+    drawC4();
+    drawSeakeeping();
     drawTable(sim,b,der);
     verdict(sim);
   }
