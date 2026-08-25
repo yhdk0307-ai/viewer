@@ -1,905 +1,925 @@
 {
-  "project": {
-    "id": "DGP-LIFE-STRUCTURE",
-    "title": "life リポジトリ構造マップ",
-    "entry": "overview",
-    "description": "life リポジトリの全体構造。AI と人間の共通認識図。ディレクトリ構成を変更したら必ずこの図も更新する。編集: <viewer>/tools/diagram_drawer/?src=../../data/diagrams/life_structure.json"
+ "project": {
+  "id": "DGP-LIFE-STRUCTURE",
+  "title": "life リポジトリ構造マップ",
+  "entry": "overview",
+  "description": "life リポジトリの全体構造。AI と人間の共通認識図。ディレクトリ構成を変更したら必ずこの図も更新する。編集: <viewer>/tools/diagram_drawer/?src=../../data/diagrams/life_structure.json"
+ },
+ "diagrams": [
+  {
+   "meta": {
+    "id": "overview",
+    "title": "System Overview (3 layers)",
+    "caption": "GOVERNANCE が土台、DEVELOPMENT が本体、PUBLISH は成果スライスの公開先。クリック: outputs → 詳細 / rules・skills → サブシステム / workflows → 公開パイプライン",
+    "projection": "iso",
+    "theme": "mono-light",
+    "grid": 20,
+    "render3d": "shape"
+   },
+   "layers": [
+    {
+     "id": "gov",
+     "label": "Governance",
+     "z": 0,
+     "elevation": 0
+    },
+    {
+     "id": "dev",
+     "label": "Development (home)",
+     "z": 1,
+     "elevation": 300
+    },
+    {
+     "id": "pub",
+     "label": "Publish",
+     "z": 2,
+     "elevation": 600
+    }
+   ],
+   "groups": [
+    {
+     "id": "plate_gov",
+     "label": "Governance",
+     "kind": "platform",
+     "layer": "gov",
+     "x": 20,
+     "y": 80,
+     "w": 960,
+     "h": 340
+    },
+    {
+     "id": "plate_dev",
+     "label": "Development",
+     "kind": "platform",
+     "layer": "dev",
+     "x": 20,
+     "y": 80,
+     "w": 960,
+     "h": 420
+    },
+    {
+     "id": "plate_pub",
+     "label": "Publish",
+     "kind": "platform",
+     "layer": "pub",
+     "x": 260,
+     "y": 160,
+     "w": 480,
+     "h": 240
+    }
+   ],
+   "nodes": [
+    {
+     "id": "claude_md",
+     "type": "block",
+     "label": "CLAUDE.md",
+     "icon": "book",
+     "x": 120,
+     "y": 160,
+     "w": 160,
+     "h": 80,
+     "layer": "gov",
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "claude_dir",
+     "entityId": "E-claude",
+     "type": "block",
+     "label": ".claude/ rules+skills",
+     "icon": "shield-check",
+     "x": 420,
+     "y": 160,
+     "w": 180,
+     "h": 80,
+     "layer": "gov",
+     "link": "subsystems"
+    },
+    {
+     "id": "gh_workflows",
+     "entityId": "E-github",
+     "type": "block",
+     "label": ".github/ workflows",
+     "icon": "gear",
+     "x": 720,
+     "y": 160,
+     "w": 180,
+     "h": 80,
+     "layer": "gov",
+     "link": "publish_flow"
+    },
+    {
+     "id": "knowledge",
+     "entityId": "E-knowledge",
+     "type": "block",
+     "label": "knowledge/",
+     "icon": "book",
+     "x": 80,
+     "y": 140,
+     "w": 150,
+     "h": 80,
+     "layer": "dev"
+    },
+    {
+     "id": "ideas",
+     "entityId": "E-ideas",
+     "type": "block",
+     "label": "ideas/",
+     "icon": "bulb",
+     "x": 80,
+     "y": 320,
+     "w": 150,
+     "h": 80,
+     "layer": "dev"
+    },
+    {
+     "id": "outputs",
+     "entityId": "E-outputs",
+     "type": "block",
+     "label": "outputs/",
+     "icon": "folder",
+     "x": 330,
+     "y": 200,
+     "w": 170,
+     "h": 90,
+     "layer": "dev",
+     "link": "outputs_detail",
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "tools",
+     "entityId": "E-tools",
+     "type": "block",
+     "label": "tools/ diagram_engine",
+     "icon": "hierarchy",
+     "x": 620,
+     "y": 140,
+     "w": 190,
+     "h": 80,
+     "layer": "dev"
+    },
+    {
+     "id": "docs",
+     "entityId": "E-docs",
+     "type": "block",
+     "label": "docs/ bootstraps",
+     "icon": "notebook",
+     "x": 620,
+     "y": 320,
+     "w": 190,
+     "h": 80,
+     "layer": "dev"
+    },
+    {
+     "id": "viewer",
+     "entityId": "E-viewer",
+     "type": "pictogram",
+     "label": "viewer (GitHub Pages)",
+     "icon": "world",
+     "x": 440,
+     "y": 230,
+     "w": 120,
+     "h": 100,
+     "layer": "pub",
+     "link": "publish_flow",
+     "style": {
+      "accent": true
+     }
+    }
+   ],
+   "edges": [
+    {
+     "id": "o1",
+     "from": "claude_md",
+     "to": "outputs",
+     "label": "governs",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "o2",
+     "from": "claude_dir",
+     "to": "tools",
+     "label": "/diagram skill",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "o3",
+     "from": "outputs",
+     "to": "viewer",
+     "label": "interactive/",
+     "kind": "orthogonal",
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "o4",
+     "from": "tools",
+     "to": "viewer",
+     "label": "interactive/",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "o5",
+     "from": "gh_workflows",
+     "to": "viewer",
+     "label": "sync-viewer.yml",
+     "kind": "orthogonal",
+     "style": {
+      "accent": true
+     }
+    }
+   ]
   },
-  "diagrams": [
-    {
-      "meta": {
-        "id": "overview",
-        "title": "System Overview (3 layers)",
-        "caption": "GOVERNANCE が土台、DEVELOPMENT が本体、PUBLISH は成果スライスの公開先。クリック: outputs → 詳細 / rules・skills → サブシステム / workflows → 公開パイプライン",
-        "projection": "iso",
-        "theme": "mono-light",
-        "grid": 20,
-        "render3d": "shape"
-      },
-      "layers": [
-        {
-          "id": "gov",
-          "label": "Governance",
-          "z": 0,
-          "elevation": 0
-        },
-        {
-          "id": "dev",
-          "label": "Development (home)",
-          "z": 1,
-          "elevation": 300
-        },
-        {
-          "id": "pub",
-          "label": "Publish",
-          "z": 2,
-          "elevation": 600
-        }
-      ],
-      "groups": [
-        {
-          "id": "plate_gov",
-          "label": "Governance",
-          "kind": "platform",
-          "layer": "gov",
-          "x": 20,
-          "y": 80,
-          "w": 960,
-          "h": 340
-        },
-        {
-          "id": "plate_dev",
-          "label": "Development",
-          "kind": "platform",
-          "layer": "dev",
-          "x": 20,
-          "y": 80,
-          "w": 960,
-          "h": 420
-        },
-        {
-          "id": "plate_pub",
-          "label": "Publish",
-          "kind": "platform",
-          "layer": "pub",
-          "x": 260,
-          "y": 160,
-          "w": 480,
-          "h": 240
-        }
-      ],
-      "nodes": [
-        {
-          "id": "claude_md",
-          "type": "block",
-          "label": "CLAUDE.md",
-          "icon": "book",
-          "x": 120,
-          "y": 160,
-          "w": 160,
-          "h": 80,
-          "layer": "gov",
-          "style": {
-            "accent": true
-          }
-        },
-        {
-          "id": "claude_dir",
-          "entityId": "E-claude",
-          "type": "block",
-          "label": ".claude/ rules+skills",
-          "icon": "shield-check",
-          "x": 420,
-          "y": 160,
-          "w": 180,
-          "h": 80,
-          "layer": "gov",
-          "link": "subsystems"
-        },
-        {
-          "id": "gh_workflows",
-          "entityId": "E-github",
-          "type": "block",
-          "label": ".github/ workflows",
-          "icon": "gear",
-          "x": 720,
-          "y": 160,
-          "w": 180,
-          "h": 80,
-          "layer": "gov",
-          "link": "publish_flow"
-        },
-        {
-          "id": "knowledge",
-          "entityId": "E-knowledge",
-          "type": "block",
-          "label": "knowledge/",
-          "icon": "book",
-          "x": 80,
-          "y": 140,
-          "w": 150,
-          "h": 80,
-          "layer": "dev"
-        },
-        {
-          "id": "ideas",
-          "entityId": "E-ideas",
-          "type": "block",
-          "label": "ideas/",
-          "icon": "bulb",
-          "x": 80,
-          "y": 320,
-          "w": 150,
-          "h": 80,
-          "layer": "dev"
-        },
-        {
-          "id": "outputs",
-          "entityId": "E-outputs",
-          "type": "block",
-          "label": "outputs/",
-          "icon": "folder",
-          "x": 330,
-          "y": 200,
-          "w": 170,
-          "h": 90,
-          "layer": "dev",
-          "link": "outputs_detail",
-          "style": {
-            "accent": true
-          }
-        },
-        {
-          "id": "tools",
-          "entityId": "E-tools",
-          "type": "block",
-          "label": "tools/ diagram_engine",
-          "icon": "hierarchy",
-          "x": 620,
-          "y": 140,
-          "w": 190,
-          "h": 80,
-          "layer": "dev"
-        },
-        {
-          "id": "docs",
-          "entityId": "E-docs",
-          "type": "block",
-          "label": "docs/ bootstraps",
-          "icon": "notebook",
-          "x": 620,
-          "y": 320,
-          "w": 190,
-          "h": 80,
-          "layer": "dev"
-        },
-        {
-          "id": "viewer",
-          "entityId": "E-viewer",
-          "type": "pictogram",
-          "label": "viewer (GitHub Pages)",
-          "icon": "world",
-          "x": 440,
-          "y": 230,
-          "w": 120,
-          "h": 100,
-          "layer": "pub",
-          "link": "publish_flow",
-          "style": {
-            "accent": true
-          }
-        }
-      ],
-      "edges": [
-        {
-          "id": "o1",
-          "from": "claude_md",
-          "to": "outputs",
-          "label": "governs",
-          "kind": "orthogonal"
-        },
-        {
-          "id": "o2",
-          "from": "claude_dir",
-          "to": "tools",
-          "label": "/diagram skill",
-          "kind": "orthogonal"
-        },
-        {
-          "id": "o3",
-          "from": "outputs",
-          "to": "viewer",
-          "label": "interactive/",
-          "kind": "orthogonal",
-          "style": {
-            "accent": true
-          }
-        },
-        {
-          "id": "o4",
-          "from": "tools",
-          "to": "viewer",
-          "label": "interactive/",
-          "kind": "orthogonal"
-        },
-        {
-          "id": "o5",
-          "from": "gh_workflows",
-          "to": "viewer",
-          "label": "sync-viewer.yml",
-          "kind": "orthogonal",
-          "style": {
-            "accent": true
-          }
-        }
-      ]
-    },
-    {
-      "meta": {
-        "id": "outputs_detail",
-        "title": "outputs/ Detail",
-        "caption": "各サブシステムの成果物 home。learning/ 配下の各ゴールと diagrams/ は自分の interactive/（公開スライス）を持つ。← で全体へ戻る",
-        "projection": "flat",
-        "theme": "mono-light",
-        "grid": 20,
-        "size": {
-          "w": 1120,
-          "h": 640
-        }
-      },
-      "groups": [
-        {
-          "id": "g_outputs",
-          "label": "outputs/",
-          "kind": "container",
-          "x": 40,
-          "y": 40,
-          "w": 1040,
-          "h": 560
-        },
-        {
-          "id": "g_learning",
-          "label": "learning/（LS・学習ゴール）",
-          "kind": "container",
-          "x": 320,
-          "y": 100,
-          "w": 460,
-          "h": 460,
-          "style": {
-            "fill": "var(--de-fill-alt)",
-            "opacity": 0.55
-          }
-        }
-      ],
-      "nodes": [
-        {
-          "id": "research",
-          "type": "block",
-          "label": "research/",
-          "sublabel": "RA リサーチ",
-          "icon": "search",
-          "x": 80,
-          "y": 110,
-          "w": 190,
-          "h": 74
-        },
-        {
-          "id": "speeches",
-          "type": "block",
-          "label": "speeches/",
-          "sublabel": "SW スピーチ",
-          "icon": "microphone",
-          "x": 80,
-          "y": 230,
-          "w": 190,
-          "h": 74
-        },
-        {
-          "id": "dev_plans",
-          "type": "block",
-          "label": "dev_plans/",
-          "sublabel": "DP 開発プラン",
-          "icon": "presentation",
-          "x": 80,
-          "y": 350,
-          "w": 190,
-          "h": 74
-        },
-        {
-          "id": "portfolio",
-          "type": "block",
-          "label": "portfolio/",
-          "sublabel": "KP ポートフォリオ",
-          "icon": "chart",
-          "x": 80,
-          "y": 470,
-          "w": 190,
-          "h": 74
-        },
-        {
-          "id": "epoch_arc1",
-          "type": "block",
-          "label": "epoch_arc1/",
-          "icon": "book",
-          "x": 360,
-          "y": 160,
-          "w": 180,
-          "h": 64
-        },
-        {
-          "id": "epoch_arc2",
-          "type": "block",
-          "label": "epoch_arc2/",
-          "icon": "book",
-          "x": 570,
-          "y": 160,
-          "w": 180,
-          "h": 64
-        },
-        {
-          "id": "manga_epoch",
-          "entityId": "E-ms",
-          "type": "block",
-          "label": "manga_epoch/",
-          "sublabel": "MS マンガ制作",
-          "icon": "notebook",
-          "x": 360,
-          "y": 270,
-          "w": 180,
-          "h": 74,
-          "style": {
-            "accent": true
-          }
-        },
-        {
-          "id": "g_test",
-          "type": "block",
-          "label": "g_test_2026_05/",
-          "icon": "book",
-          "x": 570,
-          "y": 270,
-          "w": 180,
-          "h": 64
-        },
-        {
-          "id": "robotics_ai",
-          "type": "block",
-          "label": "robotics_ai/",
-          "icon": "book",
-          "x": 360,
-          "y": 380,
-          "w": 180,
-          "h": 64
-        },
-        {
-          "id": "l_interactive",
-          "type": "note",
-          "label": "各ゴールの interactive/ が公開スライス → <viewer>/<goal>/",
-          "x": 360,
-          "y": 480,
-          "w": 390,
-          "h": 56
-        },
-        {
-          "id": "diagrams",
-          "entityId": "E-dg",
-          "type": "block",
-          "label": "diagrams/",
-          "sublabel": "DG ダイアグラム",
-          "icon": "hierarchy",
-          "x": 850,
-          "y": 110,
-          "w": 200,
-          "h": 80,
-          "style": {
-            "accent": true
-          }
-        },
-        {
-          "id": "life_json",
-          "type": "block",
-          "label": "interactive/ life_structure.json",
-          "sublabel": "この図（単一の正本）",
-          "icon": "sitemap",
-          "x": 850,
-          "y": 250,
-          "w": 200,
-          "h": 90,
-          "style": {
-            "accent": true
-          }
-        }
-      ],
-      "edges": [
-        {
-          "id": "d1",
-          "from": "diagrams",
-          "to": "life_json",
-          "label": "公開スライス",
-          "kind": "orthogonal",
-          "style": {
-            "accent": true
-          }
-        }
-      ]
-    },
-    {
-      "meta": {
-        "id": "publish_flow",
-        "title": "Publish Pipeline (sync-viewer)",
-        "caption": "main へ push → sync-viewer.yml が各 home の公開スライスを viewer リポジトリへ転送 → GitHub Pages。← で全体へ戻る",
-        "projection": "flat",
-        "theme": "mono-light",
-        "grid": 20,
-        "size": {
-          "w": 1140,
-          "h": 640
-        }
-      },
-      "groups": [
-        {
-          "id": "g_home",
-          "label": "life リポジトリ（home の公開スライス）",
-          "kind": "container",
-          "x": 40,
-          "y": 60,
-          "w": 330,
-          "h": 520
-        },
-        {
-          "id": "g_site",
-          "label": "viewer サイト（GitHub Pages）",
-          "kind": "container",
-          "x": 830,
-          "y": 60,
-          "w": 280,
-          "h": 520
-        }
-      ],
-      "nodes": [
-        {
-          "id": "s_learning",
-          "type": "block",
-          "label": "outputs/learning/*/interactive/",
-          "x": 70,
-          "y": 120,
-          "w": 270,
-          "h": 64,
-          "icon": "book"
-        },
-        {
-          "id": "s_diagrams",
-          "type": "block",
-          "label": "outputs/diagrams/interactive/",
-          "x": 70,
-          "y": 220,
-          "w": 270,
-          "h": 64,
-          "icon": "sitemap",
-          "style": {
-            "accent": true
-          }
-        },
-        {
-          "id": "s_tool",
-          "entityId": "E-tools",
-          "type": "block",
-          "label": "tools/diagram_engine/interactive/",
-          "x": 70,
-          "y": 320,
-          "w": 270,
-          "h": 64,
-          "icon": "hierarchy"
-        },
-        {
-          "id": "s_lp",
-          "type": "block",
-          "label": "outputs/site/interactive/（LP）",
-          "x": 70,
-          "y": 420,
-          "w": 270,
-          "h": 64,
-          "icon": "world"
-        },
-        {
-          "id": "sync",
-          "type": "function",
-          "label": "sync-viewer.yml",
-          "sublabel": "on: push(main)",
-          "icon": "gear",
-          "x": 460,
-          "y": 250,
-          "w": 220,
-          "h": 110,
-          "style": {
-            "accent": true
-          }
-        },
-        {
-          "id": "u_goal",
-          "type": "block",
-          "label": "/pub/<project>/ ・ /review/<project>/",
-          "x": 870,
-          "y": 120,
-          "w": 200,
-          "h": 60
-        },
-        {
-          "id": "u_diagrams",
-          "type": "block",
-          "label": "/data/diagrams/",
-          "x": 870,
-          "y": 220,
-          "w": 200,
-          "h": 60,
-          "style": {
-            "accent": true
-          }
-        },
-        {
-          "id": "u_drawer",
-          "type": "block",
-          "label": "/tools/diagram_drawer/",
-          "x": 870,
-          "y": 320,
-          "w": 200,
-          "h": 60
-        },
-        {
-          "id": "u_root",
-          "type": "block",
-          "label": "/（サイト root）",
-          "x": 870,
-          "y": 420,
-          "w": 200,
-          "h": 60
-        }
-      ],
-      "edges": [
-        {
-          "id": "p1",
-          "from": "s_learning",
-          "to": "sync",
-          "kind": "orthogonal"
-        },
-        {
-          "id": "p2",
-          "from": "s_diagrams",
-          "to": "sync",
-          "kind": "orthogonal",
-          "style": {
-            "accent": true
-          }
-        },
-        {
-          "id": "p3",
-          "from": "s_tool",
-          "to": "sync",
-          "kind": "orthogonal"
-        },
-        {
-          "id": "p4",
-          "from": "s_lp",
-          "to": "sync",
-          "kind": "orthogonal"
-        },
-        {
-          "id": "p5",
-          "from": "sync",
-          "to": "u_goal",
-          "kind": "orthogonal"
-        },
-        {
-          "id": "p6",
-          "from": "sync",
-          "to": "u_diagrams",
-          "kind": "orthogonal",
-          "style": {
-            "accent": true
-          }
-        },
-        {
-          "id": "p7",
-          "from": "sync",
-          "to": "u_drawer",
-          "kind": "orthogonal"
-        },
-        {
-          "id": "p8",
-          "from": "sync",
-          "to": "u_root",
-          "kind": "orthogonal"
-        }
-      ]
-    },
-    {
-      "meta": {
-        "id": "subsystems",
-        "title": "Subsystems & Skills",
-        "caption": "CLAUDE.md 登録の 8 サブシステム。スキルは .claude/skills/。← で全体へ戻る",
-        "projection": "flat",
-        "theme": "mono-light",
-        "grid": 20,
-        "size": {
-          "w": 1120,
-          "h": 560
-        }
-      },
-      "groups": [],
-      "nodes": [
-        {
-          "id": "kas",
-          "type": "block",
-          "label": "KAS",
-          "sublabel": "ナレッジ蓄積基盤",
-          "icon": "book",
-          "x": 80,
-          "y": 100,
-          "w": 220,
-          "h": 84
-        },
-        {
-          "id": "ra",
-          "type": "block",
-          "label": "RA /research",
-          "sublabel": "リサーチエージェント",
-          "icon": "search",
-          "x": 380,
-          "y": 100,
-          "w": 220,
-          "h": 84
-        },
-        {
-          "id": "kp",
-          "type": "block",
-          "label": "KP",
-          "sublabel": "知識ポートフォリオ",
-          "icon": "chart",
-          "x": 680,
-          "y": 100,
-          "w": 220,
-          "h": 84
-        },
-        {
-          "id": "sw",
-          "type": "block",
-          "label": "SW /speech",
-          "sublabel": "スピーチ原稿生成",
-          "icon": "microphone",
-          "x": 80,
-          "y": 240,
-          "w": 220,
-          "h": 84
-        },
-        {
-          "id": "dp",
-          "type": "block",
-          "label": "DP /dev-plan",
-          "sublabel": "開発プラン生成",
-          "icon": "presentation",
-          "x": 380,
-          "y": 240,
-          "w": 220,
-          "h": 84
-        },
-        {
-          "id": "ls",
-          "type": "block",
-          "label": "LS /learn",
-          "sublabel": "学習サポート",
-          "icon": "bulb",
-          "x": 680,
-          "y": 240,
-          "w": 220,
-          "h": 84
-        },
-        {
-          "id": "ms",
-          "entityId": "E-ms",
-          "type": "block",
-          "label": "MS /manga",
-          "sublabel": "マンガ制作支援",
-          "icon": "notebook",
-          "x": 80,
-          "y": 380,
-          "w": 220,
-          "h": 84
-        },
-        {
-          "id": "dg",
-          "entityId": "E-dg",
-          "type": "block",
-          "label": "DG /diagram",
-          "sublabel": "ダイアグラム生成（この図）",
-          "icon": "hierarchy",
-          "x": 380,
-          "y": 380,
-          "w": 220,
-          "h": 84,
-          "style": {
-            "accent": true
-          }
-        }
-      ],
-      "edges": [
-        {
-          "id": "s1",
-          "from": "ra",
-          "to": "kas",
-          "label": "蓄積",
-          "kind": "orthogonal"
-        },
-        {
-          "id": "s2",
-          "from": "kas",
-          "to": "kp",
-          "label": "可視化",
-          "kind": "orthogonal"
-        }
-      ]
+  {
+   "meta": {
+    "id": "outputs_detail",
+    "title": "outputs/ Detail",
+    "caption": "各サブシステムの成果物 home。learning/ 配下の各ゴールと diagrams/ は自分の interactive/（公開スライス）を持つ。← で全体へ戻る",
+    "projection": "flat",
+    "theme": "mono-light",
+    "grid": 20,
+    "size": {
+     "w": 1120,
+     "h": 640
     }
-  ],
-  "entities": [
+   },
+   "groups": [
     {
-      "id": "E-repo",
-      "type": "block",
-      "name": "life リポジトリ",
-      "props": {
-        "provenance": "human",
-        "description": "GitHub + Claude Code による個人 AI 駆動ライフマネジメント"
-      }
+     "id": "g_outputs",
+     "label": "outputs/",
+     "kind": "container",
+     "x": 40,
+     "y": 40,
+     "w": 1040,
+     "h": 560
     },
     {
-      "id": "E-outputs",
-      "type": "block",
-      "name": "outputs/（成果物 home）",
-      "parent": "E-repo",
-      "props": {
-        "provenance": "doc",
-        "description": "各サブシステムの成果物 home。learning/・diagrams/・research/ が公開スライスを持つ"
-      }
-    },
-    {
-      "id": "E-tools",
-      "type": "block",
-      "name": "diagram_engine（図解エンジン本体）",
-      "parent": "E-repo",
-      "props": {
-        "provenance": "human",
-        "status": "active",
-        "description": "tools/diagram_engine。JSON 宣言 ⇄ 2D/2.5D/3D の自己完結インタラクティブ図解＋MBSE 台帳"
-      }
-    },
-    {
-      "id": "E-dg",
-      "type": "block",
-      "name": "DG ダイアグラム生成",
-      "parent": "E-outputs",
-      "props": {
-        "provenance": "human",
-        "status": "active",
-        "description": "/diagram スキル。この共通認識図（life_structure）の生成系。diagram_engine が実現する"
-      }
-    },
-    {
-      "id": "E-ms",
-      "type": "block",
-      "name": "MS マンガ制作支援",
-      "parent": "E-outputs",
-      "props": {
-        "provenance": "human",
-        "status": "active",
-        "description": "/manga スキル。EPOCH 漫画制作（MulmoScript / 画像生成 / キャラ一貫性）"
-      }
-    },
-    {
-      "id": "E-ra",
-      "type": "block",
-      "name": "RA リサーチ成果",
-      "parent": "E-outputs",
-      "props": {
-        "provenance": "human",
-        "status": "active",
-        "description": "/research スキル。outputs/research/。interactive/ を公開スライスとして持つ（Oceanic Constellations 資料集・スタートアップ解説）"
-      }
-    },
-    {
-      "id": "E-viewer",
-      "type": "pictogram",
-      "name": "viewer 公開サイト",
-      "parent": "E-repo",
-      "props": {
-        "provenance": "human",
-        "description": "GitHub Pages 公開先。sync-viewer.yml が各 home の公開スライスを転送"
-      }
-    },
-    {
-      "id": "E-ideas",
-      "type": "block",
-      "name": "ideas/",
-      "parent": "E-repo",
-      "props": {
-        "provenance": "doc",
-        "description": "アイデアノート・メモ（YAML frontmatter）。daily/ に日次トレンドネタ"
-      }
-    },
-    {
-      "id": "E-knowledge",
-      "type": "block",
-      "name": "knowledge/",
-      "parent": "E-repo",
-      "props": {
-        "provenance": "doc",
-        "description": "ナレッジベース（KAS 管理）。domain/research/learning/profile/meta"
-      }
-    },
-    {
-      "id": "E-docs",
-      "type": "block",
-      "name": "docs/",
-      "parent": "E-repo",
-      "props": {
-        "provenance": "doc",
-        "description": "参考資料。bootstraps/（ライフ管理ブートストラップ）・reference/"
-      }
-    },
-    {
-      "id": "E-github",
-      "type": "block",
-      "name": ".github/",
-      "parent": "E-repo",
-      "props": {
-        "provenance": "doc",
-        "description": "ISSUE_TEMPLATE/ と workflows/（GitHub Actions・sync-viewer 含む）"
-      }
-    },
-    {
-      "id": "E-claude",
-      "type": "block",
-      "name": ".claude/",
-      "parent": "E-repo",
-      "props": {
-        "provenance": "doc",
-        "description": "rules/（常時ルール）・skills/・agents/（検証エージェント等）"
-      }
+     "id": "g_learning",
+     "label": "learning/（LS・学習ゴール）",
+     "kind": "container",
+     "x": 320,
+     "y": 100,
+     "w": 460,
+     "h": 460,
+     "style": {
+      "fill": "var(--de-fill-alt)",
+      "opacity": 0.55
+     }
     }
-  ],
-  "relations": [
+   ],
+   "nodes": [
     {
-      "id": "R-tool-dg",
-      "rel": "realizes",
-      "from": "E-tools",
-      "to": "E-dg",
-      "props": {
-        "note": "diagram_engine が DG サブシステムを実現する"
-      }
+     "id": "research",
+     "type": "block",
+     "label": "research/",
+     "sublabel": "RA リサーチ",
+     "icon": "search",
+     "x": 80,
+     "y": 110,
+     "w": 190,
+     "h": 74
     },
     {
-      "id": "R-dg-viewer",
-      "rel": "flow",
-      "from": "E-dg",
-      "to": "E-viewer",
-      "props": {
-        "note": "diagrams/interactive/ を viewer /diagrams/ へ公開"
-      }
+     "id": "speeches",
+     "type": "block",
+     "label": "speeches/",
+     "sublabel": "SW スピーチ",
+     "icon": "microphone",
+     "x": 80,
+     "y": 230,
+     "w": 190,
+     "h": 74
     },
     {
-      "id": "R-ms-viewer",
-      "rel": "flow",
-      "from": "E-ms",
-      "to": "E-viewer",
-      "props": {
-        "note": "manga_epoch/interactive/ を viewer へ公開"
-      }
+     "id": "dev_plans",
+     "type": "block",
+     "label": "dev_plans/",
+     "sublabel": "DP 開発プラン",
+     "icon": "presentation",
+     "x": 80,
+     "y": 350,
+     "w": 190,
+     "h": 74
     },
     {
-      "id": "R-ra-viewer",
-      "rel": "flow",
-      "from": "E-ra",
-      "to": "E-viewer",
-      "props": {
-        "note": "research/interactive/ を viewer /review/oceanic/ へ公開"
-      }
+     "id": "portfolio",
+     "type": "block",
+     "label": "portfolio/",
+     "sublabel": "KP ポートフォリオ",
+     "icon": "chart",
+     "x": 80,
+     "y": 470,
+     "w": 190,
+     "h": 74
+    },
+    {
+     "id": "epoch_arc1",
+     "type": "block",
+     "label": "epoch_arc1/",
+     "icon": "book",
+     "x": 360,
+     "y": 160,
+     "w": 180,
+     "h": 64
+    },
+    {
+     "id": "epoch_arc2",
+     "type": "block",
+     "label": "epoch_arc2/",
+     "icon": "book",
+     "x": 570,
+     "y": 160,
+     "w": 180,
+     "h": 64
+    },
+    {
+     "id": "manga_epoch",
+     "entityId": "E-ms",
+     "type": "block",
+     "label": "manga_epoch/",
+     "sublabel": "MS マンガ制作",
+     "icon": "notebook",
+     "x": 360,
+     "y": 270,
+     "w": 180,
+     "h": 74,
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "g_test",
+     "type": "block",
+     "label": "g_test_2026_05/",
+     "icon": "book",
+     "x": 570,
+     "y": 270,
+     "w": 180,
+     "h": 64
+    },
+    {
+     "id": "robotics_ai",
+     "type": "block",
+     "label": "robotics_ai/",
+     "icon": "book",
+     "x": 360,
+     "y": 380,
+     "w": 180,
+     "h": 64
+    },
+    {
+     "id": "l_interactive",
+     "type": "note",
+     "label": "各ゴールの interactive/ が公開スライス → <viewer>/<goal>/",
+     "x": 360,
+     "y": 480,
+     "w": 390,
+     "h": 56
+    },
+    {
+     "id": "diagrams",
+     "entityId": "E-dg",
+     "type": "block",
+     "label": "diagrams/",
+     "sublabel": "DG ダイアグラム",
+     "icon": "hierarchy",
+     "x": 850,
+     "y": 110,
+     "w": 200,
+     "h": 80,
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "life_json",
+     "type": "block",
+     "label": "interactive/ life_structure.json",
+     "sublabel": "この図（単一の正本）",
+     "icon": "sitemap",
+     "x": 850,
+     "y": 250,
+     "w": 200,
+     "h": 90,
+     "style": {
+      "accent": true
+     }
     }
-  ]
+   ],
+   "edges": [
+    {
+     "id": "d1",
+     "from": "diagrams",
+     "to": "life_json",
+     "label": "公開スライス",
+     "kind": "orthogonal",
+     "style": {
+      "accent": true
+     }
+    }
+   ]
+  },
+  {
+   "meta": {
+    "id": "publish_flow",
+    "title": "Publish Pipeline (sync-viewer)",
+    "caption": "main へ push → sync-viewer.yml が各 home の公開スライスを viewer リポジトリへ転送 → GitHub Pages。← で全体へ戻る",
+    "projection": "flat",
+    "theme": "mono-light",
+    "grid": 20,
+    "size": {
+     "w": 1140,
+     "h": 640
+    }
+   },
+   "groups": [
+    {
+     "id": "g_home",
+     "label": "life リポジトリ（home の公開スライス）",
+     "kind": "container",
+     "x": 40,
+     "y": 60,
+     "w": 330,
+     "h": 520
+    },
+    {
+     "id": "g_site",
+     "label": "viewer サイト（GitHub Pages）",
+     "kind": "container",
+     "x": 830,
+     "y": 60,
+     "w": 280,
+     "h": 520
+    }
+   ],
+   "nodes": [
+    {
+     "id": "s_learning",
+     "type": "block",
+     "label": "outputs/learning/*/interactive/",
+     "x": 70,
+     "y": 120,
+     "w": 270,
+     "h": 64,
+     "icon": "book"
+    },
+    {
+     "id": "s_diagrams",
+     "type": "block",
+     "label": "outputs/diagrams/interactive/",
+     "x": 70,
+     "y": 220,
+     "w": 270,
+     "h": 64,
+     "icon": "sitemap",
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "s_tool",
+     "entityId": "E-tools",
+     "type": "block",
+     "label": "tools/*/interactive/",
+     "x": 70,
+     "y": 320,
+     "w": 270,
+     "h": 64,
+     "icon": "hierarchy",
+     "sublabel": "diagram_engine ・ usv_model"
+    },
+    {
+     "id": "s_lp",
+     "type": "block",
+     "label": "outputs/site/interactive/（LP）",
+     "x": 70,
+     "y": 420,
+     "w": 270,
+     "h": 64,
+     "icon": "world"
+    },
+    {
+     "id": "sync",
+     "type": "function",
+     "label": "sync-viewer.yml",
+     "sublabel": "on: push(main)",
+     "icon": "gear",
+     "x": 460,
+     "y": 250,
+     "w": 220,
+     "h": 110,
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "u_goal",
+     "type": "block",
+     "label": "/pub/<project>/ ・ /review/<project>/",
+     "x": 870,
+     "y": 120,
+     "w": 200,
+     "h": 60
+    },
+    {
+     "id": "u_diagrams",
+     "type": "block",
+     "label": "/data/diagrams/",
+     "x": 870,
+     "y": 220,
+     "w": 200,
+     "h": 60,
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "u_drawer",
+     "type": "block",
+     "label": "/tools/<tool>/",
+     "x": 870,
+     "y": 320,
+     "w": 200,
+     "h": 60,
+     "sublabel": "diagram_drawer ・ usv_model"
+    },
+    {
+     "id": "u_root",
+     "type": "block",
+     "label": "/（サイト root）",
+     "x": 870,
+     "y": 420,
+     "w": 200,
+     "h": 60
+    }
+   ],
+   "edges": [
+    {
+     "id": "p1",
+     "from": "s_learning",
+     "to": "sync",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "p2",
+     "from": "s_diagrams",
+     "to": "sync",
+     "kind": "orthogonal",
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "p3",
+     "from": "s_tool",
+     "to": "sync",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "p4",
+     "from": "s_lp",
+     "to": "sync",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "p5",
+     "from": "sync",
+     "to": "u_goal",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "p6",
+     "from": "sync",
+     "to": "u_diagrams",
+     "kind": "orthogonal",
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "p7",
+     "from": "sync",
+     "to": "u_drawer",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "p8",
+     "from": "sync",
+     "to": "u_root",
+     "kind": "orthogonal"
+    }
+   ]
+  },
+  {
+   "meta": {
+    "id": "subsystems",
+    "title": "Subsystems & Skills",
+    "caption": "CLAUDE.md 登録の 8 サブシステム。スキルは .claude/skills/。← で全体へ戻る",
+    "projection": "flat",
+    "theme": "mono-light",
+    "grid": 20,
+    "size": {
+     "w": 1120,
+     "h": 560
+    }
+   },
+   "groups": [],
+   "nodes": [
+    {
+     "id": "kas",
+     "type": "block",
+     "label": "KAS",
+     "sublabel": "ナレッジ蓄積基盤",
+     "icon": "book",
+     "x": 80,
+     "y": 100,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "ra",
+     "type": "block",
+     "label": "RA /research",
+     "sublabel": "リサーチエージェント",
+     "icon": "search",
+     "x": 380,
+     "y": 100,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "kp",
+     "type": "block",
+     "label": "KP",
+     "sublabel": "知識ポートフォリオ",
+     "icon": "chart",
+     "x": 680,
+     "y": 100,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "sw",
+     "type": "block",
+     "label": "SW /speech",
+     "sublabel": "スピーチ原稿生成",
+     "icon": "microphone",
+     "x": 80,
+     "y": 240,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "dp",
+     "type": "block",
+     "label": "DP /dev-plan",
+     "sublabel": "開発プラン生成",
+     "icon": "presentation",
+     "x": 380,
+     "y": 240,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "ls",
+     "type": "block",
+     "label": "LS /learn",
+     "sublabel": "学習サポート",
+     "icon": "bulb",
+     "x": 680,
+     "y": 240,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "ms",
+     "entityId": "E-ms",
+     "type": "block",
+     "label": "MS /manga",
+     "sublabel": "マンガ制作支援",
+     "icon": "notebook",
+     "x": 80,
+     "y": 380,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "dg",
+     "entityId": "E-dg",
+     "type": "block",
+     "label": "DG /diagram",
+     "sublabel": "ダイアグラム生成（この図）",
+     "icon": "hierarchy",
+     "x": 380,
+     "y": 380,
+     "w": 220,
+     "h": 84,
+     "style": {
+      "accent": true
+     }
+    }
+   ],
+   "edges": [
+    {
+     "id": "s1",
+     "from": "ra",
+     "to": "kas",
+     "label": "蓄積",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "s2",
+     "from": "kas",
+     "to": "kp",
+     "label": "可視化",
+     "kind": "orthogonal"
+    }
+   ]
+  }
+ ],
+ "entities": [
+  {
+   "id": "E-repo",
+   "type": "block",
+   "name": "life リポジトリ",
+   "props": {
+    "provenance": "human",
+    "description": "GitHub + Claude Code による個人 AI 駆動ライフマネジメント"
+   }
+  },
+  {
+   "id": "E-outputs",
+   "type": "block",
+   "name": "outputs/（成果物 home）",
+   "parent": "E-repo",
+   "props": {
+    "provenance": "doc",
+    "description": "各サブシステムの成果物 home。learning/・diagrams/・research/ が公開スライスを持つ"
+   }
+  },
+  {
+   "id": "E-tools",
+   "type": "block",
+   "name": "diagram_engine（図解エンジン本体）",
+   "parent": "E-repo",
+   "props": {
+    "provenance": "human",
+    "status": "active",
+    "description": "tools/diagram_engine。JSON 宣言 ⇄ 2D/2.5D/3D の自己完結インタラクティブ図解＋MBSE 台帳"
+   }
+  },
+  {
+   "id": "E-dg",
+   "type": "block",
+   "name": "DG ダイアグラム生成",
+   "parent": "E-outputs",
+   "props": {
+    "provenance": "human",
+    "status": "active",
+    "description": "/diagram スキル。この共通認識図（life_structure）の生成系。diagram_engine が実現する"
+   }
+  },
+  {
+   "id": "E-ms",
+   "type": "block",
+   "name": "MS マンガ制作支援",
+   "parent": "E-outputs",
+   "props": {
+    "provenance": "human",
+    "status": "active",
+    "description": "/manga スキル。EPOCH 漫画制作（MulmoScript / 画像生成 / キャラ一貫性）"
+   }
+  },
+  {
+   "id": "E-ra",
+   "type": "block",
+   "name": "RA リサーチ成果",
+   "parent": "E-outputs",
+   "props": {
+    "provenance": "human",
+    "status": "active",
+    "description": "/research スキル。outputs/research/。interactive/ を公開スライスとして持つ（Oceanic Constellations 資料集・スタートアップ解説）"
+   }
+  },
+  {
+   "id": "E-viewer",
+   "type": "pictogram",
+   "name": "viewer 公開サイト",
+   "parent": "E-repo",
+   "props": {
+    "provenance": "human",
+    "description": "GitHub Pages 公開先。sync-viewer.yml が各 home の公開スライスを転送"
+   }
+  },
+  {
+   "id": "E-ideas",
+   "type": "block",
+   "name": "ideas/",
+   "parent": "E-repo",
+   "props": {
+    "provenance": "doc",
+    "description": "アイデアノート・メモ（YAML frontmatter）。daily/ に日次トレンドネタ"
+   }
+  },
+  {
+   "id": "E-knowledge",
+   "type": "block",
+   "name": "knowledge/",
+   "parent": "E-repo",
+   "props": {
+    "provenance": "doc",
+    "description": "ナレッジベース（KAS 管理）。domain/research/learning/profile/meta"
+   }
+  },
+  {
+   "id": "E-docs",
+   "type": "block",
+   "name": "docs/",
+   "parent": "E-repo",
+   "props": {
+    "provenance": "doc",
+    "description": "参考資料。bootstraps/（ライフ管理ブートストラップ）・reference/"
+   }
+  },
+  {
+   "id": "E-github",
+   "type": "block",
+   "name": ".github/",
+   "parent": "E-repo",
+   "props": {
+    "provenance": "doc",
+    "description": "ISSUE_TEMPLATE/ と workflows/（GitHub Actions・sync-viewer 含む）"
+   }
+  },
+  {
+   "id": "E-claude",
+   "type": "block",
+   "name": ".claude/",
+   "parent": "E-repo",
+   "props": {
+    "provenance": "doc",
+    "description": "rules/（常時ルール）・skills/・agents/（検証エージェント等）"
+   }
+  },
+  {
+   "id": "E-usv",
+   "type": "block",
+   "name": "usv_model（USV 0次元モデル）",
+   "props": {
+    "provenance": "ai",
+    "description": "エネルギー成立性・動力性能成立性の 0D シミュレータ（tools/usv_model/）。設計書 DP-20260825-01"
+   }
+  }
+ ],
+ "relations": [
+  {
+   "id": "R-tool-dg",
+   "rel": "realizes",
+   "from": "E-tools",
+   "to": "E-dg",
+   "props": {
+    "note": "diagram_engine が DG サブシステムを実現する"
+   }
+  },
+  {
+   "id": "R-dg-viewer",
+   "rel": "flow",
+   "from": "E-dg",
+   "to": "E-viewer",
+   "props": {
+    "note": "diagrams/interactive/ を viewer /diagrams/ へ公開"
+   }
+  },
+  {
+   "id": "R-ms-viewer",
+   "rel": "flow",
+   "from": "E-ms",
+   "to": "E-viewer",
+   "props": {
+    "note": "manga_epoch/interactive/ を viewer へ公開"
+   }
+  },
+  {
+   "id": "R-ra-viewer",
+   "rel": "flow",
+   "from": "E-ra",
+   "to": "E-viewer",
+   "props": {
+    "note": "research/interactive/ を viewer /review/oceanic/ へ公開"
+   }
+  },
+  {
+   "id": "R-usv-viewer",
+   "rel": "flow",
+   "from": "E-usv",
+   "to": "E-viewer",
+   "props": {
+    "note": "tools/usv_model/interactive → viewer /tools/usv_model/（sync-viewer MAP_DEV）"
+   }
+  }
+ ]
 }

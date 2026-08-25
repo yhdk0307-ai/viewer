@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>USV 0次元モデル — エネルギー・動力性能成立性</title>
+<style>
+  /* ── ページ基調（chrome）。チャート系列色は dataviz 検証済みパレット（下の SERIES）を使用 ── */
+  :root{
+    --bg:#F5F7F8; --surface:#FFFFFF; --surface2:#EDF1F3;
+    --ink:#14232C; --muted:#5A6E7B; --faint:#8A9AA5;
+    --line:#DAE2E7; --line2:#C4D1D8;
+    --accent:#3D5A6C; --accent-ink:#2C4453;
+    --warn-bg:#FBF3E2; --warn-line:#D9BE85; --warn-ink:#7A5A14;
+    --ok:#0CA30C; --ng:#D03B3B;
+    --chart-surface:#FCFCFB; --grid:#E1E0D9; --axis:#C3C2B7;
+    --ink-chart:#0B0B0B; --muted-chart:#898781;
+    --s1:#2A78D6; --s2:#EB6834; --s3:#1BAF7A; --s4:#EDA100; --s5:#E87BA4; --s7:#4A3AA7;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0C151B; --surface:#121F27; --surface2:#182835;
+      --ink:#E4EDF2; --muted:#93A8B4; --faint:#6B8290;
+      --line:#22333E; --line2:#33495A;
+      --accent:#8FC1D4; --accent-ink:#B4D8E6;
+      --warn-bg:#2A2414; --warn-line:#6E5A28; --warn-ink:#D9A84E;
+      --ok:#0CA30C; --ng:#E66767;
+      --chart-surface:#1A1A19; --grid:#2C2C2A; --axis:#383835;
+      --ink-chart:#FFFFFF; --muted-chart:#898781;
+      --s1:#3987E5; --s2:#D95926; --s3:#199E70; --s4:#C98500; --s5:#D55181; --s7:#9085E9;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0C151B; --surface:#121F27; --surface2:#182835;
+    --ink:#E4EDF2; --muted:#93A8B4; --faint:#6B8290;
+    --line:#22333E; --line2:#33495A;
+    --accent:#8FC1D4; --accent-ink:#B4D8E6;
+    --warn-bg:#2A2414; --warn-line:#6E5A28; --warn-ink:#D9A84E;
+    --ok:#0CA30C; --ng:#E66767;
+    --chart-surface:#1A1A19; --grid:#2C2C2A; --axis:#383835;
+    --ink-chart:#FFFFFF; --muted-chart:#898781;
+    --s1:#3987E5; --s2:#D95926; --s3:#199E70; --s4:#C98500; --s5:#D55181; --s7:#9085E9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,"Noto Sans JP",system-ui,sans-serif;
+    line-height:1.65;font-size:14.5px;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 16px 72px;}
+  header{border-bottom:1px solid var(--line);background:var(--surface);}
+  .head-in{max-width:1080px;margin:0 auto;padding:22px 16px 16px;}
+  .eyebrow{font-size:11px;letter-spacing:.18em;color:var(--accent-ink);font-weight:700;}
+  h1{font-size:clamp(20px,3.6vw,27px);margin:.15em 0 .1em;line-height:1.25;}
+  .sub{color:var(--muted);font-size:13px;}
+  h2{font-size:13px;letter-spacing:.12em;color:var(--muted);font-weight:700;margin:34px 0 12px;
+     display:flex;align-items:center;gap:9px;}
+  h2::before{content:"";width:16px;height:2px;background:var(--accent);}
+  .caveat{margin-top:14px;background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:8px;
+    padding:9px 12px;font-size:12.5px;color:var(--warn-ink);}
+  /* controls */
+  .panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;}
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px 8px;}
+  .panel h3{margin:0 0 8px;font-size:13px;color:var(--accent-ink);letter-spacing:.06em;}
+  .row{display:grid;grid-template-columns:1fr 118px;align-items:center;gap:8px;padding:3px 0;}
+  .row label{font-size:12.5px;color:var(--muted);}
+  .row .val{display:flex;align-items:center;gap:5px;}
+  input[type=number]{width:76px;padding:3px 6px;border:1px solid var(--line2);border-radius:6px;
+    background:var(--surface);color:var(--ink);font:inherit;font-variant-numeric:tabular-nums;text-align:right;}
+  input[type=number]:focus,select:focus,button:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .unit{font-size:11px;color:var(--faint);min-width:34px;}
+  select{padding:3px 6px;border:1px solid var(--line2);border-radius:6px;background:var(--surface);color:var(--ink);font:inherit;}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px;}
+  button{padding:6px 12px;border:1px solid var(--line2);border-radius:7px;background:var(--surface);
+    color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer;}
+  button:hover{border-color:var(--accent);}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--bg);font-weight:700;}
+  /* verdict */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 14px;}
+  .kpi .k{font-size:11.5px;color:var(--muted);letter-spacing:.05em;}
+  .kpi .v{font-size:24px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums;}
+  .kpi .n{font-size:11.5px;color:var(--faint);margin-top:1px;}
+  .badge{display:inline-block;padding:1px 9px;border-radius:99px;font-size:11.5px;font-weight:700;}
+  .badge.ok{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok);}
+  .badge.ng{background:color-mix(in srgb,var(--ng) 14%,transparent);color:var(--ng);}
+  /* charts */
+  .chart-card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
+  .chart-card h3{margin:0;font-size:13.5px;}
+  .chart-card .cap{font-size:12px;color:var(--muted);margin:2px 0 8px;}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin:6px 0 2px;}
+  .legend .chip{display:inline-flex;align-items:center;gap:5px;}
+  .sw{width:11px;height:11px;border-radius:3px;display:inline-block;}
+  .sw.line{height:0;border-top:2.5px dashed var(--ink);border-radius:0;}
+  .cv{position:relative;}
+  canvas{display:block;width:100%;height:auto;background:var(--chart-surface);border-radius:6px;}
+  .tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line2);
+    border-radius:7px;padding:6px 9px;font-size:11.5px;box-shadow:0 3px 12px rgba(0,0,0,.14);
+    display:none;white-space:nowrap;font-variant-numeric:tabular-nums;z-index:5;}
+  /* power budget bars */
+  .pb{display:grid;gap:9px;margin-top:6px;}
+  .pb-row{display:grid;grid-template-columns:88px 1fr;gap:10px;align-items:center;}
+  .pb-name{font-size:12px;color:var(--muted);text-align:right;}
+  .pb-bar{display:flex;height:26px;border-radius:5px;overflow:hidden;background:var(--surface2);gap:2px;}
+  .pb-seg{height:100%;min-width:2px;}
+  .pb-lab{font-size:11.5px;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums;}
+  /* validation */
+  .vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;}
+  .vcase{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:12.5px;}
+  .vcase b{font-size:13px;}
+  .vcase .crit{color:var(--muted);font-size:11.5px;}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums;}
+  th,td{border-bottom:1px solid var(--line);padding:5px 9px;text-align:right;}
+  th:first-child,td:first-child{text-align:left;}
+  th{color:var(--muted);font-weight:600;font-size:11.5px;}
+  details{margin-top:10px;}
+  summary{cursor:pointer;color:var(--accent-ink);font-size:12.5px;}
+  .io{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+  textarea{width:100%;height:90px;font:11px ui-monospace,monospace;background:var(--surface);
+    color:var(--ink);border:1px solid var(--line2);border-radius:7px;padding:7px;}
+  footer{margin-top:40px;font-size:11.5px;color:var(--faint);border-top:1px solid var(--line);padding-top:12px;}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+<header><div class="head-in">
+  <div class="eyebrow">USV 0-D MODEL · PHASE 1（定常入力）</div>
+  <h1>USV 0次元モデル — エネルギー・動力性能成立性</h1>
+  <div class="sub">ベースライン: Seasats Lightfish 級（RR-20260824-01 調査値）／ 設計書: DP-20260825-01 ／ surge 1自由度 (m+mₐ)V̇ = T − R</div>
+  <div class="caveat">⚠ 波浪中抵抗増加は STAWAVE-1 に波長/船長比の暫定減衰を掛けた修正版です（小型艇では STAWAVE-1 が適用域外のため）。荒天側の絶対値は傾向把握用であり、Phase 2 のスペクトル＋RAO で置き換え予定です。</div>
+</div></header>
+
+<div class="wrap">
+
+<h2>入力パラメータ</h2>
+<div class="presets">
+  <button class="primary" id="btn-recalc">再計算</button>
+  <button data-preset="v1">V1 最高速力</button>
+  <button data-preset="v2">V2 無日照航続</button>
+  <button data-preset="v3">V3 長期滞留</button>
+  <button data-preset="v4">V4 荒天</button>
+  <button data-preset="base">ベースラインに戻す</button>
+</div>
+<div class="panels">
+  <div class="panel"><h3>機体（Lightfish ベースライン）</h3>
+    <div class="row"><label>水線長 Lwl</label><span class="val"><input type="number" id="p-L" step="0.1" min="1" max="20"><span class="unit">m</span></span></div>
+    <div class="row"><label>幅 B</label><span class="val"><input type="number" id="p-B" step="0.05" min="0.3" max="5"><span class="unit">m</span></span></div>
+    <div class="row"><label>質量 m</label><span class="val"><input type="number" id="p-m" step="1" min="30" max="5000"><span class="unit">kg</span></span></div>
+    <div class="row"><label>推進最大電力</label><span class="val"><input type="number" id="p-pmax" step="10" min="50" max="20000"><span class="unit">W</span></span></div>
+    <div class="row"><label>ホテル負荷</label><span class="val"><input type="number" id="p-hotel" step="5" min="0" max="1000"><span class="unit">W</span></span></div>
+    <div class="row"><label>太陽光パネル</label><span class="val"><input type="number" id="p-panel" step="5" min="0" max="5000"><span class="unit">W</span></span></div>
+    <div class="row"><label>電池容量</label><span class="val"><input type="number" id="p-batt" step="0.5" min="0.5" max="200"><span class="unit">kWh</span></span></div>
+    <div class="row"><label>補助発電機</label><span class="val"><select id="p-gen"><option value="off">なし</option><option value="on">あり(125W)</option></select></span></div>
+    <div class="row"><label>発電機燃料</label><span class="val"><input type="number" id="p-fuel" step="1" min="0" max="500"><span class="unit">kWh</span></span></div>
+  </div>
+  <div class="panel"><h3>環境（定常）</h3>
+    <div class="row"><label>風速 U₁₀</label><span class="val"><input type="number" id="e-wind" step="1" min="0" max="40"><span class="unit">m/s</span></span></div>
+    <div class="row"><label>風向（艇に対し）</label><span class="val"><select id="e-wdir"><option value="0">向い風</option><option value="90">横風</option><option value="180">追い風</option></select></span></div>
+    <div class="row"><label>有義波高 Hs</label><span class="val"><input type="number" id="e-hs" step="0.25" min="0" max="8"><span class="unit">m</span></span></div>
+    <div class="row"><label>波周期 Tp</label><span class="val"><input type="number" id="e-tp" step="0.5" min="2" max="16"><span class="unit">s</span></span></div>
+    <div class="row"><label>日射量（日平均）</label><span class="val"><input type="number" id="e-irr" step="0.5" min="0" max="8"><span class="unit">kWh/m²/日</span></span></div>
+    <div class="row"><label>PV総合ディレート</label><span class="val"><input type="number" id="e-derate" step="0.05" min="0.2" max="1"><span class="unit">—</span></span></div>
+  </div>
+  <div class="panel"><h3>ミッション</h3>
+    <div class="row"><label>目標速力</label><span class="val"><input type="number" id="m-vt" step="0.5" min="0" max="6"><span class="unit">kt</span></span></div>
+    <div class="row"><label>期間</label><span class="val"><input type="number" id="m-days" step="5" min="1" max="365"><span class="unit">日</span></span></div>
+    <div class="row"><label>初期 SOC</label><span class="val"><input type="number" id="m-soc0" step="5" min="10" max="100"><span class="unit">%</span></span></div>
+    <div class="row"><label>下限 SOC</label><span class="val"><input type="number" id="m-socmin" step="5" min="0" max="50"><span class="unit">%</span></span></div>
+    <details><summary>パラメータの書き出し / 読み込み（JSON）</summary>
+      <textarea id="io-json" spellcheck="false"></textarea>
+      <div class="io"><button id="io-export">現在値を書き出す</button><button id="io-import">読み込んで適用</button></div>
+    </details>
+  </div>
+</div>
+
+<h2>判定</h2>
+<div class="kpis">
+  <div class="kpi"><div class="k">達成可能速力 V_eq（全力）</div><div class="v" id="k-veq">–</div><div class="n" id="k-veq-n"></div></div>
+  <div class="kpi"><div class="k">動力性能成立性</div><div class="v" id="k-prop">–</div><div class="n" id="k-prop-n"></div></div>
+  <div class="kpi"><div class="k">エネルギー成立性</div><div class="v" id="k-energy">–</div><div class="n" id="k-energy-n"></div></div>
+  <div class="kpi"><div class="k">無日照 耐久</div><div class="v" id="k-dark">–</div><div class="n">電池のみ・目標速力で</div></div>
+  <div class="kpi"><div class="k">最大航続（電池＋燃料）</div><div class="v" id="k-range">–</div><div class="n" id="k-range-n"></div></div>
+</div>
+
+<h2>図1 — 推力と抵抗の釣合い（V_eq の決定）</h2>
+<div class="chart-card">
+  <h3>抵抗内訳（積上げ）と全力推力線</h3>
+  <div class="cap">交点が達成可能速力。抵抗は艇速に対して単調増加、推力は減少。</div>
+  <div class="legend">
+    <span class="chip"><span class="sw" style="background:var(--s1)"></span>平水抵抗</span>
+    <span class="chip"><span class="sw" style="background:var(--s2)"></span>波浪抵抗増加</span>
+    <span class="chip"><span class="sw" style="background:var(--s3)"></span>風圧抵抗</span>
+    <span class="chip"><span class="sw line"></span>推力（最大電力時）</span>
+  </div>
+  <div class="cv"><canvas id="c1" width="1000" height="380" role="img" aria-label="速度に対する抵抗内訳の積上げ面と推力曲線"></canvas><div class="tip" id="t1"></div></div>
+</div>
+
+<h2>図2 — 日平均の電力収支</h2>
+<div class="chart-card">
+  <h3>発電 vs 消費（目標速力で巡航した場合の日平均）</h3>
+  <div class="pb" id="pb"></div>
+  <div class="legend" style="margin-top:10px">
+    <span class="chip"><span class="sw" style="background:var(--s4)"></span>太陽光</span>
+    <span class="chip"><span class="sw" style="background:var(--s5)"></span>発電機</span>
+    <span class="chip"><span class="sw" style="background:var(--s1)"></span>推進</span>
+    <span class="chip"><span class="sw" style="background:var(--s7)"></span>ホテル負荷</span>
+  </div>
+</div>
+
+<h2>図3 — SOC 時系列（ミッションシミュレーション）</h2>
+<div class="chart-card">
+  <h3>電池残量の推移</h3>
+  <div class="cap" id="c3cap">昼夜の日射サイクル・SOC 下限でのドリフト移行・発電機ヒステリシスを含む。</div>
+  <div class="cv"><canvas id="c3" width="1000" height="300" role="img" aria-label="ミッション期間中の電池SOC推移"></canvas><div class="tip" id="t3"></div></div>
+  <details><summary>数値表を表示</summary><div id="dtable" style="overflow-x:auto"></div></details>
+</div>
+
+<h2>検証ケース（自動実行）</h2>
+<div class="vgrid" id="vgrid"></div>
+
+<footer>
+  USV 0次元モデル Phase 1 ／ 設計書 DP-20260825-01 ／ 較正: V1(4.5kt)・V2(575nm) → Cr_base=0.00284, ホテル負荷104W ／
+  主要な前提: ITTC-1957＋剰余抵抗・修正STAWAVE-1（暫定）・Cd法風圧抵抗・η_total ≤ 0.51（Torqeedo公称拘束）。
+  数式コアは DOM 非依存の純関数（Python 移植可能）。
+</footer>
+</div>
+
+<script id="usv-core">
+/* ============================================================
+   USV 0-D MODEL CORE — 純関数・DOM非依存（Node でもそのまま動く）
+   設計書: outputs/dev_plans/DP-20260825-01.md
+   ============================================================ */
+'use strict';
+const USV = (function(){
+  const C = { rho:1025, rhoA:1.225, nu:1.19e-6, g:9.81 };
+  const KT = 0.5144;   // m/s per knot
+
+  // ── 既定パラメータ（Seasats Lightfish ベースライン。◎公称/△推定は設計書§4） ──
+  function defaults(){
+    return {
+      hull: { Lwl:3.2, B:0.9, m:159, Cb:0.45, k1:1.25,          // (1+k)
+              CrBase:0.00284, FnRef:0.30,                       // 較正済 (V1)
+              CdAir:0.8, Afront:0.35, LBWLfrac:0.3, addedMassFrac:0.05 },
+      prop: { PmaxElec:450, etaCtrl:0.97,
+              motor:{ Pfix:8, a:0.04, b:6e-5 },                 // 損失 = Pfix + a·Ps + b·Ps²
+              propeller:{ etaPeak:0.55, Vd:1.8, Dprop:0.20 } },
+      pwr:  { battWh:4000, panelW:415, derate:0.70,
+              etaChg:0.97, etaDis:0.97,
+              hotelW:104,                                        // 較正済 (V2)
+              gen:{ enabled:false, powW:125, fuelWh:30000, onSoc:0.30, offSoc:0.50 } },
+      env:  { windU:0, windDirDeg:0, Hs:0, Tp:6, irrKwhDay:4.5 },
+      msn:  { targetKt:2.5, days:30, soc0:1.0, socMin:0.10 }
+    };
+  }
+
+  function derived(h){
+    const vol = h.m / C.rho;
+    const d   = vol / (h.Cb * h.Lwl * h.B);
+    const S   = 1.7 * h.Lwl * d + vol / d;      // Denny-Mumford
+    return { vol, d, S };
+  }
+
+  // ── 抵抗 [N] ──
+  function rCalm(V, h, der){
+    if (V <= 0) return 0;
+    const Re = V * h.Lwl / C.nu;
+    const Cf = 0.075 / Math.pow(Math.log10(Re) - 2, 2);
+    const Fn = V / Math.sqrt(C.g * h.Lwl);
+    const Cr = h.CrBase * (1 + Math.pow(Fn / h.FnRef, 4));
+    return 0.5 * C.rho * der.S * (h.k1 * Cf + Cr) * V * V;
+  }
+  function rWind(V, env, h){
+    const th = env.windDirDeg * Math.PI / 180;
+    const u = env.windU * Math.cos(th) + V;     // 艇軸成分（向い風で正）
+    return 0.5 * C.rhoA * h.CdAir * h.Afront * u * Math.abs(u);
+  }
+  function rWave(env, h){
+    if (env.Hs <= 0) return 0;
+    const LBWL = h.LBWLfrac * h.Lwl;
+    const raw = C.rho * C.g * env.Hs * env.Hs * h.B * Math.sqrt(h.B / LBWL) / 16;  // STAWAVE-1
+    const lam = C.g * env.Tp * env.Tp / (2 * Math.PI);
+    const f = 1 / (1 + Math.pow(lam / (2 * h.Lwl), 2));   // 暫定: 長波長減衰（設計書§3-2b）
+    return f * raw;
+  }
+  function rTotal(V, env, h, der){
+    const calm = rCalm(V, h, der), wave = rWave(env, h), wind = rWind(V, env, h);
+    return { total: calm + wave + wind, calm, wave, wind };
+  }
+
+  // ── 推進チェーン: P_elec → 推力 [N] ──
+  function etaMotor(Ps, mo){
+    if (Ps <= 0) return 0.5;
+    const loss = mo.Pfix + mo.a * Ps + mo.b * Ps * Ps;
+    return Ps / (Ps + loss);
+  }
+  function pShaft(Pe, prop){
+    const Pm = 0.85 * Pe;                      // 0D近似: 動作点をP入力の85%と仮置き
+    return prop.etaCtrl * Pe * etaMotor(Pm, prop.motor);
+  }
+  function etaProp(V, pr){
+    if (V <= 0) return 0;
+    const x = V / pr.Vd;
+    return pr.etaPeak * x * Math.exp(1 - x);
+  }
+  function thrust(V, Pe, prop){
+    const Ps = pShaft(Pe, prop);
+    const Ap = Math.PI * Math.pow(prop.propeller.Dprop / 2, 2);
+    const Tb = Math.cbrt(2 * C.rho * Ap * Ps * Ps);   // ボラード上限（運動量理論）
+    if (V < 0.05) return Tb;
+    return Math.min(etaProp(V, prop.propeller) * Ps / V, Tb);
+  }
+  function pElecFor(Treq, V, prop){             // 要求推力→必要電力（二分法）
+    if (Treq <= 0) return 0;
+    let lo = 0.5, hi = prop.PmaxElec;
+    if (thrust(V, hi, prop) < Treq) return Infinity;
+    for (let i = 0; i < 50; i++){
+      const mid = (lo + hi) / 2;
+      if (thrust(V, mid, prop) < Treq) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+
+  // ── 定常釣合い ──
+  function solveVeq(Pe, env, p, der){
+    const f = V => thrust(V, Pe, p.prop) - rTotal(V, env, p.hull, der).total;
+    if (f(0.05) <= 0) return 0;                 // 前進不能
+    let lo = 0.05, hi = 5.0;
+    if (f(hi) > 0) return hi;
+    for (let i = 0; i < 60; i++){
+      const mid = (lo + hi) / 2;
+      if (f(mid) > 0) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
+  }
+
+  // ── 太陽光: 日平均→正弦半波の瞬時値 [W]（t: 秒, 日の出6h/日没18h） ──
+  function pSolar(tSec, pwr, env){
+    const hour = (tSec / 3600) % 24;
+    if (hour < 6 || hour > 18) return 0;
+    const shape = Math.sin(Math.PI * (hour - 6) / 12);
+    const dailyWh = pwr.panelW * env.irrKwhDay * pwr.derate;   // panelW × (kWh/m²/日 ÷ 1kW/m²STC) × derate
+    const peak = dailyWh * Math.PI / (2 * 12);                 // ∫正弦半波=peak·2/π·12h
+    return peak * shape;
+  }
+
+  // ── ミッション時間積分（準定常・dt=600s） ──
+  function simulate(p){
+    const der = derived(p.hull);
+    const dt = 600, N = Math.round(p.msn.days * 86400 / dt);
+    const capWh = p.pwr.battWh;
+    let soc = p.msn.soc0, fuel = p.pwr.gen.fuelWh, genOn = false, drift = false;
+    let distNm = 0, minSoc = soc, depletedDay = -1;
+    const Vt = p.msn.targetKt * KT;
+    const out = { t:[], soc:[], V:[], Psolar:[], Pload:[] };
+    const sampleEvery = Math.max(1, Math.round(N / 800));
+    for (let i = 0; i < N; i++){
+      const t = i * dt;
+      // 速度ポリシー: 下限SOCでドリフト、+10%回復で再開
+      if (drift && soc >= Math.min(1, p.msn.socMin + 0.10)) drift = false;
+      let V = 0, Pprop = 0;
+      if (!drift && Vt > 0){
+        const R = rTotal(Vt, p.env, p.hull, der).total;
+        const Pe = pElecFor(R, Vt, p.prop);
+        if (Pe <= p.prop.PmaxElec){ V = Vt; Pprop = Pe; }
+        else { V = solveVeq(p.prop.PmaxElec, p.env, p, der); Pprop = p.prop.PmaxElec; }
+      }
+      // 発電機ヒステリシス
+      if (p.pwr.gen.enabled && fuel > 0){
+        if (!genOn && soc < p.pwr.gen.onSoc) genOn = true;
+        if (genOn && soc > p.pwr.gen.offSoc) genOn = false;
+      } else genOn = false;
+      const Pgen = genOn ? Math.min(p.pwr.gen.powW, fuel * 3600 / dt) : 0;
+      if (genOn) fuel = Math.max(0, fuel - Pgen * dt / 3600);
+      const Psol = pSolar(t, p.pwr, p.env);
+      const Pin = Psol + Pgen, Pout = Pprop + p.pwr.hotelW;
+      const dWh = (Pin * p.pwr.etaChg - Pout / p.pwr.etaDis) * dt / 3600;
+      soc = Math.min(1, soc + dWh / capWh);
+      if (soc <= p.msn.socMin){ soc = p.msn.socMin; if (!drift){ drift = true; if (depletedDay < 0) depletedDay = t / 86400; } }
+      minSoc = Math.min(minSoc, soc);
+      distNm += (V / KT) * dt / 3600;
+      if (i % sampleEvery === 0){
+        out.t.push(t / 86400); out.soc.push(soc); out.V.push(V / KT);
+        out.Psolar.push(Psol); out.Pload.push(Pout);
+      }
+    }
+    out.minSoc = minSoc; out.distNm = distNm; out.depletedDay = depletedDay;
+    out.fuelLeft = fuel; out.everDrifted = depletedDay >= 0;
+    return out;
+  }
+
+  // ── KPI ──
+  function maxRange(p){                          // 無日照・電池+燃料を速度掃引で最適化 [nm]
+    const der = derived(p.hull);
+    const E = p.pwr.battWh * (1 - p.msn.socMin) + (p.pwr.gen.enabled ? p.pwr.gen.fuelWh : 0);
+    let best = 0, bestKt = 0;
+    for (let kt = 1.0; kt <= 4.5; kt += 0.1){
+      const V = kt * KT;
+      const R = rTotal(V, p.env, p.hull, der).total;
+      const Pe = pElecFor(R, V, p.prop);
+      if (!isFinite(Pe)) continue;
+      const r = E / (Pe + p.pwr.hotelW) * kt;
+      if (r > best){ best = r; bestKt = kt; }
+    }
+    return { nm: best, kt: bestKt };
+  }
+  function darkEndurance(p){                     // 無日照・目標速力での電池持続 [h]
+    const der = derived(p.hull);
+    const Vt = p.msn.targetKt * KT;
+    let Pe = 0;
+    if (Vt > 0){
+      const R = rTotal(Vt, p.env, p.hull, der).total;
+      Pe = pElecFor(R, Vt, p.prop);
+      if (!isFinite(Pe)) return 0;
+    }
+    return p.pwr.battWh * (p.msn.soc0 - p.msn.socMin) / (Pe + p.pwr.hotelW);
+  }
+  function dailyBudget(p){                       // 図2用の日平均 [W]
+    const der = derived(p.hull);
+    const Vt = p.msn.targetKt * KT;
+    let Pprop = 0, reached = true;
+    if (Vt > 0){
+      const R = rTotal(Vt, p.env, p.hull, der).total;
+      const Pe = pElecFor(R, Vt, p.prop);
+      if (Pe <= p.prop.PmaxElec) Pprop = Pe;
+      else { Pprop = p.prop.PmaxElec; reached = false; }
+    }
+    const solarAvg = p.pwr.panelW * p.env.irrKwhDay * p.pwr.derate / 24;
+    return { solarAvg, genAvg:0, Pprop, hotel: p.pwr.hotelW, reached };
+  }
+
+  return { C, KT, defaults, derived, rCalm, rWind, rWave, rTotal,
+           etaMotor, pShaft, etaProp, thrust, pElecFor, solveVeq,
+           pSolar, simulate, maxRange, darkEndurance, dailyBudget };
+})();
+if (typeof module !== 'undefined') module.exports = USV;
+</script>
+
+<script>
+/* ============================================================
+   UI 層 — 入力・図・判定（コアには触らず呼ぶだけ）
+   ============================================================ */
+'use strict';
+(function(){
+  const $ = id => document.getElementById(id);
+  const fmt = (x, d=1) => Number(x).toFixed(d);
+  let P = USV.defaults();
+
+  // ── 入力欄 ⇄ パラメータ ──
+  const bind = [
+    ['p-L','hull.Lwl'],['p-B','hull.B'],['p-m','hull.m'],
+    ['p-pmax','prop.PmaxElec'],['p-hotel','pwr.hotelW'],['p-panel','pwr.panelW'],
+    ['e-wind','env.windU'],['e-hs','env.Hs'],['e-tp','env.Tp'],
+    ['e-irr','env.irrKwhDay'],['e-derate','pwr.derate'],
+    ['m-vt','msn.targetKt'],['m-days','msn.days'],
+  ];
+  const get = path => path.split('.').reduce((o,k)=>o[k], P);
+  const set = (path,v) => { const ks=path.split('.'); let o=P; for(let i=0;i<ks.length-1;i++)o=o[ks[i]]; o[ks[ks.length-1]]=v; };
+  function toUI(){
+    bind.forEach(([id,path]) => { $(id).value = get(path); });
+    $('p-batt').value = P.pwr.battWh/1000;
+    $('p-fuel').value = P.pwr.gen.fuelWh/1000;
+    $('p-gen').value = P.pwr.gen.enabled ? 'on':'off';
+    $('e-wdir').value = String(P.env.windDirDeg);
+    $('m-soc0').value = Math.round(P.msn.soc0*100);
+    $('m-socmin').value = Math.round(P.msn.socMin*100);
+  }
+  function fromUI(){
+    bind.forEach(([id,path]) => { const v=parseFloat($(id).value); if(isFinite(v)) set(path,v); });
+    P.pwr.battWh = parseFloat($('p-batt').value)*1000 || P.pwr.battWh;
+    P.pwr.gen.fuelWh = parseFloat($('p-fuel').value)*1000 || 0;
+    P.pwr.gen.enabled = $('p-gen').value==='on';
+    P.env.windDirDeg = parseFloat($('e-wdir').value);
+    P.msn.soc0 = (parseFloat($('m-soc0').value)||100)/100;
+    P.msn.socMin = (parseFloat($('m-socmin').value)||10)/100;
+  }
+
+  // ── テーマ対応の色取得（canvas 用） ──
+  const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  // ── 図1: 釣合い曲線 ──
+  let c1data = null;
+  function drawC1(){
+    const cv = $('c1'), ctx = cv.getContext('2d');
+    const W = cv.width, H = cv.height, L = 58, R = 16, T = 14, Bm = 40;
+    const der = USV.derived(P.hull);
+    const Vmax = 5.5*USV.KT, n = 140;
+    const rows = [];
+    let ymax = 0;
+    for (let i=0;i<=n;i++){
+      const V = Vmax*i/n;
+      const r = USV.rTotal(V, P.env, P.hull, der);
+      const t = USV.thrust(V, P.prop.PmaxElec, P.prop);
+      rows.push({V,r,t});
+      ymax = Math.max(ymax, r.total, t);
+    }
+    ymax *= 1.12;
+    const veq = USV.solveVeq(P.prop.PmaxElec, P.env, P, der);
+    c1data = {rows, ymax, veq, L, R, T, Bm, W, H, Vmax};
+    const x = V => L + (W-L-R)*V/Vmax;
+    const y = v => T + (H-T-Bm)*(1 - v/ymax);
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = css('--chart-surface'); ctx.fillRect(0,0,W,H);
+    // grid
+    ctx.strokeStyle = css('--grid'); ctx.lineWidth = 1;
+    ctx.font = '11px system-ui,sans-serif'; ctx.fillStyle = css('--muted-chart');
+    const yStep = ymax>400?100:(ymax>150?50:20);
+    for (let g=0; g<=ymax; g+=yStep){
+      ctx.beginPath(); ctx.moveTo(L,y(g)); ctx.lineTo(W-R,y(g)); ctx.stroke();
+      ctx.textAlign='right'; ctx.fillText(String(g), L-6, y(g)+4);
+    }
+    for (let kt=0; kt<=5; kt++){
+      const vx = x(kt*USV.KT);
+      ctx.textAlign='center'; ctx.fillText(kt+' kt', vx, H-Bm+16);
+    }
+    ctx.save(); ctx.translate(14, (T+H-Bm)/2); ctx.rotate(-Math.PI/2);
+    ctx.textAlign='center'; ctx.fillText('力 [N]', 0, 0); ctx.restore();
+    // stacked areas: calm(s1) → +wave(s2) → +wind(s3)、2px の面間ギャップは境界線で表現
+    const stack = [
+      {key:'calm', color:css('--s1')},
+      {key:'wave', color:css('--s2')},
+      {key:'wind', color:css('--s3')},
+    ];
+    let baseVals = rows.map(()=>0);
+    stack.forEach(s=>{
+      const topVals = rows.map((r,i)=> baseVals[i] + Math.max(0, r.r[s.key]));
+      ctx.beginPath();
+      rows.forEach((r,i)=>{ const px=x(r.V), py=y(topVals[i]); i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
+      for (let i=rows.length-1;i>=0;i--) ctx.lineTo(x(rows[i].V), y(baseVals[i]));
+      ctx.closePath(); ctx.fillStyle = s.color; ctx.globalAlpha = 0.82; ctx.fill(); ctx.globalAlpha = 1;
+      ctx.strokeStyle = css('--chart-surface'); ctx.lineWidth = 2;
+      ctx.beginPath();
+      rows.forEach((r,i)=>{ const px=x(r.V), py=y(topVals[i]); i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
+      ctx.stroke();
+      baseVals = topVals;
+    });
+    // thrust line (ink dashed)
+    ctx.strokeStyle = css('--ink-chart'); ctx.lineWidth = 2.5; ctx.setLineDash([7,5]);
+    ctx.beginPath();
+    rows.forEach((r,i)=>{ const px=x(r.V), py=y(Math.min(r.t,ymax)); i?ctx.lineTo(px,py):ctx.moveTo(px,py); });
+    ctx.stroke(); ctx.setLineDash([]);
+    // V_eq marker
+    if (veq > 0.05){
+      const vx = x(veq);
+      ctx.strokeStyle = css('--axis'); ctx.lineWidth=1.5; ctx.setLineDash([3,4]);
+      ctx.beginPath(); ctx.moveTo(vx,T); ctx.lineTo(vx,H-Bm); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = css('--ink-chart'); ctx.textAlign='left'; ctx.font='bold 12px system-ui,sans-serif';
+      ctx.fillText('V_eq = '+fmt(veq/USV.KT,2)+' kt', Math.min(vx+7, W-140), T+16);
+    } else {
+      ctx.fillStyle = css('--ink-chart'); ctx.textAlign='left'; ctx.font='bold 12px system-ui,sans-serif';
+      ctx.fillText('前進不能（推力 < 抵抗）', L+10, T+16);
+    }
+    // baseline
+    ctx.strokeStyle = css('--axis'); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(L,y(0)); ctx.lineTo(W-R,y(0)); ctx.stroke();
+  }
+  // hover tooltip C1
+  $('c1').addEventListener('mousemove', ev=>{
+    if(!c1data) return;
+    const cv=$('c1'), rect=cv.getBoundingClientRect();
+    const mx=(ev.clientX-rect.left)*cv.width/rect.width;
+    const d=c1data, V=Math.max(0,Math.min(d.Vmax,(mx-d.L)/(d.W-d.L-d.R)*d.Vmax));
+    const i=Math.round(V/d.Vmax*(d.rows.length-1)), r=d.rows[i];
+    const tip=$('t1');
+    tip.style.display='block';
+    tip.style.left=Math.min(rect.width-190,(ev.clientX-rect.left)+14)+'px';
+    tip.style.top=(ev.clientY-rect.top-10)+'px';
+    tip.innerHTML=`<b>${fmt(r.V/USV.KT,2)} kt</b><br>平水 ${fmt(r.r.calm)} N ／ 波浪 ${fmt(r.r.wave)} N<br>風圧 ${fmt(r.r.wind)} N ／ <b>計 ${fmt(r.r.total)} N</b><br>推力 ${fmt(r.t)} N`;
+  });
+  $('c1').addEventListener('mouseleave', ()=>{ $('t1').style.display='none'; });
+
+  // ── 図2: 電力収支バー ──
+  function drawPB(){
+    const b = USV.dailyBudget(P);
+    const gen = P.pwr.gen.enabled ? '発電機は SOC 低下時のみ稼働（バーは太陽光のみ）' : '';
+    const maxW = Math.max(b.solarAvg, b.Pprop + b.hotel, 1);
+    const seg = (w,color,label,val)=>`<div class="pb-seg" style="width:${Math.max(2,100*w/maxW)}%;background:${color}" title="${label} ${fmt(val)} W"></div>`;
+    $('pb').innerHTML = `
+      <div class="pb-row"><div class="pb-name">発電（日平均）</div><div>
+        <div class="pb-bar">${seg(b.solarAvg,'var(--s4)','太陽光',b.solarAvg)}</div>
+        <div class="pb-lab">太陽光 ${fmt(b.solarAvg)} W ${gen?'・'+gen:''}</div></div></div>
+      <div class="pb-row"><div class="pb-name">消費</div><div>
+        <div class="pb-bar">${seg(b.Pprop,'var(--s1)','推進',b.Pprop)}${seg(b.hotel,'var(--s7)','ホテル負荷',b.hotel)}</div>
+        <div class="pb-lab">推進 ${fmt(b.Pprop)} W ＋ ホテル ${fmt(b.hotel)} W ＝ <b>${fmt(b.Pprop+b.hotel)} W</b>
+        （収支 ${b.solarAvg-b.Pprop-b.hotel>=0?'+':''}${fmt(b.solarAvg-b.Pprop-b.hotel)} W）</div></div></div>`;
+    return b;
+  }
+
+  // ── 図3: SOC 時系列 ──
+  let c3sim=null;
+  function drawC3(sim){
+    c3sim = sim;
+    const cv = $('c3'), ctx = cv.getContext('2d');
+    const W=cv.width,H=cv.height,L=52,R=14,T=12,Bm=36;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle=css('--chart-surface'); ctx.fillRect(0,0,W,H);
+    const days=P.msn.days;
+    const x=d=>L+(W-L-R)*d/days, y=s=>T+(H-T-Bm)*(1-s);
+    ctx.strokeStyle=css('--grid'); ctx.lineWidth=1;
+    ctx.font='11px system-ui,sans-serif'; ctx.fillStyle=css('--muted-chart');
+    [0,0.25,0.5,0.75,1].forEach(s=>{
+      ctx.beginPath();ctx.moveTo(L,y(s));ctx.lineTo(W-R,y(s));ctx.stroke();
+      ctx.textAlign='right';ctx.fillText(Math.round(s*100)+'%',L-6,y(s)+4);
+    });
+    const dStep=days<=10?1:(days<=40?5:(days<=120?20:30));
+    for(let d=0;d<=days;d+=dStep){ctx.textAlign='center';ctx.fillText(d+'日',x(d),H-Bm+16);}
+    // SOC_min status line (critical)
+    ctx.strokeStyle=css('--ng'); ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(L,y(P.msn.socMin));ctx.lineTo(W-R,y(P.msn.socMin));ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=css('--ng'); ctx.textAlign='left'; ctx.fillText('下限 SOC', L+6, y(P.msn.socMin)-5);
+    // SOC line (ink)
+    ctx.strokeStyle=css('--ink-chart'); ctx.lineWidth=2;
+    ctx.beginPath();
+    sim.t.forEach((d,i)=>{const px=x(d),py=y(sim.soc[i]); i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
+    ctx.stroke();
+    // endpoint emphasis
+    const li=sim.t.length-1;
+    ctx.fillStyle=css('--ink-chart');
+    ctx.beginPath();ctx.arc(x(sim.t[li]),y(sim.soc[li]),4,0,7);ctx.fill();
+    ctx.textAlign='right';ctx.font='bold 11px system-ui,sans-serif';
+    ctx.fillText(Math.round(sim.soc[li]*100)+'%', x(sim.t[li])-8, y(sim.soc[li])-6);
+  }
+  $('c3').addEventListener('mousemove', ev=>{
+    if(!c3sim) return;
+    const cv=$('c3'), rect=cv.getBoundingClientRect();
+    const mx=(ev.clientX-rect.left)*cv.width/rect.width;
+    const L=52,R=14,days=P.msn.days;
+    const d=Math.max(0,Math.min(days,(mx-L)/(cv.width-L-R)*days));
+    let i=0; while(i<c3sim.t.length-1 && c3sim.t[i]<d) i++;
+    const tip=$('t3');
+    tip.style.display='block';
+    tip.style.left=Math.min(rect.width-170,(ev.clientX-rect.left)+14)+'px';
+    tip.style.top=(ev.clientY-rect.top-10)+'px';
+    tip.innerHTML=`<b>${fmt(c3sim.t[i],1)} 日目</b><br>SOC ${Math.round(c3sim.soc[i]*100)}%・速力 ${fmt(c3sim.V[i],1)} kt<br>日射 ${fmt(c3sim.Psolar[i])} W／消費 ${fmt(c3sim.Pload[i])} W`;
+  });
+  $('c3').addEventListener('mouseleave', ()=>{ $('t3').style.display='none'; });
+
+  // ── 数値表 ──
+  function drawTable(sim,b,der){
+    const veq=USV.solveVeq(P.prop.PmaxElec,P.env,P,der);
+    const r=USV.rTotal(Math.max(veq,0.01),P.env,P.hull,der);
+    $('dtable').innerHTML=`<table>
+      <tr><th>項目</th><th>値</th><th>項目</th><th>値</th></tr>
+      <tr><td>V_eq（全力）</td><td>${fmt(veq/USV.KT,2)} kt</td><td>浸水表面積 S</td><td>${fmt(der.S,2)} m²</td></tr>
+      <tr><td>平水抵抗 @V_eq</td><td>${fmt(r.calm)} N</td><td>波浪抵抗増加</td><td>${fmt(r.wave)} N</td></tr>
+      <tr><td>風圧抵抗 @V_eq</td><td>${fmt(r.wind)} N</td><td>全抵抗</td><td>${fmt(r.total)} N</td></tr>
+      <tr><td>太陽光（日平均）</td><td>${fmt(b.solarAvg)} W</td><td>消費（日平均）</td><td>${fmt(b.Pprop+b.hotel)} W</td></tr>
+      <tr><td>ミッション最低 SOC</td><td>${Math.round(sim.minSoc*100)} %</td><td>航走距離</td><td>${fmt(sim.distNm,0)} nm</td></tr>
+      <tr><td>燃料残</td><td>${fmt(sim.fuelLeft/1000,1)} kWh</td><td>SOC枯渇（初回）</td><td>${sim.depletedDay>=0?fmt(sim.depletedDay,1)+' 日目':'なし'}</td></tr>
+    </table>`;
+  }
+
+  // ── 判定 ──
+  function verdict(sim){
+    const der=USV.derived(P.hull);
+    const veq=USV.solveVeq(P.prop.PmaxElec,P.env,P,der);
+    $('k-veq').textContent=veq>0.05?fmt(veq/USV.KT,2)+' kt':'0（不能）';
+    $('k-veq-n').textContent='最大電力 '+P.prop.PmaxElec+' W 投入時';
+    const propOK=veq>=P.msn.targetKt*USV.KT-1e-6;
+    $('k-prop').innerHTML=propOK?'<span class="badge ok">成立</span>':'<span class="badge ng">不成立</span>';
+    $('k-prop-n').textContent='目標 '+P.msn.targetKt+' kt に対し';
+    const enOK=!sim.everDrifted;
+    $('k-energy').innerHTML=enOK?'<span class="badge ok">成立</span>':'<span class="badge ng">不成立</span>';
+    $('k-energy-n').textContent=enOK?('最低SOC '+Math.round(sim.minSoc*100)+'%（'+P.msn.days+'日間）')
+                                    :('SOC枯渇 '+fmt(sim.depletedDay,1)+' 日目（ドリフト退避）');
+    const dh=USV.darkEndurance(P);
+    $('k-dark').textContent=dh>=48?fmt(dh/24,1)+' 日':fmt(dh,0)+' 時間';
+    const mr=USV.maxRange(P);
+    $('k-range').textContent=fmt(mr.nm,0)+' nm';
+    $('k-range-n').textContent='最適速力 '+fmt(mr.kt,1)+' kt・無日照時';
+  }
+
+  // ── 検証ケース（自動実行・較正の再現） ──
+  function runValidation(){
+    const cases=[
+      {id:'V1',name:'最高速力',crit:'V_eq = 4.5 ± 0.3 kt（平水・無風・全力）',
+       run(){ const p=USV.defaults(); const veq=USV.solveVeq(p.prop.PmaxElec,p.env,p,USV.derived(p.hull))/USV.KT;
+              return {val:veq.toFixed(2)+' kt', ok:Math.abs(veq-4.5)<=0.3}; }},
+      {id:'V2',name:'無日照航続',crit:'575 ± 60 nm（電池4kWh＋燃料30kWh）',
+       run(){ const p=USV.defaults(); p.pwr.gen.enabled=true; p.env.irrKwhDay=0; p.msn.socMin=0;
+              const r=USV.maxRange(p); return {val:r.nm.toFixed(0)+' nm @ '+r.kt.toFixed(1)+' kt', ok:Math.abs(r.nm-575)<=60}; }},
+      {id:'V3',name:'長期滞留（station keeping）',crit:'日射4.5・ホテル45W・速力0 で 90日 SOC非枯渇',
+       run(){ const p=USV.defaults(); p.pwr.hotelW=45; p.msn.targetKt=0; p.msn.days=90;
+              const s=USV.simulate(p); return {val:'最低SOC '+Math.round(s.minSoc*100)+'%', ok:!s.everDrifted}; }},
+      {id:'V4',name:'荒天前進',crit:'Hs2.5m・向い風15m/s で減速を再現（連続性確認）',
+       run(){ const p=USV.defaults(); p.env.Hs=2.5; p.env.Tp=7; p.env.windU=15;
+              const veq=USV.solveVeq(p.prop.PmaxElec,p.env,p,USV.derived(p.hull))/USV.KT;
+              return {val:'V_eq '+veq.toFixed(2)+' kt（平水4.5kt比）', ok:veq<4.2&&veq>0}; }},
+    ];
+    $('vgrid').innerHTML=cases.map(c=>{
+      const r=c.run();
+      return `<div class="vcase"><b>${c.id} ${c.name}</b>
+        <span class="badge ${r.ok?'ok':'ng'}">${r.ok?'PASS':'FAIL'}</span>
+        <div class="crit">${c.crit}</div><div>結果: ${r.val}</div></div>`;
+    }).join('');
+  }
+
+  // ── プリセット ──
+  const presets={
+    base(){ P=USV.defaults(); },
+    v1(){ P=USV.defaults(); P.msn.targetKt=4.5; P.msn.days=1; },
+    v2(){ P=USV.defaults(); P.pwr.gen.enabled=true; P.env.irrKwhDay=0; P.msn.targetKt=2.7; P.msn.days=10; P.msn.socMin=0.0; },
+    v3(){ P=USV.defaults(); P.pwr.hotelW=45; P.msn.targetKt=0; P.msn.days=90; },
+    v4(){ P=USV.defaults(); P.env.Hs=2.5; P.env.Tp=7; P.env.windU=15; P.msn.targetKt=2.5; P.msn.days=10; },
+  };
+  document.querySelectorAll('[data-preset]').forEach(b=>{
+    b.addEventListener('click',()=>{ presets[b.dataset.preset](); toUI(); recalc(); });
+  });
+
+  // ── JSON 入出力 ──
+  $('io-export').addEventListener('click',()=>{ fromUI(); $('io-json').value=JSON.stringify(P,null,1); });
+  $('io-import').addEventListener('click',()=>{
+    try{ P=JSON.parse($('io-json').value); toUI(); recalc(); }
+    catch(e){ $('io-json').value='// JSON が読めません: '+e.message+'\n'+$('io-json').value; }
+  });
+
+  // ── 再計算 ──
+  function recalc(){
+    fromUI();
+    const der=USV.derived(P.hull);
+    drawC1();
+    const b=drawPB();
+    const sim=USV.simulate(P);
+    drawC3(sim);
+    drawTable(sim,b,der);
+    verdict(sim);
+  }
+  $('btn-recalc').addEventListener('click',recalc);
+  document.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',recalc));
+  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',recalc);
+
+  toUI(); recalc(); runValidation();
+})();
+</script>
+</body>
+</html>
