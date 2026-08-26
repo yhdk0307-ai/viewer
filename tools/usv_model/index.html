@@ -55,6 +55,11 @@
   button:hover{border-color:var(--ink);}
   button.primary{background:#111;border-color:#111;color:#FFF;font-weight:700;}
   button.primary:hover{background:#333;border-color:#333;}
+  .presets button.on{background:#111;border-color:#111;color:#FFF;font-weight:700;}
+  /* プリセット適用で値が変わった入力欄を一拍ハイライト */
+  @keyframes pflash{from{background:#FBF3DB;border-color:#956400}to{}}
+  input.pflash,select.pflash{animation:pflash 1.1s ease-out;}
+  @media (prefers-reduced-motion:reduce){input.pflash,select.pflash{animation:none}}
   /* ── 判定: 罫線で束ねたスタットロー（カードなし） ── */
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0 32px;
     border-top:1.4px solid var(--rule);border-bottom:1.4px solid var(--rule);
@@ -129,6 +134,102 @@
     .stickybar{transition:none}
     .kpi.flash .v{animation:none}
   }
+
+  /* ── タブ（下線式・エディトリアル） ── */
+  .tabs{max-width:1040px;margin:0 auto;padding:0 20px;display:flex;gap:26px;
+    border-bottom:1px solid var(--line);}
+  .tabs button{border:none;background:none;border-radius:0;padding:11px 2px;font-size:14px;
+    color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;}
+  .tabs button:hover{color:var(--ink);border-color:transparent;}
+  .tabs button.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:700;}
+
+  /* ══ 設計書タブ（#tab-doc スコープ・論文調） ══ */
+  #tab-doc{--gov:#1F6C9F;--clo:#956400;--good:#346538;--bad:#9F2F2D;--s4:#B87F00;
+    font-size:15px;line-height:1.9;}
+  #tab-doc .doc-wrap{max-width:740px;margin:0 auto;padding:0 22px 96px;}
+  #tab-doc .doc-head{padding:34px 0 22px;border-bottom:2px solid var(--rule);}
+  #tab-doc .eyebrow{font-size:11px;letter-spacing:.22em;color:var(--muted);
+    font-family:ui-monospace,"SF Mono",Menlo,monospace;}
+  #tab-doc h1{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:700;
+    font-size:clamp(25px,4.6vw,33px);line-height:1.35;margin:.35em 0 .3em;letter-spacing:-0.01em;}
+  #tab-doc .std{color:var(--muted);font-size:13px;line-height:1.8;}
+  #tab-doc .std b{color:var(--ink);font-weight:600;}
+  #tab-doc h3{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-weight:700;
+    font-size:15.5px;margin:26px 0 6px;border:none;padding:0;}
+  #tab-doc code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:.86em;
+    color:var(--ink);background:none;padding:0;border-bottom:1px dotted var(--line);}
+  #tab-doc details.sec{margin-top:44px;}
+  #tab-doc details.sec>summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;
+    gap:12px;padding:6px 0;border-bottom:1px solid var(--rule);color:var(--ink);font-size:inherit;}
+  #tab-doc details.sec>summary::-webkit-details-marker{display:none}
+  #tab-doc details.sec>summary::before{content:"";}
+  #tab-doc details.sec>summary .no{color:var(--muted);font-family:ui-monospace,Menlo,monospace;font-size:13px;}
+  #tab-doc details.sec>summary .ttl{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+    font-weight:700;font-size:20px;}
+  #tab-doc details.sec>summary::after{content:"−";margin-left:auto;color:var(--faint);
+    font-family:ui-monospace,monospace;font-size:14px;}
+  #tab-doc details.sec:not([open])>summary::after{content:"+";}
+  #tab-doc details.sub{margin:16px 0;}
+  #tab-doc details.sub>summary{cursor:pointer;list-style:none;font-weight:700;font-size:14px;
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif;padding:3px 0;color:var(--ink);}
+  #tab-doc details.sub>summary::-webkit-details-marker{display:none}
+  #tab-doc details.sub>summary::before{content:"▸ ";color:var(--faint);}
+  #tab-doc details.sub[open]>summary::before{content:"▾ ";color:var(--faint);}
+  #tab-doc .eqbox{margin:16px 0 18px;padding:0;background:none;border:none;overflow-x:auto;}
+  #tab-doc .eqhead{display:flex;gap:14px;align-items:baseline;}
+  #tab-doc .bdg{font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.08em;
+    background:none;border:none;padding:0;font-weight:500;border-radius:0;}
+  #tab-doc .bdg.gov{color:var(--gov);}
+  #tab-doc .bdg.clo{color:var(--clo);}
+  #tab-doc .bdg.rep{color:var(--muted);}
+  #tab-doc .eqno{margin-left:auto;color:var(--muted);font-family:ui-monospace,monospace;font-size:12px;}
+  #tab-doc math[display="block"]{margin:.5em auto .35em;font-size:1.16em;width:fit-content;display:block;}
+  #tab-doc .eqnote{font-size:12.5px;color:var(--muted);line-height:1.75;margin:0;}
+  #tab-doc .tbl{overflow-x:auto;margin:12px 0 18px;}
+  #tab-doc table{border-collapse:collapse;width:100%;font-size:12.8px;line-height:1.6;
+    border-top:1.4px solid var(--rule);border-bottom:1.4px solid var(--rule);}
+  #tab-doc th,#tab-doc td{padding:6px 10px 6px 0;text-align:left;vertical-align:top;border:none;}
+  #tab-doc tr:first-child th{border-bottom:1px solid var(--rule);color:var(--ink);
+    font-weight:600;font-size:11.5px;letter-spacing:.05em;white-space:nowrap;}
+  #tab-doc td{border-bottom:1px solid var(--line);}
+  #tab-doc tr:last-child td{border-bottom:none;}
+  #tab-doc td.num,#tab-doc th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  #tab-doc td.sym{white-space:nowrap;}
+  #tab-doc .ok{color:var(--good);font-weight:700;font-family:ui-monospace,monospace;font-size:12px;}
+  #tab-doc figure{margin:18px 0 6px;padding:0;background:none;border:none;}
+  #tab-doc figcaption{font-size:12.5px;color:var(--muted);padding:6px 0 0;line-height:1.75;}
+  #tab-doc .caveat{margin:14px 0;padding:0;background:none;border:none;
+    font-size:13.5px;color:var(--ink);line-height:1.85;}
+  #tab-doc .caveat b{color:var(--clo);}
+  #tab-doc .find{margin:14px 0;padding:0;background:none;border:none;font-size:14px;line-height:1.85;}
+  #tab-doc .find .fl{font-family:ui-monospace,monospace;font-size:11.5px;letter-spacing:.1em;
+    color:var(--good);font-weight:700;}
+  #tab-doc .arch{display:grid;gap:8px;margin:16px 0;font-size:12.5px;}
+  #tab-doc .arch-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+  #tab-doc .mod{background:var(--surface);border:1px solid var(--ink);border-radius:2px;
+    padding:8px 12px;text-align:center;}
+  #tab-doc .mod b{font-family:"Hiragino Mincho ProN",serif;display:block;font-size:13.5px;}
+  #tab-doc .mod span{color:var(--muted);font-size:11.5px;line-height:1.55;display:block;}
+  #tab-doc .mod.hub{border-width:2px;}
+  #tab-doc .arr{text-align:center;color:var(--faint);font-size:14px;line-height:1;}
+  #tab-doc ul{padding-left:1.4em;margin:.4em 0 1em;}
+  #tab-doc li{margin:.3em 0;}
+  #tab-doc li::marker{color:var(--faint);}
+  #tab-doc nav.toc{margin:30px 0 8px;padding:0 0 18px;border-bottom:1px solid var(--line);}
+  #tab-doc nav.toc .th{font-size:11px;letter-spacing:.2em;color:var(--muted);
+    font-family:ui-monospace,monospace;margin-bottom:8px;}
+  #tab-doc nav.toc ol{margin:0;padding-left:1.3em;columns:2;column-gap:40px;font-size:13.5px;}
+  #tab-doc nav.toc li{margin:.22em 0;break-inside:avoid;}
+  #tab-doc nav.toc li::marker{color:var(--muted);font-variant-numeric:tabular-nums;}
+  #tab-doc nav.toc a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--faint);}
+  #tab-doc nav.toc a:hover{border-bottom:1px solid var(--ink);}
+  @media(max-width:640px){#tab-doc nav.toc ol{columns:1}}
+  #tab-doc .tools{display:flex;gap:14px;margin:12px 0 0;}
+  #tab-doc .tools button{padding:0;border:none;background:none;color:var(--muted);
+    font-size:12px;cursor:pointer;border-bottom:1px dotted var(--faint);border-radius:0;}
+  #tab-doc .tools button:hover{color:var(--ink);border-bottom-color:var(--ink);}
+  #tab-doc .foot{margin-top:64px;border-top:2px solid var(--rule);padding-top:14px;
+    font-size:12px;color:var(--muted);line-height:1.8;}
 </style>
 </head>
 <body>
@@ -145,12 +246,17 @@
   <div class="sub">ベースライン: Seasats Lightfish 級（RR-20260824-01 調査値）／ 設計書: DP-20260825-01 ／ surge 1自由度 (m+mₐ)V̇ = T − R ＋ JONSWAP スペクトル（Phase 2）＋ heave/pitch RAO 耐航性判定（Phase 3）</div>
   <div class="caveat"><b>注意</b> — 波浪抵抗は反射成分のみ（運動起因は未評価）・耐航性は 1 自由度近似（減衰比は仮定値）。荒天側の絶対値は傾向把握用。前提と置換計画の全文は設計書 DP-20260825-01。</div>
 </div></header>
+<nav class="tabs" aria-label="表示切替">
+  <button data-tab="model" class="on">モデル</button>
+  <button data-tab="doc">設計書</button>
+</nav>
 
+<div id="tab-model">
 <div class="wrap">
 
 <h2>入力パラメータ</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">入力を変えると即座に再計算されます。プリセット（黒表示が選択中）を押すと該当パラメータが設定され、変わった欄が一瞬ハイライトされます。</div>
 <div class="presets">
-  <button class="primary" id="btn-recalc">再計算</button>
   <button data-preset="v1">V1 最高速力</button>
   <button data-preset="v2">V2 無日照航続</button>
   <button data-preset="v3">V3 長期滞留</button>
@@ -200,7 +306,7 @@
   <div class="kpi"><div class="k">動力性能成立性</div><div class="v" id="k-prop">–</div><div class="n" id="k-prop-n"></div></div>
   <div class="kpi"><div class="k">エネルギー成立性</div><div class="v" id="k-energy">–</div><div class="n" id="k-energy-n"></div></div>
   <div class="kpi"><div class="k">無日照 耐久</div><div class="v" id="k-dark">–</div><div class="n">電池のみ・目標速力で</div></div>
-  <div class="kpi"><div class="k">最大航続（電池＋燃料）</div><div class="v" id="k-range">–</div><div class="n" id="k-range-n"></div></div>
+  <div class="kpi"><div class="k">最大航続（電池＋燃料）<span style="font-weight:400;color:var(--faint)">・nm=海里(1.852 km)</span></div><div class="v" id="k-range">–</div><div class="n" id="k-range-n"></div></div>
 </div>
 
 <h2>図1 — 推力と抵抗の釣合い（V_eq の決定）</h2>
@@ -268,6 +374,468 @@
   数式コアは DOM 非依存の純関数（Python 移植可能）。
 </footer>
 </div>
+
+</div>
+<div id="tab-doc" hidden><div class="doc-wrap">
+<div class="doc-head">
+  <div class="eyebrow">DP-20260825-01 · PHASE 1–3 実装済み · REV.4</div>
+  <h1>USV 0次元モデル設計書</h1>
+  <div class="std">長期外洋ミッションの<b>エネルギー成立性</b>と<b>動力性能成立性</b>を評価する点質量モデル。
+  ベースライン: Seasats Lightfish（RR-20260824-01 調査値）／ 実装: <code>tools/usv_model/interactive/index.html</code>（検証 6/6 PASS）<br>
+  本書は<b>支配式（一般形）と閉じ込め式（実験式・仮定）を分離して記述</b>する。閉じ込め式は将来、実験・CFD 等のマップで差し替える前提の「置換対象」であり、各所にその旨と推奨手段を明記する。</div>
+</div>
+
+<nav class="toc"><div class="th">目次 — CONTENTS</div>
+<ol>
+<li><a href="#s1">目的とスコープ</a></li>
+<li><a href="#s2">記号・変数一覧</a></li>
+<li><a href="#s3">アーキテクチャ</a></li>
+<li><a href="#s4">運動方程式と定常解（DYN）</a></li>
+<li><a href="#s5">抵抗（HULL）</a></li>
+<li><a href="#s6">推進チェーン（PROP）</a></li>
+<li><a href="#s7">電源・エネルギー（PWR）</a></li>
+<li><a href="#s8">耐航性（SEA）</a></li>
+<li><a href="#s9">較正と検証</a></li>
+<li><a href="#s10">閉じ込め式の置換ロードマップ</a></li>
+<li><a href="#s11">発見・限界</a></li>
+</ol>
+<div class="tools"><button id="btn-open">すべて開く</button><button id="btn-close">すべて畳む</button></div>
+</nav>
+
+<!-- ═══════════ §1 ═══════════ -->
+<details class="sec" id="s1" open><summary><span class="no">§1</span><span class="ttl">目的とスコープ</span></summary>
+<p>解きたい問いは2つ。<b>①その海象で前に進めるか</b> — 推力と全抵抗の釣合いから達成可能速力 <math><msub><mi>V</mi><mi>eq</mi></msub></math> を求める。<b>②電力収支が破綻しないか</b> — 日射・電池・補助発電・ホテル負荷を時間積分し、SOC が下限を割らずにミッションを完走できるかを判定する。</p>
+<p>自由度は前後方向（surge）1 自由度、環境入力は定常（Phase 2 で波は JONSWAP スペクトル化済み）。非スコープ: 操縦性・復原性・構造強度・波力/帆推進。</p>
+</details>
+
+<!-- ═══════════ §2 ═══════════ -->
+<details class="sec" id="s2" open><summary><span class="no">§2</span><span class="ttl">記号・変数一覧</span></summary>
+<p>単位はすべて SI（表示のみ kt・nm へ変換）。値欄の記号: ◎=公称（出典確認済）／○=公称から導出／△=推定・仮定（較正または置換の対象）。</p>
+
+<details class="sub" open><summary>物理定数</summary><div class="tbl"><table>
+<tr><th>記号</th><th>名称</th><th>役割</th><th>単位</th><th class="num">値</th></tr>
+<tr><td class="sym"><math><mi>ρ</mi></math></td><td>海水密度</td><td>抵抗・浮力・付加質量の基準密度</td><td>kg/m³</td><td class="num">1025</td></tr>
+<tr><td class="sym"><math><msub><mi>ρ</mi><mi>a</mi></msub></math></td><td>空気密度</td><td>風圧抵抗の基準密度</td><td>kg/m³</td><td class="num">1.225</td></tr>
+<tr><td class="sym"><math><mi>ν</mi></math></td><td>海水の動粘性係数</td><td>Reynolds 数の算出</td><td>m²/s</td><td class="num">1.19×10⁻⁶</td></tr>
+<tr><td class="sym"><math><mi>g</mi></math></td><td>重力加速度</td><td>Froude 数・波の分散関係</td><td>m/s²</td><td class="num">9.81</td></tr>
+<tr><td class="sym"><math><msub><mi>G</mi><mi>STC</mi></msub></math></td><td>標準試験日射強度</td><td>太陽光パネル定格の基準</td><td>W/m²</td><td class="num">1000</td></tr>
+</table></div></details>
+
+<details class="sub" open><summary>幾何・船体（Lightfish ベースライン）</summary><div class="tbl"><table>
+<tr><th>記号</th><th>名称</th><th>役割</th><th>単位</th><th class="num">値</th></tr>
+<tr><td class="sym"><math><msub><mi>L</mi><mi>wl</mi></msub></math></td><td>水線長</td><td>Re・Fn・波長比の基準長さ</td><td>m</td><td class="num">3.2 ○</td></tr>
+<tr><td class="sym"><math><mi>B</mi></math></td><td>船幅</td><td>波浪抵抗・水線面積の幅</td><td>m</td><td class="num">0.9 ◎</td></tr>
+<tr><td class="sym"><math><mi>m</mi></math></td><td>質量（排水量）</td><td>運動方程式の慣性・排水容積の源</td><td>kg</td><td class="num">159 ◎</td></tr>
+<tr><td class="sym"><math><msub><mi>m</mi><mi>a</mi></msub></math></td><td>surge 付加質量</td><td>加速時に船体と共に動く水の慣性。<math><mrow><msub><mi>m</mi><mi>a</mi></msub><mo>=</mo><mn>0.05</mn><mi>m</mi></mrow></math> と仮定</td><td>kg</td><td class="num">8.0 △</td></tr>
+<tr><td class="sym"><math><mo>∇</mo></math></td><td>排水容積</td><td><math><mrow><mo>∇</mo><mo>=</mo><mi>m</mi><mo>/</mo><mi>ρ</mi></mrow></math></td><td>m³</td><td class="num">0.155 ○</td></tr>
+<tr><td class="sym"><math><msub><mi>C</mi><mi>b</mi></msub></math></td><td>方形係数</td><td>喫水の導出に使用（細長艇の代表値）</td><td>—</td><td class="num">0.45 △</td></tr>
+<tr><td class="sym"><math><mi>d</mi></math></td><td>喫水</td><td><math><mrow><mi>d</mi><mo>=</mo><mo>∇</mo><mo>/</mo><mo>(</mo><msub><mi>C</mi><mi>b</mi></msub><msub><mi>L</mi><mi>wl</mi></msub><mi>B</mi><mo>)</mo></mrow></math>。波の深度減衰にも使用</td><td>m</td><td class="num">0.120 ○</td></tr>
+<tr><td class="sym"><math><mi>S</mi></math></td><td>浸水表面積</td><td>摩擦抵抗の基準面積（Denny-Mumford 近似）</td><td>m²</td><td class="num">1.95 △</td></tr>
+<tr><td class="sym"><math><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>k</mi><mo>)</mo></mrow></math></td><td>形状影響係数</td><td>平板摩擦から 3 次元船体への補正</td><td>—</td><td class="num">1.25 △</td></tr>
+<tr><td class="sym"><math><msub><mi>C</mi><mi>w</mi></msub></math></td><td>水線面積係数</td><td>ヒーブ復原力・ピッチ復原モーメントの水線面積 <math><mrow><msub><mi>A</mi><mi>w</mi></msub><mo>=</mo><msub><mi>C</mi><mi>w</mi></msub><msub><mi>L</mi><mi>wl</mi></msub><mi>B</mi></mrow></math></td><td>—</td><td class="num">0.72 △</td></tr>
+<tr><td class="sym"><math><msub><mi>A</mi><mi>F</mi></msub></math></td><td>水線上前面投影面積</td><td>風圧抵抗の基準面積</td><td>m²</td><td class="num">0.35 △</td></tr>
+<tr><td class="sym"><math><msub><mi>A</mi><mi>p</mi></msub></math></td><td>プロペラ円板面積</td><td>ボラード推力上限（運動量理論）。D=0.20 m</td><td>m²</td><td class="num">0.0314 △</td></tr>
+<tr><td class="sym"><math><msub><mi>L</mi><mi>BWL</mi></msub></math></td><td>船首 1/4 幅点までの長さ</td><td>STAWAVE 系の船首肥大度パラメータ。0.3 L<sub>wl</sub> と仮定</td><td>m</td><td class="num">0.96 △</td></tr>
+<tr><td class="sym"><math><msub><mi>r</mi><mi>g</mi></msub></math></td><td>ピッチ慣動半径比</td><td>ピッチ慣性 <math><mrow><msub><mi>I</mi><mn>55</mn></msub><mo>∝</mo><mo>(</mo><msub><mi>r</mi><mi>g</mi></msub><msub><mi>L</mi><mi>wl</mi></msub><msup><mo>)</mo><mn>2</mn></msup></mrow></math></td><td>—</td><td class="num">0.25 △</td></tr>
+</table></div></details>
+
+<details class="sub" open><summary>状態・環境</summary><div class="tbl"><table>
+<tr><th>記号</th><th>名称</th><th>役割</th><th>単位</th><th class="num">既定値</th></tr>
+<tr><td class="sym"><math><mi>V</mi></math></td><td>対水速力</td><td>主状態変数。抵抗・推力の引数</td><td>m/s</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><mi>t</mi></math></td><td>時間</td><td>ミッション積分の独立変数（Δt=600 s）</td><td>s</td><td class="num">—</td></tr>
+<tr><td class="sym">SOC</td><td>電池充電率</td><td>エネルギー状態変数（0–1）</td><td>—</td><td class="num">初期 1.0</td></tr>
+<tr><td class="sym"><math><msub><mi>U</mi><mi>w</mi></msub></math></td><td>風速（U₁₀）</td><td>風圧抵抗の入力</td><td>m/s</td><td class="num">0</td></tr>
+<tr><td class="sym"><math><mi>ψ</mi></math></td><td>風向角（艇軸基準）</td><td>0°=向い風・180°=追い風</td><td>deg</td><td class="num">0</td></tr>
+<tr><td class="sym"><math><msub><mi>H</mi><mi>s</mi></msub></math></td><td>有義波高</td><td>波エネルギーのスケール（<math><mrow><msub><mi>m</mi><mn>0</mn></msub><mo>=</mo><msubsup><mi>H</mi><mi>s</mi><mn>2</mn></msubsup><mo>/</mo><mn>16</mn></mrow></math>）</td><td>m</td><td class="num">0</td></tr>
+<tr><td class="sym"><math><msub><mi>T</mi><mi>p</mi></msub></math></td><td>ピーク波周期</td><td>スペクトルのピーク位置</td><td>s</td><td class="num">6</td></tr>
+<tr><td class="sym"><math><mi>ω</mi></math>, <math><msub><mi>ω</mi><mi>e</mi></msub></math></td><td>波角周波数・出会い角周波数</td><td>スペクトル積分の変数／航走中の応答周波数</td><td>rad/s</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><mi>λ</mi></math>, <math><msub><mi>k</mi><mi>w</mi></msub></math></td><td>波長・波数</td><td>深水分散 <math><mrow><mi>λ</mi><mo>=</mo><mn>2</mn><mi>π</mi><mi>g</mi><mo>/</mo><msup><mi>ω</mi><mn>2</mn></msup></mrow></math>, <math><mrow><msub><mi>k</mi><mi>w</mi></msub><mo>=</mo><msup><mi>ω</mi><mn>2</mn></msup><mo>/</mo><mi>g</mi></mrow></math></td><td>m, 1/m</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><mrow><mi>S</mi><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math></td><td>波スペクトル密度</td><td>波エネルギーの周波数分布</td><td>m²·s</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><mi>G</mi></math></td><td>全天日射強度（GHI）</td><td>太陽光発電の入力</td><td>W/m²</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><mi>φ</mi></math>, <math><mi>δ</mi></math>, <math><msub><mi>α</mi><mi>s</mi></msub></math></td><td>緯度・太陽赤緯・太陽高度</td><td>晴天日射モデルの幾何</td><td>deg</td><td class="num">35°N</td></tr>
+<tr><td class="sym"><math><msub><mi>k</mi><mi>c</mi></msub></math></td><td>雲量係数</td><td>晴天 GHI への乗数（0–1）</td><td>—</td><td class="num">0.70 △</td></tr>
+</table></div></details>
+
+<details class="sub" open><summary>抵抗</summary><div class="tbl"><table>
+<tr><th>記号</th><th>名称</th><th>役割</th><th>単位</th><th class="num">値</th></tr>
+<tr><td class="sym">Re, Fn</td><td>Reynolds 数・Froude 数</td><td>摩擦／造波の無次元支配数</td><td>—</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><msub><mi>C</mi><mi>F</mi></msub></math></td><td>摩擦抵抗係数</td><td>ITTC-1957 相関線</td><td>—</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><msub><mi>C</mi><mi>R</mi></msub></math></td><td>剰余（造波）抵抗係数</td><td>Fn 依存の閉じ込め式。<math><msub><mi>C</mi><mrow><mi>R</mi><mn>0</mn></mrow></msub></math>=較正値</td><td>—</td><td class="num">C_R0=0.00284</td></tr>
+<tr><td class="sym"><math><msub><mi>C</mi><mi>T</mi></msub></math></td><td>全抵抗係数</td><td><math><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>k</mi><mo>)</mo><msub><mi>C</mi><mi>F</mi></msub><mo>+</mo><msub><mi>C</mi><mi>R</mi></msub></mrow></math></td><td>—</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><msub><mi>R</mi><mi>calm</mi></msub></math>, <math><msub><mi>R</mi><mi>AW</mi></msub></math>, <math><msub><mi>R</mi><mi>wind</mi></msub></math></td><td>平水抵抗・波浪中抵抗増加・風圧抵抗</td><td>全抵抗の 3 成分</td><td>N</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><mrow><msub><mi>Φ</mi><mi>aw</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math></td><td>波浪中抵抗増加の応答関数（QTF）</td><td>単位波振幅² あたりの抵抗増加</td><td>N/m²</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><mrow><mi>r</mi><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math></td><td>成分別反射効率</td><td>波長/船長比による QTF の減衰（0–1）</td><td>—</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><msub><mi>C</mi><mi>d</mi></msub></math></td><td>空力抗力係数</td><td>前面投影基準のブラフボディ抗力</td><td>—</td><td class="num">0.8 △</td></tr>
+</table></div></details>
+
+<details class="sub" open><summary>推進</summary><div class="tbl"><table>
+<tr><th>記号</th><th>名称</th><th>役割</th><th>単位</th><th class="num">値</th></tr>
+<tr><td class="sym"><math><msub><mi>P</mi><mi>e</mi></msub></math></td><td>推進入力電力</td><td>電池→制御器への入力。最大 <math><msub><mi>P</mi><mi>max</mi></msub></math></td><td>W</td><td class="num">≤450 △</td></tr>
+<tr><td class="sym"><math><msub><mi>P</mi><mi>s</mi></msub></math></td><td>軸出力</td><td>モーター出力＝プロペラ入力</td><td>W</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><msub><mi>P</mi><mi>fix</mi></msub></math>, a, b</td><td>モーター損失係数</td><td>固定損／線形損（鉄損系）／2乗損（銅損系）</td><td>W, —, 1/W</td><td class="num">8, 0.04, 6×10⁻⁵ △</td></tr>
+<tr><td class="sym"><math><msub><mi>η</mi><mi>ctrl</mi></msub></math>, <math><msub><mi>η</mi><mi>motor</mi></msub></math>, <math><msub><mi>η</mi><mi>prop</mi></msub></math></td><td>制御器・モーター・プロペラ効率</td><td>推進チェーンの各段効率</td><td>—</td><td class="num">0.97 / 式 / 式</td></tr>
+<tr><td class="sym"><math><msub><mi>η</mi><mi>pk</mi></msub></math>, <math><msub><mi>V</mi><mi>d</mi></msub></math></td><td>プロペラピーク効率・設計前進速度</td><td>効率カーブの形状パラメータ</td><td>—, m/s</td><td class="num">0.55, 1.8 △</td></tr>
+<tr><td class="sym"><math><mi>T</mi></math>, <math><msub><mi>T</mi><mi>b</mi></msub></math></td><td>推力・ボラード推力上限</td><td>釣合いの左辺／低速時の上限（運動量理論）</td><td>N</td><td class="num">—</td></tr>
+</table></div></details>
+
+<details class="sub" open><summary>電源・エネルギー</summary><div class="tbl"><table>
+<tr><th>記号</th><th>名称</th><th>役割</th><th>単位</th><th class="num">値</th></tr>
+<tr><td class="sym"><math><msub><mi>E</mi><mi>bat</mi></msub></math></td><td>電池容量</td><td>SOC 積分の分母</td><td>Wh</td><td class="num">4000 ◎</td></tr>
+<tr><td class="sym"><math><msub><mi>η</mi><mi>chg</mi></msub></math>, <math><msub><mi>η</mi><mi>dis</mi></msub></math></td><td>充電・放電効率</td><td>電池の入出力損失</td><td>—</td><td class="num">0.97 △</td></tr>
+<tr><td class="sym"><math><msub><mi>P</mi><mi>panel</mi></msub></math></td><td>太陽光パネル定格</td><td>G<sub>STC</sub> 時の発電量</td><td>W</td><td class="num">415 ◎</td></tr>
+<tr><td class="sym"><math><msub><mi>f</mi><mi>der</mi></msub></math></td><td>PV 総合ディレート</td><td>温度・塩汚れ・傾斜等の一括係数</td><td>—</td><td class="num">0.70 △</td></tr>
+<tr><td class="sym"><math><msub><mi>P</mi><mi>gen</mi></msub></math>, <math><msub><mi>E</mi><mi>fuel</mi></msub></math></td><td>発電機出力・燃料エネルギー</td><td>メタノール補助発電（SOC ヒステリシス起動）</td><td>W, Wh</td><td class="num">125 / 30000 ◎</td></tr>
+<tr><td class="sym"><math><msub><mi>P</mi><mi>hotel</mi></msub></math></td><td>ホテル負荷</td><td>航法計算機・通信・センサーの常時消費</td><td>W</td><td class="num">104（較正値）</td></tr>
+<tr><td class="sym"><math><msub><mi>P</mi><mi>prop</mi></msub></math></td><td>推進消費電力</td><td>目標速力の維持に必要な P<sub>e</sub></td><td>W</td><td class="num">—</td></tr>
+</table></div></details>
+
+<details class="sub" open><summary>耐航性</summary><div class="tbl"><table>
+<tr><th>記号</th><th>名称</th><th>役割</th><th>単位</th><th class="num">値</th></tr>
+<tr><td class="sym"><math><msub><mi>A</mi><mi>w</mi></msub></math></td><td>水線面積</td><td>ヒーブ復原力 <math><mrow><mi>ρ</mi><mi>g</mi><msub><mi>A</mi><mi>w</mi></msub></mrow></math> の源</td><td>m²</td><td class="num">2.07 ○</td></tr>
+<tr><td class="sym"><math><msub><mi>ω</mi><mrow><mi>n</mi><mo>,</mo><mi>h</mi></mrow></msub></math></td><td>ヒーブ固有角周波数</td><td>共振周期 T<sub>n</sub>≈1.6 s を与える</td><td>rad/s</td><td class="num">○</td></tr>
+<tr><td class="sym"><math><msub><mi>ζ</mi><mi>h</mi></msub></math>, <math><msub><mi>ζ</mi><mi>θ</mi></msub></math></td><td>ヒーブ・ピッチ減衰比</td><td>共振ピークの高さを決める（放射＋粘性）</td><td>—</td><td class="num">0.35 △</td></tr>
+<tr><td class="sym"><math><msub><mi>μ</mi><mi>a</mi></msub></math></td><td>付加質量比（ヒーブ／ピッチ）</td><td>固有周波数の分母補正。0.8 と仮定</td><td>—</td><td class="num">0.8 △</td></tr>
+<tr><td class="sym"><math><mrow><msub><mi>H</mi><mi>h</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math>, <math><mrow><msub><mi>H</mi><mi>θ</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math></td><td>ヒーブ・ピッチ RAO</td><td>単位波振幅あたりの応答</td><td>m/m, deg/m</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><msub><mi>m</mi><mi>n</mi></msub></math></td><td>応答スペクトルの n 次モーメント</td><td>RMS = √m₀</td><td>—</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><msub><mi>H</mi><mrow><mi>s</mi><mo>,</mo><mi>lim</mi></mrow></msub></math></td><td>運用限界有義波高</td><td>基準（加速度 0.2g・ピッチ 6°）に達する Hs</td><td>m</td><td class="num">—</td></tr>
+</table></div></details>
+</details>
+
+<!-- ═══════════ §3 ═══════════ -->
+<details class="sec" id="s3" open><summary><span class="no">§3</span><span class="ttl">アーキテクチャ — 7 モジュール</span></summary>
+<p>全モジュールは<b>純関数</b>。SI 単位で受け渡し、各モジュールに <code>model</code> セレクタを持たせて閉じ込め式を差し替える。数式コアは DOM 非依存で Python へそのまま移植できる。</p>
+<div class="arch">
+  <div class="arch-row">
+    <div class="mod"><b>ENV</b><span>環境入力<br>風・波・流れ・日射</span></div>
+    <div class="mod"><b>HULL</b><span>抵抗<br>平水＋波浪＋風圧</span></div>
+    <div class="mod"><b>PROP</b><span>推進系<br>損失分解×プロペラ効率</span></div>
+  </div>
+  <div class="arr">↓ R(V) ／ T(V, P) ↓</div>
+  <div class="arch-row">
+    <div class="mod"><b>PWR</b><span>電源<br>電池 SOC・太陽光・発電機</span></div>
+    <div class="mod hub"><b>DYN</b><span>ソルバー<br>釣合い求根＋時間積分</span></div>
+    <div class="mod"><b>MSN</b><span>ミッション評価<br>成立性判定・KPI</span></div>
+  </div>
+  <div class="arr">↓</div>
+  <div class="arch-row" style="grid-template-columns:1fr">
+    <div class="mod"><b>UI</b><span>釣合い曲線・電力収支・SOC 時系列・スペクトル・耐航性・検証自動実行</span></div>
+  </div>
+</div>
+</details>
+
+<!-- ═══════════ §4 ═══════════ -->
+<details class="sec" id="s4" open><summary><span class="no">§4</span><span class="ttl">運動方程式と定常解（DYN）</span></summary>
+<details class="sub" open><summary>支配式</summary>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(1)</span></div>
+<math display="block"><mrow>
+<mo>(</mo><mi>m</mi><mo>+</mo><msub><mi>m</mi><mi>a</mi></msub><mo>)</mo>
+<mfrac><mrow><mi>d</mi><mi>V</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac>
+<mo>=</mo>
+<mi>T</mi><mo>(</mo><mi>V</mi><mo>,</mo><msub><mi>P</mi><mi>e</mi></msub><mo>)</mo>
+<mo>−</mo>
+<msub><mi>R</mi><mi>total</mi></msub><mo>(</mo><mi>V</mi><mo>;</mo><mi>env</mi><mo>)</mo>
+</mrow></math>
+<div class="eqnote">surge 1 自由度の運動量保存。付加質量 <math><msub><mi>m</mi><mi>a</mi></msub></math> は加速時に艇と共に動く水の慣性。</div></div>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(2)</span></div>
+<math display="block"><mrow>
+<msub><mi>R</mi><mi>total</mi></msub><mo>=</mo>
+<msub><mi>R</mi><mi>calm</mi></msub><mo>+</mo><msub><mi>R</mi><mi>AW</mi></msub><mo>+</mo><msub><mi>R</mi><mi>wind</mi></msub>
+</mrow></math>
+<div class="eqnote">抵抗の線形重ね合わせ（各成分の連成は無視＝0 次元の基本仮定）。</div></div>
+<p><b>定常解</b>: <math><mrow><mi>T</mi><mo>(</mo><mi>V</mi><mo>)</mo><mo>=</mo><msub><mi>R</mi><mi>total</mi></msub><mo>(</mo><mi>V</mi><mo>)</mo></mrow></math> を二分法で求根する。<math><mrow><mi>T</mi><mo>−</mo><mi>R</mi></mrow></math> は V に対し単調減少なので必ず一意に収束し、解が無い場合（最大推力 &lt; 最小抵抗）は「前進不能」と判定する。時間積分（ミッション評価）は Δt=600 s の準定常で回す。</p>
+</details>
+</details>
+
+<!-- ═══════════ §5 ═══════════ -->
+<details class="sec" id="s5" open><summary><span class="no">§5</span><span class="ttl">抵抗（HULL）</span></summary>
+
+<details class="sub" open><summary>5.1 支配式（一般形）</summary>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(3)</span></div>
+<math display="block"><mrow>
+<msub><mi>R</mi><mi>calm</mi></msub><mo>=</mo>
+<mfrac><mn>1</mn><mn>2</mn></mfrac><mi>ρ</mi><mi>S</mi>
+<msub><mi>C</mi><mi>T</mi></msub><mo>(</mo><mi>Re</mi><mo>,</mo><mi>Fn</mi><mo>)</mo>
+<msup><mi>V</mi><mn>2</mn></msup>
+</mrow></math>
+<div class="eqnote">平水抵抗の無次元形。全抵抗係数 <math><msub><mi>C</mi><mi>T</mi></msub></math> の中身が閉じ込めの対象。</div></div>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(4)</span></div>
+<math display="block"><mrow>
+<msub><mi>R</mi><mi>AW</mi></msub><mo>=</mo>
+<mn>2</mn><msubsup><mo>∫</mo><mn>0</mn><mo>∞</mo></msubsup>
+<mi>S</mi><mo>(</mo><mi>ω</mi><mo>)</mo><mspace width="0.17em"/>
+<msub><mi>Φ</mi><mi>aw</mi></msub><mo>(</mo><mi>ω</mi><mo>;</mo><mi>V</mi><mo>)</mo><mspace width="0.17em"/>
+<mi>d</mi><mi>ω</mi>
+</mrow></math>
+<div class="eqnote">波浪中抵抗増加のスペクトル形。<math><msub><mi>Φ</mi><mi>aw</mi></msub></math> は単位波振幅² あたりの抵抗増加（QTF）。<b>この形は BEM や模型試験の QTF をそのまま受け取れる</b>——置き換えは <math><msub><mi>Φ</mi><mi>aw</mi></msub></math> の差し替えだけで済む。</div></div>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(5)</span></div>
+<math display="block"><mrow>
+<msub><mi>R</mi><mi>wind</mi></msub><mo>=</mo>
+<mfrac><mn>1</mn><mn>2</mn></mfrac><msub><mi>ρ</mi><mi>a</mi></msub>
+<msub><mi>C</mi><mi>X</mi></msub><mo>(</mo><msub><mi>ψ</mi><mi>r</mi></msub><mo>)</mo>
+<msub><mi>A</mi><mi>F</mi></msub>
+<msubsup><mi>U</mi><mi>r</mi><mn>2</mn></msubsup>
+</mrow></math>
+<div class="eqnote">風圧抵抗の一般形（ITTC 7.5-04-01-01 と同型）。<math><msub><mi>C</mi><mi>X</mi></msub></math> は相対風向角の関数＝風洞試験のテーブルを受け取れる形。</div></div>
+</details>
+
+<details class="sub" open><summary>5.2 平水抵抗の閉じ込め式（ITTC-1957 ＋ 剰余抵抗）</summary>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（実験相関・仮定）</span><span class="bdg rep">置換: 曳航水槽試験 / CFD(RANS)</span><span class="eqno">(6)</span></div>
+<math display="block"><mrow>
+<msub><mi>C</mi><mi>T</mi></msub><mo>=</mo>
+<mo>(</mo><mn>1</mn><mo>+</mo><mi>k</mi><mo>)</mo><msub><mi>C</mi><mi>F</mi></msub>
+<mo>+</mo><msub><mi>C</mi><mi>R</mi></msub>
+<mo>,</mo><mspace width="1em"/>
+<msub><mi>C</mi><mi>F</mi></msub><mo>=</mo>
+<mfrac><mn>0.075</mn><msup><mrow><mo>(</mo><msub><mi>log</mi><mn>10</mn></msub><mi>Re</mi><mo>−</mo><mn>2</mn><mo>)</mo></mrow><mn>2</mn></msup></mfrac>
+<mo>,</mo><mspace width="1em"/>
+<msub><mi>C</mi><mi>R</mi></msub><mo>=</mo>
+<msub><mi>C</mi><mrow><mi>R</mi><mn>0</mn></mrow></msub>
+<mrow><mo>[</mo><mn>1</mn><mo>+</mo><msup><mrow><mo>(</mo><mfrac><mi>Fn</mi><msub><mi>Fn</mi><mi>ref</mi></msub></mfrac><mo>)</mo></mrow><mn>4</mn></msup><mo>]</mo></mrow>
+</mrow></math>
+<div class="eqnote"><math><msub><mi>C</mi><mi>F</mi></msub></math> は ITTC-1957 模型船相関線（実験相関・信頼度高）。<math><msub><mi>C</mi><mi>R</mi></msub></math> の Fn⁴ 形は<b>本設計の仮定</b>で、<math><msub><mi>C</mi><mrow><mi>R</mi><mn>0</mn></mrow></msub></math>=0.00284 は最高速力 4.5 kt からの較正値。曳航試験または CFD で <math><mrow><msub><mi>C</mi><mi>R</mi></msub><mo>(</mo><mi>Fn</mi><mo>)</mo></mrow></math> テーブルに置換するのが本命。</div></div>
+<details class="sub" open><summary>図1 — 平水抵抗の内訳（ベースライン）</summary>
+<figure><svg viewBox="0 0 700 250" role="img" style="width:100%;height:auto;display:block"><line x1="52" y1="216.0" x2="686" y2="216.0" class="grid"/><text x="46" y="219.5" class="tick" text-anchor="end">0</text><line x1="52" y1="162.3" x2="686" y2="162.3" class="grid"/><text x="46" y="165.8" class="tick" text-anchor="end">50</text><line x1="52" y1="108.6" x2="686" y2="108.6" class="grid"/><text x="46" y="112.1" class="tick" text-anchor="end">100</text><line x1="52" y1="54.9" x2="686" y2="54.9" class="grid"/><text x="46" y="58.4" class="tick" text-anchor="end">150</text><text x="52.0" y="232" class="tick" text-anchor="middle">0</text><text x="171.6" y="232" class="tick" text-anchor="middle">1</text><text x="291.2" y="232" class="tick" text-anchor="middle">2</text><text x="410.9" y="232" class="tick" text-anchor="middle">3</text><text x="530.5" y="232" class="tick" text-anchor="middle">4</text><text x="650.1" y="232" class="tick" text-anchor="middle">5</text><line x1="52" y1="216" x2="686" y2="216" class="axis"/><text x="369" y="247" class="lab" text-anchor="middle">速力 V [kt]</text><text x="12" y="114" class="lab" text-anchor="middle" transform="rotate(-90 12 114)">抵抗 [N]</text><polyline points="75.9,215.9 87.9,215.7 99.8,215.6 111.8,215.3 123.8,215.1 135.7,214.8 147.7,214.4 159.7,214.1 171.6,213.6 183.6,213.2 195.5,212.7 207.5,212.1 219.5,211.5 231.4,210.9 243.4,210.2 255.4,209.5 267.3,208.7 279.3,207.8 291.2,206.9 303.2,206.0 315.2,204.9 327.1,203.8 339.1,202.5 351.1,201.2 363.0,199.7 375.0,198.1 386.9,196.4 398.9,194.5 410.9,192.4 422.8,190.1 434.8,187.6 446.8,184.8 458.7,181.7 470.7,178.3 482.6,174.6 494.6,170.4 506.6,165.9 518.5,160.8 530.5,155.3 542.5,149.1 554.4,142.4 566.4,134.9 578.3,126.7 590.3,117.6 602.3,107.7 614.2,96.7 626.2,84.7 638.2,71.6 650.1,57.2 662.1,41.4 674.0,24.1 686.0,12.0 698.0,12.0 709.9,12.0" class="s-ink" fill="none"/><polyline points="75.9,215.9 87.9,215.8 99.8,215.7 111.8,215.5 123.8,215.4 135.7,215.2 147.7,215.0 159.7,214.7 171.6,214.4 183.6,214.2 195.5,213.9 207.5,213.5 219.5,213.2 231.4,212.8 243.4,212.4 255.4,212.0 267.3,211.5 279.3,211.1 291.2,210.6 303.2,210.1 315.2,209.6 327.1,209.1 339.1,208.5 351.1,207.9 363.0,207.3 375.0,206.7 386.9,206.1 398.9,205.5 410.9,204.8 422.8,204.1 434.8,203.4 446.8,202.7 458.7,201.9 470.7,201.2 482.6,200.4 494.6,199.6 506.6,198.8 518.5,197.9 530.5,197.1 542.5,196.2 554.4,195.3 566.4,194.4 578.3,193.5 590.3,192.6 602.3,191.6 614.2,190.7 626.2,189.7 638.2,188.7 650.1,187.6 662.1,186.6 674.0,185.5 686.0,184.5 698.0,183.4 709.9,182.3" class="s1" fill="none"/><polyline points="75.9,216.0 87.9,215.9 99.8,215.9 111.8,215.8 123.8,215.7 135.7,215.6 147.7,215.5 159.7,215.3 171.6,215.2 183.6,215.0 195.5,214.8 207.5,214.6 219.5,214.4 231.4,214.1 243.4,213.8 255.4,213.5 267.3,213.2 279.3,212.8 291.2,212.3 303.2,211.8 315.2,211.3 327.1,210.7 339.1,210.0 351.1,209.2 363.0,208.4 375.0,207.4 386.9,206.3 398.9,205.0 410.9,203.6 422.8,202.0 434.8,200.2 446.8,198.1 458.7,195.8 470.7,193.2 482.6,190.2 494.6,186.9 506.6,183.1 518.5,178.9 530.5,174.2 542.5,168.9 554.4,163.0 566.4,156.5 578.3,149.2 590.3,141.0 602.3,132.0 614.2,122.1 626.2,111.1 638.2,98.9 650.1,85.5 662.1,70.8 674.0,54.6 686.0,36.8 698.0,17.4 709.9,12.0" class="s2" fill="none"/><line x1="590.3" y1="12" x2="590.3" y2="216" class="mark"/><text x="595.3" y="25" class="marklab">V₁=4.5kt (Fn≈0.41)</text><text x="536.5" y="76.4" class="slab l-ink">合計</text><text x="572.4" y="196.7" class="slab l1">摩擦 (1+k)C_F</text><text x="452.7" y="160.2" class="slab l2">剰余 C_R</text></svg><figcaption>図1: 平水抵抗の速度特性。低速は摩擦が支配、Fn≈0.3 以降は剰余（造波）が急増し、公称最高速力 4.5 kt は Fn≈0.41＝排水量型の hull speed 直下に一致する（抵抗モデルの妥当性の傍証）。</figcaption></figure>
+</details>
+</details>
+
+<details class="sub" open><summary>5.3 波浪中抵抗増加の閉じ込め式（JONSWAP × 成分別反射）</summary>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（スペクトル・準実験式）</span><span class="eqno">(7)</span></div>
+<math display="block"><mrow>
+<mi>S</mi><mo>(</mo><mi>ω</mi><mo>)</mo><mo>∝</mo>
+<msup><mi>ω</mi><mrow><mo>−</mo><mn>5</mn></mrow></msup>
+<mi>exp</mi><mrow><mo>[</mo><mo>−</mo><mfrac><mn>5</mn><mn>4</mn></mfrac><msup><mrow><mo>(</mo><mfrac><msub><mi>ω</mi><mi>p</mi></msub><mi>ω</mi></mfrac><mo>)</mo></mrow><mn>4</mn></msup><mo>]</mo></mrow>
+<mspace width="0.3em"/><msup><mn>3.3</mn><mi>r'</mi></msup>
+<mo>,</mo><mspace width="1em"/>
+<msubsup><mo>∫</mo><mn>0</mn><mo>∞</mo></msubsup><mi>S</mi><mspace width="0.17em"/><mi>d</mi><mi>ω</mi>
+<mo>=</mo><mfrac><msubsup><mi>H</mi><mi>s</mi><mn>2</mn></msubsup><mn>16</mn></mfrac>
+</mrow></math>
+<div class="eqnote">JONSWAP スペクトル（γ=3.3、m₀ に数値正規化）。海域の実測スペクトルが得られればそのまま差し替え可。</div></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（仮定）</span><span class="bdg rep">置換: BEM / 耐航性能Sim / 波浪中模型試験</span><span class="eqno">(8)</span></div>
+<math display="block"><mrow>
+<msub><mi>Φ</mi><mi>aw</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo><mo>=</mo>
+<mfrac><mn>1</mn><mn>2</mn></mfrac><mi>ρ</mi><mi>g</mi><mi>B</mi>
+<msqrt><mfrac><mi>B</mi><msub><mi>L</mi><mi>BWL</mi></msub></mfrac></msqrt>
+<mspace width="0.25em"/><mi>r</mi><mo>(</mo><mi>ω</mi><mo>)</mo>
+<mo>,</mo><mspace width="1em"/>
+<mi>r</mi><mo>(</mo><mi>ω</mi><mo>)</mo><mo>=</mo>
+<mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><msup><mrow><mo>(</mo><mi>λ</mi><mo>/</mo><mn>2</mn><msub><mi>L</mi><mi>wl</mi></msub><mo>)</mo></mrow><mn>2</mn></msup></mrow></mfrac>
+</mrow></math>
+<div class="eqnote">反射（回折）漸近値は STAWAVE-1（ISO 15016）の係数で、<b>r≡1 とすると式(4)は STAWAVE-1 に厳密一致</b>する。減衰形 r(ω) は「短波長＝全反射・長波長＝追従」を表す<b>本設計の仮定</b>（実験検証なし）。<b>運動起因成分は含まれない</b>——BEM か耐航性能 Sim で QTF ごと置換するのが本命。</div></div>
+<details class="sub" open><summary>図2 — 反射効率 r(λ/L)</summary>
+<figure><svg viewBox="0 0 700 250" role="img" style="width:100%;height:auto;display:block"><line x1="52" y1="216.0" x2="686" y2="216.0" class="grid"/><text x="46" y="219.5" class="tick" text-anchor="end">0</text><line x1="52" y1="118.9" x2="686" y2="118.9" class="grid"/><text x="46" y="122.4" class="tick" text-anchor="end">0.5</text><line x1="52" y1="21.7" x2="686" y2="21.7" class="grid"/><text x="46" y="25.2" class="tick" text-anchor="end">1</text><text x="161.6" y="232" class="tick" text-anchor="middle">0.5</text><text x="244.6" y="232" class="tick" text-anchor="middle">1</text><text x="327.5" y="232" class="tick" text-anchor="middle">2</text><text x="437.2" y="232" class="tick" text-anchor="middle">5</text><text x="520.1" y="232" class="tick" text-anchor="middle">10</text><text x="603.1" y="232" class="tick" text-anchor="middle">20</text><line x1="52" y1="216" x2="686" y2="216" class="axis"/><text x="369" y="247" class="lab" text-anchor="middle">波長/船長 λ/L [—]（対数軸）</text><text x="12" y="114" class="lab" text-anchor="middle" transform="rotate(-90 12 114)">反射効率 r [—]</text><polygon points="52,216 52.0,23.6 59.0,23.9 65.9,24.1 72.9,24.4 79.9,24.8 86.9,25.1 93.8,25.5 100.8,26.0 107.8,26.5 114.8,27.1 121.7,27.8 128.7,28.5 135.7,29.3 142.6,30.2 149.6,31.2 156.6,32.3 163.6,33.5 170.5,34.8 177.5,36.4 184.5,38.0 191.4,39.8 198.4,41.8 205.4,44.0 212.4,46.5 219.3,49.1 226.3,51.9 233.3,55.0 240.3,58.4 247.2,62.0 254.2,65.8 261.2,69.9 268.1,74.3 275.1,78.8 282.1,83.6 289.1,88.7 296.0,93.9 303.0,99.2 310.0,104.7 317.0,110.3 323.9,115.9 330.9,121.6 337.9,127.2 344.8,132.8 351.8,138.3 358.8,143.7 365.8,148.9 372.7,153.9 379.7,158.7 386.7,163.3 393.7,167.7 400.6,171.8 407.6,175.6 414.6,179.2 421.5,182.6 428.5,185.7 435.5,188.5 442.5,191.2 449.4,193.6 456.4,195.8 463.4,197.8 470.3,199.6 477.3,201.3 484.3,202.8 491.3,204.2 498.2,205.4 505.2,206.5 512.2,207.5 519.2,208.4 526.1,209.2 533.1,209.9 540.1,210.6 547.0,211.2 554.0,211.7 561.0,212.2 568.0,212.6 574.9,212.9 581.9,213.3 588.9,213.6 595.9,213.8 602.8,214.1 609.8,214.3 616.8,214.5 623.7,214.6 630.7,214.8 637.7,214.9 644.7,215.0 651.6,215.1 658.6,215.2 665.6,215.3 672.6,215.4 679.5,215.5 679.5,216" class="s2" opacity="0.16" stroke="none"/><polyline points="52.0,23.6 59.0,23.9 65.9,24.1 72.9,24.4 79.9,24.8 86.9,25.1 93.8,25.5 100.8,26.0 107.8,26.5 114.8,27.1 121.7,27.8 128.7,28.5 135.7,29.3 142.6,30.2 149.6,31.2 156.6,32.3 163.6,33.5 170.5,34.8 177.5,36.4 184.5,38.0 191.4,39.8 198.4,41.8 205.4,44.0 212.4,46.5 219.3,49.1 226.3,51.9 233.3,55.0 240.3,58.4 247.2,62.0 254.2,65.8 261.2,69.9 268.1,74.3 275.1,78.8 282.1,83.6 289.1,88.7 296.0,93.9 303.0,99.2 310.0,104.7 317.0,110.3 323.9,115.9 330.9,121.6 337.9,127.2 344.8,132.8 351.8,138.3 358.8,143.7 365.8,148.9 372.7,153.9 379.7,158.7 386.7,163.3 393.7,167.7 400.6,171.8 407.6,175.6 414.6,179.2 421.5,182.6 428.5,185.7 435.5,188.5 442.5,191.2 449.4,193.6 456.4,195.8 463.4,197.8 470.3,199.6 477.3,201.3 484.3,202.8 491.3,204.2 498.2,205.4 505.2,206.5 512.2,207.5 519.2,208.4 526.1,209.2 533.1,209.9 540.1,210.6 547.0,211.2 554.0,211.7 561.0,212.2 568.0,212.6 574.9,212.9 581.9,213.3 588.9,213.6 595.9,213.8 602.8,214.1 609.8,214.3 616.8,214.5 623.7,214.6 630.7,214.8 637.7,214.9 644.7,215.0 651.6,215.1 658.6,215.2 665.6,215.3 672.6,215.4 679.5,215.5" class="s2" fill="none"/><line x1="327.5" y1="12" x2="327.5" y2="216" class="mark"/><text x="332.5" y="25" class="marklab">λ=2L</text><text x="140.8" y="31.4" class="slab l2">短波長=全反射</text><text x="507.5" y="153.8" class="slab l-mut">長波長=追従(contouring)</text></svg><figcaption>図2: 波長/船長比に対する反射効率（対数軸）。λ≲L の成分は全反射して抵抗になり、λ≫L では艇が波面に追従（contouring）して寄与しない。3 m 艇では大部分の風波成分が右側（追従域）に入る。</figcaption></figure>
+</details>
+<details class="sub" open><summary>図3 — スペクトルと抵抗寄与（荒天例 Hs 2.5 m・Tp 7 s）</summary>
+<figure><svg viewBox="0 0 700 250" role="img" style="width:100%;height:auto;display:block"><line x1="52" y1="216.0" x2="686" y2="216.0" class="grid"/><text x="46" y="219.5" class="tick" text-anchor="end">0</text><line x1="52" y1="118.9" x2="686" y2="118.9" class="grid"/><text x="46" y="122.4" class="tick" text-anchor="end">0.5</text><line x1="52" y1="21.7" x2="686" y2="21.7" class="grid"/><text x="46" y="25.2" class="tick" text-anchor="end">1</text><text x="100.8" y="232" class="tick" text-anchor="middle">2</text><text x="198.3" y="232" class="tick" text-anchor="middle">4</text><text x="295.8" y="232" class="tick" text-anchor="middle">6</text><text x="393.4" y="232" class="tick" text-anchor="middle">8</text><text x="490.9" y="232" class="tick" text-anchor="middle">10</text><text x="588.5" y="232" class="tick" text-anchor="middle">12</text><text x="686.0" y="232" class="tick" text-anchor="middle">14</text><line x1="52" y1="216" x2="686" y2="216" class="axis"/><text x="369" y="247" class="lab" text-anchor="middle">波周期 T [s]</text><text x="12" y="114" class="lab" text-anchor="middle" transform="rotate(-90 12 114)">正規化密度 [—]</text><polygon points="52,216 52.0,216.0 55.9,215.2 59.8,215.0 63.7,214.8 67.6,214.6 71.5,214.3 75.4,214.0 79.3,213.7 83.2,213.3 87.1,212.9 91.0,212.4 94.9,211.9 98.8,211.4 102.7,210.8 106.6,210.2 110.5,209.5 114.4,208.8 118.3,208.0 122.2,207.2 126.1,206.3 130.0,205.4 133.9,204.4 137.8,203.3 141.7,202.3 145.6,201.1 149.5,200.0 153.4,198.7 157.3,197.4 161.2,196.1 165.1,194.7 169.0,193.2 172.9,191.7 176.8,190.2 180.8,188.7 184.7,187.1 188.6,185.4 192.5,183.8 196.4,182.1 200.3,180.3 204.2,178.7 208.1,176.8 212.0,175.2 215.9,173.3 219.8,171.7 223.7,169.8 227.6,168.2 231.5,166.4 235.4,164.8 239.3,163.1 243.2,161.5 247.1,160.1 251.0,158.4 254.9,157.0 258.8,155.7 262.7,154.1 266.6,152.8 270.5,151.4 274.4,149.3 278.3,147.5 282.2,145.7 286.1,141.1 290.0,137.0 293.9,133.2 297.8,126.1 301.7,115.9 305.6,106.5 309.5,98.0 313.4,85.5 317.3,70.2 321.2,56.2 325.1,43.3 329.0,32.8 332.9,29.5 336.8,26.6 340.7,24.0 344.6,21.7 348.5,25.2 352.4,43.1 356.3,60.0 360.2,75.9 364.1,91.0 368.0,105.1 371.9,116.9 375.8,127.4 379.7,137.4 383.6,146.8 387.5,155.7 391.4,164.1 395.3,170.0 399.2,173.8 403.1,177.3 407.0,180.7 410.9,183.9 414.8,186.9 418.7,189.8 422.6,192.3 426.5,194.2 430.4,195.9 434.4,197.6 438.3,199.3 442.2,200.8 446.1,202.3 450.0,203.7 453.9,205.0 457.8,205.9 461.7,206.9 465.6,207.7 469.5,208.6 473.4,209.4 477.3,210.2 481.2,210.9 485.1,211.6 489.0,212.3 492.9,212.8 496.8,213.1 500.7,213.4 504.6,213.7 508.5,213.9 512.4,214.2 516.3,214.4 520.2,214.7 524.1,214.9 528.0,215.1 531.9,215.3 535.8,215.5 539.7,215.5 543.6,215.6 547.5,215.6 551.4,215.7 555.3,215.7 559.2,215.7 563.1,215.8 567.0,215.8 570.9,215.8 574.8,215.9 578.7,215.9 582.6,215.9 586.5,216.0 590.4,216.0 594.3,216.0 598.2,216.0 602.1,216.0 606.0,216.0 609.9,216.0 613.8,216.0 617.7,216.0 621.6,216.0 625.5,216.0 629.4,216.0 633.3,216.0 637.2,216.0 641.1,216.0 645.0,216.0 648.9,216.0 652.8,216.0 656.7,216.0 660.6,216.0 664.5,216.0 668.4,216.0 672.3,216.0 676.2,216.0 680.1,216.0 684.0,216.0 684.0,216" class="s2" opacity="0.16" stroke="none"/><polyline points="52.0,216.0 55.9,215.2 59.8,215.0 63.7,214.8 67.6,214.6 71.5,214.3 75.4,214.0 79.3,213.7 83.2,213.3 87.1,212.9 91.0,212.4 94.9,211.9 98.8,211.4 102.7,210.8 106.6,210.2 110.5,209.5 114.4,208.8 118.3,208.0 122.2,207.2 126.1,206.3 130.0,205.4 133.9,204.4 137.8,203.3 141.7,202.3 145.6,201.1 149.5,200.0 153.4,198.7 157.3,197.4 161.2,196.1 165.1,194.7 169.0,193.2 172.9,191.7 176.8,190.2 180.8,188.7 184.7,187.1 188.6,185.4 192.5,183.8 196.4,182.1 200.3,180.3 204.2,178.7 208.1,176.8 212.0,175.2 215.9,173.3 219.8,171.7 223.7,169.8 227.6,168.2 231.5,166.4 235.4,164.8 239.3,163.1 243.2,161.5 247.1,160.1 251.0,158.4 254.9,157.0 258.8,155.7 262.7,154.1 266.6,152.8 270.5,151.4 274.4,149.3 278.3,147.5 282.2,145.7 286.1,141.1 290.0,137.0 293.9,133.2 297.8,126.1 301.7,115.9 305.6,106.5 309.5,98.0 313.4,85.5 317.3,70.2 321.2,56.2 325.1,43.3 329.0,32.8 332.9,29.5 336.8,26.6 340.7,24.0 344.6,21.7 348.5,25.2 352.4,43.1 356.3,60.0 360.2,75.9 364.1,91.0 368.0,105.1 371.9,116.9 375.8,127.4 379.7,137.4 383.6,146.8 387.5,155.7 391.4,164.1 395.3,170.0 399.2,173.8 403.1,177.3 407.0,180.7 410.9,183.9 414.8,186.9 418.7,189.8 422.6,192.3 426.5,194.2 430.4,195.9 434.4,197.6 438.3,199.3 442.2,200.8 446.1,202.3 450.0,203.7 453.9,205.0 457.8,205.9 461.7,206.9 465.6,207.7 469.5,208.6 473.4,209.4 477.3,210.2 481.2,210.9 485.1,211.6 489.0,212.3 492.9,212.8 496.8,213.1 500.7,213.4 504.6,213.7 508.5,213.9 512.4,214.2 516.3,214.4 520.2,214.7 524.1,214.9 528.0,215.1 531.9,215.3 535.8,215.5 539.7,215.5 543.6,215.6 547.5,215.6 551.4,215.7 555.3,215.7 559.2,215.7 563.1,215.8 567.0,215.8 570.9,215.8 574.8,215.9 578.7,215.9 582.6,215.9 586.5,216.0 590.4,216.0 594.3,216.0 598.2,216.0 602.1,216.0 606.0,216.0 609.9,216.0 613.8,216.0 617.7,216.0 621.6,216.0 625.5,216.0 629.4,216.0 633.3,216.0 637.2,216.0 641.1,216.0 645.0,216.0 648.9,216.0 652.8,216.0 656.7,216.0 660.6,216.0 664.5,216.0 668.4,216.0 672.3,216.0 676.2,216.0 680.1,216.0 684.0,216.0" class="s2" fill="none"/><polyline points="52.0,216.0 55.9,167.0 59.8,156.8 63.7,145.7 67.6,134.2 71.5,122.2 75.4,110.2 79.3,98.2 83.2,86.7 87.1,75.8 91.0,65.7 94.9,56.6 98.8,48.5 102.7,41.6 106.6,35.7 110.5,30.9 114.4,27.3 118.3,24.7 122.2,22.9 126.1,21.8 130.0,21.7 133.9,22.1 137.8,22.9 141.7,24.5 145.6,26.5 149.5,28.9 153.4,31.4 157.3,34.2 161.2,37.2 165.1,40.2 169.0,43.4 172.9,46.7 176.8,50.3 180.8,54.2 184.7,57.5 188.6,61.1 192.5,65.1 196.4,68.6 200.3,72.3 204.2,76.3 208.1,79.8 212.0,83.9 215.9,87.2 219.8,91.3 223.7,94.6 227.6,98.6 231.5,102.0 235.4,105.7 239.3,109.3 243.2,112.8 247.1,116.6 251.0,119.8 254.9,123.2 258.8,126.7 262.7,129.7 266.6,132.9 270.5,135.7 274.4,137.8 278.3,140.0 282.2,142.2 286.1,141.6 290.0,141.6 293.9,142.1 297.8,139.8 301.7,135.5 305.6,132.4 309.5,130.4 313.4,125.9 317.3,120.2 321.2,116.0 325.1,113.1 329.0,111.9 332.9,114.9 336.8,118.0 340.7,121.1 344.6,124.3 348.5,129.9 352.4,141.4 356.3,151.6 360.2,160.7 364.1,168.7 368.0,175.8 371.9,181.5 375.8,186.5 379.7,190.9 383.6,194.8 387.5,198.2 391.4,201.3 395.3,203.5 399.2,205.0 403.1,206.3 407.0,207.5 410.9,208.5 414.8,209.5 418.7,210.3 422.6,211.1 426.5,211.6 430.4,212.1 434.4,212.6 438.3,213.0 442.2,213.4 446.1,213.7 450.0,214.0 453.9,214.3 457.8,214.5 461.7,214.7 465.6,214.8 469.5,215.0 473.4,215.1 477.3,215.3 481.2,215.4 485.1,215.5 489.0,215.6 492.9,215.6 496.8,215.7 500.7,215.7 504.6,215.8 508.5,215.8 512.4,215.8 516.3,215.9 520.2,215.9 524.1,215.9 528.0,215.9 531.9,215.9 535.8,216.0 539.7,216.0 543.6,216.0 547.5,216.0 551.4,216.0 555.3,216.0 559.2,216.0 563.1,216.0 567.0,216.0 570.9,216.0 574.8,216.0 578.7,216.0 582.6,216.0 586.5,216.0 590.4,216.0 594.3,216.0 598.2,216.0 602.1,216.0 606.0,216.0 609.9,216.0 613.8,216.0 617.7,216.0 621.6,216.0 625.5,216.0 629.4,216.0 633.3,216.0 637.2,216.0 641.1,216.0 645.0,216.0 648.9,216.0 652.8,216.0 656.7,216.0 660.6,216.0 664.5,216.0 668.4,216.0 672.3,216.0 676.2,216.0 680.1,216.0 684.0,216.0" class="s-ink" fill="none" stroke-dasharray="6 5"/><line x1="344.6" y1="12" x2="344.6" y2="216" class="mark"/><text x="349.6" y="25" class="marklab">Tp=7s</text><text x="403.1" y="48.9" class="slab l2">S(T)（波エネルギー）</text><text x="100.8" y="41.1" class="slab l-ink">抵抗寄与 S·r</text></svg><figcaption>図3: 波エネルギー S(T)（面）はピーク周期 7 s に集中するが、抵抗寄与 S·r（破線）は短周期側（T≈2–3 s＝艇が反射する成分）に現れる。「Tp が長くても短波長テールが抵抗を作る」という Phase 2 の要点。</figcaption></figure>
+</details>
+</details>
+
+<details class="sub" open><summary>5.4 風圧抵抗の閉じ込め式</summary>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（仮定）</span><span class="bdg rep">置換: 風洞試験 / CFD（風向角別 C_X テーブル）</span><span class="eqno">(9)</span></div>
+<math display="block"><mrow>
+<msub><mi>u</mi><mi>r</mi></msub><mo>=</mo>
+<msub><mi>U</mi><mi>w</mi></msub><mi>cos</mi><mi>ψ</mi><mo>+</mo><mi>V</mi>
+<mo>,</mo><mspace width="1em"/>
+<msub><mi>R</mi><mi>wind</mi></msub><mo>=</mo>
+<mfrac><mn>1</mn><mn>2</mn></mfrac><msub><mi>ρ</mi><mi>a</mi></msub>
+<msub><mi>C</mi><mi>d</mi></msub>
+<msub><mi>A</mi><mi>F</mi></msub>
+<msub><mi>u</mi><mi>r</mi></msub><mrow><mo>|</mo><msub><mi>u</mi><mi>r</mi></msub><mo>|</mo></mrow>
+</mrow></math>
+<div class="eqnote">艇軸成分の <math><mrow><msub><mi>u</mi><mi>r</mi></msub><mo>|</mo><msub><mi>u</mi><mi>r</mi></msub><mo>|</mo></mrow></math> 形で符号を保存（追い風で自動的に推進側）。C<sub>d</sub>=0.8 はブラフボディ代表値の<b>仮定</b>。横風の横力・回頭は 0 次元の非スコープ。</div></div>
+</details>
+</details>
+
+<!-- ═══════════ §6 ═══════════ -->
+<details class="sec" id="s6" open><summary><span class="no">§6</span><span class="ttl">推進チェーン（PROP）</span></summary>
+<details class="sub" open><summary>6.1 支配式（一般形）</summary>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(10)</span></div>
+<math display="block"><mrow>
+<msub><mi>P</mi><mi>s</mi></msub><mo>=</mo>
+<msub><mi>η</mi><mi>ctrl</mi></msub><mspace width="0.15em"/><msub><mi>η</mi><mi>motor</mi></msub><mspace width="0.15em"/>
+<msub><mi>P</mi><mi>e</mi></msub>
+<mo>,</mo><mspace width="1em"/>
+<mi>T</mi><mo>=</mo>
+<mi>min</mi><mrow><mo>(</mo>
+<mfrac><mrow><msub><mi>η</mi><mi>prop</mi></msub><mspace width="0.15em"/><msub><mi>P</mi><mi>s</mi></msub></mrow><mi>V</mi></mfrac>
+<mo>,</mo><mspace width="0.4em"/><msub><mi>T</mi><mi>b</mi></msub>
+<mo>)</mo></mrow>
+</mrow></math>
+<div class="eqnote">電力 → 制御器 → モーター → プロペラの直列チェーン。各段の効率が閉じ込めの対象。全体拘束: η<sub>total</sub> ≤ 0.51（Torqeedo Cruise 3.0 FP 公称の総合効率。実装の最大実測 0.49）。</div></div>
+</details>
+<details class="sub" open><summary>6.2 閉じ込め式（損失分解・効率カーブ・ボラード上限）</summary>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（仮定）</span><span class="bdg rep">置換: モーターベンチ試験の効率マップ（トルク×回転数）</span><span class="eqno">(11)</span></div>
+<math display="block"><mrow>
+<msub><mi>P</mi><mi>loss</mi></msub><mo>=</mo>
+<msub><mi>P</mi><mi>fix</mi></msub><mo>+</mo>
+<mi>a</mi><msub><mi>P</mi><mi>s</mi></msub><mo>+</mo>
+<mi>b</mi><msubsup><mi>P</mi><mi>s</mi><mn>2</mn></msubsup>
+<mo>,</mo><mspace width="1em"/>
+<msub><mi>η</mi><mi>motor</mi></msub><mo>=</mo>
+<mfrac><msub><mi>P</mi><mi>s</mi></msub><mrow><msub><mi>P</mi><mi>s</mi></msub><mo>+</mo><msub><mi>P</mi><mi>loss</mi></msub></mrow></mfrac>
+</mrow></math>
+<div class="eqnote">固定損（制御器待機）＋線形損（鉄損系）＋2 乗損（銅損系）の物理ベース分解。低負荷での効率急落を 3 係数で再現する。</div></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（仮定）</span><span class="bdg rep">置換: プロペラ単独試験（open-water の K_T/K_Q–J 特性）</span><span class="eqno">(12)</span></div>
+<math display="block"><mrow>
+<msub><mi>η</mi><mi>prop</mi></msub><mo>(</mo><mi>V</mi><mo>)</mo><mo>=</mo>
+<msub><mi>η</mi><mi>pk</mi></msub>
+<mfrac><mi>V</mi><msub><mi>V</mi><mi>d</mi></msub></mfrac>
+<msup><mi>e</mi><mrow><mn>1</mn><mo>−</mo><mi>V</mi><mo>/</mo><msub><mi>V</mi><mi>d</mi></msub></mrow></msup>
+<mo>,</mo><mspace width="1em"/>
+<msub><mi>T</mi><mi>b</mi></msub><mo>=</mo>
+<msup><mrow><mo>(</mo><mn>2</mn><mi>ρ</mi><msub><mi>A</mi><mi>p</mi></msub><msubsup><mi>P</mi><mi>s</mi><mn>2</mn></msubsup><mo>)</mo></mrow><mrow><mn>1</mn><mo>/</mo><mn>3</mn></mrow></msup>
+</mrow></math>
+<div class="eqnote">効率カーブは前進率の 1 山近似（V<sub>d</sub> でピーク）。ボラード上限 T<sub>b</sub> は運動量理論の理想値で、V→0 で推力が発散しないための物理的上限。<b>置換時は η_prop(V) を K_T/K_Q テーブル＋回転数整合に差し替える</b>（ボラード試験で T_b も実測）。</div></div>
+<details class="sub" open><summary>図4 — モーター効率（損失分解）</summary>
+<figure><svg viewBox="0 0 700 250" role="img" style="width:100%;height:auto;display:block"><line x1="52" y1="216.0" x2="686" y2="216.0" class="grid"/><text x="46" y="219.5" class="tick" text-anchor="end">0</text><line x1="52" y1="114.0" x2="686" y2="114.0" class="grid"/><text x="46" y="117.5" class="tick" text-anchor="end">0.5</text><line x1="52" y1="12.0" x2="686" y2="12.0" class="grid"/><text x="46" y="15.5" class="tick" text-anchor="end">1</text><text x="52.0" y="232" class="tick" text-anchor="middle">0</text><text x="192.9" y="232" class="tick" text-anchor="middle">100</text><text x="333.8" y="232" class="tick" text-anchor="middle">200</text><text x="474.7" y="232" class="tick" text-anchor="middle">300</text><text x="615.6" y="232" class="tick" text-anchor="middle">400</text><line x1="52" y1="216" x2="686" y2="216" class="axis"/><text x="369" y="247" class="lab" text-anchor="middle">軸出力 P_s [W]</text><text x="12" y="114" class="lab" text-anchor="middle" transform="rotate(-90 12 114)">η_motor [—]</text><polyline points="66.1,105.2 73.1,86.4 80.2,74.5 87.2,66.2 94.3,60.1 101.3,55.5 108.4,51.8 115.4,48.9 122.4,46.4 129.5,44.4 136.5,42.7 143.6,41.2 150.6,39.9 157.7,38.8 164.7,37.8 171.8,36.9 178.8,36.2 185.8,35.5 192.9,34.8 199.9,34.3 207.0,33.7 214.0,33.3 221.1,32.9 228.1,32.5 235.2,32.1 242.2,31.8 249.2,31.5 256.3,31.2 263.3,30.9 270.4,30.7 277.4,30.5 284.5,30.3 291.5,30.1 298.6,29.9 305.6,29.7 312.6,29.6 319.7,29.4 326.7,29.3 333.8,29.2 340.8,29.1 347.9,29.0 354.9,28.9 362.0,28.8 369.0,28.7 376.0,28.6 383.1,28.5 390.1,28.5 397.2,28.4 404.2,28.3 411.3,28.3 418.3,28.2 425.4,28.2 432.4,28.1 439.4,28.1 446.5,28.0 453.5,28.0 460.6,28.0 467.6,28.0 474.7,27.9 481.7,27.9 488.8,27.9 495.8,27.9 502.8,27.8 509.9,27.8 516.9,27.8 524.0,27.8 531.0,27.8 538.1,27.8 545.1,27.8 552.2,27.8 559.2,27.8 566.2,27.8 573.3,27.8 580.3,27.8 587.4,27.8 594.4,27.8 601.5,27.8 608.5,27.8 615.6,27.8 622.6,27.8 629.6,27.8 636.7,27.8 643.7,27.9 650.8,27.9 657.8,27.9 664.9,27.9 671.9,27.9 679.0,27.9 686.0,27.9" class="s1" fill="none"/><text x="404.2" y="18.1" class="slab l-mut">低負荷で固定損が支配 → 効率急落</text></svg><figcaption>図4: 軸出力に対するモーター効率。低負荷では固定損が相対的に大きく効率が急落する——長期滞留の微速航行でこの領域を使うため、エネルギー成立性に直結する特性。</figcaption></figure>
+</details>
+<details class="sub" open><summary>図5 — プロペラ効率と総合効率</summary>
+<figure><svg viewBox="0 0 700 250" role="img" style="width:100%;height:auto;display:block"><line x1="52" y1="216.0" x2="686" y2="216.0" class="grid"/><text x="46" y="219.5" class="tick" text-anchor="end">0</text><line x1="52" y1="148.0" x2="686" y2="148.0" class="grid"/><text x="46" y="151.5" class="tick" text-anchor="end">0.2</text><line x1="52" y1="80.0" x2="686" y2="80.0" class="grid"/><text x="46" y="83.5" class="tick" text-anchor="end">0.4</text><line x1="52" y1="12.0" x2="686" y2="12.0" class="grid"/><text x="46" y="15.5" class="tick" text-anchor="end">0.6</text><text x="52.0" y="232" class="tick" text-anchor="middle">0</text><text x="178.8" y="232" class="tick" text-anchor="middle">1</text><text x="305.6" y="232" class="tick" text-anchor="middle">2</text><text x="432.4" y="232" class="tick" text-anchor="middle">3</text><text x="559.2" y="232" class="tick" text-anchor="middle">4</text><text x="686.0" y="232" class="tick" text-anchor="middle">5</text><line x1="52" y1="216" x2="686" y2="216" class="axis"/><text x="369" y="247" class="lab" text-anchor="middle">速力 V [kt]</text><text x="12" y="114" class="lab" text-anchor="middle" transform="rotate(-90 12 114)">効率 [—]</text><polyline points="90.0,176.0 102.7,164.2 115.4,153.0 128.1,142.6 140.8,132.7 153.4,123.5 166.1,114.9 178.8,106.8 191.5,99.3 204.2,92.3 216.8,85.8 229.5,79.7 242.2,74.1 254.9,68.9 267.6,64.1 280.2,59.7 292.9,55.6 305.6,52.0 318.3,48.6 331.0,45.6 343.6,42.8 356.3,40.4 369.0,38.2 381.7,36.3 394.4,34.7 407.0,33.3 419.7,32.1 432.4,31.1 445.1,30.3 457.8,29.7 470.4,29.3 483.1,29.1 495.8,29.0 508.5,29.1 521.2,29.3 533.8,29.7 546.5,30.1 559.2,30.7 571.9,31.5 584.6,32.3 597.2,33.2 609.9,34.2 622.6,35.3 635.3,36.5 648.0,37.8 660.6,39.1 673.3,40.5 686.0,42.0" class="s2" fill="none"/><polyline points="90.0,186.9 102.7,177.2 115.4,167.5 128.1,157.7 140.8,148.0 153.4,138.3 166.1,128.6 178.8,118.9 191.5,111.8 204.2,105.6 216.8,99.7 229.5,94.3 242.2,89.3 254.9,84.7 267.6,80.4 280.2,76.5 292.9,72.9 305.6,69.6 318.3,66.6 331.0,63.9 343.6,61.4 356.3,59.3 369.0,57.3 381.7,55.6 394.4,54.2 407.0,52.9 419.7,51.8 432.4,50.9 445.1,50.3 457.8,49.7 470.4,49.4 483.1,49.1 495.8,49.1 508.5,49.1 521.2,49.3 533.8,49.7 546.5,50.1 559.2,50.6 571.9,51.3 584.6,52.0 597.2,52.8 609.9,53.7 622.6,54.7 635.3,55.8 648.0,56.9 660.6,58.1 673.3,59.4 686.0,60.7" class="s-ink" fill="none" stroke-dasharray="6 5"/><line x1="495.7" y1="12" x2="495.7" y2="216" class="mark"/><text x="500.7" y="25" class="marklab"></text><text x="483.1" y="29.0" class="slab l2">η_prop（V_d=1.8m/s でピーク）</text><text x="457.8" y="93.6" class="slab l-ink">η_total（≤0.51 拘束・実測max 0.49）</text></svg><figcaption>図5: プロペラ効率（実線）は設計前進速度 V_d=1.8 m/s（≈3.5 kt）でピーク。総合効率（破線、入力 300 W 時）は拘束 η_total ≤ 0.51 の内側に収まる。</figcaption></figure>
+</details>
+</details>
+</details>
+
+<!-- ═══════════ §7 ═══════════ -->
+<details class="sec" id="s7" open><summary><span class="no">§7</span><span class="ttl">電源・エネルギー（PWR）</span></summary>
+<details class="sub" open><summary>7.1 支配式（エネルギー保存）</summary>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(13)</span></div>
+<math display="block"><mrow>
+<msub><mi>E</mi><mi>bat</mi></msub>
+<mfrac><mrow><mi>d</mi><mspace width="0.1em"/><mi>SOC</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac>
+<mo>=</mo>
+<msub><mi>η</mi><mi>chg</mi></msub>
+<mrow><mo>(</mo><msub><mi>P</mi><mi>solar</mi></msub><mo>+</mo><msub><mi>P</mi><mi>gen</mi></msub><mo>)</mo></mrow>
+<mo>−</mo>
+<mfrac><mrow><msub><mi>P</mi><mi>prop</mi></msub><mo>+</mo><msub><mi>P</mi><mi>hotel</mi></msub></mrow><msub><mi>η</mi><mi>dis</mi></msub></mfrac>
+</mrow></math>
+<div class="eqnote">電池のエネルギー保存。SOC は [SOC<sub>min</sub>, 1] にクリップ。発電機は SOC ヒステリシス（30%↓で起動・50%↑で停止）、燃料残量を減算。</div></div>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(14)</span></div>
+<math display="block"><mrow>
+<msub><mi>P</mi><mi>solar</mi></msub><mo>=</mo>
+<mfrac><mrow><mi>G</mi><mo>(</mo><mi>t</mi><mo>)</mo></mrow><msub><mi>G</mi><mi>STC</mi></msub></mfrac>
+<msub><mi>P</mi><mi>panel</mi></msub>
+<msub><mi>f</mi><mi>der</mi></msub>
+</mrow></math>
+<div class="eqnote">太陽光発電の一般形。日射 G(t) の与え方が閉じ込めの対象。</div></div>
+</details>
+<details class="sub" open><summary>7.2 日射の閉じ込め式（2 モデル選択式）</summary>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（実験相関）</span><span class="bdg rep">置換: 対象海域の日射統計（衛星再解析）＋実艇の汚損実測</span><span class="eqno">(15)</span></div>
+<math display="block"><mrow>
+<mi>G</mi><mo>=</mo>
+<mn>1098</mn><mspace width="0.2em"/>
+<mi>sin</mi><msub><mi>α</mi><mi>s</mi></msub>
+<mspace width="0.2em"/>
+<msup><mi>e</mi><mrow><mo>−</mo><mn>0.057</mn><mo>/</mo><mi>sin</mi><msub><mi>α</mi><mi>s</mi></msub></mrow></msup>
+<msub><mi>k</mi><mi>c</mi></msub>
+<mo>,</mo><mspace width="1em"/>
+<mi>sin</mi><msub><mi>α</mi><mi>s</mi></msub><mo>=</mo>
+<mi>sin</mi><mi>φ</mi><mspace width="0.1em"/><mi>sin</mi><mi>δ</mi>
+<mo>+</mo>
+<mi>cos</mi><mi>φ</mi><mspace width="0.1em"/><mi>cos</mi><mi>δ</mi><mspace width="0.1em"/><mi>cos</mi><mi>h</mi>
+</mrow></math>
+<div class="eqnote">Haurwitz 晴天 GHI × 雲量係数（緯度・月・時角から太陽高度を計算）。もう 1 つの選択肢は日平均入力（kWh/m²/日 → 正弦半波展開）。検証: 35°N 6月晴天 8.78／12月 3.07／赤道3月 7.69 kWh/m²/日で実勢と整合。<b>PV ディレート f_der=0.70（塩汚れ・波しぶき込みの一括仮定）は実艇データでの置換が特に重要</b>——長期滞留の判定がこの値に敏感（§11）。</div></div>
+<details class="sub" open><summary>図6 — 日射プロファイル（モデル比較）</summary>
+<figure><svg viewBox="0 0 700 250" role="img" style="width:100%;height:auto;display:block"><line x1="52" y1="216.0" x2="686" y2="216.0" class="grid"/><text x="46" y="219.5" class="tick" text-anchor="end">0</text><line x1="52" y1="137.5" x2="686" y2="137.5" class="grid"/><text x="46" y="141.0" class="tick" text-anchor="end">100</text><line x1="52" y1="59.1" x2="686" y2="59.1" class="grid"/><text x="46" y="62.6" class="tick" text-anchor="end">200</text><text x="52.0" y="232" class="tick" text-anchor="middle">0</text><text x="210.5" y="232" class="tick" text-anchor="middle">6</text><text x="369.0" y="232" class="tick" text-anchor="middle">12</text><text x="527.5" y="232" class="tick" text-anchor="middle">18</text><text x="686.0" y="232" class="tick" text-anchor="middle">24</text><line x1="52" y1="216" x2="686" y2="216" class="axis"/><text x="369" y="247" class="lab" text-anchor="middle">時刻 [h]</text><text x="12" y="114" class="lab" text-anchor="middle" transform="rotate(-90 12 114)">P_solar [W]</text><polyline points="52.0,216.0 57.3,216.0 62.6,216.0 67.9,216.0 73.1,216.0 78.4,216.0 83.7,216.0 89.0,216.0 94.3,216.0 99.5,216.0 104.8,216.0 110.1,216.0 115.4,216.0 120.7,216.0 126.0,216.0 131.3,216.0 136.5,216.0 141.8,216.0 147.1,216.0 152.4,216.0 157.7,216.0 163.0,216.0 168.2,216.0 173.5,216.0 178.8,216.0 184.1,216.0 189.4,216.0 194.7,216.0 199.9,216.0 205.2,216.0 210.5,216.0 215.8,209.0 221.1,202.0 226.4,195.0 231.6,188.1 236.9,181.3 242.2,174.5 247.5,167.9 252.8,161.4 258.1,155.0 263.3,148.9 268.6,142.9 273.9,137.1 279.2,131.5 284.5,126.2 289.8,121.1 295.0,116.2 300.3,111.7 305.6,107.4 310.9,103.4 316.2,99.7 321.4,96.4 326.7,93.3 332.0,90.7 337.3,88.3 342.6,86.3 347.9,84.7 353.1,83.4 358.4,82.5 363.7,81.9 369.0,81.7 374.3,81.9 379.6,82.5 384.8,83.4 390.1,84.7 395.4,86.3 400.7,88.3 406.0,90.7 411.3,93.3 416.5,96.4 421.8,99.7 427.1,103.4 432.4,107.4 437.7,111.7 443.0,116.2 448.2,121.1 453.5,126.2 458.8,131.5 464.1,137.1 469.4,142.9 474.7,148.9 479.9,155.0 485.2,161.4 490.5,167.9 495.8,174.5 501.1,181.3 506.4,188.1 511.6,195.0 516.9,202.0 522.2,209.0 527.5,216.0 532.8,216.0 538.1,216.0 543.3,216.0 548.6,216.0 553.9,216.0 559.2,216.0 564.5,216.0 569.8,216.0 575.0,216.0 580.3,216.0 585.6,216.0 590.9,216.0 596.2,216.0 601.5,216.0 606.7,216.0 612.0,216.0 617.3,216.0 622.6,216.0 627.9,216.0 633.2,216.0 638.4,216.0 643.7,216.0 649.0,216.0 654.3,216.0 659.6,216.0 664.9,216.0 670.1,216.0 675.4,216.0 680.7,216.0 686.0,216.0" class="s-ink" fill="none" stroke-dasharray="6 5"/><polygon points="52,216 52.0,216.0 57.3,216.0 62.6,216.0 67.9,216.0 73.1,216.0 78.4,216.0 83.7,216.0 89.0,216.0 94.3,216.0 99.5,216.0 104.8,216.0 110.1,216.0 115.4,216.0 120.7,216.0 126.0,216.0 131.3,216.0 136.5,216.0 141.8,216.0 147.1,216.0 152.4,216.0 157.7,216.0 163.0,216.0 168.2,216.0 173.5,216.0 178.8,216.0 184.1,215.0 189.4,210.4 194.7,204.6 199.9,198.2 205.2,191.7 210.5,185.0 215.8,178.3 221.1,171.5 226.4,164.8 231.6,158.1 236.9,151.4 242.2,144.8 247.5,138.4 252.8,132.1 258.1,125.9 263.3,119.8 268.6,114.0 273.9,108.3 279.2,102.8 284.5,97.6 289.8,92.6 295.0,87.9 300.3,83.4 305.6,79.2 310.9,75.3 316.2,71.7 321.4,68.5 326.7,65.5 332.0,62.9 337.3,60.6 342.6,58.6 347.9,57.0 353.1,55.7 358.4,54.8 363.7,54.3 369.0,54.1 374.3,54.3 379.6,54.8 384.8,55.7 390.1,57.0 395.4,58.6 400.7,60.6 406.0,62.9 411.3,65.5 416.5,68.5 421.8,71.7 427.1,75.3 432.4,79.2 437.7,83.4 443.0,87.9 448.2,92.6 453.5,97.6 458.8,102.8 464.1,108.3 469.4,114.0 474.7,119.8 479.9,125.9 485.2,132.1 490.5,138.4 495.8,144.8 501.1,151.4 506.4,158.1 511.6,164.8 516.9,171.5 522.2,178.3 527.5,185.0 532.8,191.7 538.1,198.2 543.3,204.6 548.6,210.4 553.9,215.0 559.2,216.0 564.5,216.0 569.8,216.0 575.0,216.0 580.3,216.0 585.6,216.0 590.9,216.0 596.2,216.0 601.5,216.0 606.7,216.0 612.0,216.0 617.3,216.0 622.6,216.0 627.9,216.0 633.2,216.0 638.4,216.0 643.7,216.0 649.0,216.0 654.3,216.0 659.6,216.0 664.9,216.0 670.1,216.0 675.4,216.0 680.7,216.0 686.0,216.0 686.0,216" class="s4" opacity="0.16" stroke="none"/><polyline points="52.0,216.0 57.3,216.0 62.6,216.0 67.9,216.0 73.1,216.0 78.4,216.0 83.7,216.0 89.0,216.0 94.3,216.0 99.5,216.0 104.8,216.0 110.1,216.0 115.4,216.0 120.7,216.0 126.0,216.0 131.3,216.0 136.5,216.0 141.8,216.0 147.1,216.0 152.4,216.0 157.7,216.0 163.0,216.0 168.2,216.0 173.5,216.0 178.8,216.0 184.1,215.0 189.4,210.4 194.7,204.6 199.9,198.2 205.2,191.7 210.5,185.0 215.8,178.3 221.1,171.5 226.4,164.8 231.6,158.1 236.9,151.4 242.2,144.8 247.5,138.4 252.8,132.1 258.1,125.9 263.3,119.8 268.6,114.0 273.9,108.3 279.2,102.8 284.5,97.6 289.8,92.6 295.0,87.9 300.3,83.4 305.6,79.2 310.9,75.3 316.2,71.7 321.4,68.5 326.7,65.5 332.0,62.9 337.3,60.6 342.6,58.6 347.9,57.0 353.1,55.7 358.4,54.8 363.7,54.3 369.0,54.1 374.3,54.3 379.6,54.8 384.8,55.7 390.1,57.0 395.4,58.6 400.7,60.6 406.0,62.9 411.3,65.5 416.5,68.5 421.8,71.7 427.1,75.3 432.4,79.2 437.7,83.4 443.0,87.9 448.2,92.6 453.5,97.6 458.8,102.8 464.1,108.3 469.4,114.0 474.7,119.8 479.9,125.9 485.2,132.1 490.5,138.4 495.8,144.8 501.1,151.4 506.4,158.1 511.6,164.8 516.9,171.5 522.2,178.3 527.5,185.0 532.8,191.7 538.1,198.2 543.3,204.6 548.6,210.4 553.9,215.0 559.2,216.0 564.5,216.0 569.8,216.0 575.0,216.0 580.3,216.0 585.6,216.0 590.9,216.0 596.2,216.0 601.5,216.0 606.7,216.0 612.0,216.0 617.3,216.0 622.6,216.0 627.9,216.0 633.2,216.0 638.4,216.0 643.7,216.0 649.0,216.0 654.3,216.0 659.6,216.0 664.9,216.0 670.1,216.0 675.4,216.0 680.7,216.0 686.0,216.0" class="s4" fill="none"/><polyline points="52.0,216.0 57.3,216.0 62.6,216.0 67.9,216.0 73.1,216.0 78.4,216.0 83.7,216.0 89.0,216.0 94.3,216.0 99.5,216.0 104.8,216.0 110.1,216.0 115.4,216.0 120.7,216.0 126.0,216.0 131.3,216.0 136.5,216.0 141.8,216.0 147.1,216.0 152.4,216.0 157.7,216.0 163.0,216.0 168.2,216.0 173.5,216.0 178.8,216.0 184.1,216.0 189.4,216.0 194.7,216.0 199.9,216.0 205.2,216.0 210.5,216.0 215.8,216.0 221.1,216.0 226.4,216.0 231.6,216.0 236.9,216.0 242.2,216.0 247.5,214.1 252.8,209.4 258.1,203.9 263.3,198.3 268.6,192.7 273.9,187.2 279.2,181.9 284.5,176.7 289.8,171.8 295.0,167.1 300.3,162.7 305.6,158.6 310.9,154.7 316.2,151.1 321.4,147.9 326.7,144.9 332.0,142.3 337.3,140.0 342.6,138.1 347.9,136.5 353.1,135.2 358.4,134.3 363.7,133.8 369.0,133.6 374.3,133.8 379.6,134.3 384.8,135.2 390.1,136.5 395.4,138.1 400.7,140.0 406.0,142.3 411.3,144.9 416.5,147.9 421.8,151.1 427.1,154.7 432.4,158.6 437.7,162.7 443.0,167.1 448.2,171.8 453.5,176.7 458.8,181.9 464.1,187.2 469.4,192.7 474.7,198.3 479.9,203.9 485.2,209.4 490.5,214.1 495.8,216.0 501.1,216.0 506.4,216.0 511.6,216.0 516.9,216.0 522.2,216.0 527.5,216.0 532.8,216.0 538.1,216.0 543.3,216.0 548.6,216.0 553.9,216.0 559.2,216.0 564.5,216.0 569.8,216.0 575.0,216.0 580.3,216.0 585.6,216.0 590.9,216.0 596.2,216.0 601.5,216.0 606.7,216.0 612.0,216.0 617.3,216.0 622.6,216.0 627.9,216.0 633.2,216.0 638.4,216.0 643.7,216.0 649.0,216.0 654.3,216.0 659.6,216.0 664.9,216.0 670.1,216.0 675.4,216.0 680.7,216.0 686.0,216.0" class="s1" fill="none"/><text x="437.7" y="23.8" class="slab l4">晴天6月(35°N,雲0.7)</text><text x="522.2" y="123.4" class="slab l-ink">日平均モデル(4.5kWh/m²)</text><text x="268.6" y="168.9" class="slab l1">晴天12月</text></svg><figcaption>図6: 発電プロファイル。日平均モデル（破線・4.5 kWh/m²/日）と晴天モデル（35°N 雲量係数 0.7、6月と 12月）。緯度・季節の効果が滞留成立性の評価に入る。</figcaption></figure>
+</details>
+</details>
+</details>
+
+<!-- ═══════════ §8 ═══════════ -->
+<details class="sec" id="s8" open><summary><span class="no">§8</span><span class="ttl">耐航性（SEA・第一次近似）</span></summary>
+<details class="sub" open><summary>8.1 支配式（線形応答のスペクトル理論）</summary>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(16)</span></div>
+<math display="block"><mrow>
+<msub><mi>m</mi><mi>n</mi></msub><mo>=</mo>
+<msubsup><mo>∫</mo><mn>0</mn><mo>∞</mo></msubsup>
+<mi>S</mi><mo>(</mo><mi>ω</mi><mo>)</mo>
+<msup><mrow><mo>|</mo><msub><mi>H</mi><mi>x</mi></msub><mo>(</mo><mi>ω</mi><mo>;</mo><mi>V</mi><mo>)</mo><mo>|</mo></mrow><mn>2</mn></msup>
+<msubsup><mi>ω</mi><mi>e</mi><mi>n</mi></msubsup>
+<mspace width="0.17em"/><mi>d</mi><mi>ω</mi>
+<mo>,</mo><mspace width="1em"/>
+<msub><mi>RMS</mi><mi>x</mi></msub><mo>=</mo><msqrt><msub><mi>m</mi><mn>0</mn></msub></msqrt>
+</mrow></math>
+<div class="eqnote">線形耐航性理論の標準形。応答 x（ヒーブ・ピッチ・加速度）の RAO <math><msub><mi>H</mi><mi>x</mi></msub></math> が閉じ込めの対象。<b>BEM や耐航性能 Sim の RAO をそのまま受け取れる形</b>。</div></div>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(17)</span></div>
+<math display="block"><mrow>
+<msub><mi>ω</mi><mi>e</mi></msub><mo>=</mo>
+<mi>ω</mi><mo>+</mo>
+<mfrac><mrow><msup><mi>ω</mi><mn>2</mn></msup><mi>V</mi></mrow><mi>g</mi></mfrac>
+</mrow></math>
+<div class="eqnote">向い波の出会い周波数（深水）。</div></div>
+</details>
+<details class="sub" open><summary>8.2 RAO の閉じ込め式（1 自由度近似）</summary>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（仮定）</span><span class="bdg rep">置換: BEM（3D パネル法）/ ストリップ法 / 耐航性能Sim / 模型試験</span><span class="eqno">(18)</span></div>
+<math display="block"><mrow>
+<mrow><mo>|</mo><msub><mi>H</mi><mi>h</mi></msub><mo>|</mo></mrow><mo>=</mo>
+<mfrac>
+<mrow><mi>F</mi><mo>(</mo><msub><mi>k</mi><mi>w</mi></msub><mo>)</mo></mrow>
+<msqrt><msup><mrow><mo>(</mo><mn>1</mn><mo>−</mo><msup><mi>Ω</mi><mn>2</mn></msup><mo>)</mo></mrow><mn>2</mn></msup><mo>+</mo><msup><mrow><mo>(</mo><mn>2</mn><msub><mi>ζ</mi><mi>h</mi></msub><mi>Ω</mi><mo>)</mo></mrow><mn>2</mn></msup></msqrt>
+</mfrac>
+<mo>,</mo><mspace width="0.8em"/>
+<mi>Ω</mi><mo>=</mo><mfrac><msub><mi>ω</mi><mi>e</mi></msub><msub><mi>ω</mi><mrow><mi>n</mi><mo>,</mo><mi>h</mi></mrow></msub></mfrac>
+<mo>,</mo><mspace width="0.8em"/>
+<msub><mi>ω</mi><mrow><mi>n</mi><mo>,</mo><mi>h</mi></mrow></msub><mo>=</mo>
+<msqrt><mfrac><mrow><mi>ρ</mi><mi>g</mi><msub><mi>A</mi><mi>w</mi></msub></mrow><mrow><mi>m</mi><mo>(</mo><mn>1</mn><mo>+</mo><msub><mi>μ</mi><mi>a</mi></msub><mo>)</mo></mrow></mfrac></msqrt>
+</mrow></math>
+<div class="eqnote">起振力係数 <math><mrow><mi>F</mi><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>k</mi><mi>w</mi></msub><mi>d</mi></mrow></msup><mo>|</mo><mi>sinc</mi><mo>(</mo><msub><mi>k</mi><mi>w</mi></msub><msub><mi>L</mi><mi>wl</mi></msub><mo>/</mo><mn>2</mn><mo>)</mo><mo>|</mo></mrow></math>（深度減衰×船長平均）。ピッチも同形（起振は 1 次モーメント平均）。<b>減衰比 ζ=0.35・付加質量比 μ_a=0.8 は文献代表値の仮定</b>で、位相・連成・相対水位運動（甲板冠水/プロペラ空転）は未評価。判定基準: RMS 上下加速度 ≤ 0.2g・RMS ピッチ ≤ 6°。応答の Hs 線形性から運用限界 <math><msub><mi>H</mi><mrow><mi>s</mi><mo>,</mo><mi>lim</mi></mrow></msub></math> を逆算。</div></div>
+<details class="sub" open><summary>図7 — ヒーブ RAO</summary>
+<figure><svg viewBox="0 0 700 250" role="img" style="width:100%;height:auto;display:block"><line x1="52" y1="216.0" x2="686" y2="216.0" class="grid"/><text x="46" y="219.5" class="tick" text-anchor="end">0</text><line x1="52" y1="137.5" x2="686" y2="137.5" class="grid"/><text x="46" y="141.0" class="tick" text-anchor="end">0.5</text><line x1="52" y1="59.1" x2="686" y2="59.1" class="grid"/><text x="46" y="62.6" class="tick" text-anchor="end">1</text><text x="109.6" y="232" class="tick" text-anchor="middle">2</text><text x="224.9" y="232" class="tick" text-anchor="middle">4</text><text x="340.2" y="232" class="tick" text-anchor="middle">6</text><text x="455.5" y="232" class="tick" text-anchor="middle">8</text><text x="570.7" y="232" class="tick" text-anchor="middle">10</text><text x="686.0" y="232" class="tick" text-anchor="middle">12</text><line x1="52" y1="216" x2="686" y2="216" class="axis"/><text x="369" y="247" class="lab" text-anchor="middle">波周期 T [s]</text><text x="12" y="114" class="lab" text-anchor="middle" transform="rotate(-90 12 114)">|H_h| [m/m]</text><polyline points="52.0,212.6 55.5,202.8 58.9,190.0 62.4,184.1 65.8,185.2 69.3,191.6 72.7,201.6 76.2,213.6 79.7,205.6 83.1,192.8 86.6,180.4 90.0,168.8 93.5,158.1 97.0,148.4 100.4,139.6 103.9,131.6 107.3,124.6 110.8,118.2 114.2,112.6 117.7,107.6 121.2,103.1 124.6,99.1 128.1,95.5 131.5,92.3 135.0,89.4 138.5,86.9 141.9,84.5 145.4,82.5 148.8,80.6 152.3,78.9 155.7,77.4 159.2,76.0 162.7,74.7 166.1,73.6 169.6,72.6 173.0,71.6 176.5,70.8 180.0,70.0 183.4,69.2 186.9,68.6 190.3,68.0 193.8,67.4 197.2,66.9 200.7,66.4 204.2,66.0 207.6,65.6 211.1,65.2 214.5,64.9 218.0,64.5 221.5,64.2 224.9,64.0 228.4,63.7 231.8,63.5 235.3,63.2 238.7,63.0 242.2,62.8 245.7,62.6 249.1,62.5 252.6,62.3 256.0,62.2 259.5,62.0 262.9,61.9 266.4,61.7 269.9,61.6 273.3,61.5 276.8,61.4 280.2,61.3 283.7,61.2 287.2,61.1 290.6,61.0 294.1,61.0 297.5,60.9 301.0,60.8 304.4,60.8 307.9,60.7 311.4,60.6 314.8,60.6 318.3,60.5 321.7,60.5 325.2,60.4 328.7,60.4 332.1,60.3 335.6,60.3 339.0,60.2 342.5,60.2 345.9,60.2 349.4,60.1 352.9,60.1 356.3,60.1 359.8,60.0 363.2,60.0 366.7,60.0 370.2,59.9 373.6,59.9 377.1,59.9 380.5,59.9 384.0,59.8 387.4,59.8 390.9,59.8 394.4,59.8 397.8,59.8 401.3,59.7 404.7,59.7 408.2,59.7 411.7,59.7 415.1,59.7 418.6,59.7 422.0,59.6 425.5,59.6 428.9,59.6 432.4,59.6 435.9,59.6 439.3,59.6 442.8,59.6 446.2,59.5 449.7,59.5 453.1,59.5 456.6,59.5 460.1,59.5 463.5,59.5 467.0,59.5 470.4,59.5 473.9,59.5 477.4,59.5 480.8,59.4 484.3,59.4 487.7,59.4 491.2,59.4 494.6,59.4 498.1,59.4 501.6,59.4 505.0,59.4 508.5,59.4 511.9,59.4 515.4,59.4 518.9,59.4 522.3,59.4 525.8,59.4 529.2,59.4 532.7,59.3 536.1,59.3 539.6,59.3 543.1,59.3 546.5,59.3 550.0,59.3 553.4,59.3 556.9,59.3 560.4,59.3 563.8,59.3 567.3,59.3 570.7,59.3 574.2,59.3 577.6,59.3 581.1,59.3 584.6,59.3 588.0,59.3 591.5,59.3 594.9,59.3 598.4,59.3 601.9,59.3 605.3,59.3 608.8,59.3 612.2,59.3 615.7,59.3 619.1,59.3 622.6,59.2 626.1,59.2 629.5,59.2 633.0,59.2 636.4,59.2 639.9,59.2 643.3,59.2 646.8,59.2 650.3,59.2 653.7,59.2 657.2,59.2 660.6,59.2 664.1,59.2 667.6,59.2 671.0,59.2 674.5,59.2 677.9,59.2 681.4,59.2 684.8,59.2" class="s1" fill="none"/><polyline points="52.0,214.1 55.5,206.7 58.9,193.7 62.4,184.2 65.8,181.7 69.3,187.1 72.7,198.3 76.2,213.0 79.7,203.2 83.1,187.7 86.6,173.3 90.0,160.1 93.5,148.4 97.0,138.1 100.4,129.1 103.9,121.1 107.3,114.2 110.8,108.2 114.2,102.9 117.7,98.3 121.2,94.2 124.6,90.7 128.1,87.5 131.5,84.8 135.0,82.3 138.5,80.1 141.9,78.2 145.4,76.5 148.8,75.0 152.3,73.6 155.7,72.4 159.2,71.3 162.7,70.3 166.1,69.4 169.6,68.6 173.0,67.8 176.5,67.2 180.0,66.6 183.4,66.0 186.9,65.5 190.3,65.1 193.8,64.7 197.2,64.3 200.7,63.9 204.2,63.6 207.6,63.3 211.1,63.1 214.5,62.8 218.0,62.6 221.5,62.4 224.9,62.2 228.4,62.0 231.8,61.8 235.3,61.7 238.7,61.5 242.2,61.4 245.7,61.3 249.1,61.1 252.6,61.0 256.0,60.9 259.5,60.8 262.9,60.7 266.4,60.7 269.9,60.6 273.3,60.5 276.8,60.4 280.2,60.4 283.7,60.3 287.2,60.3 290.6,60.2 294.1,60.2 297.5,60.1 301.0,60.1 304.4,60.0 307.9,60.0 311.4,59.9 314.8,59.9 318.3,59.9 321.7,59.8 325.2,59.8 328.7,59.8 332.1,59.8 335.6,59.7 339.0,59.7 342.5,59.7 345.9,59.7 349.4,59.6 352.9,59.6 356.3,59.6 359.8,59.6 363.2,59.6 366.7,59.6 370.2,59.5 373.6,59.5 377.1,59.5 380.5,59.5 384.0,59.5 387.4,59.5 390.9,59.5 394.4,59.4 397.8,59.4 401.3,59.4 404.7,59.4 408.2,59.4 411.7,59.4 415.1,59.4 418.6,59.4 422.0,59.4 425.5,59.4 428.9,59.4 432.4,59.3 435.9,59.3 439.3,59.3 442.8,59.3 446.2,59.3 449.7,59.3 453.1,59.3 456.6,59.3 460.1,59.3 463.5,59.3 467.0,59.3 470.4,59.3 473.9,59.3 477.4,59.3 480.8,59.3 484.3,59.3 487.7,59.3 491.2,59.3 494.6,59.2 498.1,59.2 501.6,59.2 505.0,59.2 508.5,59.2 511.9,59.2 515.4,59.2 518.9,59.2 522.3,59.2 525.8,59.2 529.2,59.2 532.7,59.2 536.1,59.2 539.6,59.2 543.1,59.2 546.5,59.2 550.0,59.2 553.4,59.2 556.9,59.2 560.4,59.2 563.8,59.2 567.3,59.2 570.7,59.2 574.2,59.2 577.6,59.2 581.1,59.2 584.6,59.2 588.0,59.2 591.5,59.2 594.9,59.2 598.4,59.2 601.9,59.2 605.3,59.2 608.8,59.2 612.2,59.2 615.7,59.2 619.1,59.2 622.6,59.2 626.1,59.2 629.5,59.2 633.0,59.2 636.4,59.2 639.9,59.2 643.3,59.2 646.8,59.2 650.3,59.2 653.7,59.2 657.2,59.2 660.6,59.2 664.1,59.2 667.6,59.1 671.0,59.1 674.5,59.1 677.9,59.1 681.4,59.1 684.8,59.1" class="s2" fill="none" stroke-dasharray="6 4"/><line x1="36.8" y1="12" x2="36.8" y2="216" class="mark"/><text x="41.8" y="25" class="marklab">T_n≈0.7s</text><text x="490.0" y="49.7" class="slab l-mut">長波長→追従 |H|→1</text><text x="259.5" y="118.7" class="slab l1">V=0</text><text x="161.5" y="74.8" class="slab l2">V=2.5kt</text></svg><figcaption>図7: ヒーブ RAO。長波長（右）では波面に追従して |H|→1、短波長（左）では応答しない。固有周期 T_n≈1.6 s の共振は減衰比 0.35 で抑えられている。前進速度は出会い周波数を介して応答を左へずらす。</figcaption></figure>
+</details>
+</details>
+</details>
+
+<!-- ═══════════ §9 ═══════════ -->
+<details class="sec" id="s9" open><summary><span class="no">§9</span><span class="ttl">較正と検証</span></summary>
+<p>較正は V1・V2 の 2 ケースのみで行い（自由パラメータ 2 個: <math><msub><mi>C</mi><mrow><mi>R</mi><mn>0</mn></mrow></msub></math>, <math><msub><mi>P</mi><mi>hotel</mi></msub></math>）、V3 以降は較正に使わず<b>ブラインドで</b>通した。Python 試作と JS 実装のクロスチェックで数値一致を確認。</p>
+<details class="sub" open><summary>図8 — 推力・抵抗の釣合い（平水と荒天）</summary>
+<figure><svg viewBox="0 0 700 250" role="img" style="width:100%;height:auto;display:block"><line x1="52" y1="216.0" x2="686" y2="216.0" class="grid"/><text x="46" y="219.5" class="tick" text-anchor="end">0</text><line x1="52" y1="137.5" x2="686" y2="137.5" class="grid"/><text x="46" y="141.0" class="tick" text-anchor="end">100</text><line x1="52" y1="59.1" x2="686" y2="59.1" class="grid"/><text x="46" y="62.6" class="tick" text-anchor="end">200</text><text x="52.0" y="232" class="tick" text-anchor="middle">0</text><text x="167.3" y="232" class="tick" text-anchor="middle">1</text><text x="282.5" y="232" class="tick" text-anchor="middle">2</text><text x="397.8" y="232" class="tick" text-anchor="middle">3</text><text x="513.1" y="232" class="tick" text-anchor="middle">4</text><text x="628.4" y="232" class="tick" text-anchor="middle">5</text><line x1="52" y1="216" x2="686" y2="216" class="axis"/><text x="369" y="247" class="lab" text-anchor="middle">速力 V [kt]</text><text x="12" y="114" class="lab" text-anchor="middle" transform="rotate(-90 12 114)">力 [N]</text><polyline points="63.5,44.5 75.1,44.5 86.6,44.5 98.1,44.5 109.6,44.5 121.2,44.5 132.7,44.5 144.2,44.5 155.7,44.5 167.3,44.5 178.8,44.5 190.3,44.5 201.9,44.5 213.4,44.5 224.9,45.0 236.4,49.9 248.0,54.5 259.5,59.1 271.0,63.5 282.5,67.8 294.1,72.0 305.6,76.0 317.1,80.0 328.7,83.8 340.2,87.5 351.7,91.2 363.2,94.7 374.8,98.1 386.3,101.4 397.8,104.6 409.3,107.8 420.9,110.8 432.4,113.8 443.9,116.7 455.5,119.5 467.0,122.2 478.5,124.8 490.0,127.4 501.6,129.9 513.1,132.3 524.6,134.7 536.1,137.0 547.7,139.2 559.2,141.4 570.7,143.5 582.3,145.5 593.8,147.5 605.3,149.4 616.8,151.3 628.4,153.1 639.9,154.9 651.4,156.6 662.9,158.3 674.5,159.9 686.0,161.5" class="s-ink" fill="none" stroke-dasharray="7 5"/><polyline points="63.5,216.0 75.1,215.9 86.6,215.8 98.1,215.7 109.6,215.5 121.2,215.3 132.7,215.1 144.2,214.8 155.7,214.6 167.3,214.2 178.8,213.9 190.3,213.5 201.9,213.1 213.4,212.7 224.9,212.2 236.4,211.7 248.0,211.1 259.5,210.5 271.0,209.9 282.5,209.2 294.1,208.5 305.6,207.7 317.1,206.9 328.7,205.9 340.2,204.9 351.7,203.9 363.2,202.7 374.8,201.4 386.3,200.0 397.8,198.4 409.3,196.7 420.9,194.9 432.4,192.8 443.9,190.5 455.5,188.0 467.0,185.3 478.5,182.2 490.0,178.9 501.6,175.2 513.1,171.1 524.6,166.5 536.1,161.6 547.7,156.1 559.2,150.0 570.7,143.4 582.3,136.1 593.8,128.1 605.3,119.3 616.8,109.6 628.4,99.0 639.9,87.5 651.4,74.8 662.9,61.0 674.5,46.0 686.0,29.6" class="s1" fill="none"/><polyline points="63.5,114.6 75.1,114.3 86.6,114.0 98.1,113.7 109.6,113.3 121.2,112.9 132.7,112.5 144.2,112.0 155.7,111.5 167.3,111.0 178.8,110.4 190.3,109.9 201.9,109.2 213.4,108.6 224.9,107.9 236.4,107.2 248.0,106.4 259.5,105.6 271.0,104.8 282.5,103.9 294.1,103.0 305.6,102.0 317.1,100.9 328.7,99.8 340.2,98.6 351.7,97.3 363.2,95.9 374.8,94.4 386.3,92.8 397.8,91.0 409.3,89.1 420.9,87.0 432.4,84.8 443.9,82.3 455.5,79.6 467.0,76.6 478.5,73.4 490.0,69.8 501.6,65.9 513.1,61.6 524.6,56.9 536.1,51.7 547.7,46.0 559.2,39.7 570.7,32.9 582.3,25.4 593.8,17.1 605.3,12.0 616.8,12.0 628.4,12.0 639.9,12.0 651.4,12.0 662.9,12.0 674.5,12.0 686.0,12.0" class="s2" fill="none"/><line x1="570.6" y1="12" x2="570.6" y2="216" class="mark"/><text x="575.6" y="25" class="marklab">平水 V_eq=4.50kt</text><line x1="366.1" y1="12" x2="366.1" y2="216" class="mark"/><text x="371.1" y="25" class="marklab">荒天 2.73kt</text><text x="190.3" y="29.3" class="slab l-ink">推力 T(V, 450W)</text><text x="553.4" y="121.8" class="slab l1">R 平水</text><text x="351.7" y="98.3" class="slab l2">R 荒天(Hs2.5m,U15m/s)</text></svg><figcaption>図8: 釣合い曲線。推力線（破線・450 W）と抵抗曲線の交点が達成可能速力。平水 4.50 kt（較正点）に対し、荒天（Hs 2.5 m・向い風 15 m/s）では 2.73 kt へ減速する。</figcaption></figure>
+</details>
+<details class="sub" open><summary>検証結果一覧</summary>
+<div class="tbl"><table>
+<tr><th>#</th><th>ケース</th><th>合格基準</th><th>結果</th><th></th></tr>
+<tr><td>V1</td><td>平水・全力（較正: C_R0）</td><td class="num">4.5 ± 0.3 kt</td><td class="num">4.50 kt</td><td class="ok">PASS</td></tr>
+<tr><td>V2</td><td>無日照航続（較正: P_hotel=104 W）</td><td class="num">575 ± 60 nm</td><td class="num">576 nm @ 2.7 kt</td><td class="ok">PASS</td></tr>
+<tr><td>V3</td><td>滞留 90 日（日射 4.5・ホテル 45 W・速力 0）</td><td>SOC 非枯渇</td><td class="num">最低 SOC 85%</td><td class="ok">PASS</td></tr>
+<tr><td>V4</td><td>荒天（Hs 2.5 m・向い風 15 m/s）</td><td>減速の再現</td><td class="num">V_eq 2.73 kt ※</td><td class="ok">PASS</td></tr>
+<tr><td>V5</td><td>スペクトル整合</td><td>m₀=Hs²/16・R_AW≤STAWAVE-1・∝Hs²</td><td class="num">誤差 0.00%・93/2191 N・比 4.000</td><td class="ok">PASS</td></tr>
+<tr><td>V6</td><td>RAO 極限挙動</td><td>長波→1・短波→0・Hs 線形</td><td class="num">1.000／0.056／2.000</td><td class="ok">PASS</td></tr>
+</table></div>
+<p style="font-size:12.5px;color:var(--muted)">※ V4 は運動起因の抵抗増加を含まないため、なお下振れの可能性がある。不変条件テスト（抵抗の速度単調性・推力の非増加性・追い風での負抵抗・SOC 上下限・η ≤ 0.51・ボラード有限性）も全 PASS。</p>
+</details>
+</details>
+
+<!-- ═══════════ §10 ═══════════ -->
+<details class="sec" id="s10" open><summary><span class="no">§10</span><span class="ttl">閉じ込め式の置換ロードマップ</span></summary>
+<p>本モデルの精度は閉じ込め式の質で決まる。各閉じ込めは<b>関数インターフェースを変えずにテーブル/マップへ差し替えられる</b>よう設計してある（<code>model</code> セレクタ）。優先度は「結果への感度 × 現在の不確かさ」で付けた。</p>
+<div class="tbl"><table>
+<tr><th>閉じ込め式</th><th>現状</th><th>置換インターフェース</th><th>推奨手段</th><th>優先度</th></tr>
+<tr><td>波浪中 QTF <math><msub><mi>Φ</mi><mi>aw</mi></msub></math>（式8）</td><td>反射漸近×仮定減衰。<b>運動起因成分なし</b></td><td><math><mrow><msub><mi>Φ</mi><mi>aw</mi></msub><mo>(</mo><mi>ω</mi><mo>,</mo><mi>V</mi><mo>)</mo></mrow></math> テーブル</td><td><b>BEM（3D パネル法）→ 波浪中模型試験</b>。耐航性能 Sim（ストリップ法）でも可</td><td><b>最高</b></td></tr>
+<tr><td>RAO <math><msub><mi>H</mi><mi>h</mi></msub></math>, <math><msub><mi>H</mi><mi>θ</mi></msub></math>（式18）</td><td>1 自由度近似・減衰比仮定</td><td><math><mrow><mi>H</mi><mo>(</mo><mi>ω</mi><mo>,</mo><mi>V</mi><mo>,</mo><mi>χ</mi><mo>)</mo></mrow></math> テーブル（波向 χ 含む）</td><td><b>BEM / 耐航性能 Sim</b>（QTF と同時に得られる）→ 模型試験で検証</td><td><b>最高</b></td></tr>
+<tr><td>剰余抵抗 <math><msub><mi>C</mi><mi>R</mi></msub></math>（式6）</td><td>Fn⁴ 形・1 点較正</td><td><math><mrow><msub><mi>C</mi><mi>R</mi></msub><mo>(</mo><mi>Fn</mi><mo>)</mo></mrow></math> テーブル</td><td><b>曳航水槽試験</b> または CFD（RANS・自由表面）</td><td>高</td></tr>
+<tr><td>PV ディレート <math><msub><mi>f</mi><mi>der</mi></msub></math></td><td>一括 0.70 仮定</td><td>時変 <math><mrow><msub><mi>f</mi><mi>der</mi></msub><mo>(</mo><mi>t</mi><mo>)</mo></mrow></math>（汚損進行込み）</td><td><b>実艇曝露試験</b>（長期滞留判定がこの値に敏感＝§11）</td><td>高</td></tr>
+<tr><td>モーター効率（式11）</td><td>損失 3 係数</td><td>η(トルク, 回転数) 2次元マップ</td><td><b>モーターベンチ試験</b>（ポッド実物）</td><td>中</td></tr>
+<tr><td>プロペラ効率（式12）</td><td>1 山カーブ＋運動量理論上限</td><td>K_T/K_Q–J テーブル</td><td><b>プロペラ単独試験</b>＋ボラード試験。CFD でも可</td><td>中</td></tr>
+<tr><td>風圧 <math><msub><mi>C</mi><mi>d</mi></msub></math>（式9）</td><td>一定 0.8 仮定</td><td><math><mrow><msub><mi>C</mi><mi>X</mi></msub><mo>(</mo><mi>ψ</mi><mo>)</mo></mrow></math> テーブル</td><td>風洞試験 / CFD（第2級項なので優先度低め）</td><td>低</td></tr>
+<tr><td>日射 G(t)（式15）</td><td>Haurwitz＋雲量係数</td><td>海域別時系列</td><td>衛星再解析データ（ERA5 等）の統計</td><td>低</td></tr>
+<tr><td>電池（式13）</td><td>固定効率・容量一定</td><td>SOC/温度依存の等価回路＋劣化</td><td>電池特性試験（長期ミッションでは劣化が効く）</td><td>低</td></tr>
+</table></div>
+<p>「最高」の 2 行（QTF と RAO）は<b>同じ BEM 計算から同時に得られる</b>ため、最初の投資は BEM（または耐航性能 Sim の導入）が最も効率が良い。</p>
+</details>
+
+<!-- ═══════════ §11 ═══════════ -->
+<details class="sec" id="s11" open><summary><span class="no">§11</span><span class="ttl">発見・限界</span></summary>
+<div class="find"><span class="fl">FINDING 1</span><br>
+<b>ホテル負荷が推進と同オーダーの第 1 級項。</b>公称航続 575 nm の逆算から P<sub>hotel</sub>≈104 W（航法計算機・Starlink・センサー）。この艇級のエネルギー成立性はホテル負荷の見積り精度で決まる。</div>
+<div class="find"><span class="fl">FINDING 2</span><br>
+<b>日射 4.5 kWh/m²/日では日平均発電 54 W ＝ ホテル負荷 104 W を恒常的に賄えない。</b>公称「6 ヶ月滞留」はホテル負荷 ≤45 W の省電力モードが前提と推定（V3 で成立確認）。長期滞留の成否は推進ではなくホテル負荷の管理で決まる。</div>
+<div class="caveat"><b>限界（明示）:</b> ①運動起因の抵抗増加は未評価（抵抗は反射成分のみ＝荒天は下振れ方向の不確かさ）。②耐航性は 1 自由度・減衰比仮定・位相/連成/相対水位運動なし。③ 0 次元の原理的限界として斜め波・横風の横力・回頭は表現不可。④ △印パラメータ（特に f_der・ζ・C_d）は仮定であり §10 の置換で解消する。⑤ Lightfish の船型・ポッド型式・実ホテル負荷は非公開＝公称値の測定条件も不明という二重の不確かさ。</div>
+</details>
+
+<div class="foot">
+DP-20260825-01 Rev.2 ／ ベース調査: RR-20260824-01 ／ 実装: tools/usv_model/interactive/index.html（Phase 1–3・検証 6/6 PASS）<br>
+主要参照: ITTC 7.5-02-02-02（抵抗）・ITTC 7.5-04-01-01（速力試運転・風圧/波浪修正）・ISO 15016 / STAWAVE-1・JONSWAP（Hasselmann 1973）・Haurwitz 晴天 GHI・Torqeedo Cruise 3.0 FP 公称値。<br>
+数式は MathML ネイティブ描画（外部ライブラリ不使用）。グラフはすべて実装コアから計算した実データ。
+</div>
+</div></div>
 
 <script id="usv-core">
 /* ============================================================
@@ -947,7 +1515,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     flashIfChanged('k-dark', dh>=48?fmt(dh/24,1)+' 日':fmt(dh,0)+' 時間', true);
     const mr=USV.maxRange(P);
     flashIfChanged('k-range', fmt(mr.nm,0)+' nm', true);
-    $('k-range-n').textContent='最適速力 '+fmt(mr.kt,1)+' kt・無日照時';
+    $('k-range-n').textContent='≈ '+fmt(mr.nm*1.852,0)+' km・最適速力 '+fmt(mr.kt,1)+' kt・無日照時';
     // 要約バーへ複製
     $('sb-veq').textContent=$('k-veq').textContent;
     $('sb-prop').innerHTML=propHtml;
@@ -1008,8 +1576,30 @@ if (typeof module !== 'undefined') module.exports = USV;
     v3(){ P=USV.defaults(); P.pwr.hotelW=45; P.msn.targetKt=0; P.msn.days=90; },
     v4(){ P=USV.defaults(); P.env.Hs=2.5; P.env.Tp=7; P.env.windU=15; P.msn.targetKt=2.5; P.msn.days=10; },
   };
+  function snapshotInputs(){
+    const m={};
+    document.querySelectorAll('input,select').forEach(el=>{ if(el.id) m[el.id]=el.value; });
+    return m;
+  }
+  function setActivePreset(name){
+    document.querySelectorAll('[data-preset]').forEach(b=>
+      b.classList.toggle('on', b.dataset.preset===name));
+  }
+  let applyingPreset=false;
   document.querySelectorAll('[data-preset]').forEach(b=>{
-    b.addEventListener('click',()=>{ presets[b.dataset.preset](); toUI(); recalc(); });
+    b.addEventListener('click',()=>{
+      const before=snapshotInputs();
+      applyingPreset=true;
+      presets[b.dataset.preset](); toUI(); recalc();
+      applyingPreset=false;
+      setActivePreset(b.dataset.preset);
+      // 変わった入力欄をハイライト
+      document.querySelectorAll('input,select').forEach(el=>{
+        if(el.id && before[el.id]!==undefined && before[el.id]!==el.value){
+          el.classList.remove('pflash'); void el.offsetWidth; el.classList.add('pflash');
+        }
+      });
+    });
   });
 
   // ── JSON 入出力 ──
@@ -1032,19 +1622,57 @@ if (typeof module !== 'undefined') module.exports = USV;
     drawTable(sim,b,der);
     verdict(sim);
   }
-  $('btn-recalc').addEventListener('click',recalc);
-  document.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',recalc));
+  document.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',()=>{
+    if(!applyingPreset) setActivePreset(null);   // 手動変更＝プリセットから離脱
+    recalc();
+  }));
 
   // 判定が画面上方へ消えたら要約バーを出す（単一要素なので rAF スロットルの passive リスナーで十分）
   const kpis=document.querySelector('.kpis'), sbar=$('sbar');
   if (kpis){
     let ticking=false;
-    const upd=()=>{ sbar.classList.toggle('show', kpis.getBoundingClientRect().bottom<0); ticking=false; };
+    const upd=()=>{ const on=!document.getElementById('tab-model').hidden && kpis.getBoundingClientRect().bottom<0; sbar.classList.toggle('show', on); ticking=false; };
     window.addEventListener('scroll',()=>{ if(!ticking){ requestAnimationFrame(upd); ticking=true; } },{passive:true});
     upd();
   }
 
-  toUI(); recalc(); runValidation();
+  toUI(); recalc(); runValidation(); setActivePreset('base');
+})();
+</script>
+<script>
+
+/* ── タブ切替 ── */
+(function(){
+  const sbar=document.getElementById('sbar');
+  function showTab(name){
+    document.getElementById('tab-model').hidden = name!=='model';
+    document.getElementById('tab-doc').hidden   = name!=='doc';
+    document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
+    if(name!=='model' && sbar) sbar.classList.remove('show');
+    window.scrollTo(0,0);
+  }
+  document.querySelectorAll('.tabs button').forEach(b=>
+    b.addEventListener('click',()=>showTab(b.dataset.tab)));
+  // ハッシュが設計書の章なら設計書タブを開く
+  if(/^#s\d+$/.test(location.hash)){ showTab('doc'); }
+  window.__showTab=showTab;
+})();
+/* ── 設計書: 目次ジャンプ・開閉（#tab-doc スコープ） ── */
+(function(){
+  function openTo(id){
+    var el=document.getElementById(id); if(!el) return;
+    var n=el; while(n){ if(n.tagName==='DETAILS') n.open=true; n=n.parentElement; }
+    el.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  document.querySelectorAll('#tab-doc nav.toc a').forEach(function(a){
+    a.addEventListener('click',function(e){ e.preventDefault();
+      var id=a.getAttribute('href').slice(1); openTo(id); history.replaceState(null,'','#'+id); });
+  });
+  if(location.hash) openTo(location.hash.slice(1));
+  document.getElementById('btn-open').addEventListener('click',function(){
+    document.querySelectorAll('#tab-doc details').forEach(function(d){d.open=true;}); });
+  document.getElementById('btn-close').addEventListener('click',function(){
+    document.querySelectorAll('#tab-doc details.sec').forEach(function(d){d.open=false;}); });
 })();
 </script>
 </body>
