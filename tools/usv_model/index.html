@@ -78,7 +78,7 @@
   .cv{position:relative;}
   canvas{display:block;width:100%;height:auto;background:var(--chart-surface);}
   .tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line2);
-    border-radius:4px;padding:6px 9px;font-size:11.5px;box-shadow:0 2px 8px rgba(0,0,0,.05);
+    border-radius:4px;padding:7px 10px;font-size:12.5px;box-shadow:0 2px 8px rgba(0,0,0,.05);
     display:none;white-space:nowrap;font-variant-numeric:tabular-nums;z-index:5;}
   /* ── 電力収支バー ── */
   .pb{display:grid;gap:9px;margin-top:6px;}
@@ -113,14 +113,37 @@
   footer{margin-top:48px;font-size:11.5px;color:var(--muted);border-top:2px solid var(--rule);
     padding-top:12px;line-height:1.8;}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+  /* 判定が画面外のとき現れる要約バー（機能的モーション） */
+  .stickybar{position:fixed;top:0;left:0;right:0;z-index:20;background:var(--surface);
+    border-bottom:1px solid var(--rule);padding:7px 20px;
+    display:flex;gap:22px;align-items:baseline;flex-wrap:wrap;
+    font-size:13px;transform:translateY(-100%);transition:transform .2s ease;}
+  .stickybar.show{transform:translateY(0);}
+  .stickybar .sv{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-weight:700;
+    font-size:16px;font-variant-numeric:tabular-nums;}
+  .stickybar .sk{color:var(--muted);font-size:11px;margin-right:4px;}
+  /* 値が変わった KPI を一拍ハイライト（変更箇所の視認） */
+  @keyframes kflash{from{background:#FBF3DB}to{background:transparent}}
+  .kpi.flash .v{animation:kflash .9s ease-out;}
+  @media (prefers-reduced-motion:reduce){
+    .stickybar{transition:none}
+    .kpi.flash .v{animation:none}
+  }
 </style>
 </head>
 <body>
+<div class="stickybar" id="sbar" aria-hidden="true">
+  <span><span class="sk">V_eq</span><span class="sv" id="sb-veq">–</span></span>
+  <span><span class="sk">動力</span><span id="sb-prop">–</span></span>
+  <span><span class="sk">エネルギー</span><span id="sb-energy">–</span></span>
+  <span><span class="sk">限界 Hs</span><span class="sv" id="sb-limhs">–</span></span>
+  <span><span class="sk">最大航続</span><span class="sv" id="sb-range">–</span></span>
+</div>
 <header><div class="head-in">
   <div class="eyebrow">USV 0-D MODEL · PHASE 1–3</div>
   <h1>USV 0次元モデル — エネルギー・動力性能成立性</h1>
   <div class="sub">ベースライン: Seasats Lightfish 級（RR-20260824-01 調査値）／ 設計書: DP-20260825-01 ／ surge 1自由度 (m+mₐ)V̇ = T − R ＋ JONSWAP スペクトル（Phase 2）＋ heave/pitch RAO 耐航性判定（Phase 3）</div>
-  <div class="caveat"><b>注意</b> — 波浪中抵抗増加は JONSWAP スペクトル×成分別反射効率で評価します（STAWAVE-1 の反射漸近値が基礎。規則波モードは Phase 1 の暫定式）。<b>運動起因の抵抗増加成分は未評価</b>で、耐航性（Phase 3）の運動応答は 1 自由度近似・減衰比は仮定値です。荒天側の絶対値は引き続き傾向把握用です。</div>
+  <div class="caveat"><b>注意</b> — 波浪抵抗は反射成分のみ（運動起因は未評価）・耐航性は 1 自由度近似（減衰比は仮定値）。荒天側の絶対値は傾向把握用。前提と置換計画の全文は設計書 DP-20260825-01。</div>
 </div></header>
 
 <div class="wrap">
@@ -193,7 +216,29 @@
   <div class="cv"><canvas id="c1" width="1000" height="380" role="img" aria-label="速度に対する抵抗内訳の積上げ面と推力曲線"></canvas><div class="tip" id="t1"></div></div>
 </div>
 
-<h2>図2 — 日平均の電力収支</h2>
+<h2>図2 — 波スペクトルと抵抗寄与</h2>
+<div class="chart-card">
+  <h3>JONSWAP スペクトルと反射寄与の分布</h3>
+  <div class="cap">短波長成分（右側の小さい周期）ほど船体が反射して抵抗になる。長波長は追従（contouring）して寄与しない。縦軸は各系列の最大値で正規化。</div>
+  <div class="legend">
+    <span class="chip"><span class="sw" style="background:var(--s2)"></span>波スペクトル S(T)</span>
+    <span class="chip"><span class="sw line"></span>抵抗寄与密度 S·r(λ/L)</span>
+  </div>
+  <div class="cv"><canvas id="c4" width="1000" height="240" role="img" aria-label="波周期に対するスペクトル密度と抵抗寄与の分布"></canvas><div class="tip" id="t4"></div></div>
+</div>
+
+<h2>耐航性 — 運動応答（第一次近似）</h2>
+<div class="chart-card">
+  <div class="kpis" style="margin-bottom:8px">
+    <div class="kpi"><div class="k">ヒーブ RMS</div><div class="v" id="s-heave">–</div><div class="n">上下動（有義値の1/2目安）</div></div>
+    <div class="kpi"><div class="k">ピッチ RMS</div><div class="v" id="s-pitch">–</div><div class="n" id="s-pitch-n">基準 ≤ 6°</div></div>
+    <div class="kpi"><div class="k">上下加速度 RMS</div><div class="v" id="s-accel">–</div><div class="n" id="s-accel-n">基準 ≤ 0.2g</div></div>
+    <div class="kpi"><div class="k">運用限界 Hs（この周期で）</div><div class="v" id="s-limhs">–</div><div class="n" id="s-verdict"></div></div>
+  </div>
+  <div class="cap">1自由度近似（減衰比 0.35・付加質量は代表値の<b>仮定</b>。位相と相対水位運動は未評価）。応答は Hs に線形なので限界 Hs = Hs × min(基準/RMS)。<b>注意</b>: 運動と抵抗増加はまだ連成していない（抵抗側は反射成分のみ）。</div>
+</div>
+
+<h2>図3 — 日平均の電力収支</h2>
 <div class="chart-card">
   <h3>発電 vs 消費（目標速力で巡航した場合の日平均）</h3>
   <div class="pb" id="pb"></div>
@@ -205,29 +250,7 @@
   </div>
 </div>
 
-<h2>図4 — 波スペクトルと抵抗寄与（Phase 2）</h2>
-<div class="chart-card">
-  <h3>JONSWAP スペクトルと反射寄与の分布</h3>
-  <div class="cap">短波長成分（右側の小さい周期）ほど船体が反射して抵抗になる。長波長は追従（contouring）して寄与しない。縦軸は各系列の最大値で正規化。</div>
-  <div class="legend">
-    <span class="chip"><span class="sw" style="background:var(--s2)"></span>波スペクトル S(T)</span>
-    <span class="chip"><span class="sw line"></span>抵抗寄与密度 S·r(λ/L)</span>
-  </div>
-  <div class="cv"><canvas id="c4" width="1000" height="240" role="img" aria-label="波周期に対するスペクトル密度と抵抗寄与の分布"></canvas><div class="tip" id="t4"></div></div>
-</div>
-
-<h2>耐航性 — 運動応答（Phase 3・第一次近似）</h2>
-<div class="chart-card">
-  <div class="kpis" style="margin-bottom:8px">
-    <div class="kpi"><div class="k">ヒーブ RMS</div><div class="v" id="s-heave">–</div><div class="n">上下動（有義値の1/2目安）</div></div>
-    <div class="kpi"><div class="k">ピッチ RMS</div><div class="v" id="s-pitch">–</div><div class="n" id="s-pitch-n">基準 ≤ 6°</div></div>
-    <div class="kpi"><div class="k">上下加速度 RMS</div><div class="v" id="s-accel">–</div><div class="n" id="s-accel-n">基準 ≤ 0.2g</div></div>
-    <div class="kpi"><div class="k">運用限界 Hs（この周期で）</div><div class="v" id="s-limhs">–</div><div class="n" id="s-verdict"></div></div>
-  </div>
-  <div class="cap">1自由度近似（減衰比 0.35・付加質量は代表値の<b>仮定</b>。位相と相対水位運動は未評価）。応答は Hs に線形なので限界 Hs = Hs × min(基準/RMS)。<b>注意</b>: 運動と抵抗増加はまだ連成していない（抵抗側は反射成分のみ）。</div>
-</div>
-
-<h2>図3 — SOC 時系列（ミッションシミュレーション）</h2>
+<h2>図4 — SOC 時系列（ミッションシミュレーション）</h2>
 <div class="chart-card">
   <h3>電池残量の推移</h3>
   <div class="cap" id="c3cap">昼夜の日射サイクル・SOC 下限でのドリフト移行・発電機ヒステリシスを含む。</div>
@@ -650,7 +673,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     ctx.fillStyle = css('--chart-surface'); ctx.fillRect(0,0,W,H);
     // grid
     ctx.strokeStyle = css('--grid'); ctx.lineWidth = 1;
-    ctx.font = '11px system-ui,sans-serif'; ctx.fillStyle = css('--muted-chart');
+    ctx.font = '12.5px system-ui,sans-serif'; ctx.fillStyle = css('--muted-chart');
     const yStep = ymax>400?100:(ymax>150?50:20);
     for (let g=0; g<=ymax; g+=yStep){
       ctx.beginPath(); ctx.moveTo(L,y(g)); ctx.lineTo(W-R,y(g)); ctx.stroke();
@@ -691,10 +714,10 @@ if (typeof module !== 'undefined') module.exports = USV;
       const vx = x(veq);
       ctx.strokeStyle = css('--axis'); ctx.lineWidth=1.5; ctx.setLineDash([3,4]);
       ctx.beginPath(); ctx.moveTo(vx,T); ctx.lineTo(vx,H-Bm); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = css('--ink-chart'); ctx.textAlign='left'; ctx.font='bold 12px system-ui,sans-serif';
+      ctx.fillStyle = css('--ink-chart'); ctx.textAlign='left'; ctx.font='bold 13px system-ui,sans-serif';
       ctx.fillText('V_eq = '+fmt(veq/USV.KT,2)+' kt', Math.min(vx+7, W-140), T+16);
     } else {
-      ctx.fillStyle = css('--ink-chart'); ctx.textAlign='left'; ctx.font='bold 12px system-ui,sans-serif';
+      ctx.fillStyle = css('--ink-chart'); ctx.textAlign='left'; ctx.font='bold 13px system-ui,sans-serif';
       ctx.fillText('前進不能（推力 < 抵抗）', L+10, T+16);
     }
     // baseline
@@ -744,7 +767,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     const days=P.msn.days;
     const x=d=>L+(W-L-R)*d/days, y=s=>T+(H-T-Bm)*(1-s);
     ctx.strokeStyle=css('--grid'); ctx.lineWidth=1;
-    ctx.font='11px system-ui,sans-serif'; ctx.fillStyle=css('--muted-chart');
+    ctx.font='12.5px system-ui,sans-serif'; ctx.fillStyle=css('--muted-chart');
     [0,0.25,0.5,0.75,1].forEach(s=>{
       ctx.beginPath();ctx.moveTo(L,y(s));ctx.lineTo(W-R,y(s));ctx.stroke();
       ctx.textAlign='right';ctx.fillText(Math.round(s*100)+'%',L-6,y(s)+4);
@@ -764,7 +787,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     const li=sim.t.length-1;
     ctx.fillStyle=css('--ink-chart');
     ctx.beginPath();ctx.arc(x(sim.t[li]),y(sim.soc[li]),4,0,7);ctx.fill();
-    ctx.textAlign='right';ctx.font='bold 11px system-ui,sans-serif';
+    ctx.textAlign='right';ctx.font='bold 12.5px system-ui,sans-serif';
     ctx.fillText(Math.round(sim.soc[li]*100)+'%', x(sim.t[li])-8, y(sim.soc[li])-6);
   }
   $('c3').addEventListener('mousemove', ev=>{
@@ -815,7 +838,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     const x = Tt => L + (W - L - R) * (Tt - Tmin) / (Tmax - Tmin);
     const y = v => T + (H - T - Bm) * (1 - v);
     ctx.strokeStyle = css('--grid'); ctx.lineWidth = 1;
-    ctx.font = '11px system-ui,sans-serif'; ctx.fillStyle = css('--muted-chart');
+    ctx.font = '12.5px system-ui,sans-serif'; ctx.fillStyle = css('--muted-chart');
     for (let g = 0; g <= 1; g += 0.5){
       ctx.beginPath(); ctx.moveTo(L, y(g)); ctx.lineTo(W - R, y(g)); ctx.stroke();
     }
@@ -870,6 +893,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     if (P.env.Hs <= 0){
       $('s-heave').textContent = '–'; $('s-pitch').textContent = '–';
       $('s-accel').textContent = '–'; $('s-limhs').textContent = '–';
+      $('sb-limhs').textContent = '–（平水）';
       $('s-verdict').textContent = '波高 0（平水）'; return;
     }
     $('s-heave').textContent = fmt(sk.heaveRms, 2) + ' m';
@@ -878,6 +902,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     $('s-accel').innerHTML = fmt(sk.accelRms / 9.81, 2) + ' g ' +
       `<span class="badge ${sk.okAccel ? 'ok' : 'ng'}">${sk.okAccel ? 'OK' : 'NG'}</span>`;
     $('s-limhs').textContent = isFinite(sk.limitHs) ? fmt(sk.limitHs, 1) + ' m' : '—';
+    $('sb-limhs').textContent = $('s-limhs').textContent;
     $('s-verdict').textContent = 'Tp=' + P.env.Tp + 's・速力 ' + fmt(V / USV.KT, 1) + ' kt で評価';
   }
 
@@ -897,23 +922,37 @@ if (typeof module !== 'undefined') module.exports = USV;
   }
 
   // ── 判定 ──
+  function flashIfChanged(id, html, asText){
+    const el=$(id); const cur=asText?el.textContent:el.innerHTML;
+    if(cur===html) return;
+    if(asText) el.textContent=html; else el.innerHTML=html;
+    const kpi=el.closest('.kpi');
+    if(kpi){ kpi.classList.remove('flash'); void kpi.offsetWidth; kpi.classList.add('flash'); }
+  }
   function verdict(sim){
     const der=USV.derived(P.hull);
     const veq=USV.solveVeq(P.prop.PmaxElec,P.env,P,der);
-    $('k-veq').textContent=veq>0.05?fmt(veq/USV.KT,2)+' kt':'0（不能）';
+    flashIfChanged('k-veq', veq>0.05?fmt(veq/USV.KT,2)+' kt':'0（不能）', true);
     $('k-veq-n').textContent='最大電力 '+P.prop.PmaxElec+' W 投入時';
     const propOK=veq>=P.msn.targetKt*USV.KT-1e-6;
-    $('k-prop').innerHTML=propOK?'<span class="badge ok">成立</span>':'<span class="badge ng">不成立</span>';
+    const propHtml=propOK?'<span class="badge ok">成立</span>':'<span class="badge ng">不成立</span>';
+    flashIfChanged('k-prop', propHtml, false);
     $('k-prop-n').textContent='目標 '+P.msn.targetKt+' kt に対し';
     const enOK=!sim.everDrifted;
-    $('k-energy').innerHTML=enOK?'<span class="badge ok">成立</span>':'<span class="badge ng">不成立</span>';
+    const enHtml=enOK?'<span class="badge ok">成立</span>':'<span class="badge ng">不成立</span>';
+    flashIfChanged('k-energy', enHtml, false);
     $('k-energy-n').textContent=enOK?('最低SOC '+Math.round(sim.minSoc*100)+'%（'+P.msn.days+'日間）')
                                     :('SOC枯渇 '+fmt(sim.depletedDay,1)+' 日目（ドリフト退避）');
     const dh=USV.darkEndurance(P);
-    $('k-dark').textContent=dh>=48?fmt(dh/24,1)+' 日':fmt(dh,0)+' 時間';
+    flashIfChanged('k-dark', dh>=48?fmt(dh/24,1)+' 日':fmt(dh,0)+' 時間', true);
     const mr=USV.maxRange(P);
-    $('k-range').textContent=fmt(mr.nm,0)+' nm';
+    flashIfChanged('k-range', fmt(mr.nm,0)+' nm', true);
     $('k-range-n').textContent='最適速力 '+fmt(mr.kt,1)+' kt・無日照時';
+    // 要約バーへ複製
+    $('sb-veq').textContent=$('k-veq').textContent;
+    $('sb-prop').innerHTML=propHtml;
+    $('sb-energy').innerHTML=enHtml;
+    $('sb-range').textContent=$('k-range').textContent;
   }
 
   // ── 検証ケース（自動実行・較正の再現） ──
@@ -995,6 +1034,15 @@ if (typeof module !== 'undefined') module.exports = USV;
   }
   $('btn-recalc').addEventListener('click',recalc);
   document.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',recalc));
+
+  // 判定が画面上方へ消えたら要約バーを出す（単一要素なので rAF スロットルの passive リスナーで十分）
+  const kpis=document.querySelector('.kpis'), sbar=$('sbar');
+  if (kpis){
+    let ticking=false;
+    const upd=()=>{ sbar.classList.toggle('show', kpis.getBoundingClientRect().bottom<0); ticking=false; };
+    window.addEventListener('scroll',()=>{ if(!ticking){ requestAnimationFrame(upd); ticking=true; } },{passive:true});
+    upd();
+  }
 
   toUI(); recalc(); runValidation();
 })();
