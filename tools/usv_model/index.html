@@ -56,6 +56,12 @@
   button.primary{background:#111;border-color:#111;color:#FFF;font-weight:700;}
   button.primary:hover{background:#333;border-color:#333;}
   .presets button.on{background:#111;border-color:#111;color:#FFF;font-weight:700;}
+  /* ── 船体 3D ビュー（自前 canvas 投影・表示専用） ── */
+  .hv-ctrl{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 8px;}
+  .hv-ctrl button.on{background:#111;border-color:#111;color:#FFF;font-weight:700;}
+  #hull3d{width:100%;height:250px;display:block;border:1px solid var(--line);
+    touch-action:none;cursor:grab;background:var(--surface);}
+  #hull3d:active{cursor:grabbing;}
   /* プリセット適用で値が変わった入力欄を一拍ハイライト */
   @keyframes pflash{from{background:#FBF3DB;border-color:#956400}to{}}
   input.pflash,select.pflash{animation:pflash 1.1s ease-out;}
@@ -300,6 +306,12 @@
   </div>
 </div>
 
+<h2>船体形状</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">主要目 L・B・m から生成した概念形状（Seasats Lightfish 準拠のパラメトリック船体。実測形状ではなく、計算には §5 以降の式のみを使用）。ドラッグで回転、ホイール／ピンチで拡大縮小、ダブルクリックで視点リセット。</div>
+<div class="hv-ctrl"><button id="hv-float">浮かべる（喫水線を表示）</button><button id="hv-reset">視点リセット</button></div>
+<canvas id="hull3d"></canvas>
+<div class="cap" id="hull3d-info" style="font-size:12px;color:var(--muted);margin:6px 0 0"></div>
+
 <h2>判定</h2>
 <div class="kpis">
   <div class="kpi"><div class="k">達成可能速力 V_eq（全力）</div><div class="v" id="k-veq">–</div><div class="n" id="k-veq-n"></div></div>
@@ -406,6 +418,7 @@
 <details class="sec" id="s1" open><summary><span class="no">§1</span><span class="ttl">目的とスコープ</span></summary>
 <p>解きたい問いは2つ。<b>①その海象で前に進めるか</b> — 推力と全抵抗の釣合いから達成可能速力 <math><msub><mi>V</mi><mi>eq</mi></msub></math> を求める。<b>②電力収支が破綻しないか</b> — 日射・電池・補助発電・ホテル負荷を時間積分し、SOC が下限を割らずにミッションを完走できるかを判定する。</p>
 <p>自由度は前後方向（surge）1 自由度、環境入力は定常（Phase 2 で波は JONSWAP スペクトル化済み）。非スコープ: 操縦性・復原性・構造強度・波力/帆推進。</p>
+<p>付記: モデル画面の「船体形状」3D ビューは主要目（L・B・m）から生成した<b>表示専用の概念形状</b>（Lightfish 準拠のパラメトリック船体）であり、計算には一切使われない — 抵抗・浮力・喫水はすべて §5 以降の式による。実形状データ（STL / オフセットテーブル）を入手した段階で、§10 の BEM/CFD 置換と併せて描画も実形状に差し替える。</p>
 </details>
 
 <!-- ═══════════ §2 ═══════════ -->
@@ -1201,7 +1214,64 @@ const USV = (function(){
     return { solarAvg, genAvg:0, Pprop, hotel: p.pwr.hotelW, reached };
   }
 
-  return { C, KT, defaults, derived, slenderness, crSlenderFactor, rCalm, rWind, rWave, rWaveRegular, rWaveSpectral,
+  // ── 表示用の概念船体形状（HULL-VIEW・計算には不使用） ──
+  // Seasats Lightfish を模したパラメトリック形状。主要目 Lwl・B に追従し、
+  // デッキ高 D は L に比例（基準 L=3.2m で 0.30m）。断面は半幅 y=y_deck·u^q の
+  // 超楕円系（q=0.55 → 丸底 V 形）。平面形は艫幅 0.62B・前方 1/4 で細める。
+  function hullGeom(h){
+    const L=h.Lwl, HB=h.B/2, D=0.094*L;
+    const wT=0.62, tm=0.42, q=0.55;
+    const plan = t => {
+      if (t>=1) return 0;
+      if (t<=tm){ const s=t/tm; return wT+(1-wT)*Math.sin(s*Math.PI/2); }
+      const s=(t-tm)/(1-tm); return Math.pow(1-Math.pow(s,1.7),0.8);
+    };
+    const zKeel = t => (t>0.62 ? Math.pow((t-0.62)/0.38,1.6)*0.55*D : 0)
+                     + (t<0.08 ? (1-t/0.08)*0.05*D : 0);
+    const zDeck = t => D*(1+0.06*Math.pow(Math.max(0,(t-0.55)/0.45),2));
+    const sect = (t,u) => plan(t)*HB*Math.pow(u,q);   // 半幅 [m]（u: 0=キール, 1=デッキ）
+    return { L, HB, D, plan, zKeel, zDeck, sect };
+  }
+  // 面リスト（x: 艫→艏, y: 右舷+, z: キール基線から上向き）
+  function hullMesh(h){
+    const g=hullGeom(h), N=26, M=8, faces=[], lines=[];
+    const st=[];
+    for(let i=0;i<=N;i++){
+      const t=i/N, x=t*g.L, z0=g.zKeel(t), z1=g.zDeck(t), row=[];
+      for(let j=0;j<=M;j++){ const u=j/M; row.push([x, g.sect(t,u), z0+u*(z1-z0)]); }
+      st.push(row);
+    }
+    const P=(row,j,sgn)=>{ const p=row[j]; return [p[0], sgn*p[1], p[2]]; };
+    for(let i=0;i<N;i++) for(let j=0;j<M;j++) for(const sgn of [1,-1])
+      faces.push({p:[P(st[i],j,sgn),P(st[i+1],j,sgn),P(st[i+1],j+1,sgn),P(st[i],j+1,sgn)],tag:'hull'});
+    for(let i=0;i<N;i++){                              // デッキ（中央 78% はパネル帯）
+      const a=st[i][M], b=st[i+1][M], t=(i+0.5)/N, pan=(t>0.06&&t<0.86);
+      const ya=0.78*a[1], yb=0.78*b[1];
+      faces.push({p:[[a[0],-a[1],a[2]],[b[0],-b[1],b[2]],[b[0],-yb,b[2]],[a[0],-ya,a[2]]],tag:'deck'});
+      faces.push({p:[[a[0],-ya,a[2]],[b[0],-yb,b[2]],[b[0],yb,b[2]],[a[0],ya,a[2]]],tag:pan?'panel':'deck'});
+      faces.push({p:[[a[0],ya,a[2]],[b[0],yb,b[2]],[b[0],b[1],b[2]],[a[0],a[1],a[2]]],tag:'deck'});
+    }
+    const tr=[];                                       // トランサム（船尾を閉じる）
+    for(let j=0;j<=M;j++) tr.push(P(st[0],j,1));
+    for(let j=M;j>=0;j--) tr.push(P(st[0],j,-1));
+    faces.push({p:tr,tag:'transom'});
+    const xm=0.10*g.L, zm=g.zDeck(0.10), hm=0.16*g.L;  // 通信マスト（船尾寄り）
+    lines.push([[xm,0,zm],[xm,0,zm+hm]]);
+    lines.push([[xm,-0.03*g.L,zm+hm*0.82],[xm,0.03*g.L,zm+hm*0.82]]);
+    return { faces, lines, L:g.L, B:h.B, D:g.D };
+  }
+  // 喫水 d に対する水線（右舷ポリライン。左舷は y 反転）
+  function hullWaterline(h, d){
+    const g=hullGeom(h), N=60, pts=[];
+    for(let i=0;i<=N;i++){
+      const t=i/N, z0=g.zKeel(t), z1=g.zDeck(t);
+      if(d<=z0||d>=z1) continue;
+      pts.push([t*g.L, g.sect(t,(d-z0)/(z1-z0)), d]);
+    }
+    return pts;
+  }
+
+  return { C, KT, defaults, derived, slenderness, crSlenderFactor, hullMesh, hullWaterline, rCalm, rWind, rWave, rWaveRegular, rWaveSpectral,
            jonswapS, reflEff, rTotal,
            etaMotor, pShaft, etaProp, thrust, pElecFor, solveVeq,
            pSolar, pSolarDaily, pSolarClearSky, solarDailyWh, solarElevSin,
@@ -1209,6 +1279,130 @@ const USV = (function(){
            simulate, maxRange, darkEndurance, dailyBudget };
 })();
 if (typeof module !== 'undefined') module.exports = USV;
+</script>
+
+<script>
+/* ============================================================
+   船体 3D ビュー — 自前 canvas 投影（外部ライブラリなし・表示専用）
+   ============================================================ */
+'use strict';
+(function(){
+  const cv=document.getElementById('hull3d'); if(!cv) return;
+  const ctx=cv.getContext('2d');
+  const info=document.getElementById('hull3d-info');
+  const btnF=document.getElementById('hv-float'), btnR=document.getElementById('hv-reset');
+  const YAW0=-2.25, PITCH0=-0.30;
+  let yaw=YAW0, pitch=PITCH0, zoom=1, floating=false;
+  let hull=null, der=null, mesh=null;
+
+  const COL={hull:[199,193,181], deck:[236,232,223], panel:[54,58,64], transom:[178,172,160]};
+  const SUB=[116,146,178];   // 水線下の混色先
+  const WATER='rgba(42,120,214,0.14)', WGRID='rgba(42,120,214,0.28)', WLINE='#2A78D6';
+
+  function update(h,d){ hull=h; der=d; mesh=USV.hullMesh(h); draw(); }
+
+  function draw(){
+    const dpr=window.devicePixelRatio||1, cw=cv.clientWidth, ch=cv.clientHeight;
+    if(!cw) return;
+    if(cv.width!==Math.round(cw*dpr)||cv.height!==Math.round(ch*dpr)){ cv.width=Math.round(cw*dpr); cv.height=Math.round(ch*dpr); }
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,cw,ch);
+    if(!mesh) return;
+    const L=mesh.L, D=mesh.D, d=der.d;
+    const cx=L/2, cz=floating?Math.min(d,D):D/2;     // 浮遊表示では水面を回転中心に
+    const cx0=cw*0.5, cy0=ch*0.54;
+    const sc=zoom*Math.min(cw*0.72, ch*2.6)/L;
+    const sy=Math.sin(yaw), cyw=Math.cos(yaw), sp=Math.sin(pitch), cp=Math.cos(pitch);
+    const rot=p=>{                                    // → [画面右, 画面上, 奥行き]
+      const x=p[0]-cx, y=p[1], z=p[2]-cz;
+      const u=x*cyw-y*sy, v=x*sy+y*cyw;
+      return [u, z*cp-v*sp, v*cp+z*sp];
+    };
+    const px=q=>[cx0+q[0]*sc, cy0-q[1]*sc];
+    const light=[-0.35,0.72,-0.60];                   // ビュー空間の光（左上手前）
+    const items=[];
+
+    for(const f of mesh.faces){
+      const r=f.p.map(rot);
+      let zc=0, xw=0, zw=0;
+      for(let i=0;i<f.p.length;i++){ zc+=r[i][2]; zw+=f.p[i][2]; }
+      zc/=r.length; zw/=f.p.length;
+      const a=[r[1][0]-r[0][0],r[1][1]-r[0][1],r[1][2]-r[0][2]];
+      const b=[r[2][0]-r[0][0],r[2][1]-r[0][1],r[2][2]-r[0][2]];
+      const n=[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+      const nl=Math.hypot(n[0],n[1],n[2])||1;
+      const dt=Math.abs((n[0]*light[0]+n[1]*light[1]+n[2]*light[2])/nl);
+      const sh=0.58+0.42*dt;
+      let c=COL[f.tag]||COL.hull;
+      if(floating && zw<d && f.tag!=='panel'){        // 水線下を青灰へ
+        c=[c[0]+(SUB[0]-c[0])*0.55, c[1]+(SUB[1]-c[1])*0.55, c[2]+(SUB[2]-c[2])*0.55];
+      }
+      items.push({z:zc, kind:'face', pts:r.map(px),
+        fill:`rgb(${(c[0]*sh)|0},${(c[1]*sh)|0},${(c[2]*sh)|0})`});
+    }
+    for(const ln of mesh.lines){
+      const r=ln.map(rot);
+      items.push({z:(r[0][2]+r[1][2])/2, kind:'stroke', pts:r.map(px), stroke:'#44403A', w:2});
+    }
+    if(floating){
+      const x0=-0.22*L, x1=1.22*L, y0=-0.52*L, y1=0.52*L, NX=12, NY=8;
+      for(let i=0;i<NX;i++) for(let j=0;j<NY;j++){
+        const xa=x0+(x1-x0)*i/NX, xb=x0+(x1-x0)*(i+1)/NX;
+        const ya=y0+(y1-y0)*j/NY, yb=y0+(y1-y0)*(j+1)/NY;
+        const r=[[xa,ya,d],[xb,ya,d],[xb,yb,d],[xa,yb,d]].map(rot);
+        items.push({z:(r[0][2]+r[2][2])/2, kind:'water', pts:r.map(px)});
+      }
+      const wl=USV.hullWaterline(hull, Math.min(d, D*0.999));
+      for(const sgn of [1,-1]){                       // 遮蔽を正しくするためセグメント毎に深度ソート
+        for(let i=0;i<wl.length-1;i++){
+          const r=[wl[i],wl[i+1]].map(p=>rot([p[0],sgn*p[1],p[2]]));
+          items.push({z:(r[0][2]+r[1][2])/2-0.004*L, kind:'stroke', pts:r.map(px), stroke:WLINE, w:1.8});
+        }
+      }
+    }
+    items.sort((p,q)=>q.z-p.z);                       // 奥から手前へ
+    for(const it of items){
+      ctx.beginPath();
+      it.pts.forEach((p,i)=> i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));
+      if(it.kind==='face'){ ctx.closePath(); ctx.fillStyle=it.fill; ctx.fill();
+        ctx.strokeStyle='rgba(17,17,17,0.06)'; ctx.lineWidth=0.5; ctx.stroke(); }
+      else if(it.kind==='water'){ ctx.closePath(); ctx.fillStyle=WATER; ctx.fill();
+        ctx.strokeStyle=WGRID; ctx.lineWidth=0.5; ctx.stroke(); }
+      else { ctx.strokeStyle=it.stroke; ctx.lineWidth=it.w; ctx.lineJoin='round'; ctx.stroke(); }
+    }
+    const fb=D-d;
+    if(floating){
+      info.innerHTML = fb<=0
+        ? '<b style="color:var(--ng-ink)">喫水がデッキ高を超過 — 予備浮力なし（この質量では浮かべられない）</b>'
+        : `喫水 d = ${d.toFixed(3)} m ・ 乾舷 f = ${fb.toFixed(3)} m（デッキ高 ${D.toFixed(2)} m・排水容積 ∇ = ${der.vol.toFixed(3)} m³）`;
+    } else {
+      info.textContent='「浮かべる」を押すと、現在の質量 m に対する喫水線と水面を表示します。';
+    }
+  }
+
+  const ptrs=new Map(); let lastDist=0;
+  cv.addEventListener('pointerdown',e=>{ cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId,[e.clientX,e.clientY]); });
+  cv.addEventListener('pointermove',e=>{
+    if(!ptrs.has(e.pointerId)) return;
+    const prev=ptrs.get(e.pointerId); ptrs.set(e.pointerId,[e.clientX,e.clientY]);
+    if(ptrs.size===1){
+      yaw+=(e.clientX-prev[0])*0.011;
+      pitch=Math.max(-1.35,Math.min(1.35,pitch-(e.clientY-prev[1])*0.011));
+      draw();
+    } else if(ptrs.size===2){
+      const a=[...ptrs.values()], dn=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);
+      if(lastDist) zoom=Math.max(0.5,Math.min(3,zoom*dn/lastDist));
+      lastDist=dn; draw();
+    }
+  });
+  const end=e=>{ ptrs.delete(e.pointerId); lastDist=0; };
+  cv.addEventListener('pointerup',end); cv.addEventListener('pointercancel',end);
+  cv.addEventListener('wheel',e=>{ e.preventDefault(); zoom=Math.max(0.5,Math.min(3,zoom*(e.deltaY<0?1.1:0.9))); draw(); },{passive:false});
+  cv.addEventListener('dblclick',()=>{ yaw=YAW0; pitch=PITCH0; zoom=1; draw(); });
+  btnF.addEventListener('click',()=>{ floating=!floating; btnF.classList.toggle('on',floating); draw(); });
+  btnR.addEventListener('click',()=>{ yaw=YAW0; pitch=PITCH0; zoom=1; draw(); });
+  window.addEventListener('resize',()=>draw());
+  window.__hullView={update};
+})();
 </script>
 
 <script>
@@ -1666,6 +1860,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   function recalc(){
     fromUI();
     const der=USV.derived(P.hull);
+    if(window.__hullView) window.__hullView.update(P.hull, der);
     drawC1();
     const b=drawPB();
     const sim=USV.simulate(P);
