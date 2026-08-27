@@ -328,7 +328,7 @@
 </div>
 
 <h2>船体形状</h2>
-<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">主要目 L・B・m から生成した概念形状（Seasats Lightfish 準拠のパラメトリック船体。実測形状ではなく、計算には §5 以降の式のみを使用）。ドラッグで回転、ホイール／ピンチで拡大縮小、ダブルクリックで視点リセット。</div>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">主要目 L・B・m（スラスターはプロペラ径 D<sub>prop</sub>）から生成した概念形状（Seasats Lightfish 準拠。後部の羽＝通信ウィング・前部マスト・キールフィン・ポッドスラスターを含む。実測形状ではなく、計算には §5 以降の式のみを使用）。ドラッグで回転、ホイール／ピンチで拡大縮小、ダブルクリックで視点リセット。</div>
 <div class="hv-ctrl"><button id="hv-float">浮かべる（喫水線を表示）</button><button id="hv-reset">視点リセット</button></div>
 <canvas id="hull3d"></canvas>
 <div class="cap" id="hull3d-info" style="font-size:12px;color:var(--muted);margin:6px 0 0"></div>
@@ -1236,16 +1236,18 @@ const USV = (function(){
   }
 
   // ── 表示用の概念船体形状（HULL-VIEW・計算には不使用） ──
-  // Seasats Lightfish を模したパラメトリック形状。主要目 Lwl・B に追従し、
-  // デッキ高 D は L に比例（基準 L=3.2m で 0.30m）。断面は半幅 y=y_deck·u^q の
-  // 超楕円系（q=0.55 → 丸底 V 形）。平面形は艫幅 0.62B・前方 1/4 で細める。
+  // Seasats Lightfish を模したパラメトリック形状。主要目 Lwl・B（付加物はさらに
+  // プロペラ径 Dprop）に追従。デッキ高 D は L に比例（基準 L=3.2m で 0.30m）。
+  // 断面は半幅 y=y_deck·u^q の超楕円系（q=0.55 → 丸底 V 形）。
+  // 付加物 tag: wing（後部の羽）/ mast（前部マスト）/ keel（前部キールフィン）/
+  // pod・prop（後部ポッドスラスター）。tag は色分けと将来の寸法注記に使う。
   function hullGeom(h){
     const L=h.Lwl, HB=h.B/2, D=0.094*L;
-    const wT=0.62, tm=0.42, q=0.55;
+    const wT=0.70, tm=0.42, q=0.55;
     const plan = t => {
       if (t>=1) return 0;
       if (t<=tm){ const s=t/tm; return wT+(1-wT)*Math.sin(s*Math.PI/2); }
-      const s=(t-tm)/(1-tm); return Math.pow(1-Math.pow(s,1.7),0.8);
+      const s=(t-tm)/(1-tm); return Math.pow(1-Math.pow(s,2.0),0.8);
     };
     const zKeel = t => (t>0.62 ? Math.pow((t-0.62)/0.38,1.6)*0.55*D : 0)
                      + (t<0.08 ? (1-t/0.08)*0.05*D : 0);
@@ -1253,33 +1255,92 @@ const USV = (function(){
     const sect = (t,u) => plan(t)*HB*Math.pow(u,q);   // 半幅 [m]（u: 0=キール, 1=デッキ）
     return { L, HB, D, plan, zKeel, zDeck, sect };
   }
-  // 面リスト（x: 艫→艏, y: 右舷+, z: キール基線から上向き）
-  function hullMesh(h){
-    const g=hullGeom(h), N=26, M=8, faces=[], lines=[];
+  // 面リスト（x: 艫(0)→艏(L), y: 右舷+, z: キール基線から上向き）
+  function hullMesh(h, prop){
+    const g=hullGeom(h), L=g.L, D=g.D, B=h.B, N=26, M=8, faces=[];
+    const Dp=(prop&&prop.propeller&&prop.propeller.Dprop)||0.20;
+    const F=(pts,tag)=>faces.push({p:pts,tag});
+    // ── 船殻・デッキ・トランサム ──
     const st=[];
     for(let i=0;i<=N;i++){
-      const t=i/N, x=t*g.L, z0=g.zKeel(t), z1=g.zDeck(t), row=[];
+      const t=i/N, x=t*L, z0=g.zKeel(t), z1=g.zDeck(t), row=[];
       for(let j=0;j<=M;j++){ const u=j/M; row.push([x, g.sect(t,u), z0+u*(z1-z0)]); }
       st.push(row);
     }
-    const P=(row,j,sgn)=>{ const p=row[j]; return [p[0], sgn*p[1], p[2]]; };
+    const P=(row,j,sgn)=>{ const q2=row[j]; return [q2[0], sgn*q2[1], q2[2]]; };
     for(let i=0;i<N;i++) for(let j=0;j<M;j++) for(const sgn of [1,-1])
-      faces.push({p:[P(st[i],j,sgn),P(st[i+1],j,sgn),P(st[i+1],j+1,sgn),P(st[i],j+1,sgn)],tag:'hull'});
+      F([P(st[i],j,sgn),P(st[i+1],j,sgn),P(st[i+1],j+1,sgn),P(st[i],j+1,sgn)],'hull');
     for(let i=0;i<N;i++){                              // デッキ（中央 78% はパネル帯）
       const a=st[i][M], b=st[i+1][M], t=(i+0.5)/N, pan=(t>0.06&&t<0.86);
       const ya=0.78*a[1], yb=0.78*b[1];
-      faces.push({p:[[a[0],-a[1],a[2]],[b[0],-b[1],b[2]],[b[0],-yb,b[2]],[a[0],-ya,a[2]]],tag:'deck'});
-      faces.push({p:[[a[0],-ya,a[2]],[b[0],-yb,b[2]],[b[0],yb,b[2]],[a[0],ya,a[2]]],tag:pan?'panel':'deck'});
-      faces.push({p:[[a[0],ya,a[2]],[b[0],yb,b[2]],[b[0],b[1],b[2]],[a[0],a[1],a[2]]],tag:'deck'});
+      F([[a[0],-a[1],a[2]],[b[0],-b[1],b[2]],[b[0],-yb,b[2]],[a[0],-ya,a[2]]],'deck');
+      F([[a[0],-ya,a[2]],[b[0],-yb,b[2]],[b[0],yb,b[2]],[a[0],ya,a[2]]],pan?'panel':'deck');
+      F([[a[0],ya,a[2]],[b[0],yb,b[2]],[b[0],b[1],b[2]],[a[0],a[1],a[2]]],'deck');
     }
     const tr=[];                                       // トランサム（船尾を閉じる）
     for(let j=0;j<=M;j++) tr.push(P(st[0],j,1));
     for(let j=M;j>=0;j--) tr.push(P(st[0],j,-1));
-    faces.push({p:tr,tag:'transom'});
-    const xm=0.10*g.L, zm=g.zDeck(0.10), hm=0.16*g.L;  // 通信マスト（船尾寄り）
-    lines.push([[xm,0,zm],[xm,0,zm+hm]]);
-    lines.push([[xm,-0.03*g.L,zm+hm*0.82],[xm,0.03*g.L,zm+hm*0.82]]);
-    return { faces, lines, L:g.L, B:h.B, D:g.D };
+    F(tr,'transom');
+    // ── ① 後部の羽（アフトウィング: 後傾ストラット2本＋プレート＋アンテナ箱） ──
+    const zw=D+0.115*L, thk=0.006*L, xw0=0.030*L, xw1=0.150*L, yw=0.24*B;
+    for(const sgn of [1,-1]){                          // ストラット（後傾スラブ）
+      const ys=sgn*0.155*B;
+      F([[0.200*L,ys,g.zDeck(0.200)],[0.228*L,ys,g.zDeck(0.228)],
+         [0.140*L,ys,zw],[0.112*L,ys,zw]],'wing');
+    }
+    F([[xw0,-yw,zw+thk],[xw1,-yw,zw+thk],[xw1,yw,zw+thk],[xw0,yw,zw+thk]],'wing');  // プレート上面
+    F([[xw0,-yw,zw],[xw1,-yw,zw],[xw1,yw,zw],[xw0,yw,zw]],'wing');                   // 下面
+    F([[xw1,-yw,zw],[xw1,yw,zw],[xw1,yw,zw+thk],[xw1,-yw,zw+thk]],'wing');           // 前縁
+    F([[xw0,-yw,zw],[xw0,yw,zw],[xw0,yw,zw+thk],[xw0,-yw,zw+thk]],'wing');           // 後縁
+    for(const sgn of [1,-1])
+      F([[xw0,sgn*yw,zw],[xw1,sgn*yw,zw],[xw1,sgn*yw,zw+thk],[xw0,sgn*yw,zw+thk]],'wing');
+    { const cx2=(xw0+xw1)/2, ax=0.035*L, ay=0.10*B, zb=zw+thk, hb=0.016*L;          // 通信アンテナ箱
+      F([[cx2-ax,-ay,zb+hb],[cx2+ax,-ay,zb+hb],[cx2+ax,ay,zb+hb],[cx2-ax,ay,zb+hb]],'panel');
+      for(const sgn of [1,-1]){
+        F([[cx2-ax,sgn*ay,zb],[cx2+ax,sgn*ay,zb],[cx2+ax,sgn*ay,zb+hb],[cx2-ax,sgn*ay,zb+hb]],'panel');
+        F([[cx2+sgn*ax,-ay,zb],[cx2+sgn*ax,ay,zb],[cx2+sgn*ax,ay,zb+hb],[cx2+sgn*ax,-ay,zb+hb]],'panel');
+      } }
+    // ── ② 前部マスト（十字スラブ・先細り＋クロスバー） ──
+    { const xm=0.80*L, zd=g.zDeck(0.80), zt=zd+0.105*L, wb=0.008*L, wt=0.0035*L;
+      F([[xm-wb,0,zd],[xm+wb,0,zd],[xm+wt,0,zt],[xm-wt,0,zt]],'mast');
+      F([[xm,-wb,zd],[xm,wb,zd],[xm,wt,zt],[xm,-wt,zt]],'mast');
+      const zc=zd+0.088*L, cb=0.030*L;
+      F([[xm-0.003*L,-cb,zc],[xm+0.003*L,-cb,zc],[xm+0.003*L,cb,zc],[xm-0.003*L,cb,zc]],'mast'); }
+    // ── ③ 前部キールフィン（台形スラブ・両面＋底縁） ──
+    { const w=0.005*L, zb2=-0.50*D;
+      const top=[[0.58*L,g.zKeel(0.58)],[0.76*L,g.zKeel(0.76)]];
+      const bot=[[0.62*L,zb2],[0.72*L,zb2]];
+      for(const sgn of [1,-1])
+        F([[top[0][0],sgn*w,top[0][1]],[top[1][0],sgn*w,top[1][1]],
+           [bot[1][0],sgn*w,bot[1][1]],[bot[0][0],sgn*w,bot[0][1]]],'keel');
+      F([[bot[0][0],-w,bot[0][1]],[bot[1][0],-w,bot[1][1]],
+         [bot[1][0],w,bot[1][1]],[bot[0][0],w,bot[0][1]]],'keel'); }
+    // ── ④ 後部ポッドスラスター（ストラット＋回転体ポッド＋3枚プロペラ） ──
+    { const rp=0.28*Dp, zp=-(0.55*Dp), x0=0.045*L, lp=0.11*L, KP=8;
+      const prof=[[0,0.30],[0.10,0.72],[0.28,1.0],[0.62,1.0],[0.85,0.70],[1,0.22]];  // [位置,半径比]
+      const ring=(sx,rr)=>{ const q2=[]; for(let k2=0;k2<KP;k2++){ const a=k2/KP*2*Math.PI;
+        q2.push([x0+sx*lp, rr*rp*Math.cos(a), zp+rr*rp*Math.sin(a)]); } return q2; };
+      const rings=prof.map(pr=>ring(pr[0],pr[1]));
+      for(let i2=0;i2<rings.length-1;i2++) for(let k2=0;k2<KP;k2++){
+        const a=rings[i2], b=rings[i2+1], k3=(k2+1)%KP;
+        F([a[k2],b[k2],b[k3],a[k3]],'pod'); }
+      const nose=rings[rings.length-1], aftc=rings[0];
+      for(let k2=0;k2<KP;k2++){ const k3=(k2+1)%KP;
+        F([[x0+lp,0,zp],nose[k2],nose[k3]],'pod');
+        F([[x0,0,zp],aftc[k3],aftc[k2]],'pod'); }
+      const xs0=0.078*L, xs1=0.108*L;                  // ストラット（ハルからポッドへ）
+      F([[xs0,0,0.02*D],[xs1,0,0.02*D],[x0+0.66*lp,0,zp],[x0+0.34*lp,0,zp]],'pod');
+      const xpr=x0-0.012*L, rh=0.12*rp/0.28, rt=Dp/2;  // プロペラ 3 枚（半径 = Dprop/2）
+      for(let k2=0;k2<3;k2++){ const a=k2*2*Math.PI/3+0.5;
+        const pt=(r,da)=>[xpr, r*Math.cos(a+da), zp+r*Math.sin(a+da)];
+        F([pt(rh,-0.50),pt(rt,-0.16),pt(rt,0.16),pt(rh,0.50)],'prop'); } }
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;
+    for(const f of faces) for(const q2 of f.p){
+      if(q2[0]<x0)x0=q2[0]; if(q2[0]>x1)x1=q2[0];
+      if(q2[1]<y0)y0=q2[1]; if(q2[1]>y1)y1=q2[1];
+      if(q2[2]<z0)z0=q2[2]; if(q2[2]>z1)z1=q2[2];
+    }
+    return { faces, lines:[], L, B, D, bb:{x0,x1,y0,y1,z0,z1} };
   }
   // 喫水 d に対する水線（右舷ポリライン。左舷は y 反転）
   function hullWaterline(h, d){
@@ -1316,11 +1377,12 @@ if (typeof module !== 'undefined') module.exports = USV;
   let yaw=YAW0, pitch=PITCH0, zoom=1, floating=false;
   let hull=null, der=null, mesh=null;
 
-  const COL={hull:[199,193,181], deck:[236,232,223], panel:[54,58,64], transom:[178,172,160]};
+  const COL={hull:[199,193,181], deck:[236,232,223], panel:[54,58,64], transom:[178,172,160],
+             wing:[132,136,142], mast:[76,72,66], keel:[158,152,140], pod:[60,64,70], prop:[104,100,92]};
   const SUB=[116,146,178];   // 水線下の混色先
   const WATER='rgba(42,120,214,0.14)', WGRID='rgba(42,120,214,0.28)', WLINE='#2A78D6';
 
-  function update(h,d){ hull=h; der=d; mesh=USV.hullMesh(h); draw(); }
+  function update(h,d,pr){ hull=h; der=d; mesh=USV.hullMesh(h,pr); draw(); }
 
   function draw(){
     const dpr=window.devicePixelRatio||1, cw=cv.clientWidth, ch=cv.clientHeight;
@@ -1328,16 +1390,23 @@ if (typeof module !== 'undefined') module.exports = USV;
     if(cv.width!==Math.round(cw*dpr)||cv.height!==Math.round(ch*dpr)){ cv.width=Math.round(cw*dpr); cv.height=Math.round(ch*dpr); }
     ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,cw,ch);
     if(!mesh) return;
-    const L=mesh.L, D=mesh.D, d=der.d;
-    const cx=L/2, cz=floating?Math.min(d,D):D/2;     // 浮遊表示では水面を回転中心に
-    const cx0=cw*0.5, cy0=ch*0.54;
-    const sc=zoom*Math.min(cw*0.72, ch*2.6)/L;
+    const L=mesh.L, D=mesh.D, d=der.d, bb=mesh.bb;
+    const cx=L/2, cz=floating?Math.min(d,D):(bb.z0+bb.z1)/2;
     const sy=Math.sin(yaw), cyw=Math.cos(yaw), sp=Math.sin(pitch), cp=Math.cos(pitch);
     const rot=p=>{                                    // → [画面右, 画面上, 奥行き]
       const x=p[0]-cx, y=p[1], z=p[2]-cz;
       const u=x*cyw-y*sy, v=x*sy+y*cyw;
       return [u, z*cp-v*sp, v*cp+z*sp];
     };
+    // bbox の 8 頂点を回して画面内に自動フィット（回転中はわずかに呼吸するが常に収まる）
+    let u0=1e9,u1=-1e9,w0=1e9,w1=-1e9;
+    for(const xc of [bb.x0,bb.x1]) for(const yc of [bb.y0,bb.y1]) for(const zc of [bb.z0,bb.z1]){
+      const r=rot([xc,yc,zc]);
+      if(r[0]<u0)u0=r[0]; if(r[0]>u1)u1=r[0];
+      if(r[1]<w0)w0=r[1]; if(r[1]>w1)w1=r[1];
+    }
+    const sc=zoom*Math.min(cw*0.90/(u1-u0), ch*0.86/(w1-w0));
+    const cx0=cw*0.5-sc*(u0+u1)/2, cy0=ch*0.50+sc*(w0+w1)/2;
     const px=q=>[cx0+q[0]*sc, cy0-q[1]*sc];
     const light=[-0.35,0.72,-0.60];                   // ビュー空間の光（左上手前）
     const items=[];
@@ -1881,7 +1950,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   function recalc(){
     fromUI();
     const der=USV.derived(P.hull);
-    if(window.__hullView) window.__hullView.update(P.hull, der);
+    if(window.__hullView) window.__hullView.update(P.hull, der, P.prop);
     drawC1();
     const b=drawPB();
     const sim=USV.simulate(P);
