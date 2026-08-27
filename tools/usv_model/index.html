@@ -1320,14 +1320,14 @@ const USV = (function(){
   }
 
   // ── 表示用の概念船体形状（HULL-VIEW・計算には不使用） ──
-  // Seasats Lightfish を模したパラメトリック形状。主要目 Lwl・B（付加物はさらに
-  // プロペラ径 Dprop）に追従。デッキ高 D は L に比例（基準 L=3.2m で 0.30m）。
-  // 断面は半幅 y=y_deck·u^q の超楕円系（q=0.55 → 丸底 V 形）。
-  // 付加物 tag: wing（後部の羽）/ mast（前部マスト）/ keel（前部キールフィン）/
-  // pod・prop（後部ポッドスラスター）。tag は色分けと将来の寸法注記に使う。
+  // Seasats Lightfish 準拠。主要目 Lwl・B（付加物はさらにプロペラ径 Dprop）に追従。
+  // 断面: 丸底 V（y=y_max·u^q）→ チャイン（最大幅・z=0.72D）→ 内傾する舷側
+  // → 内側に絞ったデッキ（0.80 幅）＝実艇の台形上部。
+  // 付加物 tag: wing（後部の羽）/ mast（前部マスト＋レドーム）/ keel（後傾キール）/
+  // pod・prop（トランサムマウントのスラスター）。tag は色分けと寸法注記に使う。
   function hullGeom(h){
     const L=h.Lwl, HB=h.B/2, D=0.094*L;
-    const wT=0.70, tm=0.42, q=0.55;
+    const wT=0.70, tm=0.42, q=0.55, chineF=0.72, deckIn=0.80;
     const plan = t => {
       if (t>=1) return 0;
       if (t<=tm){ const s=t/tm; return wT+(1-wT)*Math.sin(s*Math.PI/2); }
@@ -1336,85 +1336,110 @@ const USV = (function(){
     const zKeel = t => (t>0.62 ? Math.pow((t-0.62)/0.38,1.6)*0.55*D : 0)
                      + (t<0.08 ? (1-t/0.08)*0.05*D : 0);
     const zDeck = t => D*(1+0.06*Math.pow(Math.max(0,(t-0.55)/0.45),2));
-    const sect = (t,u) => plan(t)*HB*Math.pow(u,q);   // 半幅 [m]（u: 0=キール, 1=デッキ）
-    return { L, HB, D, plan, zKeel, zDeck, sect };
+    const zChine = t => { const z0=zKeel(t), z1=zDeck(t); return z0+chineF*(z1-z0); };
+    const sect = (t,u) => plan(t)*HB*Math.pow(u,q);       // キール→チャインの半幅
+    return { L, HB, D, chineF, deckIn, plan, zKeel, zDeck, zChine, sect };
   }
   // 面リスト（x: 艫(0)→艏(L), y: 右舷+, z: キール基線から上向き）
   function hullMesh(h, prop){
     const g=hullGeom(h), L=g.L, D=g.D, B=h.B, N=26, M=8, faces=[];
     const Dp=(prop&&prop.propeller&&prop.propeller.Dprop)||0.20;
     const F=(pts,tag)=>faces.push({p:pts,tag});
-    // ── 船殻・デッキ・トランサム ──
+    // ── 船殻: キール→チャイン(M 分割)＋内傾舷側→デッキ縁(1 段) ──
     const st=[];
     for(let i=0;i<=N;i++){
-      const t=i/N, x=t*L, z0=g.zKeel(t), z1=g.zDeck(t), row=[];
-      for(let j=0;j<=M;j++){ const u=j/M; row.push([x, g.sect(t,u), z0+u*(z1-z0)]); }
+      const t=i/N, x=t*L, z0=g.zKeel(t), zc=g.zChine(t), z1=g.zDeck(t), row=[];
+      for(let j=0;j<=M;j++){ const u=j/M; row.push([x, g.sect(t,u), z0+u*(zc-z0)]); }
+      row.push([x, g.deckIn*g.plan(t)*g.HB, z1]);          // デッキ縁（内側に絞る＝台形上部）
       st.push(row);
     }
+    const MT=M+1;                                          // 最上段 index
     const P=(row,j,sgn)=>{ const q2=row[j]; return [q2[0], sgn*q2[1], q2[2]]; };
-    for(let i=0;i<N;i++) for(let j=0;j<M;j++) for(const sgn of [1,-1])
+    for(let i=0;i<N;i++) for(let j=0;j<MT;j++) for(const sgn of [1,-1])
       F([P(st[i],j,sgn),P(st[i+1],j,sgn),P(st[i+1],j+1,sgn),P(st[i],j+1,sgn)],'hull');
-    for(let i=0;i<N;i++){                              // デッキ（中央 78% はパネル帯）
-      const a=st[i][M], b=st[i+1][M], t=(i+0.5)/N, pan=(t>0.06&&t<0.86);
-      const ya=0.78*a[1], yb=0.78*b[1];
+    for(let i=0;i<N;i++){                                  // デッキ（中央 80% はパネル帯）
+      const a=st[i][MT], b=st[i+1][MT], t=(i+0.5)/N, pan=(t>0.06&&t<0.86);
+      const ya=0.80*a[1], yb=0.80*b[1];
       F([[a[0],-a[1],a[2]],[b[0],-b[1],b[2]],[b[0],-yb,b[2]],[a[0],-ya,a[2]]],'deck');
       F([[a[0],-ya,a[2]],[b[0],-yb,b[2]],[b[0],yb,b[2]],[a[0],ya,a[2]]],pan?'panel':'deck');
       F([[a[0],ya,a[2]],[b[0],yb,b[2]],[b[0],b[1],b[2]],[a[0],a[1],a[2]]],'deck');
     }
-    const tr=[];                                       // トランサム（船尾を閉じる）
-    for(let j=0;j<=M;j++) tr.push(P(st[0],j,1));
-    for(let j=M;j>=0;j--) tr.push(P(st[0],j,-1));
+    const tr=[];                                           // トランサム（船尾を閉じる）
+    for(let j=0;j<=MT;j++) tr.push(P(st[0],j,1));
+    for(let j=MT;j>=0;j--) tr.push(P(st[0],j,-1));
     F(tr,'transom');
-    // ── ① 後部の羽（アフトウィング: 後傾ストラット2本＋プレート＋アンテナ箱） ──
+    // ── ① 後部の羽（アフトウィング: 後傾ストラット2本＋プレート＋通信アンテナ箱） ──
     const zw=D+0.115*L, thk=0.006*L, xw0=0.030*L, xw1=0.150*L, yw=0.24*B;
-    for(const sgn of [1,-1]){                          // ストラット（後傾スラブ）
+    for(const sgn of [1,-1]){
       const ys=sgn*0.155*B;
       F([[0.200*L,ys,g.zDeck(0.200)],[0.228*L,ys,g.zDeck(0.228)],
          [0.140*L,ys,zw],[0.112*L,ys,zw]],'wing');
     }
-    F([[xw0,-yw,zw+thk],[xw1,-yw,zw+thk],[xw1,yw,zw+thk],[xw0,yw,zw+thk]],'wing');  // プレート上面
-    F([[xw0,-yw,zw],[xw1,-yw,zw],[xw1,yw,zw],[xw0,yw,zw]],'wing');                   // 下面
-    F([[xw1,-yw,zw],[xw1,yw,zw],[xw1,yw,zw+thk],[xw1,-yw,zw+thk]],'wing');           // 前縁
-    F([[xw0,-yw,zw],[xw0,yw,zw],[xw0,yw,zw+thk],[xw0,-yw,zw+thk]],'wing');           // 後縁
+    F([[xw0,-yw,zw+thk],[xw1,-yw,zw+thk],[xw1,yw,zw+thk],[xw0,yw,zw+thk]],'wing');
+    F([[xw0,-yw,zw],[xw1,-yw,zw],[xw1,yw,zw],[xw0,yw,zw]],'wing');
+    F([[xw1,-yw,zw],[xw1,yw,zw],[xw1,yw,zw+thk],[xw1,-yw,zw+thk]],'wing');
+    F([[xw0,-yw,zw],[xw0,yw,zw],[xw0,yw,zw+thk],[xw0,-yw,zw+thk]],'wing');
     for(const sgn of [1,-1])
       F([[xw0,sgn*yw,zw],[xw1,sgn*yw,zw],[xw1,sgn*yw,zw+thk],[xw0,sgn*yw,zw+thk]],'wing');
-    { const cx2=(xw0+xw1)/2, ax=0.035*L, ay=0.10*B, zb=zw+thk, hb=0.016*L;          // 通信アンテナ箱
+    { const cx2=(xw0+xw1)/2, ax=0.035*L, ay=0.10*B, zb=zw+thk, hb=0.016*L;
       F([[cx2-ax,-ay,zb+hb],[cx2+ax,-ay,zb+hb],[cx2+ax,ay,zb+hb],[cx2-ax,ay,zb+hb]],'panel');
       for(const sgn of [1,-1]){
         F([[cx2-ax,sgn*ay,zb],[cx2+ax,sgn*ay,zb],[cx2+ax,sgn*ay,zb+hb],[cx2-ax,sgn*ay,zb+hb]],'panel');
         F([[cx2+sgn*ax,-ay,zb],[cx2+sgn*ax,ay,zb],[cx2+sgn*ax,ay,zb+hb],[cx2+sgn*ax,-ay,zb+hb]],'panel');
       } }
-    // ── ② 前部マスト（十字スラブ・先細り＋クロスバー） ──
-    { const xm=0.80*L, zd=g.zDeck(0.80), zt=zd+0.105*L, wb=0.008*L, wt=0.0035*L;
+    // ── ② 前部マスト（十字スラブ・先細り）＋頂部レドーム（回転楕円体） ──
+    { const xm=0.80*L, zd=g.zDeck(0.80), zt=zd+0.115*L, wb=0.008*L, wt=0.0035*L;
       F([[xm-wb,0,zd],[xm+wb,0,zd],[xm+wt,0,zt],[xm-wt,0,zt]],'mast');
       F([[xm,-wb,zd],[xm,wb,zd],[xm,wt,zt],[xm,-wt,zt]],'mast');
-      const zc=zd+0.088*L, cb=0.030*L;
-      F([[xm-0.003*L,-cb,zc],[xm+0.003*L,-cb,zc],[xm+0.003*L,cb,zc],[xm-0.003*L,cb,zc]],'mast'); }
-    // ── ③ 前部キールフィン（台形スラブ・両面＋底縁） ──
-    { const w=0.005*L, zb2=-0.50*D;
-      const top=[[0.58*L,g.zKeel(0.58)],[0.76*L,g.zKeel(0.76)]];
-      const bot=[[0.62*L,zb2],[0.72*L,zb2]];
+      const zc2=zd+0.085*L, cb=0.028*L;
+      F([[xm-0.003*L,-cb,zc2],[xm+0.003*L,-cb,zc2],[xm+0.003*L,cb,zc2],[xm-0.003*L,cb,zc2]],'mast');
+      const rx=0.032*L, rz=0.015*L, z0r=zt+rz*0.6, KP=8;   // レドーム（丸屋根）
+      const prof=[[-1,0.10],[-0.55,0.80],[0.05,1.0],[0.6,0.82],[1,0.18]];
+      const ring=(pr)=>{ const q2=[]; for(let k2=0;k2<KP;k2++){ const a=k2/KP*2*Math.PI;
+        q2.push([xm+pr[1]*rx*Math.cos(a), pr[1]*rx*Math.sin(a), z0r+pr[0]*rz]); } return q2; };
+      const rings=prof.map(ring);
+      for(let i2=0;i2<rings.length-1;i2++) for(let k2=0;k2<KP;k2++){
+        const a=rings[i2], b=rings[i2+1], k3=(k2+1)%KP;
+        F([a[k2],b[k2],b[k3],a[k3]],'pod'); }
+      for(let k2=0;k2<KP;k2++){ const k3=(k2+1)%KP;
+        F([[xm,0,z0r+rz],rings[rings.length-1][k2],rings[rings.length-1][k3]],'pod');
+        F([[xm,0,z0r-rz],rings[0][k3],rings[0][k2]],'pod'); } }
+    // ── ③ キールフィン（深く・後傾。上端が前・下端が後ろへ流れる） ──
+    { const w=0.005*L, zb2=-0.95*D;
+      const topF=[0.70*L,g.zKeel(0.70)], topA=[0.55*L,g.zKeel(0.55)];
+      const botF=[0.50*L,zb2], botA=[0.42*L,zb2];
       for(const sgn of [1,-1])
-        F([[top[0][0],sgn*w,top[0][1]],[top[1][0],sgn*w,top[1][1]],
-           [bot[1][0],sgn*w,bot[1][1]],[bot[0][0],sgn*w,bot[0][1]]],'keel');
-      F([[bot[0][0],-w,bot[0][1]],[bot[1][0],-w,bot[1][1]],
-         [bot[1][0],w,bot[1][1]],[bot[0][0],w,bot[0][1]]],'keel'); }
-    // ── ④ 後部ポッドスラスター（ストラット＋回転体ポッド＋3枚プロペラ） ──
-    { const rp=0.28*Dp, zp=-(0.55*Dp), x0=0.045*L, lp=0.11*L, KP=8;
-      const prof=[[0,0.30],[0.10,0.72],[0.28,1.0],[0.62,1.0],[0.85,0.70],[1,0.22]];  // [位置,半径比]
+        F([[topF[0],sgn*w,topF[1]],[topA[0],sgn*w,topA[1]],
+           [botA[0],sgn*w,botA[1]],[botF[0],sgn*w,botF[1]]],'keel');
+      F([[botA[0],-w,botA[1]],[botF[0],-w,botF[1]],
+         [botF[0],w,botF[1]],[botA[0],w,botA[1]]],'keel');
+      F([[topF[0],-w,topF[1]],[botF[0],-w,botF[1]],[botF[0],w,botF[1]],[topF[0],w,topF[1]]],'keel');
+      F([[topA[0],-w,topA[1]],[botA[0],-w,botA[1]],[botA[0],w,botA[1]],[topA[0],w,topA[1]]],'keel'); }
+    // ── ④ トランサムマウントのスラスター（船外機式: ブラケット＋垂直シャフト＋ポッド） ──
+    { const rp=0.28*Dp, zp=-0.35*D, KP=8;
+      const zt2=g.zDeck(0), zc2=g.zChine(0);
+      F([[0,-0.030*L,zc2],[0,0.030*L,zc2],[-0.028*L,0.030*L,zc2+0.02*L],[-0.028*L,-0.030*L,zc2+0.02*L]],'pod');
+      F([[0,-0.030*L,zt2],[0,0.030*L,zt2],[-0.028*L,0.030*L,zc2+0.02*L],[-0.028*L,-0.030*L,zc2+0.02*L]],'pod');
+      const xs=-0.030*L, ws=0.007*L;                       // 垂直シャフト
+      for(const [ya,yb] of [[-ws,ws]])
+        for(const face of [
+          [[xs-ws,ya,zc2+0.02*L],[xs+ws,ya,zc2+0.02*L],[xs+ws,ya,zp],[xs-ws,ya,zp]],
+          [[xs-ws,yb,zc2+0.02*L],[xs+ws,yb,zc2+0.02*L],[xs+ws,yb,zp],[xs-ws,yb,zp]],
+          [[xs-ws,ya,zc2+0.02*L],[xs-ws,yb,zc2+0.02*L],[xs-ws,yb,zp],[xs-ws,ya,zp]],
+          [[xs+ws,ya,zc2+0.02*L],[xs+ws,yb,zc2+0.02*L],[xs+ws,yb,zp],[xs+ws,ya,zp]],
+        ]) F(face,'pod');
+      const x1p=0.010*L, lp=0.095*L, x0p=x1p-lp;           // ポッド（艫の後ろ・軸は水平）
+      const prof=[[0,0.30],[0.12,0.75],[0.32,1.0],[0.65,1.0],[0.87,0.68],[1,0.22]];
       const ring=(sx,rr)=>{ const q2=[]; for(let k2=0;k2<KP;k2++){ const a=k2/KP*2*Math.PI;
-        q2.push([x0+sx*lp, rr*rp*Math.cos(a), zp+rr*rp*Math.sin(a)]); } return q2; };
+        q2.push([x0p+sx*lp, rr*rp*Math.cos(a), zp+rr*rp*Math.sin(a)]); } return q2; };
       const rings=prof.map(pr=>ring(pr[0],pr[1]));
       for(let i2=0;i2<rings.length-1;i2++) for(let k2=0;k2<KP;k2++){
         const a=rings[i2], b=rings[i2+1], k3=(k2+1)%KP;
         F([a[k2],b[k2],b[k3],a[k3]],'pod'); }
-      const nose=rings[rings.length-1], aftc=rings[0];
       for(let k2=0;k2<KP;k2++){ const k3=(k2+1)%KP;
-        F([[x0+lp,0,zp],nose[k2],nose[k3]],'pod');
-        F([[x0,0,zp],aftc[k3],aftc[k2]],'pod'); }
-      const xs0=0.078*L, xs1=0.108*L;                  // ストラット（ハルからポッドへ）
-      F([[xs0,0,0.02*D],[xs1,0,0.02*D],[x0+0.66*lp,0,zp],[x0+0.34*lp,0,zp]],'pod');
-      const xpr=x0-0.012*L, rh=0.12*rp/0.28, rt=Dp/2;  // プロペラ 3 枚（半径 = Dprop/2）
+        F([[x0p+lp,0,zp],rings[rings.length-1][k2],rings[rings.length-1][k3]],'pod');
+        F([[x0p,0,zp],rings[0][k3],rings[0][k2]],'pod'); }
+      const xpr=x0p-0.010*L, rh=0.12*rp/0.28, rt=Dp/2;     // プロペラ 3 枚（半径 = Dprop/2）
       hullMesh._propDim={x:xpr, z:zp, r:rt};
       for(let k2=0;k2<3;k2++){ const a=k2*2*Math.PI/3+0.5;
         const pt=(r,da)=>[xpr, r*Math.cos(a+da), zp+r*Math.sin(a+da)];
@@ -1427,13 +1452,16 @@ const USV = (function(){
     }
     return { faces, lines:[], L, B, D, bb:{x0,x1,y0,y1,z0,z1}, propDim:hullMesh._propDim };
   }
-  // 喫水 d に対する水線（右舷ポリライン。左舷は y 反転）
+  // 喫水 d に対する水線（右舷ポリライン。左舷は y 反転。チャイン上下で分岐）
   function hullWaterline(h, d){
     const g=hullGeom(h), N=60, pts=[];
     for(let i=0;i<=N;i++){
-      const t=i/N, z0=g.zKeel(t), z1=g.zDeck(t);
+      const t=i/N, z0=g.zKeel(t), zc=g.zChine(t), z1=g.zDeck(t);
       if(d<=z0||d>=z1) continue;
-      pts.push([t*g.L, g.sect(t,(d-z0)/(z1-z0)), d]);
+      let y;
+      if(d<=zc) y=g.sect(t,(d-z0)/(zc-z0));
+      else { const f=(d-zc)/(z1-zc); const yc=g.plan(t)*g.HB; y=yc+(g.deckIn*yc-yc)*f; }
+      pts.push([t*g.L, y, d]);
     }
     return pts;
   }
