@@ -127,6 +127,11 @@
   .vcase:last-child{border-bottom:none;}
   .vcase b{font-size:13px;}
   .vcase .crit{color:var(--muted);font-size:11.5px;}
+  .vcase .vwhy,.vcase .vnote{color:var(--muted);font-size:12px;line-height:1.7;margin-top:2px;}
+  .vcase .vwhy b,.vcase .vnote b{font-size:12px;color:var(--ink);font-weight:600;}
+  .vghead{margin:16px 0 4px;font-size:13px;font-weight:700;}
+  .vghead:first-child{margin-top:4px;}
+  .vghead .n{font-weight:400;color:var(--muted);font-size:12px;margin-left:8px;}
   table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums;
     border-top:1.4px solid var(--rule);border-bottom:1.4px solid var(--rule);}
   th,td{padding:5px 9px 5px 0;text-align:right;border:none;}
@@ -409,6 +414,7 @@
 </div>
 
 <h2>検証ケース（自動実行）</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">2 種類ある: <b>ユースケース検証（V1–V4）</b>は公表値・運用シナリオの再現で、上のプリセットと対応する。<b>モデル整合性検証（V5–V7）</b>は数理・実装の内部チェック（恒等式・物理極限・較正保存）で、運転シナリオではないためプリセットは無い。いずれも既定パラメータで毎回ロード時に実行される。</div>
 <div class="vgrid" id="vgrid"></div>
 
 <footer>
@@ -1923,19 +1929,29 @@ if (typeof module !== 'undefined') module.exports = USV;
   function runValidation(){
     const cases=[
       {id:'V1',name:'最高速力',crit:'V_eq = 4.5 ± 0.3 kt（平水・無風・全力）',
+       why:'公称最高速力 4.5 kt は Lightfish 唯一の速度系公表値で、抵抗曲線×推進チェーン全体の較正点。許容 ±0.3 kt は公称値の有効桁（1 桁）相当。',
+       note:'Fn≈0.41（hull speed 直下）で釣り合っており排水量型の物理と整合。Cr_base をこの点で較正しているため定義上成立するが、以後の改修で較正が壊れていないことを検出する回帰チェックとして働く。',
        run(){ const p=USV.defaults(); const veq=USV.solveVeq(p.prop.PmaxElec,p.env,p,USV.derived(p.hull))/USV.KT;
               return {val:veq.toFixed(2)+' kt', ok:Math.abs(veq-4.5)<=0.3}; }},
       {id:'V2',name:'無日照航続',crit:'575 ± 60 nm（電池4kWh＋燃料30kWh）',
+       why:'公称無日照航続 575 nm は V1 と独立な第 2 の公表値で、エネルギー鎖（ホテル負荷・変換効率・燃料換算）の較正点。許容 ±60 nm ≈ 10% は出典間の諸元ばらつき相当。',
+       note:'この逆算からホテル負荷 104 W を同定した。V1（抵抗系）と独立の量が同時に合うことが、抵抗とエネルギーの両モジュールが一貫している傍証になる。',
        run(){ const p=USV.defaults(); p.pwr.gen.enabled=true; p.env.irrKwhDay=0; p.msn.socMin=0;
               const r=USV.maxRange(p); return {val:r.nm.toFixed(0)+' nm @ '+r.kt.toFixed(1)+' kt', ok:Math.abs(r.nm-575)<=60}; }},
       {id:'V3',name:'長期滞留（station keeping）',crit:'日射4.5・ホテル45W・速力0 で 90日 SOC非枯渇',
+       why:'公称「6 ヶ月滞留」を判定するケース。標準ホテル負荷 104 W では日平均発電（≈54 W）を上回り成立し得ないため、省電力モード 45 W を仮定して 90 日（1 季節分）の SOC 非枯渇を基準にした。',
+       note:'成立は「45 W 省電力モード」という前提の下でのみ。つまり公称 6 ヶ月の実質条件はホテル負荷管理であり（§11 FINDING 2）、長期滞留の成否は推進ではなく待機電力で決まる。',
        run(){ const p=USV.defaults(); p.pwr.hotelW=45; p.msn.targetKt=0; p.msn.days=90;
               const s=USV.simulate(p); return {val:'最低SOC '+Math.round(s.minSoc*100)+'%', ok:!s.everDrifted}; }},
       {id:'V4',name:'荒天前進',crit:'Hs2.5m・向い風15m/s で減速を再現（連続性確認）',
+       why:'Sea State 6 相当で「前進は維持しつつ明確に減速する」という公表挙動の定性確認。荒天時速力の公表値が無く定量基準を置けないため、0 < V_eq < 4.2 kt（平水より確実に遅い）を基準にした。',
+       note:'約 2.7 kt まで減速。ただし波浪中抵抗はモデル中で最も不確かな項（運動起因成分なし＝§10 最高優先）で、この数字は目安。BEM/模型試験による置換までは下振れ方向の不確かさを持つ。',
        run(){ const p=USV.defaults(); p.env.Hs=2.5; p.env.Tp=7; p.env.windU=15;
               const veq=USV.solveVeq(p.prop.PmaxElec,p.env,p,USV.derived(p.hull))/USV.KT;
               return {val:'V_eq '+veq.toFixed(2)+' kt（平水4.5kt比）', ok:veq<4.2&&veq>=0}; }},
       {id:'V5',name:'スペクトル整合（Phase2）',crit:'m0=Hs²/16（±1%）かつ スペクトル版 R_AW ≤ STAWAVE-1 素値',
+       why:'JONSWAP の数値積分が理論恒等式 m0 = Hs²/16 を再現するか（分割幅・打切りの誤差検出）。またスペクトル版は「反射効率 r≡1 で STAWAVE-1 素値に一致する」構造なので、素値以下という不等式が常に成立するはず。',
+       note:'積分誤差 1% 未満・不等式成立＝Phase 2 実装が定義通りに動いている。ユースケースではなく実装バグの検出器で、スペクトル分割数などを変えた際の安全網。',
        run(){ const p=USV.defaults(); const Hs=2.0,Tp=6;
               const sp=USV.jonswapS(Hs,Tp); let m0=0; sp.s.forEach(s=>m0+=s*sp.dw);
               const err=Math.abs(m0-Hs*Hs/16)/(Hs*Hs/16);
@@ -1944,16 +1960,9 @@ if (typeof module !== 'undefined') module.exports = USV;
               const raw=USV.C.rho*USV.C.g*Hs*Hs*p.hull.B*Math.sqrt(p.hull.B/(p.hull.LBWLfrac*p.hull.Lwl))/16;
               return {val:'m0誤差 '+(err*100).toFixed(2)+'%・R_AW '+rs.toFixed(0)+'/'+raw.toFixed(0)+' N',
                       ok:err<0.01 && rs<=raw}; }},
-      {id:'V7',name:'排水量→剰余抵抗（痩せ型比補正）',crit:'較正点で f_M=1（V1 不変）・積載増で抵抗増・∇^(4/3) 則',
-       run(){ const p=USV.defaults(); const d0=USV.derived(p.hull);
-              const f0=USV.crSlenderFactor(p.hull,d0);
-              const heavy=USV.defaults(); heavy.hull.m=230; const dh=USV.derived(heavy.hull);
-              const fh=USV.crSlenderFactor(heavy.hull,dh);
-              // ∇^(4/3) 則の確認: f 比 = (∇比)^(4/3)
-              const pred=Math.pow(dh.vol/d0.vol,4/3);
-              const ok = Math.abs(f0-1)<1e-9 && fh>1.3 && Math.abs(fh/f0/pred-1)<0.01;
-              return {val:`f_M=1.000（較正点）→ ${fh.toFixed(3)}（230kg）・∇^(4/3)則との差 ${((fh/f0/pred-1)*100).toFixed(2)}%`, ok}; }},
       {id:'V6',name:'RAO 極限挙動（Phase3）',crit:'長波長で追従(RAO→1)・短波長で不応答・応答は Hs に線形',
+       why:'1 自由度 RAO の物理極限——長波長では波面に追従（|H|→1）、短波長では応答しない（|H|→0）——と線形理論（応答 ∝ Hs）は、パラメータの値によらず必ず成立すべき性質。',
+       note:'極限と線形性が同時に成立＝耐航性モジュールの数理が破綻していない。ただし減衰比などの仮定値の妥当性までは保証しない（§10 で BEM/模型試験に置換予定）。',
        run(){ const p=USV.defaults(); const der=USV.derived(p.hull);
               const lo=USV.raoHeave(0.3,0,p.hull,p.sea,der);
               const hi=USV.raoHeave(8.0,0,p.hull,p.sea,der);
@@ -1964,13 +1973,34 @@ if (typeof module !== 'undefined') module.exports = USV;
               const lin=Math.abs(b/a-2)<0.02;
               return {val:'RAO(長波) '+lo.toFixed(2)+'・RAO(短波) '+hi.toFixed(2)+'・線形比 '+(b/a).toFixed(3),
                       ok:lo>0.9&&lo<1.1&&hi<0.15&&lin}; }},
+      {id:'V7',name:'排水量→剰余抵抗（痩せ型比補正）',crit:'較正点で f_M=1（V1 不変）・積載増で抵抗増・∇^(4/3) 則',
+       why:'剰余抵抗の排水量補正（式 6′）を入れた際の回帰チェック。①較正点で f_M=1 となり V1/V2 の較正を壊さない、②重量増で抵抗が増える向き、③ f_M が薄船理論の ∇^(4/3) 則に従う、の 3 点を同時に確認する。',
+       note:'補正は較正保存と理論則を同時に満たす。ただし指数 p=4 は理論導出値であり、実測（曳航水槽の排水量スイープ / CFD）による確認が §10 の課題として残る。',
+       run(){ const p=USV.defaults(); const d0=USV.derived(p.hull);
+              const f0=USV.crSlenderFactor(p.hull,d0);
+              const heavy=USV.defaults(); heavy.hull.m=230; const dh=USV.derived(heavy.hull);
+              const fh=USV.crSlenderFactor(heavy.hull,dh);
+              // ∇^(4/3) 則の確認: f 比 = (∇比)^(4/3)
+              const pred=Math.pow(dh.vol/d0.vol,4/3);
+              const ok = Math.abs(f0-1)<1e-9 && fh>1.3 && Math.abs(fh/f0/pred-1)<0.01;
+              return {val:`f_M=1.000（較正点）→ ${fh.toFixed(3)}（230kg）・∇^(4/3)則との差 ${((fh/f0/pred-1)*100).toFixed(2)}%`, ok}; }},
     ];
-    $('vgrid').innerHTML=cases.map(c=>{
+    const groups=[
+      {t:'ユースケース検証', n:'公表値・運用シナリオの再現（プリセット V1–V4 と対応。V1・V2 は較正点）', ids:['V1','V2','V3','V4']},
+      {t:'モデル整合性検証', n:'数理・実装の内部チェック（恒等式・物理極限・較正保存）。運転シナリオではないためプリセットは無い', ids:['V5','V6','V7']},
+    ];
+    const card=c=>{
       const r=c.run();
       return `<div class="vcase"><b>${c.id} ${c.name}</b>
         <span class="badge ${r.ok?'ok':'ng'}">${r.ok?'PASS':'FAIL'}</span>
-        <div class="crit">${c.crit}</div><div>結果: ${r.val}</div></div>`;
-    }).join('');
+        <div class="crit">${c.crit}</div><div>結果: ${r.val}</div>
+        <div class="vwhy"><b>基準の理由:</b> ${c.why}</div>
+        <div class="vnote"><b>考察:</b> ${c.note}</div></div>`;
+    };
+    $('vgrid').innerHTML=groups.map(g=>
+      `<div class="vghead">${g.t}<span class="n">${g.n}</span></div>`+
+      g.ids.map(id=>card(cases.find(c=>c.id===id))).join('')
+    ).join('');
   }
 
   // ── プリセット ──
