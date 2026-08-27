@@ -1510,8 +1510,9 @@ if (typeof module !== 'undefined') module.exports = USV;
     waveOn=false; cancelAnimationFrame(rafId); btnW.classList.remove('on'); tNow=0; draw();
   }
 
-  const COL={hull:[199,193,181], deck:[236,232,223], panel:[54,58,64], transom:[178,172,160],
-             wing:[132,136,142], mast:[76,72,66], keel:[158,152,140], pod:[60,64,70], prop:[104,100,92]};
+  // Lightfish 実艇に合わせた濃いこげ茶（チョコレート×ブロンズ）系
+  const COL={hull:[97,74,57], deck:[148,133,114], panel:[44,47,53], transom:[84,64,50],
+             wing:[56,52,48], mast:[60,55,50], keel:[112,86,62], pod:[44,42,40], prop:[92,76,58]};
   const SUB=[116,146,178];   // 水線下の混色先
   const WATER='rgba(42,120,214,0.14)', WGRID='rgba(42,120,214,0.28)', WLINE='#2A78D6';
 
