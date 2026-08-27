@@ -287,8 +287,8 @@
 <div class="wrap">
 
 <h2>船体形状</h2>
-<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">主要目 L・B・m（スラスターはプロペラ径 D<sub>prop</sub>）から生成した概念形状（Seasats Lightfish 準拠。後部の羽＝通信ウィング・前部マスト・キールフィン・ポッドスラスターを含む。実測形状ではなく、計算には §5 以降の式のみを使用）。ドラッグで回転、ホイール／ピンチで拡大縮小、ダブルクリックで視点リセット。<b>設計パラメータの入力欄に触れると、対応する部位が青くハイライトされ、L・B・D_prop は寸法線も表示される。</b></div>
-<div class="hv-ctrl"><button id="hv-float">浮かべる（喫水線を表示）</button><button id="hv-reset">視点リセット</button></div>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">主要目 L・B・m（スラスターはプロペラ径 D<sub>prop</sub>）から生成した概念形状（Seasats Lightfish 準拠。後部の羽＝通信ウィング・前部マスト・キールフィン・ポッドスラスターを含む。実測形状ではなく、計算には §5 以降の式のみを使用）。ドラッグで回転、ホイール／ピンチで拡大縮小、ダブルクリックで視点リセット。<b>設計パラメータの入力欄に触れると、対応する部位が青くハイライトされ、L・B・D_prop は寸法線も表示される。</b>「波を立てる」は環境パネルの Hs・Tp・波モデルと現在の V_eq を使い、設計書 §8 の RAO（1 自由度・線形）で船体を動かす表示で、計算には影響しない。</div>
+<div class="hv-ctrl"><button id="hv-float">浮かべる（喫水線を表示）</button><button id="hv-wave">波を立てる（動揺シミュレーション）</button><button id="hv-reset">視点リセット</button></div>
 <canvas id="hull3d"></canvas>
 <div class="cap" id="hull3d-info" style="font-size:12px;color:var(--muted);margin:6px 0 0"></div>
 
@@ -1167,6 +1167,66 @@ const USV = (function(){
              okAccel: rA <= 1, okPitch: rP <= 1, ok: worst <= 1 };
   }
 
+  // ── Phase3b: 波浪中運動の時間領域表示（成分波合成・位相付き RAO・表示専用） ──
+  // 向い波・線形重ね合わせ。位相遅れは raoHeave/raoPitch と同一の 2 次系から
+  // φ = atan2(2ζΩ, 1−Ω²)。乱数は使わず黄金角で位相を決定的に散らす（再現性）。
+  function raoHeavePhase(w, V, h, sea){
+    const we=w+w*w*V/C.g, Aw=sea.Cw*h.Lwl*h.B;
+    const wn=Math.sqrt(C.rho*C.g*Aw/(h.m*(1+sea.maHeaveFrac)));
+    const Om=we/wn;
+    return Math.atan2(2*sea.zetaHeave*Om, 1-Om*Om);
+  }
+  function raoPitchPhase(w, V, h, sea){
+    const we=w+w*w*V/C.g;
+    const Iwp=sea.Cw*Math.pow(h.Lwl,3)*h.B/12;
+    const I55=h.m*Math.pow(sea.rPitchGyr*h.Lwl,2)*(1+sea.maPitchFrac);
+    const wn=Math.sqrt(C.rho*C.g*Iwp/I55);
+    const Om=we/wn;
+    return Math.atan2(2*sea.zetaPitch*Om, 1-Om*Om);
+  }
+  // 波と運動の成分表。regular=1 成分 / jonswap=nComp 成分に m0 保存で再標本化
+  function waveMotion(env, Vms, p, der, nComp=20){
+    if (env.Hs<=0) return { comps:[] };
+    const h=p.hull, sea=p.sea, comps=[];
+    const push=(w,a,phi)=>{
+      const k=w*w/C.g;
+      comps.push({ a, w, k, we:w+k*Vms, phi,
+        Hh: raoHeave(w,Vms,h,sea,der),                 phH: raoHeavePhase(w,Vms,h,sea),
+        Hp: raoPitchDegPerM(w,Vms,h,sea,der)*Math.PI/180,  // [rad / m 波振幅]
+        phP: raoPitchPhase(w,Vms,h,sea) });
+    };
+    if (env.waveModel==='regular'){
+      push(2*Math.PI/env.Tp, env.Hs/2, 0);
+    } else {
+      const sp=jonswapS(env.Hs, env.Tp, 120);
+      const step=Math.max(1, Math.floor(sp.w.length/nComp));
+      for(let i=0;i<nComp;i++){
+        let e=0;
+        for(let j=i*step;j<Math.min((i+1)*step,sp.w.length);j++) e+=sp.s[j]*sp.dw;
+        if(e<=1e-12) continue;
+        push(sp.w[Math.min(i*step+(step>>1), sp.w.length-1)], Math.sqrt(2*e), (i*2.399963)%(2*Math.PI));
+      }
+    }
+    return { comps };
+  }
+  // 船体固定系の波面高さ（x: 艫0→艏L。向い波＝波峰は艏から艫へ流れる）
+  function waveElev(wm, x, t){
+    let e=0;
+    for(const c of wm.comps) e+=c.a*Math.cos(c.k*x + c.we*t + c.phi);
+    return e;
+  }
+  // 重心 xcg での剛体運動: ヒーブ z [m]・ピッチ θ [rad]（艏上げ正）。
+  // 長波長極限で z→局所波面（追従）・θ→局所波傾斜に一致する（V6 と同じ極限）。
+  function waveMotionAt(wm, xcg, t){
+    let z=0, th=0;
+    for(const c of wm.comps){
+      const ph=c.k*xcg + c.we*t + c.phi;
+      z  += c.a*c.Hh*Math.cos(ph - c.phH);
+      th += c.a*c.Hp*Math.sin(ph - c.phP);
+    }
+    return { z, th };
+  }
+
   // ── ミッション時間積分（準定常・dt=600s） ──
   function simulate(p){
     const der = derived(p.hull);
@@ -1375,7 +1435,7 @@ const USV = (function(){
            jonswapS, reflEff, rTotal,
            etaMotor, pShaft, etaProp, thrust, pElecFor, solveVeq,
            pSolar, pSolarDaily, pSolarClearSky, solarDailyWh, solarElevSin,
-           raoHeave, raoPitchDegPerM, seakeeping,
+           raoHeave, raoPitchDegPerM, raoHeavePhase, raoPitchPhase, waveMotion, waveElev, waveMotionAt, seakeeping,
            simulate, maxRange, darkEndurance, dailyBudget };
 })();
 if (typeof module !== 'undefined') module.exports = USV;
@@ -1391,13 +1451,28 @@ if (typeof module !== 'undefined') module.exports = USV;
   const ctx=cv.getContext('2d');
   const info=document.getElementById('hull3d-info');
   const btnF=document.getElementById('hv-float'), btnR=document.getElementById('hv-reset');
+  const btnW=document.getElementById('hv-wave');
   const YAW0=-2.25, PITCH0=-0.30;
   let yaw=YAW0, pitch=PITCH0, zoom=1, floating=false;
   let hull=null, der=null, mesh=null;
+  let Pfull=null, veqMs=0;                            // 波駆動用（現在のパラメータと達成速力）
+  let waveOn=false, wm=null, wStats=null, rafId=0, tStart=0, tNow=0;
   let hl=null, hlTimer=0;                             // 設計パラメータ⇄部位ハイライト
   function highlight(spec){
-    hl=spec; draw();
-    clearTimeout(hlTimer); hlTimer=setTimeout(()=>{ hl=null; draw(); }, 2000);
+    hl=spec; draw(tNow);
+    clearTimeout(hlTimer); hlTimer=setTimeout(()=>{ hl=null; draw(tNow); }, 2000);
+  }
+  function buildWave(){
+    wm=USV.waveMotion(Pfull.env, veqMs, Pfull, der);
+    wStats=USV.seakeeping(Pfull.env, veqMs, Pfull, der);
+  }
+  function loop(ts){
+    if(!waveOn) return;
+    tNow=(ts-tStart)/1000; draw(tNow);
+    rafId=requestAnimationFrame(loop);
+  }
+  function stopWave(){
+    waveOn=false; cancelAnimationFrame(rafId); btnW.classList.remove('on'); tNow=0; draw();
   }
 
   const COL={hull:[199,193,181], deck:[236,232,223], panel:[54,58,64], transom:[178,172,160],
@@ -1405,16 +1480,28 @@ if (typeof module !== 'undefined') module.exports = USV;
   const SUB=[116,146,178];   // 水線下の混色先
   const WATER='rgba(42,120,214,0.14)', WGRID='rgba(42,120,214,0.28)', WLINE='#2A78D6';
 
-  function update(h,d,pr){ hull=h; der=d; mesh=USV.hullMesh(h,pr); draw(); }
+  function update(p,d,veq){
+    Pfull=p; hull=p.hull; der=d; veqMs=veq||0;
+    mesh=USV.hullMesh(p.hull,p.prop);
+    if(waveOn) buildWave();
+    draw(tNow);
+  }
 
-  function draw(){
+  function draw(tSec=0){
     const dpr=window.devicePixelRatio||1, cw=cv.clientWidth, ch=cv.clientHeight;
     if(!cw) return;
     if(cv.width!==Math.round(cw*dpr)||cv.height!==Math.round(ch*dpr)){ cv.width=Math.round(cw*dpr); cv.height=Math.round(ch*dpr); }
     ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,cw,ch);
     if(!mesh) return;
     const L=mesh.L, D=mesh.D, d=der.d, bb=mesh.bb;
-    const cx=L/2, cz=floating?Math.min(d,D):(bb.z0+bb.z1)/2;
+    const wav=waveOn && wm && wm.comps.length>0;
+    // 剛体運動（波モード時のみ）: ピッチは重心(0.5L, 水面)まわり・艏上げ正
+    let T=p2=>p2;
+    if(wav){
+      const mo=USV.waveMotionAt(wm, 0.5*L, tSec), ct=Math.cos(mo.th), st=Math.sin(mo.th);
+      T=p2=>[ 0.5*L+(p2[0]-0.5*L)*ct-(p2[2]-d)*st, p2[1], d+mo.z+(p2[0]-0.5*L)*st+(p2[2]-d)*ct ];
+    }
+    const cx=L/2, cz=(floating||wav)?Math.min(d,D):(bb.z0+bb.z1)/2;
     const sy=Math.sin(yaw), cyw=Math.cos(yaw), sp=Math.sin(pitch), cp=Math.cos(pitch);
     const rot=p=>{                                    // → [画面右, 画面上, 奥行き]
       const x=p[0]-cx, y=p[1], z=p[2]-cz;
@@ -1423,7 +1510,8 @@ if (typeof module !== 'undefined') module.exports = USV;
     };
     // bbox の 8 頂点を回して画面内に自動フィット（回転中はわずかに呼吸するが常に収まる）
     let u0=1e9,u1=-1e9,w0=1e9,w1=-1e9;
-    for(const xc of [bb.x0,bb.x1]) for(const yc of [bb.y0,bb.y1]) for(const zc of [bb.z0,bb.z1]){
+    const mz = wav ? 0.55*Pfull.env.Hs + 0.08*L : 0;   // 波モードは動揺の振れ幅分を確保
+    for(const xc of [bb.x0,bb.x1]) for(const yc of [bb.y0,bb.y1]) for(const zc of [bb.z0-mz,bb.z1+mz]){
       const r=rot([xc,yc,zc]);
       if(r[0]<u0)u0=r[0]; if(r[0]>u1)u1=r[0];
       if(r[1]<w0)w0=r[1]; if(r[1]>w1)w1=r[1];
@@ -1435,10 +1523,11 @@ if (typeof module !== 'undefined') module.exports = USV;
     const items=[];
 
     for(const f of mesh.faces){
-      const r=f.p.map(rot);
+      const fp=wav ? f.p.map(T) : f.p;
+      const r=fp.map(rot);
       let zc=0, xw=0, zw=0;
-      for(let i=0;i<f.p.length;i++){ zc+=r[i][2]; zw+=f.p[i][2]; }
-      zc/=r.length; zw/=f.p.length;
+      for(let i=0;i<fp.length;i++){ zc+=r[i][2]; xw+=fp[i][0]; zw+=fp[i][2]; }
+      zc/=r.length; xw/=fp.length; zw/=fp.length;
       const a=[r[1][0]-r[0][0],r[1][1]-r[0][1],r[1][2]-r[0][2]];
       const b=[r[2][0]-r[0][0],r[2][1]-r[0][1],r[2][2]-r[0][2]];
       const n=[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
@@ -1446,7 +1535,8 @@ if (typeof module !== 'undefined') module.exports = USV;
       const dt=Math.abs((n[0]*light[0]+n[1]*light[1]+n[2]*light[2])/nl);
       const sh=0.58+0.42*dt;
       let c=COL[f.tag]||COL.hull;
-      if(floating && zw<d && f.tag!=='panel'){        // 水線下を青灰へ
+      const wlv = wav ? d+USV.waveElev(wm,xw,tSec) : d;   // その場所の水面（波モードは動的）
+      if((floating||wav) && zw<wlv && f.tag!=='panel'){    // 水面下を青灰へ
         c=[c[0]+(SUB[0]-c[0])*0.55, c[1]+(SUB[1]-c[1])*0.55, c[2]+(SUB[2]-c[2])*0.55];
       }
       let hlF=false;                                  // パラメータに対応する部位を強調
@@ -1460,10 +1550,20 @@ if (typeof module !== 'undefined') module.exports = USV;
         fill:`rgb(${(c[0]*sh)|0},${(c[1]*sh)|0},${(c[2]*sh)|0})`});
     }
     for(const ln of mesh.lines){
-      const r=ln.map(rot);
+      const r=(wav?ln.map(T):ln).map(rot);
       items.push({z:(r[0][2]+r[1][2])/2, kind:'stroke', pts:r.map(px), stroke:'#44403A', w:2});
     }
-    if(floating){
+    if(wav){                                           // 波面（向い波・艏→艫へ流れる長峰波）
+      const x0=-0.30*L, x1=1.40*L, y0=-0.55*L, y1=0.55*L, NX=44, NY=6;
+      const ex=[];
+      for(let i=0;i<=NX;i++) ex.push(d+USV.waveElev(wm, x0+(x1-x0)*i/NX, tSec));
+      for(let i=0;i<NX;i++) for(let j=0;j<NY;j++){
+        const xa=x0+(x1-x0)*i/NX, xb=x0+(x1-x0)*(i+1)/NX;
+        const ya=y0+(y1-y0)*j/NY, yb=y0+(y1-y0)*(j+1)/NY;
+        const r=[[xa,ya,ex[i]],[xb,ya,ex[i+1]],[xb,yb,ex[i+1]],[xa,yb,ex[i]]].map(rot);
+        items.push({z:(r[0][2]+r[2][2])/2, kind:'water', pts:r.map(px)});
+      }
+    } else if(floating){
       const x0=-0.22*L, x1=1.22*L, y0=-0.52*L, y1=0.52*L, NX=12, NY=8;
       for(let i=0;i<NX;i++) for(let j=0;j<NY;j++){
         const xa=x0+(x1-x0)*i/NX, xb=x0+(x1-x0)*(i+1)/NX;
@@ -1472,7 +1572,7 @@ if (typeof module !== 'undefined') module.exports = USV;
         items.push({z:(r[0][2]+r[2][2])/2, kind:'water', pts:r.map(px)});
       }
     }
-    if(floating || (hl && hl.zone)){
+    if((floating && !wav) || (hl && hl.zone)){
       const wl=USV.hullWaterline(hull, Math.min(d, D*0.999));
       for(const sgn of [1,-1]){                       // 遮蔽を正しくするためセグメント毎に深度ソート
         for(let i=0;i<wl.length-1;i++){
@@ -1531,12 +1631,19 @@ if (typeof module !== 'undefined') module.exports = USV;
       }
     }
     const fb=D-d;
-    if(floating){
+    if(wav){
+      const mode=Pfull.env.waveModel==='regular'?'規則波':'JONSWAP';
+      info.innerHTML=`動揺表示中（${mode}・Hs ${Pfull.env.Hs} m・Tp ${Pfull.env.Tp} s・V_eq ${(veqMs/USV.KT).toFixed(2)} kt 向い波）: `+
+        `heave RMS ±${wStats.heaveRms.toFixed(2)} m・pitch RMS ±${wStats.pitchRmsDeg.toFixed(1)}°`+
+        `<span style="color:var(--faint)">　1 自由度・線形（§8）。急峻波の非線形挙動は表現外</span>`;
+    } else if(waveOn){
+      info.innerHTML='<b style="color:var(--warn-ink)">Hs = 0 のため波がありません — 環境パネルで有義波高 Hs を設定してください</b>';
+    } else if(floating){
       info.innerHTML = fb<=0
         ? '<b style="color:var(--ng-ink)">喫水がデッキ高を超過 — 予備浮力なし（この質量では浮かべられない）</b>'
         : `喫水 d = ${d.toFixed(3)} m ・ 乾舷 f = ${fb.toFixed(3)} m（デッキ高 ${D.toFixed(2)} m・排水容積 ∇ = ${der.vol.toFixed(3)} m³）`;
     } else {
-      info.textContent='「浮かべる」を押すと、現在の質量 m に対する喫水線と水面を表示します。';
+      info.textContent='「浮かべる」を押すと喫水線と水面、「波を立てる」を押すと波浪中の動揺（RAO 駆動）を表示します。';
     }
   }
 
@@ -1548,20 +1655,29 @@ if (typeof module !== 'undefined') module.exports = USV;
     if(ptrs.size===1){
       yaw+=(e.clientX-prev[0])*0.011;
       pitch=Math.max(-1.35,Math.min(1.35,pitch-(e.clientY-prev[1])*0.011));
-      draw();
+      draw(tNow);
     } else if(ptrs.size===2){
       const a=[...ptrs.values()], dn=Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);
       if(lastDist) zoom=Math.max(0.5,Math.min(3,zoom*dn/lastDist));
-      lastDist=dn; draw();
+      lastDist=dn; draw(tNow);
     }
   });
   const end=e=>{ ptrs.delete(e.pointerId); lastDist=0; };
   cv.addEventListener('pointerup',end); cv.addEventListener('pointercancel',end);
-  cv.addEventListener('wheel',e=>{ e.preventDefault(); zoom=Math.max(0.5,Math.min(3,zoom*(e.deltaY<0?1.1:0.9))); draw(); },{passive:false});
-  cv.addEventListener('dblclick',()=>{ yaw=YAW0; pitch=PITCH0; zoom=1; draw(); });
-  btnF.addEventListener('click',()=>{ floating=!floating; btnF.classList.toggle('on',floating); draw(); });
-  btnR.addEventListener('click',()=>{ yaw=YAW0; pitch=PITCH0; zoom=1; draw(); });
-  window.addEventListener('resize',()=>draw());
+  cv.addEventListener('wheel',e=>{ e.preventDefault(); zoom=Math.max(0.5,Math.min(3,zoom*(e.deltaY<0?1.1:0.9))); draw(tNow); },{passive:false});
+  cv.addEventListener('dblclick',()=>{ yaw=YAW0; pitch=PITCH0; zoom=1; draw(tNow); });
+  btnF.addEventListener('click',()=>{
+    floating=!floating; btnF.classList.toggle('on',floating);
+    if(!floating && waveOn) stopWave(); else draw(tNow);
+  });
+  btnW.addEventListener('click',()=>{
+    if(waveOn){ stopWave(); return; }
+    waveOn=true; btnW.classList.add('on');
+    if(!floating){ floating=true; btnF.classList.add('on'); }
+    buildWave(); tStart=performance.now(); rafId=requestAnimationFrame(loop);
+  });
+  btnR.addEventListener('click',()=>{ yaw=YAW0; pitch=PITCH0; zoom=1; draw(tNow); });
+  window.addEventListener('resize',()=>draw(tNow));
   window.__hullView={update, highlight};
 })();
 </script>
@@ -2048,7 +2164,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   function recalc(){
     fromUI();
     const der=USV.derived(P.hull);
-    if(window.__hullView) window.__hullView.update(P.hull, der, P.prop);
+    if(window.__hullView) window.__hullView.update(P, der, USV.solveVeq(P.prop.PmaxElec,P.env,P,der));
     drawC1();
     const b=drawPB();
     const sim=USV.simulate(P);
