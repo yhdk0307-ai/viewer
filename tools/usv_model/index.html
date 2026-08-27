@@ -132,6 +132,31 @@
   .vghead{margin:16px 0 4px;font-size:13px;font-weight:700;}
   .vghead:first-child{margin-top:4px;}
   .vghead .n{font-weight:400;color:var(--muted);font-size:12px;margin-left:8px;}
+  /* ── ミッションタブ ── */
+  .mtbl{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums;
+    border-top:1.4px solid var(--rule);border-bottom:1.4px solid var(--rule);}
+  .mtbl th{font-size:11px;color:var(--muted);font-weight:600;text-align:left;
+    padding:5px 8px 5px 0;border-bottom:1px solid var(--line2);}
+  .mtbl td{padding:4px 8px 4px 0;border-bottom:1px solid var(--line);}
+  .mtbl tr:last-child td{border-bottom:none;}
+  .mtbl input{width:72px;padding:3px 5px;border:1px solid var(--line2);
+    border-radius:3px;font:inherit;font-size:12.5px;background:var(--surface);color:var(--ink);}
+  .mtbl select{width:auto;min-width:96px;padding:3px 5px;border:1px solid var(--line2);
+    border-radius:3px;font:inherit;font-size:12.5px;background:var(--surface);color:var(--ink);}
+  .mtbl input.wide{width:96px;}
+  .mtbl button.del{padding:2px 8px;font-size:11.5px;color:var(--ng-ink);}
+  .m-add{margin:8px 0 0;}
+  .m-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0 32px;
+    border-top:1.4px solid var(--rule);border-bottom:1.4px solid var(--rule);padding:12px 0;margin-top:10px;}
+  .m-kpis .k{font-size:11px;color:var(--muted);letter-spacing:.03em;}
+  .m-kpis .v{font-size:26px;font-weight:700;line-height:1.3;font-variant-numeric:tabular-nums;}
+  .m-kpis .n{font-size:11.5px;color:var(--faint);}
+  .mbar{display:flex;align-items:center;gap:8px;font-size:12.5px;margin:3px 0;}
+  .mbar .lb{width:150px;color:var(--muted);}
+  .mbar .tr2{flex:1;height:13px;background:var(--line);position:relative;}
+  .mbar .fl{height:100%;position:absolute;left:0;top:0;}
+  .mbar .pv{width:56px;text-align:right;font-variant-numeric:tabular-nums;}
+  .mwarn{color:var(--warn-ink);font-size:12px;}
   table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums;
     border-top:1.4px solid var(--rule);border-bottom:1.4px solid var(--rule);}
   th,td{padding:5px 9px 5px 0;text-align:right;border:none;}
@@ -280,6 +305,7 @@
 </div></header>
 <nav class="tabs" aria-label="表示切替">
   <button data-tab="model" class="on">モデル</button>
+  <button data-tab="mission">ミッション</button>
   <button data-tab="doc">設計書</button>
 </nav>
 
@@ -427,6 +453,65 @@
 </div>
 
 </div>
+<div id="tab-mission" hidden>
+<div class="wrap">
+
+<h2>ミッションシミュレーション（決定論シナリオ木）</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">
+フェーズ計画 × 海象状態カタログの<b>全組合せを乱数なしで列挙</b>し、各シナリオを 0-D モデル（モデルタブの現在パラメータ）で決定論的に実行、
+生起確率で重み付けして<b>ミッション成功率</b>を求める。長い滞留フェーズは分割日数ごとの区間に自動分割し、区間ごとに独立に海象を引く。
+定式化・仮定・限界は設計書 §12。</div>
+
+<div class="presets" style="margin-top:12px">
+  <button data-mtpl="obs">テンプレ: 長期観測</button>
+  <button data-mtpl="cross">テンプレ: 海峡横断</button>
+  <button data-mtpl="patrol">テンプレ: 沿岸哨戒</button>
+</div>
+
+<h2>フェーズ計画</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">トランジット＝距離目標 [nm]・滞留＝日数目標。速力 0 はステーション保持。ホテル負荷は §11 FINDING 2 の通り成否を支配する（通常 104 W ／ 省電力 45 W）。</div>
+<div style="overflow-x:auto"><table class="mtbl" id="mp-table" style="min-width:640px"></table></div>
+<div class="m-add"><button id="mp-add">＋ フェーズを追加</button></div>
+
+<h2>海象状態カタログ</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">名前付きの離散状態と生起確率。確率は自動正規化されるが、合計が 1 でない場合は警告する。既定値は外洋波候に寄せた仮置き（設計書 §10: 海域別統計 ERA5 等で置換）。</div>
+<div style="overflow-x:auto"><table class="mtbl" id="ms-table" style="min-width:640px"></table></div>
+<div class="m-add"><button id="ms-add">＋ 状態を追加</button> <span id="ms-psum" style="font-size:12px;margin-left:10px"></span></div>
+
+<h2>成功条件と実行</h2>
+<div class="panels">
+  <div class="panel"><h3>成功条件</h3>
+    <div class="row"><label>ミッション期限</label><span class="val"><input type="number" id="mm-deadline" step="5" min="1" max="365"><span class="unit">日</span></span></div>
+    <div class="row"><label>SOC 下限</label><span class="val"><input type="number" id="mm-socmin" step="5" min="0" max="50"><span class="unit">%</span></span></div>
+    <div class="row"><label>滞留の分割日数</label><span class="val"><input type="number" id="mm-seg" step="1" min="0" max="60"><span class="unit">日</span></span></div>
+  </div>
+  <div class="panel"><h3>判定に含める失敗モード</h3>
+    <div class="row"><label>エネルギー枯渇（ドリフト）</label><span class="val"><input type="checkbox" id="mc-energy" checked></span></div>
+    <div class="row"><label>期限超過</label><span class="val"><input type="checkbox" id="mc-deadline" checked></span></div>
+    <div class="row"><label>耐航限界超過（limitHs）</label><span class="val"><input type="checkbox" id="mc-seakeep" checked></span></div>
+  </div>
+</div>
+<div style="margin:14px 0 6px"><button id="m-run" class="primary">シミュレーション実行</button>
+<span id="m-stat" style="font-size:12px;color:var(--muted);margin-left:10px"></span></div>
+
+<h2>結果</h2>
+<div class="m-kpis">
+  <div><div class="k">ミッション成功率</div><div class="v" id="mk-rate">–</div><div class="n" id="mk-raten"></div></div>
+  <div><div class="k">シナリオ数</div><div class="v" id="mk-nscen">–</div><div class="n">状態数^フェーズ数（分割後）</div></div>
+  <div><div class="k">公称シナリオ所要</div><div class="v" id="mk-days">–</div><div class="n" id="mk-daysn">最頻海象の列</div></div>
+</div>
+<div style="margin-top:14px" id="m-pareto"></div>
+
+<h2>公称シナリオの時系列（SOC・速力）</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">各フェーズが最頻海象状態を引いたときの決定論的な 1 本。帯はフェーズ区切り。</div>
+<div class="cv"><canvas id="mc1" width="1000" height="300" role="img" aria-label="公称シナリオの SOC と速力の時系列"></canvas></div>
+
+<h2>シナリオ一覧（生起確率順）</h2>
+<div style="overflow-x:auto"><table class="mtbl" id="m-scen" style="min-width:640px"></table></div>
+
+</div>
+</div>
+
 <div id="tab-doc" hidden><div class="doc-wrap">
 <div class="doc-head">
   <div class="eyebrow">DP-20260825-01 · PHASE 1–3 実装済み · REV.4</div>
@@ -449,6 +534,7 @@
 <li><a href="#s9">較正と検証</a></li>
 <li><a href="#s10">閉じ込め式の置換ロードマップ</a></li>
 <li><a href="#s11">発見・限界</a></li>
+<li><a href="#s12">ミッションシミュレーション（決定論シナリオ木）</a></li>
 </ol>
 <div class="tools"><button id="btn-open">すべて開く</button><button id="btn-close">すべて畳む</button></div>
 </nav>
@@ -913,6 +999,41 @@
 <div class="caveat"><b>限界（明示）:</b> ①運動起因の抵抗増加は未評価（抵抗は反射成分のみ＝荒天は下振れ方向の不確かさ）。②耐航性は 1 自由度・減衰比仮定・位相/連成/相対水位運動なし。③ 0 次元の原理的限界として斜め波・横風の横力・回頭は表現不可。④ △印パラメータ（特に f_der・ζ・C_d）は仮定であり §10 の置換で解消する。⑤ Lightfish の船型・ポッド型式・実ホテル負荷は非公開＝公称値の測定条件も不明という二重の不確かさ。</div>
 </details>
 
+<!-- ═══════════ §12 ═══════════ -->
+<details class="sec" id="s12" open><summary><span class="no">§12</span><span class="ttl">ミッションシミュレーション（決定論シナリオ木）</span></summary>
+<p>V1–V7 の点検証を超えて、<b>ユースケース・シナリオ込みのトレードオフスタディ</b>を行う層。
+乱数（モンテカルロ）は使わず、<b>離散シナリオの全列挙 × 生起確率の重み付け</b>で成功率を定義する
+（DRM: Design Reference Mission × 環境状態マトリクス方式）。結果は完全に再現可能で、
+失敗の原因とフェーズまで決定論的に追跡できる。</p>
+<h3>定式化（支配構造）</h3>
+<p>ミッション計画をフェーズ列 <math><mrow><msub><mi>φ</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>φ</mi><mi>N</mi></msub></mrow></math>、
+海象状態カタログを <math><mrow><mo>{</mo><msub><mi>s</mi><mi>k</mi></msub><mo>,</mo><msub><mi>p</mi><mi>k</mi></msub><mo>}</mo></mrow></math>（<math><mrow><mo>Σ</mo><msub><mi>p</mi><mi>k</mi></msub><mo>=</mo><mn>1</mn></mrow></math>）とすると、
+シナリオは各フェーズへの状態割当 <math><mrow><mi>σ</mi><mo>=</mo><mo>(</mo><msub><mi>k</mi><mn>1</mn></msub><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>k</mi><mi>N</mi></msub><mo>)</mo></mrow></math>、その重みは
+<math><mrow><msub><mi>w</mi><mi>σ</mi></msub><mo>=</mo><munderover><mo>∏</mo><mrow><mi>j</mi><mo>=</mo><mn>1</mn></mrow><mi>N</mi></munderover><msub><mi>p</mi><mrow><msub><mi>k</mi><mi>j</mi></msub></mrow></msub></mrow></math>。
+ミッション成功率は</p>
+<div class="eq"><math display="block"><mrow>
+<msub><mi>P</mi><mi>success</mi></msub><mo>=</mo>
+<munder><mo>∑</mo><mi>σ</mi></munder>
+<msub><mi>w</mi><mi>σ</mi></msub><mo>·</mo>
+<mi mathvariant="double-struck">1</mi><mo>[</mo><mtext>全成功条件を満たす</mtext><mo>]</mo>
+</mrow></math></div>
+<p>各シナリオの実行は決定論: フェーズ×状態ごとに定常量（達成速力・推進電力・耐航限界 limitHs）を §4–§8 の式で前計算し、
+SOC・燃料・時刻を持ち越しながら dt = 1 h で時間積分する（速度ポリシー・発電機ヒステリシス・ドリフト挙動は §7 の
+ミッション積分と同一）。成功条件は選択制: <b>エネルギー枯渇</b>（滞留中のドリフト到達・トランジット未達）・
+<b>期限超過</b>・<b>耐航限界超過</b>（状態 Hs &gt; limitHs）。</p>
+<h3>離散化と分割</h3>
+<p>「1 フェーズ = 海象 1 状態」の仮定は長いフェーズで粗くなりすぎるため、滞留フェーズは<b>分割日数（既定 10 日）ごとの
+区間に自動分割</b>し、区間ごとに独立に状態を引く。シナリオ数は 状態数^分割後フェーズ数（上限 4096）。</p>
+<div class="caveat"><b>仮定と限界（明示）:</b>
+①フェーズ（区間）間の海象は<b>独立</b>と仮定 — 荒天の持続相関（嵐は続く）を持たない。次の拡張はマルコフ遷移行列。
+②フェーズ内は定常海象（遷移の過渡なし）。③航路・退避の意思決定なし（速力一定＋低 SOC ドリフトのみ）。
+④成功率の分解能は海象離散化の粒度で決まる — 状態カタログの Hs・確率は仮置きであり、
+<b>海域別の波候統計（ERA5 等の散布図）での置換が §10 の日射と同列の課題</b>。
+⑤日射はフェーズ状態の日平均値を使用（晴天モデルとの併用は不可）。</div>
+<p class="std">実装: <code>simulateMission / splitPhases / phaseStateOps / simPhase / seaCatalogDefaults / missionDefaults</code>（usv-core・純関数）。
+検証 V8 が Σw<sub>σ</sub> = 1（確率の完全性）と成功率の有界性を毎ロード確認する。</p>
+</details>
+
 <div class="foot">
 DP-20260825-01 Rev.2 ／ ベース調査: RR-20260824-01 ／ 実装: tools/usv_model/interactive/index.html（Phase 1–3・検証 6/6 PASS）<br>
 主要参照: ITTC 7.5-02-02-02（抵抗）・ITTC 7.5-04-01-01（速力試運転・風圧/波浪修正）・ISO 15016 / STAWAVE-1・JONSWAP（Hasselmann 1973）・Haurwitz 晴天 GHI・Torqeedo Cruise 3.0 FP 公称値。<br>
@@ -1279,6 +1400,141 @@ const USV = (function(){
     return out;
   }
 
+  // ── ミッションシミュレーション（決定論シナリオ木 × 確率重み・設計書 §12） ──
+  // 海象状態カタログの既定値（外洋の波候に寄せた仮置き。§10: 海域別統計 ERA5 等で置換）
+  function seaCatalogDefaults(){
+    return [
+      { name:'穏やか', Hs:0.5, Tp:5, windU:3,  irr:5.5, p:0.50 },
+      { name:'通常',   Hs:1.5, Tp:7, windU:8,  irr:4.0, p:0.35 },
+      { name:'荒天',   Hs:3.0, Tp:9, windU:15, irr:2.0, p:0.15 },
+    ];
+  }
+  function missionDefaults(){
+    return {
+      phases: [
+        { name:'進出',  kind:'transit', nm:150, days:0,  targetKt:2.0, hotelW:45 },
+        { name:'観測',  kind:'loiter',  nm:0,   days:30, targetKt:0,   hotelW:45 },
+        { name:'帰投',  kind:'transit', nm:150, days:0,  targetKt:2.0, hotelW:45 },
+      ],
+      deadlineDays:75, socMin:0.10, soc0:1.0, segDays:10,
+      checks:{ energy:true, deadline:true, seakeep:true },
+    };
+  }
+  // 長い滞留フェーズを segDays ごとの区間に分割（区間ごとに独立に海象を引く。
+  // 「1 フェーズ=海象 1 状態」の離散化が長期間で粗くなりすぎるのを防ぐ）
+  function splitPhases(mis){
+    const out = [];
+    for (const ph of mis.phases){
+      if (ph.kind === 'loiter' && mis.segDays > 0 && ph.days > mis.segDays * 1.5){
+        const n = Math.ceil(ph.days / mis.segDays), d = ph.days / n;
+        for (let i = 0; i < n; i++)
+          out.push(Object.assign({}, ph, { name: ph.name + '·' + (i + 1), days: d, _parent: ph.name }));
+      } else out.push(Object.assign({}, ph, { _parent: ph.name }));
+    }
+    return out;
+  }
+  // フェーズ×海象状態の定常量を前計算（速力・推進電力・耐航限界）
+  function phaseStateOps(p, mis, states){
+    const der = derived(p.hull);
+    return mis.phases.map(ph => states.map(st => {
+      const env = Object.assign({}, p.env,
+        { Hs:st.Hs, Tp:st.Tp, windU:st.windU, windDirDeg:0,
+          irrKwhDay:st.irr, solarModel:'daily' });
+      let Vkt = 0, Pprop = 0;
+      if (ph.targetKt > 0){
+        const Vt = ph.targetKt * KT;
+        const R = rTotal(Vt, env, p.hull, der).total;
+        const Pe = pElecFor(R, Vt, p.prop);
+        if (Pe <= p.prop.PmaxElec){ Vkt = ph.targetKt; Pprop = Pe; }
+        else { Vkt = solveVeq(p.prop.PmaxElec, env, p, der) / KT; Pprop = p.prop.PmaxElec; }
+      }
+      const sk = seakeeping(env, Vkt * KT, p, der);
+      return { env, Vkt, Pprop, skOk: st.Hs <= sk.limitHs, limitHs: sk.limitHs };
+    }));
+  }
+  // 1 フェーズを定常海象で時間積分（dt=1h・SOC/燃料/時刻を持ち越し）
+  function simPhase(p, ph, op, st0, t0, maxDays, trace){
+    const dt = 3600, capWh = p.pwr.battWh;
+    let soc = st0.soc, fuel = st0.fuel, genOn = st0.genOn, drift = false;
+    let nm = 0, days = 0, minSoc = soc, drifted = false;
+    const goalNm = ph.kind === 'transit' ? ph.nm : Infinity;
+    const goalDays = ph.kind === 'loiter' ? ph.days : Infinity;
+    const NMAX = Math.ceil(maxDays * 24);
+    for (let i = 0; i < NMAX; i++){
+      if (nm >= goalNm || days >= goalDays) break;
+      if (drift && soc >= Math.min(1, p.msn.socMin + 0.10)) drift = false;
+      const V = drift ? 0 : op.Vkt, Pprop = drift ? 0 : op.Pprop;
+      if (p.pwr.gen.enabled && fuel > 0){
+        if (!genOn && soc < p.pwr.gen.onSoc) genOn = true;
+        if (genOn && soc > p.pwr.gen.offSoc) genOn = false;
+      } else genOn = false;
+      const Pgen = genOn ? Math.min(p.pwr.gen.powW, fuel * 3600 / dt) : 0;
+      if (genOn) fuel = Math.max(0, fuel - Pgen * dt / 3600);
+      const Psol = pSolar(t0 + i * dt, p.pwr, op.env);
+      const dWh = ((Psol + Pgen) * p.pwr.etaChg - (Pprop + ph.hotelW) / p.pwr.etaDis) * dt / 3600;
+      soc = Math.min(1, soc + dWh / capWh);
+      if (soc <= p.msn.socMin){ soc = p.msn.socMin; if (!drift){ drift = true; drifted = true; } }
+      minSoc = Math.min(minSoc, soc);
+      nm += V * dt / 3600;
+      days += dt / 86400;
+      if (trace && (i % 6 === 0))
+        trace.push({ d: (t0 + i * dt) / 86400, soc, Vkt: V });
+    }
+    const done = ph.kind === 'transit' ? nm >= goalNm : days >= goalDays - 1e-9;
+    return { days, nm, done, drifted, minSoc,
+             state: { soc, fuel, genOn } };
+  }
+  // 全シナリオ列挙（状態^フェーズ数）→ 決定論実行 → 確率重み付き集計
+  function simulateMission(p, mis, catalog){
+    const states = catalog.filter(st => st.p > 0);
+    const psum = states.reduce((a, st) => a + st.p, 0) || 1;
+    const w0 = states.map(st => st.p / psum);           // 正規化（元の合計は UI で警告）
+    const phases = splitPhases(mis);
+    const NP = phases.length, NS = states.length;
+    const nScen = Math.pow(NS, NP);
+    if (NP < 1 || NS < 1) return { error:'フェーズと海象状態を 1 つ以上定義してください' };
+    if (nScen > 4096) return { error:`シナリオ数 ${nScen} が上限 4096 を超えます（状態数^フェーズ数）` };
+    const ops = phaseStateOps(p, { phases }, states);
+    const scenarios = [];
+    let successRate = 0;
+    const pareto = { seakeep:0, energy:0, deadline:0 };
+    const nomIdx = w0.indexOf(Math.max(...w0));         // 公称 = 最頻状態の列
+    let nominal = null;
+    const combo = new Array(NP).fill(0);
+    for (let sIdx = 0; sIdx < nScen; sIdx++){
+      let k = sIdx;
+      for (let j = 0; j < NP; j++){ combo[j] = k % NS; k = Math.floor(k / NS); }
+      let prob = 1; for (let j = 0; j < NP; j++) prob *= w0[combo[j]];
+      const isNominal = combo.every(c => c === nomIdx);
+      const trace = isNominal ? [] : null;
+      let st = { soc: mis.soc0, fuel: p.pwr.gen.fuelWh, genOn:false };
+      let t0 = 0, minSoc = st.soc, reason = null, failPhase = -1;
+      const phaseLog = [];
+      for (let j = 0; j < NP; j++){
+        const ph = phases[j], op = ops[j][combo[j]];
+        if (mis.checks.seakeep && !op.skOk){ reason = 'seakeep'; failPhase = j; break; }
+        const remain = Math.max(1, mis.deadlineDays * 1.5 - t0 / 86400);
+        const r = simPhase(p, ph, op, st, t0, remain, trace);
+        t0 += r.days * 86400;
+        minSoc = Math.min(minSoc, r.minSoc);
+        phaseLog.push({ name: ph.name, days: r.days, nm: r.nm, socEnd: r.state.soc,
+                        state: states[combo[j]].name, Vkt: op.Vkt });
+        if (mis.checks.energy && r.drifted && ph.kind === 'loiter'){ reason = 'energy'; failPhase = j; break; }
+        if (!r.done){ reason = mis.checks.energy && r.drifted ? 'energy' : 'deadline'; failPhase = j; break; }
+        st = r.state;
+      }
+      const totalDays = t0 / 86400;
+      if (!reason && mis.checks.deadline && totalDays > mis.deadlineDays){ reason = 'deadline'; failPhase = NP - 1; }
+      const ok = !reason;
+      if (ok) successRate += prob; else pareto[reason] += prob;
+      scenarios.push({ combo: combo.slice(), prob, ok, reason, failPhase, totalDays, minSoc });
+      if (isNominal) nominal = { trace, phaseLog, ok, reason, totalDays, minSoc };
+    }
+    scenarios.sort((a, b) => b.prob - a.prob);
+    return { successRate, pareto, scenarios, nominal, nScen, states, phases,
+             probSumRaw: states.reduce((a, st) => a + st.p, 0) };
+  }
+
   // ── KPI ──
   function maxRange(p){                          // 無日照・電池+燃料を速度掃引で最適化 [nm]
     const der = derived(p.hull);
@@ -1471,7 +1727,8 @@ const USV = (function(){
            etaMotor, pShaft, etaProp, thrust, pElecFor, solveVeq,
            pSolar, pSolarDaily, pSolarClearSky, solarDailyWh, solarElevSin,
            raoHeave, raoPitchDegPerM, raoHeavePhase, raoPitchPhase, waveMotion, waveElev, waveMotionAt, seakeeping,
-           simulate, maxRange, darkEndurance, dailyBudget };
+           simulate, maxRange, darkEndurance, dailyBudget,
+           seaCatalogDefaults, missionDefaults, simulateMission };
 })();
 if (typeof module !== 'undefined') module.exports = USV;
 </script>
@@ -2138,10 +2395,20 @@ if (typeof module !== 'undefined') module.exports = USV;
               const pred=Math.pow(dh.vol/d0.vol,4/3);
               const ok = Math.abs(f0-1)<1e-9 && fh>1.3 && Math.abs(fh/f0/pred-1)<0.01;
               return {val:`f_M=1.000（較正点）→ ${fh.toFixed(3)}（230kg）・∇^(4/3)則との差 ${((fh/f0/pred-1)*100).toFixed(2)}%`, ok}; }},
+      {id:'V8',name:'ミッション確率の完全性（§12）',crit:'Σw_σ = 1（±1e-9）・成功率 ∈ [0,1]・成功率＋失敗内訳 = 1',
+       why:'決定論シナリオ木の重み w_σ = Π p_k が確率として閉じているか（列挙漏れ・正規化バグの検出）。成功率と失敗パレートの合計が 1 になることも同時に確認する。',
+       note:'成功率の絶対値はカタログの仮置き確率に依存するため検証対象にしない — ここで保証するのは確率計算の完全性のみ。海象カタログの実データ化は §10・§12 の課題。',
+       run(){ const p=USV.defaults();
+              const r=USV.simulateMission(p, USV.missionDefaults(), USV.seaCatalogDefaults());
+              const wsum=r.scenarios.reduce((a,sc)=>a+sc.prob,0);
+              const fsum=Object.values(r.pareto).reduce((a,v)=>a+v,0);
+              const ok=Math.abs(wsum-1)<1e-9 && r.successRate>=0 && r.successRate<=1
+                    && Math.abs(r.successRate+fsum-1)<1e-9;
+              return {val:`Σw=${wsum.toFixed(6)}・成功率 ${(r.successRate*100).toFixed(1)}%・成功+失敗=${((r.successRate+fsum)*100).toFixed(1)}%（${r.nScen} シナリオ）`, ok}; }},
     ];
     const groups=[
       {t:'ユースケース検証', n:'公表値・運用シナリオの再現（プリセット V1–V4 と対応。V1・V2 は較正点）', ids:['V1','V2','V3','V4']},
-      {t:'モデル整合性検証', n:'数理・実装の内部チェック（恒等式・物理極限・較正保存）。運転シナリオではないためプリセットは無い', ids:['V5','V6','V7']},
+      {t:'モデル整合性検証', n:'数理・実装の内部チェック（恒等式・物理極限・較正保存）。運転シナリオではないためプリセットは無い', ids:['V5','V6','V7','V8']},
     ];
     const card=c=>{
       const r=c.run();
@@ -2247,7 +2514,199 @@ if (typeof module !== 'undefined') module.exports = USV;
     upd();
   }
 
+  window.__getParams = () => JSON.parse(JSON.stringify(P));   // ミッションタブが現在値を参照
   toUI(); recalc(); runValidation(); setActivePreset('base');
+})();
+</script>
+<script>
+/* ============================================================
+   ミッションタブ — シナリオ編集と決定論シミュレーション（設計書 §12）
+   ============================================================ */
+'use strict';
+(function(){
+  const $ = id => document.getElementById(id);
+  const fmt = (x,d=1) => Number(x).toFixed(d);
+  let MIS = USV.missionDefaults();
+  let CAT = USV.seaCatalogDefaults();
+  let ranOnce = false;
+
+  // ── テンプレート ──
+  const TPL = {
+    obs: { mis: USV.missionDefaults(), cat: USV.seaCatalogDefaults() },
+    cross: { mis: Object.assign(USV.missionDefaults(), {
+        phases:[ { name:'横断', kind:'transit', nm:400, days:0, targetKt:2.0, hotelW:45 } ],
+        deadlineDays:40 }), cat: USV.seaCatalogDefaults() },
+    patrol: { mis: Object.assign(USV.missionDefaults(), {
+        phases:[
+          { name:'進出',   kind:'transit', nm:60,  days:0,  targetKt:2.0, hotelW:45 },
+          { name:'哨戒A',  kind:'loiter',  nm:0,   days:14, targetKt:1.0, hotelW:104 },
+          { name:'移動',   kind:'transit', nm:40,  days:0,  targetKt:2.0, hotelW:45 },
+          { name:'哨戒B',  kind:'loiter',  nm:0,   days:14, targetKt:1.0, hotelW:104 },
+          { name:'帰投',   kind:'transit', nm:60,  days:0,  targetKt:2.0, hotelW:45 },
+        ], deadlineDays:60 }), cat: USV.seaCatalogDefaults() },
+  };
+  document.querySelectorAll('[data-mtpl]').forEach(b=>b.addEventListener('click',()=>{
+    const t=TPL[b.dataset.mtpl];
+    MIS=JSON.parse(JSON.stringify(t.mis)); CAT=JSON.parse(JSON.stringify(t.cat));
+    renderAll(); run();
+  }));
+
+  // ── フェーズ表 ──
+  function renderPlan(){
+    const rows = MIS.phases.map((ph,i)=>`<tr>
+      <td><input class="wide" data-mp="${i}:name" value="${ph.name}"></td>
+      <td><select data-mp="${i}:kind"><option value="transit"${ph.kind==='transit'?' selected':''}>トランジット</option><option value="loiter"${ph.kind==='loiter'?' selected':''}>滞留</option></select></td>
+      <td><input type="number" data-mp="${i}:goal" step="5" min="0" value="${ph.kind==='transit'?ph.nm:ph.days}"> <span style="color:var(--faint)">${ph.kind==='transit'?'nm':'日'}</span></td>
+      <td><input type="number" data-mp="${i}:targetKt" step="0.5" min="0" max="5" value="${ph.targetKt}"> <span style="color:var(--faint)">kt</span></td>
+      <td><select data-mp="${i}:hotelW"><option value="104"${ph.hotelW===104?' selected':''}>通常 104 W</option><option value="45"${ph.hotelW===45?' selected':''}>省電力 45 W</option></select></td>
+      <td><button class="del" data-mpdel="${i}">削除</button></td></tr>`).join('');
+    $('mp-table').innerHTML = `<tr><th>フェーズ</th><th>種別</th><th>目標</th><th>目標速力</th><th>電力モード</th><th></th></tr>`+rows;
+    $('mp-table').querySelectorAll('[data-mp]').forEach(el=>el.addEventListener('change',()=>{
+      const [i,key]=el.dataset.mp.split(':'); const ph=MIS.phases[+i];
+      if(key==='goal'){ if(ph.kind==='transit') ph.nm=+el.value; else ph.days=+el.value; }
+      else if(key==='kind'){ ph.kind=el.value; renderPlan(); }
+      else if(key==='name') ph.name=el.value;
+      else ph[key]=+el.value;
+      stale();
+    }));
+    $('mp-table').querySelectorAll('[data-mpdel]').forEach(el=>el.addEventListener('click',()=>{
+      MIS.phases.splice(+el.dataset.mpdel,1); renderPlan(); stale();
+    }));
+  }
+  $('mp-add').addEventListener('click',()=>{
+    if(MIS.phases.length>=8){ $('m-stat').textContent='フェーズは 8 個まで'; return; }
+    MIS.phases.push({name:'フェーズ'+(MIS.phases.length+1),kind:'transit',nm:50,days:0,targetKt:2.0,hotelW:45});
+    renderPlan(); stale();
+  });
+
+  // ── 海象カタログ表 ──
+  function renderCat(){
+    const rows = CAT.map((st,i)=>`<tr>
+      <td><input class="wide" data-ms="${i}:name" value="${st.name}"></td>
+      <td><input type="number" data-ms="${i}:Hs" step="0.25" min="0" max="8" value="${st.Hs}"> <span style="color:var(--faint)">m</span></td>
+      <td><input type="number" data-ms="${i}:Tp" step="0.5" min="2" max="16" value="${st.Tp}"> <span style="color:var(--faint)">s</span></td>
+      <td><input type="number" data-ms="${i}:windU" step="1" min="0" max="40" value="${st.windU}"> <span style="color:var(--faint)">m/s</span></td>
+      <td><input type="number" data-ms="${i}:irr" step="0.5" min="0" max="8" value="${st.irr}"> <span style="color:var(--faint)">kWh/m²/日</span></td>
+      <td><input type="number" data-ms="${i}:p" step="0.05" min="0" max="1" value="${st.p}"></td>
+      <td><button class="del" data-msdel="${i}">削除</button></td></tr>`).join('');
+    $('ms-table').innerHTML = `<tr><th>状態名</th><th>Hs</th><th>Tp</th><th>風速</th><th>日射</th><th>確率</th><th></th></tr>`+rows;
+    $('ms-table').querySelectorAll('[data-ms]').forEach(el=>el.addEventListener('change',()=>{
+      const [i,key]=el.dataset.ms.split(':');
+      CAT[+i][key]= key==='name'? el.value : +el.value;
+      psum(); stale();
+    }));
+    $('ms-table').querySelectorAll('[data-msdel]').forEach(el=>el.addEventListener('click',()=>{
+      CAT.splice(+el.dataset.msdel,1); renderCat(); psum(); stale();
+    }));
+    psum();
+  }
+  $('ms-add').addEventListener('click',()=>{
+    if(CAT.length>=4){ $('m-stat').textContent='状態は 4 個まで（組合せ爆発の抑制）'; return; }
+    CAT.push({name:'状態'+(CAT.length+1),Hs:2.0,Tp:8,windU:10,irr:3.0,p:0.1});
+    renderCat(); stale();
+  });
+  function psum(){
+    const sum=CAT.reduce((a,st)=>a+(+st.p||0),0);
+    $('ms-psum').innerHTML = Math.abs(sum-1)<1e-6
+      ? `<span style="color:var(--ok-ink)">Σp = ${fmt(sum,2)}</span>`
+      : `<span class="mwarn">Σp = ${fmt(sum,2)} ≠ 1 — 実行時に正規化して使います</span>`;
+  }
+
+  // ── 成功条件 ──
+  const bindM=[['mm-deadline','deadlineDays',1],['mm-socmin','socMin',0.01],['mm-seg','segDays',1]];
+  function toUI(){
+    $('mm-deadline').value=MIS.deadlineDays; $('mm-socmin').value=Math.round(MIS.socMin*100);
+    $('mm-seg').value=MIS.segDays;
+    $('mc-energy').checked=MIS.checks.energy; $('mc-deadline').checked=MIS.checks.deadline;
+    $('mc-seakeep').checked=MIS.checks.seakeep;
+  }
+  bindM.forEach(([id,key,scale])=>$(id).addEventListener('change',()=>{ MIS[key]=+$(id).value*scale; stale(); }));
+  ['energy','deadline','seakeep'].forEach(k=>$('mc-'+k).addEventListener('change',()=>{ MIS.checks[k]=$('mc-'+k).checked; stale(); }));
+
+  function stale(){ if(ranOnce) $('m-stat').innerHTML='<span class="mwarn">条件が変わりました — 再実行してください</span>'; }
+
+  // ── 実行と描画 ──
+  const REASON={seakeep:'耐航限界超過',energy:'エネルギー枯渇',deadline:'期限超過'};
+  const RC={seakeep:'var(--s7)',energy:'var(--s2)',deadline:'var(--s4)'};
+  function run(){
+    const p = window.__getParams();
+    p.msn.socMin = MIS.socMin; p.msn.soc0 = MIS.soc0;
+    const t0=performance.now();
+    const r = USV.simulateMission(p, MIS, CAT);
+    if(r.error){ $('m-stat').innerHTML='<span class="mwarn">'+r.error+'</span>'; return; }
+    ranOnce=true;
+    $('m-stat').textContent=`${r.nScen} シナリオを ${fmt(performance.now()-t0,0)} ms で実行（モデルタブの現在パラメータ使用）`;
+    $('mk-rate').textContent=fmt(r.successRate*100,1)+' %';
+    $('mk-raten').textContent=`確率重み付き（Σp ${fmt(r.probSumRaw,2)} を正規化）`;
+    $('mk-nscen').textContent=r.nScen;
+    $('mk-days').textContent=r.nominal? fmt(r.nominal.totalDays,1)+' 日':'–';
+    $('mk-daysn').textContent=r.nominal? (r.nominal.ok?'公称: 成功':'公称: 失敗（'+REASON[r.nominal.reason]+'）')+`・最低 SOC ${fmt(r.nominal.minSoc*100,0)} %`:'';
+    // 失敗パレート
+    const rows=Object.entries(r.pareto).filter(([,v])=>v>1e-12).sort((a,b)=>b[1]-a[1]);
+    $('m-pareto').innerHTML = '<div style="font-size:12px;color:var(--muted);margin-bottom:4px">失敗確率の内訳（原因別）</div>'+
+      (rows.length? rows.map(([k,v])=>`<div class="mbar"><div class="lb">${REASON[k]}</div>
+        <div class="tr2"><div class="fl" style="width:${Math.min(100,100*v)}%;background:${RC[k]}"></div></div>
+        <div class="pv">${fmt(v*100,1)} %</div></div>`).join('')
+        : '<div style="font-size:12.5px;color:var(--ok-ink)">失敗シナリオなし</div>');
+    drawNominal(r);
+    drawScenTable(r);
+  }
+  $('m-run').addEventListener('click',run);
+  window.__missionShown=()=>{ if(!ranOnce) run(); };
+
+  function drawNominal(r){
+    const cv=$('mc1'), ctx=cv.getContext('2d');
+    const W=cv.width,H=cv.height,L=58,R=58,T=16,Bm=40;
+    const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#888';
+    ctx.clearRect(0,0,W,H); if(!r.nominal||!r.nominal.trace.length) return;
+    const tr=r.nominal.trace, tmax=Math.max(r.nominal.totalDays, tr[tr.length-1].d)||1;
+    const x=d=>L+(W-L-R)*d/tmax, ySoc=v=>T+(H-T-Bm)*(1-v), yV=v=>T+(H-T-Bm)*(1-v/5);
+    // フェーズ帯
+    let acc=0;
+    r.nominal.phaseLog.forEach((pl,i)=>{
+      const x0=x(acc); acc+=pl.days; const x1=x(acc);
+      ctx.fillStyle=i%2?'rgba(0,0,0,0.035)':'rgba(0,0,0,0.00)';
+      ctx.fillRect(x0,T,x1-x0,H-T-Bm);
+      ctx.fillStyle=css('--muted-chart'); ctx.font='11px system-ui,sans-serif'; ctx.textAlign='center';
+      if(x1-x0>34) ctx.fillText(pl.name,(x0+x1)/2,T+12);
+    });
+    // 目盛り
+    ctx.strokeStyle=css('--grid'); ctx.lineWidth=1; ctx.fillStyle=css('--muted-chart'); ctx.font='12px system-ui,sans-serif';
+    for(let g=0;g<=1.0001;g+=0.25){ const y=ySoc(g);
+      ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(W-R,y);ctx.stroke();
+      ctx.textAlign='right'; ctx.fillText(Math.round(g*100)+'%',L-6,y+4); }
+    const dStep=tmax>60?20:(tmax>20?10:5);
+    for(let d=0;d<=tmax;d+=dStep){ ctx.textAlign='center'; ctx.fillText(d+'日',x(d),H-Bm+16); }
+    // SOC 線（ink）・速力線（s1）
+    ctx.strokeStyle=css('--ink-chart'); ctx.lineWidth=2; ctx.beginPath();
+    tr.forEach((q,i)=>{ const px=x(q.d),py=ySoc(q.soc); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke();
+    ctx.strokeStyle=css('--s1'); ctx.lineWidth=1.6; ctx.beginPath();
+    tr.forEach((q,i)=>{ const px=x(q.d),py=yV(q.Vkt); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke();
+    // SOC 下限
+    ctx.strokeStyle=css('--ng-ink'); ctx.setLineDash([4,4]); ctx.beginPath();
+    ctx.moveTo(L,ySoc(MIS.socMin)); ctx.lineTo(W-R,ySoc(MIS.socMin)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=css('--ink-chart'); ctx.textAlign='left'; ctx.font='11.5px system-ui,sans-serif';
+    ctx.fillText('SOC（黒・左軸）',L+6,T+26);
+    ctx.fillStyle=css('--s1'); ctx.fillText('速力 kt（青・右軸 0–5）',L+6,T+40);
+    ctx.fillStyle=css('--muted-chart'); ctx.textAlign='center';
+    ctx.fillText('経過日数',(L+W-R)/2,H-6);
+  }
+
+  function drawScenTable(r){
+    const top=r.scenarios.slice(0,14);
+    const head='<tr><th>#</th><th>海象の列（フェーズ順）</th><th>確率</th><th>成否</th><th>所要</th><th>最低SOC</th></tr>';
+    const rows=top.map((sc,i)=>{
+      const seq=sc.combo.map(c=>r.states[c].name).join(' → ');
+      const res=sc.ok?'<span class="badge ok">成功</span>'
+        :`<span class="badge ng">失敗</span> <span style="color:var(--muted)">${REASON[sc.reason]}・${r.phases[sc.failPhase]?r.phases[sc.failPhase].name:''}</span>`;
+      return `<tr><td>${i+1}</td><td style="font-size:12px">${seq}</td><td>${fmt(sc.prob*100,2)} %</td><td>${res}</td><td>${fmt(sc.totalDays,1)} 日</td><td>${fmt(sc.minSoc*100,0)} %</td></tr>`;
+    }).join('');
+    const rest=r.scenarios.length-top.length;
+    $('m-scen').innerHTML=head+rows+(rest>0?`<tr><td colspan="6" style="color:var(--faint)">… 他 ${rest} シナリオ（確率降順で省略）</td></tr>`:'');
+  }
+
+  function renderAll(){ renderPlan(); renderCat(); toUI(); }
+  renderAll();
 })();
 </script>
 <script>
@@ -2256,8 +2715,10 @@ if (typeof module !== 'undefined') module.exports = USV;
 (function(){
   const sbar=document.getElementById('sbar');
   function showTab(name){
-    document.getElementById('tab-model').hidden = name!=='model';
-    document.getElementById('tab-doc').hidden   = name!=='doc';
+    document.getElementById('tab-model').hidden   = name!=='model';
+    document.getElementById('tab-mission').hidden = name!=='mission';
+    document.getElementById('tab-doc').hidden     = name!=='doc';
+    if(name==='mission' && window.__missionShown) window.__missionShown();
     document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
     if(name!=='model' && sbar) sbar.classList.remove('show');
     window.scrollTo(0,0);
