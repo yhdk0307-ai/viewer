@@ -469,12 +469,17 @@
 </div>
 
 <h2>フェーズ計画</h2>
-<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">トランジット＝距離目標 [nm]・滞留＝日数目標。速力 0 はステーション保持。ホテル負荷は §11 FINDING 2 の通り成否を支配する（通常 104 W ／ 省電力 45 W）。</div>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">トランジット＝距離目標 [nm]・滞留＝日数目標。速力 0 はステーション保持。ホテル負荷は §11 FINDING 2 の通り成否を支配する（通常 104 W ／ 省電力 45 W ／ 待機 25 W）。<b>給電必須</b>を外した滞留（充電待機など）は SOC 下限タッチを失敗と数えない。</div>
 <div style="overflow-x:auto"><table class="mtbl" id="mp-table" style="min-width:640px"></table></div>
 <div class="m-add"><button id="mp-add">＋ フェーズを追加</button></div>
 
 <h2>海象状態カタログ</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">名前付きの離散状態と生起確率。確率は自動正規化されるが、合計が 1 でない場合は警告する。既定値は外洋波候に寄せた仮置き（設計書 §10: 海域別統計 ERA5 等で置換）。</div>
+<div class="hv-ctrl" style="align-items:center;margin-bottom:8px">
+  <label style="font-size:12.5px;color:var(--muted)">海域プリセット:</label>
+  <select id="ms-region" style="padding:4px 6px;border:1px solid var(--line2);border-radius:3px;font:inherit;font-size:12.5px"></select>
+  <button id="ms-load">カタログに読み込む</button>
+</div>
 <div style="overflow-x:auto"><table class="mtbl" id="ms-table" style="min-width:640px"></table></div>
 <div class="m-add"><button id="ms-add">＋ 状態を追加</button> <span id="ms-psum" style="font-size:12px;margin-left:10px"></span></div>
 
@@ -484,6 +489,7 @@
     <div class="row"><label>ミッション期限</label><span class="val"><input type="number" id="mm-deadline" step="5" min="1" max="365"><span class="unit">日</span></span></div>
     <div class="row"><label>SOC 下限</label><span class="val"><input type="number" id="mm-socmin" step="5" min="0" max="50"><span class="unit">%</span></span></div>
     <div class="row"><label>滞留の分割日数</label><span class="val"><input type="number" id="mm-seg" step="1" min="0" max="60"><span class="unit">日</span></span></div>
+    <div class="row"><label>海象持続時間 τ（0=独立）</label><span class="val"><input type="number" id="mm-tau" step="0.5" min="0" max="30"><span class="unit">日</span></span></div>
   </div>
   <div class="panel"><h3>判定に含める失敗モード</h3>
     <div class="row"><label>エネルギー枯渇（ドリフト）</label><span class="val"><input type="checkbox" id="mc-energy" checked></span></div>
@@ -501,6 +507,15 @@
   <div><div class="k">公称シナリオ所要</div><div class="v" id="mk-days">–</div><div class="n" id="mk-daysn">最頻海象の列</div></div>
 </div>
 <div style="margin-top:14px" id="m-pareto"></div>
+
+<h2>感度分析（トルネード図）</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">設計パラメータを 1 つずつ ±振り幅だけ変えてミッション成功率の応答を見る（OAT 感度 — パラメータ間の相互作用は拾わない）。縦の破線が現在の成功率。</div>
+<div style="margin:6px 0 8px">
+  <label style="font-size:12.5px">振り幅 ± <input type="number" id="mt-pct" value="20" step="5" min="5" max="50" style="width:58px;padding:3px 5px;border:1px solid var(--line2);border-radius:3px;font:inherit"> %</label>
+  <button id="mt-run" style="margin-left:8px">感度を計算</button>
+  <span id="mt-stat" style="font-size:12px;color:var(--muted);margin-left:10px"></span>
+</div>
+<div class="cv"><canvas id="mt1" width="1000" height="380" role="img" aria-label="設計パラメータ感度のトルネード図"></canvas></div>
 
 <h2>公称シナリオの時系列（SOC・速力）</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">各フェーズが最頻海象状態を引いたときの決定論的な 1 本。帯はフェーズ区切り。</div>
@@ -1023,14 +1038,34 @@ SOC・燃料・時刻を持ち越しながら dt = 1 h で時間積分する（�
 <b>期限超過</b>・<b>耐航限界超過</b>（状態 Hs &gt; limitHs）。</p>
 <h3>離散化と分割</h3>
 <p>「1 フェーズ = 海象 1 状態」の仮定は長いフェーズで粗くなりすぎるため、滞留フェーズは<b>分割日数（既定 10 日）ごとの
-区間に自動分割</b>し、区間ごとに独立に状態を引く。シナリオ数は 状態数^分割後フェーズ数（上限 4096）。</p>
+区間に自動分割</b>し、区間ごとに状態を引く。シナリオ数は 状態数^分割後フェーズ数（上限 4096）。</p>
+<h3>海象の持続相関（マルコフ遷移）</h3>
+<p>区間間の海象は独立ではなく、<b>定常分布を保存する一次マルコフ連鎖</b>で結合する:
+遷移行列を <math><mrow><mi>T</mi><mo>=</mo><mi>ρ</mi><mi>I</mi><mo>+</mo><mo>(</mo><mn>1</mn><mo>−</mo><mi>ρ</mi><mo>)</mo><mn mathvariant="bold">1</mn><msup><mi>p</mi><mi>T</mi></msup></mrow></math> とすると
+<math><mrow><msup><mi>p</mi><mi>T</mi></msup><mi>T</mi><mo>=</mo><msup><mi>p</mi><mi>T</mi></msup></mrow></math>（カタログの確率 p が定常分布として保存される）。
+持続率は前区間の公称所要日数 d と持続時間 τ から <math><mrow><msub><mi>ρ</mi><mi>j</mi></msub><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>d</mi><mrow><mi>j</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>/</mo><mi>τ</mi></mrow></msup></mrow></math>。
+シナリオ重みは <math><mrow><msub><mi>w</mi><mi>σ</mi></msub><mo>=</mo><msub><mi>p</mi><msub><mi>k</mi><mn>1</mn></msub></msub><mo>·</mo><munderover><mo>∏</mo><mrow><mi>j</mi><mo>=</mo><mn>2</mn></mrow><mi>N</mi></munderover><mo>[</mo><msub><mi>ρ</mi><mi>j</mi></msub><msub><mi>δ</mi><mrow><msub><mi>k</mi><mi>j</mi></msub><msub><mi>k</mi><mrow><mi>j</mi><mo>−</mo><mn>1</mn></mrow></msub></mrow></msub><mo>+</mo><mo>(</mo><mn>1</mn><mo>−</mo><msub><mi>ρ</mi><mi>j</mi></msub><mo>)</mo><msub><mi>p</mi><msub><mi>k</mi><mi>j</mi></msub></msub><mo>]</mo></mrow></math>。
+行和が 1 のため <math><mrow><mo>Σ</mo><msub><mi>w</mi><mi>σ</mi></msub><mo>=</mo><mn>1</mn></mrow></math> は厳密に保たれる（V8）。
+τ = 0 で従来の独立抽選に退化。既定 τ = 2.5 日（中緯度の気象脱相関 2〜4 日に基づく仮定値）。</p>
+<h3>給電必須フラグと海域カタログ</h3>
+<p>滞留フェーズの<b>給電必須フラグ</b>（crit）: 必須の滞留（観測など）では SOC 下限到達＝ペイロード給電途絶＝失敗。
+crit = false の滞留（<b>充電待機</b>など）は下限タッチを許容する — 低 SOC で到着して回復するためのフェーズを
+判定が殺さないようにするため。トランジットは従来通り「目標未達＋ドリフト」のみを失敗とする。</p>
+<p>海象カタログには<b>海域プリセット</b>を同梱: 北大西洋（IACS Rec. 34 標準波浪データの Hs 周辺分布を 4 状態に集約）・
+北太平洋・日本近海・熱帯貿易風帯。<b>いずれも公表散布図統計の粗い離散化（概数）</b>であり、確率・Hs・日射の組は
+仮組み込み。既定計画での成功率は 熱帯 97.9% → 汎用 43.3% → 日本近海 27.5% → 北太平洋 14.4% → 北大西洋 0.8% と
+海域の厳しさを正しく順序づける。</p>
+<h3>感度分析（トルネード図）</h3>
+<p>設計パラメータ（m, L, B, C_b, C_d, A_front, 電池容量, パネル定格, 推進最大電力）を<b>1 つずつ ±δ 変化</b>させ、
+成功率の応答を棒で示す OAT（one-at-a-time）感度。<b>パラメータ間の相互作用は拾わない</b>ため、
+上位因子の見当づけに使い、詳細検討は該当パラメータの掃引で行う。</p>
 <div class="caveat"><b>仮定と限界（明示）:</b>
-①フェーズ（区間）間の海象は<b>独立</b>と仮定 — 荒天の持続相関（嵐は続く）を持たない。次の拡張はマルコフ遷移行列。
-②フェーズ内は定常海象（遷移の過渡なし）。③航路・退避の意思決定なし（速力一定＋低 SOC ドリフトのみ）。
-④成功率の分解能は海象離散化の粒度で決まる — 状態カタログの Hs・確率は仮置きであり、
-<b>海域別の波候統計（ERA5 等の散布図）での置換が §10 の日射と同列の課題</b>。
+①マルコフの τ は仮定値（実データからの推定は課題）。②フェーズ内は定常海象（遷移の過渡なし）。
+③航路・退避の意思決定なし（速力一定＋低 SOC ドリフトのみ）。
+④成功率の分解能は海象離散化の粒度で決まる — カタログは概数であり、
+<b>ERA5 等の再解析データによる海域別散布図での置換</b>が §10 の日射と同列の課題。
 ⑤日射はフェーズ状態の日平均値を使用（晴天モデルとの併用は不可）。</div>
-<p class="std">実装: <code>simulateMission / splitPhases / phaseStateOps / simPhase / seaCatalogDefaults / missionDefaults</code>（usv-core・純関数）。
+<p class="std">実装: <code>simulateMission / splitPhases / phaseStateOps / simPhase / seaCatalogDefaults / seaClimateCatalogs / missionDefaults</code>（usv-core・純関数）。
 検証 V8 が Σw<sub>σ</sub> = 1（確率の完全性）と成功率の有界性を毎ロード確認する。</p>
 </details>
 
@@ -1409,14 +1444,46 @@ const USV = (function(){
       { name:'荒天',   Hs:3.0, Tp:9, windU:15, irr:2.0, p:0.15 },
     ];
   }
+  // 海域別の波候カタログ（公表散布図統計の離散化・概数）。
+  // 北大西洋は IACS Rec.34 標準波浪データの Hs 周辺分布を 4 状態に集約した概数。
+  // いずれも仮組み込みであり、§10/§12 の通り ERA5 等の再解析データでの精密化が課題。
+  function seaClimateCatalogs(){
+    return [
+      { id:'generic', name:'汎用（初期仮置き）', states: seaCatalogDefaults() },
+      { id:'natl', name:'北大西洋（IACS Rec.34 散布図の離散化）', states:[
+        { name:'穏やか', Hs:1.0, Tp:6,  windU:5,  irr:4.0, p:0.38 },
+        { name:'中程度', Hs:3.0, Tp:9,  windU:11, irr:3.0, p:0.41 },
+        { name:'しけ',   Hs:5.0, Tp:11, windU:17, irr:2.0, p:0.14 },
+        { name:'大しけ', Hs:7.5, Tp:13, windU:23, irr:1.5, p:0.07 },
+      ]},
+      { id:'npac', name:'北太平洋（散布図統計の離散化）', states:[
+        { name:'穏やか', Hs:1.0, Tp:7,  windU:5,  irr:4.5, p:0.42 },
+        { name:'中程度', Hs:2.8, Tp:9,  windU:10, irr:3.5, p:0.38 },
+        { name:'しけ',   Hs:4.5, Tp:11, windU:16, irr:2.2, p:0.14 },
+        { name:'大しけ', Hs:7.0, Tp:13, windU:22, irr:1.5, p:0.06 },
+      ]},
+      { id:'japan', name:'日本近海（沿岸波候・年間の離散化）', states:[
+        { name:'穏やか', Hs:0.7, Tp:6,  windU:4,  irr:4.2, p:0.45 },
+        { name:'中程度', Hs:1.5, Tp:7,  windU:8,  irr:3.8, p:0.33 },
+        { name:'しけ',   Hs:2.8, Tp:9,  windU:13, irr:2.8, p:0.15 },
+        { name:'大しけ', Hs:4.5, Tp:11, windU:19, irr:1.8, p:0.07 },
+      ]},
+      { id:'trade', name:'熱帯太平洋・貿易風帯（低緯度の離散化）', states:[
+        { name:'穏やか', Hs:1.2, Tp:8,  windU:6,  irr:5.8, p:0.55 },
+        { name:'中程度', Hs:2.0, Tp:9,  windU:9,  irr:5.0, p:0.35 },
+        { name:'しけ',   Hs:3.2, Tp:10, windU:14, irr:3.5, p:0.10 },
+      ]},
+    ];
+  }
   function missionDefaults(){
     return {
       phases: [
-        { name:'進出',  kind:'transit', nm:150, days:0,  targetKt:2.0, hotelW:45 },
-        { name:'観測',  kind:'loiter',  nm:0,   days:30, targetKt:0,   hotelW:45 },
-        { name:'帰投',  kind:'transit', nm:150, days:0,  targetKt:2.0, hotelW:45 },
+        { name:'進出',     kind:'transit', nm:150, days:0,  targetKt:1.5, hotelW:45 },
+        { name:'充電待機', kind:'loiter',  nm:0,   days:4,  targetKt:0,   hotelW:25, crit:false },
+        { name:'観測',     kind:'loiter',  nm:0,   days:30, targetKt:0,   hotelW:45 },
+        { name:'帰投',     kind:'transit', nm:150, days:0,  targetKt:1.5, hotelW:45 },
       ],
-      deadlineDays:75, socMin:0.10, soc0:1.0, segDays:10,
+      deadlineDays:75, socMin:0.10, soc0:1.0, segDays:10, tauDays:2.5,
       checks:{ energy:true, deadline:true, seakeep:true },
     };
   }
@@ -1495,6 +1562,11 @@ const USV = (function(){
     if (NP < 1 || NS < 1) return { error:'フェーズと海象状態を 1 つ以上定義してください' };
     if (nScen > 4096) return { error:`シナリオ数 ${nScen} が上限 4096 を超えます（状態数^フェーズ数）` };
     const ops = phaseStateOps(p, { phases }, states);
+    // マルコフ遷移（海象の持続相関）: T = ρI + (1−ρ)·1·pᵀ（p は定常分布として保存）。
+    // ρ_j = exp(−d_j/τ)（d_j = 前区間の公称所要日数）。τ=0 で独立（従来）に退化。
+    const tau = mis.tauDays || 0;
+    const durs = phases.map(ph => ph.kind === 'transit'
+      ? Math.max(0.25, ph.nm / Math.max(0.2, ph.targetKt) / 24) : ph.days);
     const scenarios = [];
     let successRate = 0;
     const pareto = { seakeep:0, energy:0, deadline:0 };
@@ -1504,7 +1576,12 @@ const USV = (function(){
     for (let sIdx = 0; sIdx < nScen; sIdx++){
       let k = sIdx;
       for (let j = 0; j < NP; j++){ combo[j] = k % NS; k = Math.floor(k / NS); }
-      let prob = 1; for (let j = 0; j < NP; j++) prob *= w0[combo[j]];
+      let prob = w0[combo[0]];
+      for (let j = 1; j < NP; j++){
+        const rho = tau > 0 ? Math.exp(-durs[j-1] / tau) : 0;
+        prob *= (combo[j] === combo[j-1] ? rho + (1 - rho) * w0[combo[j]]
+                                         : (1 - rho) * w0[combo[j]]);
+      }
       const isNominal = combo.every(c => c === nomIdx);
       const trace = isNominal ? [] : null;
       let st = { soc: mis.soc0, fuel: p.pwr.gen.fuelWh, genOn:false };
@@ -1519,7 +1596,9 @@ const USV = (function(){
         minSoc = Math.min(minSoc, r.minSoc);
         phaseLog.push({ name: ph.name, days: r.days, nm: r.nm, socEnd: r.state.soc,
                         state: states[combo[j]].name, Vkt: op.Vkt });
-        if (mis.checks.energy && r.drifted && ph.kind === 'loiter'){ reason = 'energy'; failPhase = j; break; }
+        // 給電必須の滞留（crit ≠ false）はドリフト＝ペイロード給電途絶＝失敗。
+        // 充電待機など crit:false の滞留は SOC 下限タッチを許容（回復が目的のため）
+        if (mis.checks.energy && r.drifted && ph.kind === 'loiter' && ph.crit !== false){ reason = 'energy'; failPhase = j; break; }
         if (!r.done){ reason = mis.checks.energy && r.drifted ? 'energy' : 'deadline'; failPhase = j; break; }
         st = r.state;
       }
@@ -1728,7 +1807,7 @@ const USV = (function(){
            pSolar, pSolarDaily, pSolarClearSky, solarDailyWh, solarElevSin,
            raoHeave, raoPitchDegPerM, raoHeavePhase, raoPitchPhase, waveMotion, waveElev, waveMotionAt, seakeeping,
            simulate, maxRange, darkEndurance, dailyBudget,
-           seaCatalogDefaults, missionDefaults, simulateMission };
+           seaCatalogDefaults, seaClimateCatalogs, missionDefaults, simulateMission };
 })();
 if (typeof module !== 'undefined') module.exports = USV;
 </script>
@@ -2396,7 +2475,7 @@ if (typeof module !== 'undefined') module.exports = USV;
               const ok = Math.abs(f0-1)<1e-9 && fh>1.3 && Math.abs(fh/f0/pred-1)<0.01;
               return {val:`f_M=1.000（較正点）→ ${fh.toFixed(3)}（230kg）・∇^(4/3)則との差 ${((fh/f0/pred-1)*100).toFixed(2)}%`, ok}; }},
       {id:'V8',name:'ミッション確率の完全性（§12）',crit:'Σw_σ = 1（±1e-9）・成功率 ∈ [0,1]・成功率＋失敗内訳 = 1',
-       why:'決定論シナリオ木の重み w_σ = Π p_k が確率として閉じているか（列挙漏れ・正規化バグの検出）。成功率と失敗パレートの合計が 1 になることも同時に確認する。',
+       why:'決定論シナリオ木の重みが確率として閉じているか（列挙漏れ・正規化バグの検出）。マルコフ重み（既定 τ=2.5 日）でも遷移行列の行和が 1 のため Σw=1 が厳密に成り立つはずで、これが破れたら遷移の実装バグ。成功率と失敗パレートの合計が 1 になることも同時に確認する。',
        note:'成功率の絶対値はカタログの仮置き確率に依存するため検証対象にしない — ここで保証するのは確率計算の完全性のみ。海象カタログの実データ化は §10・§12 の課題。',
        run(){ const p=USV.defaults();
               const r=USV.simulateMission(p, USV.missionDefaults(), USV.seaCatalogDefaults());
@@ -2558,14 +2637,16 @@ if (typeof module !== 'undefined') module.exports = USV;
       <td><select data-mp="${i}:kind"><option value="transit"${ph.kind==='transit'?' selected':''}>トランジット</option><option value="loiter"${ph.kind==='loiter'?' selected':''}>滞留</option></select></td>
       <td><input type="number" data-mp="${i}:goal" step="5" min="0" value="${ph.kind==='transit'?ph.nm:ph.days}"> <span style="color:var(--faint)">${ph.kind==='transit'?'nm':'日'}</span></td>
       <td><input type="number" data-mp="${i}:targetKt" step="0.5" min="0" max="5" value="${ph.targetKt}"> <span style="color:var(--faint)">kt</span></td>
-      <td><select data-mp="${i}:hotelW"><option value="104"${ph.hotelW===104?' selected':''}>通常 104 W</option><option value="45"${ph.hotelW===45?' selected':''}>省電力 45 W</option></select></td>
+      <td><select data-mp="${i}:hotelW"><option value="104"${ph.hotelW===104?' selected':''}>通常 104 W</option><option value="45"${ph.hotelW===45?' selected':''}>省電力 45 W</option><option value="25"${ph.hotelW===25?' selected':''}>待機 25 W</option></select></td>
+      <td style="text-align:center">${ph.kind==='loiter'?`<input type="checkbox" data-mp="${i}:crit"${ph.crit!==false?' checked':''}>`:'<span style="color:var(--faint)">—</span>'}</td>
       <td><button class="del" data-mpdel="${i}">削除</button></td></tr>`).join('');
-    $('mp-table').innerHTML = `<tr><th>フェーズ</th><th>種別</th><th>目標</th><th>目標速力</th><th>電力モード</th><th></th></tr>`+rows;
+    $('mp-table').innerHTML = `<tr><th>フェーズ</th><th>種別</th><th>目標</th><th>目標速力</th><th>電力モード</th><th>給電必須</th><th></th></tr>`+rows;
     $('mp-table').querySelectorAll('[data-mp]').forEach(el=>el.addEventListener('change',()=>{
       const [i,key]=el.dataset.mp.split(':'); const ph=MIS.phases[+i];
       if(key==='goal'){ if(ph.kind==='transit') ph.nm=+el.value; else ph.days=+el.value; }
       else if(key==='kind'){ ph.kind=el.value; renderPlan(); }
       else if(key==='name') ph.name=el.value;
+      else if(key==='crit') ph.crit=el.checked;
       else ph[key]=+el.value;
       stale();
     }));
@@ -2613,10 +2694,10 @@ if (typeof module !== 'undefined') module.exports = USV;
   }
 
   // ── 成功条件 ──
-  const bindM=[['mm-deadline','deadlineDays',1],['mm-socmin','socMin',0.01],['mm-seg','segDays',1]];
+  const bindM=[['mm-deadline','deadlineDays',1],['mm-socmin','socMin',0.01],['mm-seg','segDays',1],['mm-tau','tauDays',1]];
   function toUI(){
     $('mm-deadline').value=MIS.deadlineDays; $('mm-socmin').value=Math.round(MIS.socMin*100);
-    $('mm-seg').value=MIS.segDays;
+    $('mm-seg').value=MIS.segDays; $('mm-tau').value=MIS.tauDays;
     $('mc-energy').checked=MIS.checks.energy; $('mc-deadline').checked=MIS.checks.deadline;
     $('mc-seakeep').checked=MIS.checks.seakeep;
   }
@@ -2625,16 +2706,25 @@ if (typeof module !== 'undefined') module.exports = USV;
 
   function stale(){ if(ranOnce) $('m-stat').innerHTML='<span class="mwarn">条件が変わりました — 再実行してください</span>'; }
 
+  // ── 海域プリセット ──
+  const REGIONS=USV.seaClimateCatalogs();
+  $('ms-region').innerHTML=REGIONS.map((c,i)=>`<option value="${i}">${c.name}</option>`).join('');
+  $('ms-load').addEventListener('click',()=>{
+    CAT=JSON.parse(JSON.stringify(REGIONS[+$('ms-region').value].states));
+    renderCat(); stale();
+  });
+
   // ── 実行と描画 ──
   const REASON={seakeep:'耐航限界超過',energy:'エネルギー枯渇',deadline:'期限超過'};
   const RC={seakeep:'var(--s7)',energy:'var(--s2)',deadline:'var(--s4)'};
+  let lastRate=null;
   function run(){
     const p = window.__getParams();
     p.msn.socMin = MIS.socMin; p.msn.soc0 = MIS.soc0;
     const t0=performance.now();
     const r = USV.simulateMission(p, MIS, CAT);
     if(r.error){ $('m-stat').innerHTML='<span class="mwarn">'+r.error+'</span>'; return; }
-    ranOnce=true;
+    ranOnce=true; lastRate=r.successRate;
     $('m-stat').textContent=`${r.nScen} シナリオを ${fmt(performance.now()-t0,0)} ms で実行（モデルタブの現在パラメータ使用）`;
     $('mk-rate').textContent=fmt(r.successRate*100,1)+' %';
     $('mk-raten').textContent=`確率重み付き（Σp ${fmt(r.probSumRaw,2)} を正規化）`;
@@ -2703,6 +2793,76 @@ if (typeof module !== 'undefined') module.exports = USV;
     }).join('');
     const rest=r.scenarios.length-top.length;
     $('m-scen').innerHTML=head+rows+(rest>0?`<tr><td colspan="6" style="color:var(--faint)">… 他 ${rest} シナリオ（確率降順で省略）</td></tr>`:'');
+  }
+
+  // ── 感度分析（トルネード図・OAT） ──
+  const SENS=[
+    ['hull.m','質量 m'],['hull.Lwl','水線長 L_wl'],['hull.B','幅 B'],['hull.Cb','方形係数 C_b'],
+    ['hull.CdAir','風圧係数 C_d'],['hull.Afront','前面投影 A_front'],
+    ['pwr.battWh','電池容量'],['pwr.panelW','パネル定格'],['prop.PmaxElec','推進最大電力'],
+  ];
+  function runTornado(){
+    if(lastRate===null) run();
+    if(lastRate===null) return;
+    const pct=(+$('mt-pct').value||20)/100, t0=performance.now(), out=[];
+    for(const [path,label] of SENS){
+      const v={};
+      for(const dir of [-1,1]){
+        const p=window.__getParams();
+        p.msn.socMin=MIS.socMin; p.msn.soc0=MIS.soc0;
+        const ks=path.split('.'); let o=p;
+        for(let i=0;i<ks.length-1;i++) o=o[ks[i]];
+        o[ks[ks.length-1]]*=(1+dir*pct);
+        const r=USV.simulateMission(p,MIS,CAT);
+        v[dir]=r.error?lastRate:r.successRate;
+      }
+      out.push({label, lo:v[-1], hi:v[1]});
+    }
+    out.sort((a,b)=>Math.max(Math.abs(b.lo-lastRate),Math.abs(b.hi-lastRate))
+                   -Math.max(Math.abs(a.lo-lastRate),Math.abs(a.hi-lastRate)));
+    $('mt-stat').textContent=`${SENS.length*2} ケースを ${fmt(performance.now()-t0,0)} ms で計算（±${Math.round(pct*100)} %・単独変化）`;
+    drawTornado(out);
+  }
+  $('mt-run').addEventListener('click',runTornado);
+  function drawTornado(rows){
+    const cv=$('mt1'), ctx=cv.getContext('2d');
+    const W=cv.width,H=cv.height,L=150,R=24,T=26,Bm=34;
+    const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#888';
+    ctx.clearRect(0,0,W,H);
+    const x=v=>L+(W-L-R)*v;                            // 0..1 → 成功率軸
+    const rh=(H-T-Bm)/rows.length, bh=Math.min(18,rh*0.55);
+    // 軸
+    ctx.strokeStyle=css('--grid'); ctx.fillStyle=css('--muted-chart');
+    ctx.font='12px system-ui,sans-serif'; ctx.lineWidth=1;
+    for(let g=0;g<=1.0001;g+=0.25){
+      ctx.beginPath(); ctx.moveTo(x(g),T); ctx.lineTo(x(g),H-Bm); ctx.stroke();
+      ctx.textAlign='center'; ctx.fillText(Math.round(g*100)+'%',x(g),H-Bm+16);
+    }
+    ctx.fillText('ミッション成功率',(L+W-R)/2,H-4);
+    rows.forEach((r0,i)=>{
+      const yc=T+rh*(i+0.5);
+      ctx.fillStyle=css('--ink-chart'); ctx.textAlign='right';
+      ctx.font='12.5px system-ui,sans-serif'; ctx.fillText(r0.label,L-10,yc+4);
+      const lo=Math.min(r0.lo,lastRate), lw=Math.abs(r0.lo-lastRate);
+      const hi0=Math.min(r0.hi,lastRate), hw=Math.abs(r0.hi-lastRate);
+      ctx.fillStyle=css('--s2'); ctx.globalAlpha=0.85;
+      ctx.fillRect(x(lo),yc-bh/2,Math.max(1.5,x(lo+lw)-x(lo)),bh);       // −側
+      ctx.fillStyle=css('--s1');
+      ctx.fillRect(x(hi0),yc-bh/2,Math.max(1.5,x(hi0+hw)-x(hi0)),bh);    // ＋側
+      ctx.globalAlpha=1;
+      ctx.fillStyle=css('--muted-chart'); ctx.font='10.5px system-ui,sans-serif';
+      ctx.textAlign=r0.lo<=lastRate?'right':'left';
+      ctx.fillText(fmt(r0.lo*100,0)+'%', x(r0.lo)+(r0.lo<=lastRate?-3:3), yc+3.5);
+      ctx.textAlign=r0.hi<=lastRate?'right':'left';
+      ctx.fillText(fmt(r0.hi*100,0)+'%', x(r0.hi)+(r0.hi<=lastRate?-3:3), yc-bh/2-2);
+    });
+    // 基準線・凡例
+    ctx.strokeStyle=css('--ink-chart'); ctx.setLineDash([4,4]); ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(x(lastRate),T-4); ctx.lineTo(x(lastRate),H-Bm); ctx.stroke(); ctx.setLineDash([]);
+    ctx.textAlign='left'; ctx.font='11.5px system-ui,sans-serif';
+    ctx.fillStyle=css('--s2'); ctx.fillText('■ −側（パラメータ減）',L,T-8);
+    ctx.fillStyle=css('--s1'); ctx.fillText('■ ＋側（パラメータ増）',L+150,T-8);
+    ctx.fillStyle=css('--ink-chart'); ctx.fillText(`基準 ${fmt(lastRate*100,1)} %`,x(lastRate)+6,H-Bm-6);
   }
 
   function renderAll(){ renderPlan(); renderCat(); toUI(); }
