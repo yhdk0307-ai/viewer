@@ -281,6 +281,12 @@
 <div id="tab-model">
 <div class="wrap">
 
+<h2>船体形状</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">主要目 L・B・m（スラスターはプロペラ径 D<sub>prop</sub>）から生成した概念形状（Seasats Lightfish 準拠。後部の羽＝通信ウィング・前部マスト・キールフィン・ポッドスラスターを含む。実測形状ではなく、計算には §5 以降の式のみを使用）。ドラッグで回転、ホイール／ピンチで拡大縮小、ダブルクリックで視点リセット。<b>設計パラメータの入力欄に触れると、対応する部位が青くハイライトされ、L・B・D_prop は寸法線も表示される。</b></div>
+<div class="hv-ctrl"><button id="hv-float">浮かべる（喫水線を表示）</button><button id="hv-reset">視点リセット</button></div>
+<canvas id="hull3d"></canvas>
+<div class="cap" id="hull3d-info" style="font-size:12px;color:var(--muted);margin:6px 0 0"></div>
+
 <h2>入力パラメータ</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">入力を変えると即座に再計算されます。プリセット（黒表示が選択中）を押すと該当パラメータが設定され、変わった欄が一瞬ハイライトされます。</div>
 <div class="presets">
@@ -337,11 +343,6 @@
   </div>
 </div>
 
-<h2>船体形状</h2>
-<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">主要目 L・B・m（スラスターはプロペラ径 D<sub>prop</sub>）から生成した概念形状（Seasats Lightfish 準拠。後部の羽＝通信ウィング・前部マスト・キールフィン・ポッドスラスターを含む。実測形状ではなく、計算には §5 以降の式のみを使用）。ドラッグで回転、ホイール／ピンチで拡大縮小、ダブルクリックで視点リセット。<b>設計パラメータの入力欄に触れると、対応する部位が青くハイライトされ、L・B・D_prop は寸法線も表示される。</b></div>
-<div class="hv-ctrl"><button id="hv-float">浮かべる（喫水線を表示）</button><button id="hv-reset">視点リセット</button></div>
-<canvas id="hull3d"></canvas>
-<div class="cap" id="hull3d-info" style="font-size:12px;color:var(--muted);margin:6px 0 0"></div>
 
 <h2>判定</h2>
 <div class="kpis">
@@ -1474,6 +1475,19 @@ if (typeof module !== 'undefined') module.exports = USV;
         }
       }
     }
+    if(hl && hl.dim==='afront'){                      // 前面投影: 平面に船体の影を落とす
+      const xf=1.12*L, pw=0.62*mesh.B, zt=bb.z1+0.02*L;
+      const pr=[[xf,-pw,d],[xf,pw,d],[xf,pw,zt],[xf,-pw,zt]].map(rot);
+      items.push({z:(pr[0][2]+pr[2][2])/2+0.02*L, kind:'plane', pts:pr.map(px)});
+      for(const f of mesh.faces){
+        let above=false;
+        for(const p2 of f.p) if(p2[2]>d){ above=true; break; }
+        if(!above) continue;                          // 水線上にかかる面だけを投影
+        const r=f.p.map(p2=>rot([xf, p2[1], Math.max(p2[2],d)]));
+        let zc2=0; for(const q2 of r) zc2+=q2[2];
+        items.push({z:zc2/r.length-0.01*L, kind:'shadow', pts:r.map(px)});
+      }
+    }
     items.sort((p,q)=>q.z-p.z);                       // 奥から手前へ
     for(const it of items){
       ctx.beginPath();
@@ -1483,6 +1497,9 @@ if (typeof module !== 'undefined') module.exports = USV;
         ctx.lineWidth=it.hlF?0.8:0.5; ctx.stroke(); }
       else if(it.kind==='water'){ ctx.closePath(); ctx.fillStyle=WATER; ctx.fill();
         ctx.strokeStyle=WGRID; ctx.lineWidth=0.5; ctx.stroke(); }
+      else if(it.kind==='plane'){ ctx.closePath(); ctx.fillStyle='rgba(42,120,214,0.08)'; ctx.fill();
+        ctx.strokeStyle='rgba(42,120,214,0.45)'; ctx.lineWidth=1; ctx.stroke(); }
+      else if(it.kind==='shadow'){ ctx.closePath(); ctx.fillStyle='#A9C4E8'; ctx.fill(); }
       else { ctx.strokeStyle=it.stroke; ctx.lineWidth=it.w; ctx.lineJoin='round'; ctx.stroke(); }
     }
     if(hl && hl.dim){                               // 寸法線（最前面・実寸ラベル付き）
@@ -1499,16 +1516,12 @@ if (typeof module !== 'undefined') module.exports = USV;
       if(hl.dim==='beam'){ const B2=mesh.B/2; seg([0.45*L,-B2,D+0.06*L],[0.45*L,B2,D+0.06*L],`B = ${hull.B.toFixed(2)} m`); }
       if(hl.dim==='dprop' && mesh.propDim){ const pd=mesh.propDim;
         seg([pd.x,0,pd.z-pd.r],[pd.x,0,pd.z+pd.r],`D_prop = ${(2*pd.r).toFixed(2)} m`); }
-      if(hl.dim==='afront'){                        // 前面投影面積を実面積の矩形で示す
-        const wB=mesh.B, hA=hull.Afront/mesh.B, xf=1.12*L;
-        const r=[[xf,-wB/2,d],[xf,wB/2,d],[xf,wB/2,d+hA],[xf,-wB/2,d+hA]].map(p2=>px(rot(p2)));
-        ctx.fillStyle='rgba(42,120,214,0.18)'; ctx.strokeStyle='#2A78D6'; ctx.lineWidth=1.2;
-        ctx.beginPath(); r.forEach((q2,i2)=>i2?ctx.lineTo(q2[0],q2[1]):ctx.moveTo(q2[0],q2[1]));
-        ctx.closePath(); ctx.fill(); ctx.stroke();
-        const lab=`A_front = ${hull.Afront.toFixed(2)} m²（幅 B × 高さ A/B・水面基準）`;
-        const mx=(r[2][0]+r[3][0])/2, my=Math.min(r[2][1],r[3][1]), w2=ctx.measureText(lab).width;
-        ctx.fillStyle='rgba(255,255,255,0.88)'; ctx.fillRect(mx-w2/2-4,my-22,w2+8,17);
-        ctx.fillStyle='#2A78D6'; ctx.fillText(lab,mx-w2/2,my-9);
+      if(hl.dim==='afront'){                        // ラベルのみ（影は描画パイプライン側）
+        const A=px(rot([1.12*L,0,bb.z1+0.04*L]));
+        const lab=`A_front = ${hull.Afront.toFixed(2)} m²（水線上の前面投影）`;
+        const w2=ctx.measureText(lab).width;
+        ctx.fillStyle='rgba(255,255,255,0.88)'; ctx.fillRect(A[0]-w2/2-4,A[1]-14,w2+8,17);
+        ctx.fillStyle='#2A78D6'; ctx.fillText(lab,A[0]-w2/2,A[1]-1);
       }
     }
     const fb=D-d;
@@ -2027,8 +2040,8 @@ if (typeof module !== 'undefined') module.exports = USV;
     'p-m':   {zone:'below'},
     'g-cb':  {zone:'below'},
     'g-k1':  {zone:'below', tags:['keel']},
-    'g-cd':  {zone:'above', dim:'afront'},
-    'g-af':  {zone:'above', dim:'afront'},
+    'g-cd':  {zone:'above'},
+    'g-af':  {dim:'afront'},
     'g-lbwl':{zone:'below'},
     'g-dprop':{tags:['prop','pod'], dim:'dprop'},
     'g-vd':  {tags:['prop']},
