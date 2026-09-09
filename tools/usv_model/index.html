@@ -306,6 +306,7 @@
 <nav class="tabs" aria-label="表示切替">
   <button data-tab="model" class="on">モデル</button>
   <button data-tab="mission">ミッション</button>
+  <button data-tab="hull">船体</button>
   <button data-tab="doc">設計書</button>
 </nav>
 
@@ -362,6 +363,11 @@
     <div class="row"><label>雲量係数（晴天モデル）</label><span class="val"><input type="number" id="e-cloud" step="0.05" min="0.1" max="1"><span class="unit">—</span></span></div>
     <div class="row"><label>PV総合ディレート</label><span class="val"><input type="number" id="e-derate" step="0.05" min="0.2" max="1"><span class="unit">—</span></span></div>
   </div>
+  <div class="panel"><h3>耐航性（Phase3）</h3>
+    <div class="row"><label>耐航性モデル</label><span class="val"><select id="g-seamode"><option value="analytic">解析式（2次系・仮定係数）</option><option value="bem">BEM 係数表</option></select></span></div>
+    <div class="row"><label>重心高 KG</label><span class="val"><input type="number" id="g-kg" step="0.01" min="0" max="0.3"><span class="unit">m</span></span></div>
+    <span id="seamode-status" style="display:block;font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6"></span>
+  </div>
   <div class="panel"><h3>ミッション</h3>
     <div class="row"><label>目標速力</label><span class="val"><input type="number" id="m-vt" step="0.5" min="0" max="6"><span class="unit">kt</span></span></div>
     <div class="row"><label>期間</label><span class="val"><input type="number" id="m-days" step="5" min="1" max="365"><span class="unit">日</span></span></div>
@@ -416,6 +422,7 @@
     <div class="kpi"><div class="k">ピッチ RMS</div><div class="v" id="s-pitch">–</div><div class="n" id="s-pitch-n">基準 ≤ 6°</div></div>
     <div class="kpi"><div class="k">上下加速度 RMS</div><div class="v" id="s-accel">–</div><div class="n" id="s-accel-n">基準 ≤ 0.2g</div></div>
     <div class="kpi"><div class="k">運用限界 Hs（この周期で）</div><div class="v" id="s-limhs">–</div><div class="n" id="s-verdict"></div></div>
+    <div class="kpi"><div class="k">ロール RMS（横波・参考）</div><div class="v" id="s-rollrms">–</div><div class="n">BEM表使用時のみ・判定には不使用</div></div>
   </div>
   <div class="cap">1自由度近似（減衰比 0.35・付加質量は代表値の<b>仮定</b>。位相と相対水位運動は未評価）。応答は Hs に線形なので限界 Hs = Hs × min(基準/RMS)。<b>注意</b>: 運動と抵抗増加はまだ連成していない（抵抗側は反射成分のみ）。</div>
 </div>
@@ -527,12 +534,68 @@
 </div>
 </div>
 
+<div id="tab-hull" hidden>
+<div class="wrap">
+
+<h2>形状と実測値</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 10px">
+  水理メッシュ（<code>tools/usv_hull/</code>・S1/S3）で 3D 形状を実測した値と、0-D モデルが使う仮定値（C_b・Denny-Mumford）を比較する。
+  数値はすべて <code>USV.hydro</code>（係数表・下の「係数表の状態と再生成」参照）から取得し、ハードコードしない。
+  係数表が未生成のときは実測値の列が「—」になる。
+</div>
+<figure><svg id="hull-silhouette" viewBox="0 0 900 340" role="img" aria-label="船体の側面図・上面図シルエットと喫水線" style="width:100%;height:auto;display:block"></svg>
+<figcaption>図H1: <code>USV.hullGeom(p.hull)</code> から描いた側面（上）・上面（下）シルエット。破線は現在の喫水（<code>hydro.hydrostatics.draft_m</code>、係数表が無ければ 0-D 近似の喫水）。表示専用（§1 と同じ注記）。</figcaption></figure>
+<div class="tbl" style="overflow-x:auto"><table id="hull-geom-table"></table></div>
+
+<h2>復原力</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 10px">
+  GZ 曲線は KG_ref（<span id="gz-kgref">—</span> m）で 1 本だけ係数表に格納されており、任意の KG は
+  <code>GZ(φ,KG) = GZ_ref(φ) − (KG − KG_ref)·sin φ</code> の閉形式で即時に求める（S1 の浮力配置は KG に依存しないため）。
+  下のスライダーは「入力パラメータ」の KG と連動しない独立の what-if 探索用。
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:center;margin:6px 0 4px">
+  <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px">形状バリアント
+    <select id="gz-variant" data-local="1" style="max-width:220px"></select>
+  </label>
+  <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:8px;flex:1;min-width:220px">
+    KG <input type="range" id="gz-kg-slider" data-local="1" min="0" max="0.30" step="0.005" style="flex:1">
+    <span id="gz-kg-val" style="font-variant-numeric:tabular-nums;min-width:52px;text-align:right">— m</span>
+  </label>
+</div>
+<figure><svg id="gz-chart" viewBox="0 0 700 320" role="img" aria-label="GZ曲線（横傾斜角に対する復原てこ）" style="width:100%;height:auto;display:block"></svg>
+<figcaption>図H2: GZ 曲線（実線）。ゼロ線との交点が平衡角、−→+ の交差が安定（自己復原）、+→− が不安定（そこを越えると転覆側へ落ちる）。</figcaption></figure>
+<div class="tbl" style="overflow-x:auto"><table id="gz-metrics-table"></table></div>
+
+<h2>耐航性能係数</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 10px">
+  BEM（<code>tools/usv_hull/bem.py</code>・S3）で出した付加質量 A・減衰 B の周波数依存と、0-D の代表値（一定）を比較する。
+  <b>注意 —</b> BEM のロール減衰はポテンシャル流のみ（粘性は仮定値で別途加算）、前進速度は出会い周波数近似、λ/L&lt;0.5 は参考値。
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:8px 28px">
+  <figure><svg id="hull-a33b33" viewBox="0 0 420 260" role="img" aria-label="ヒーブ付加質量A33と減衰B33の周波数特性" style="width:100%;height:auto;display:block"></svg>
+  <figcaption>図H3: A33(ω)・B33(ω)（ヒーブ）。</figcaption></figure>
+  <figure><svg id="hull-a55b55" viewBox="0 0 420 260" role="img" aria-label="ピッチ付加慣性A55と減衰B55の周波数特性" style="width:100%;height:auto;display:block"></svg>
+  <figcaption>図H4: A55(ω)・B55(ω)（ピッチ）。</figcaption></figure>
+</div>
+<figure><svg id="hull-rao" viewBox="0 0 700 300" role="img" aria-label="ヒーブ・ピッチRAOのBEM表と解析式の比較" style="width:100%;height:auto;display:block"></svg>
+<figcaption>図H5: V=0 でのヒーブ・ピッチ RAO — BEM 表補間 vs 0-D 解析式（実線=BEM・破線=解析式）。</figcaption></figure>
+<div class="tbl" style="overflow-x:auto"><table id="hull-fit-table"></table></div>
+<div class="tbl" style="overflow-x:auto"><table id="hull-tn-table"></table></div>
+
+<h2>係数表の状態と再生成</h2>
+<div id="hull-regen-status" style="font-size:13px;line-height:1.9"></div>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:10px 0 4px">現在のモデル入力（L・B・m・C_b・KG）で係数表を作り直すコマンド列（<code>tools/usv_hull/</code>・本リポジトリ root から）:</div>
+<pre id="hull-regen-cmd" style="white-space:pre-wrap;word-break:break-all;font:11.5px ui-monospace,monospace;background:var(--surface);border:1px solid var(--line2);border-radius:4px;padding:10px 12px;color:var(--ink)"></pre>
+
+</div>
+</div>
+
 <div id="tab-doc" hidden><div class="doc-wrap">
 <div class="doc-head">
-  <div class="eyebrow">DP-20260825-01 · PHASE 1–3 実装済み · REV.4</div>
+  <div class="eyebrow">DP-20260825-01 · PHASE 1–4 実装済み · REV.5</div>
   <h1>USV 0次元モデル設計書</h1>
   <div class="std">長期外洋ミッションの<b>エネルギー成立性</b>と<b>動力性能成立性</b>を評価する点質量モデル。
-  ベースライン: Seasats Lightfish（RR-20260824-01 調査値）／ 実装: <code>tools/usv_model/interactive/index.html</code>（検証 6/6 PASS）<br>
+  ベースライン: Seasats Lightfish（RR-20260824-01 調査値）／ 実装: <code>tools/usv_model/interactive/index.html</code>（検証 9/9 PASS）<br>
   本書は<b>支配式（一般形）と閉じ込め式（実験式・仮定）を分離して記述</b>する。閉じ込め式は将来、実験・CFD 等のマップで差し替える前提の「置換対象」であり、各所にその旨と推奨手段を明記する。</div>
 </div>
 
@@ -550,6 +613,7 @@
 <li><a href="#s10">閉じ込め式の置換ロードマップ</a></li>
 <li><a href="#s11">発見・限界</a></li>
 <li><a href="#s12">ミッションシミュレーション（決定論シナリオ木）</a></li>
+<li><a href="#s13">船体形状・復原力・耐航性能係数（S1〜S4）</a></li>
 </ol>
 <div class="tools"><button id="btn-open">すべて開く</button><button id="btn-close">すべて畳む</button></div>
 </nav>
@@ -1069,13 +1133,278 @@ crit = false の滞留（<b>充電待機</b>など）は下限タッチを許容
 検証 V8 が Σw<sub>σ</sub> = 1（確率の完全性）と成功率の有界性を毎ロード確認する。</p>
 </details>
 
+<!-- ═══════════ §13 ═══════════ -->
+<details class="sec" id="s13" open><summary><span class="no">§13</span><span class="ttl">船体形状・復原力・耐航性能係数（S1〜S4）</span></summary>
+
+<details class="sub" open><summary>13.1 目的と位置づけ</summary>
+<p>§2〜§11 の 0 次元モデルは、船体形状を <b>7 個の仮定値</b>で代表させていた: 喫水 <math><mi>d</mi></math>・浸水表面積 <math><mi>S</mi></math>（ともに方形係数 <math><msub><mi>C</mi><mi>b</mi></msub></math> と Denny-Mumford 近似から導出）、水線面積係数 <math><msub><mi>C</mi><mi>w</mi></msub></math>、ヒーブ付加質量比 <math><mi>maHeaveFrac</mi></math>・減衰比 <math><msub><mi>ζ</mi><mi>heave</mi></msub></math>、ピッチ付加慣性比 <math><mi>maPitchFrac</mi></math>・減衰比 <math><msub><mi>ζ</mi><mi>pitch</mi></msub></math> の 7 つである。§13 は、この 7 個を「船体形状 3D モデルから実測・計算した値」で置き換える作業（S1〜S4）を記録する。</p>
+<p>データの流れは次の 1 方向ループである（<code>tools/usv_hull/README.md</code>）:</p>
+<div class="arch"><div class="arch-row">
+<div class="mod hub"><b>hullGeom()</b><span>usv-core の唯一の形状正本</span></div>
+<div class="arr">→</div>
+<div class="mod"><b>export_stl.mjs</b><span>水理メッシュ→STL／Nemoh .dat</span></div>
+</div><div class="arch-row">
+<div class="mod"><b>gz.py</b><span>復原力（GZ/AVS/E_転覆・E_復帰）S0/S1</span></div>
+<div class="arr">→</div>
+<div class="mod"><b>bem.py</b><span>capytaine・付加質量/減衰/波強制力 S3</span></div>
+</div><div class="arch-row">
+<div class="mod hub"><b>pack_hydro.mjs</b><span>usv-hydro ブロックへ格納 S4</span></div>
+<div class="arr">→</div>
+<div class="mod"><b>0-D モデル（sea.mode）</b><span>UI・ミッションSimが参照</span></div>
+</div></div>
+<p><b>形状の正本は 1 つ</b> — <code>hullGeom()</code> のみで、STL を CAD で手モデリングしない。形状パラメータを振れば STL が自動で出るため、「1 隻の解析」ではなく<b>形状トレードオフスタディのループ</b>が閉じる（§13.4 の平甲板 vs キャノピー vs 非対称の比較がその実例）。</p>
+</details>
+
+<details class="sub" open><summary>13.2 水理メッシュ — 表示用との違い</summary>
+<p>モデルタブの 3D ビューが使う <code>hullMesh()</code>（表示用）は見た目重視で、ウィング・マスト・プロペラなど<b>開いた薄板</b>を含み粗い。そのままでは体積積分も BEM も通らない。<code>export_stl.mjs</code> が別に作る<b>水理メッシュ</b>は次の条件を満たす:</p>
+<ul>
+<li>船殻＋デッキ＋トランサムを<b>閉じた 1 ソリッド</b>にする（船首は y=0 に収束して自然に閉じる）</li>
+<li>頂点を溶接し、<b>有向辺が全体でちょうど 1 回ずつ</b>現れることを検査する（＝水密かつ法線の向きが揃う）。水密でないパーツがあると <code>export_stl.mjs</code> は非ゼロで終了する</li>
+<li>船首で表裏に重なる三角形が出るので<b>相殺</b>する（体積寄与 0 だが多様体性を壊し BEM が嫌うため）</li>
+<li>法線を符号付き体積で外向きに揃える</li>
+<li>キールフィン・キャノピーは<b>別の閉ソリッド</b>として出す。互いに内部が重ならないので体積は単純に足せる（発散定理は閉曲面の合併でも成立する）</li>
+</ul>
+<p>S3 では四角形パネルをそのまま Nemoh <code>.dat</code> 形式で出す（三角形になる船首・トランサム扇形は最後の頂点を重複させる Nemoh の規約に従う）。同じ離散化で STL と <code>.dat</code> の没水面積が 0.1% 以内で一致することを受入とした。パネルが四角のまま半減するため、密行列 O(N³) の求解が約 8 倍速くなる。</p>
+</details>
+
+<details class="sub" open><summary>13.3 復原力の支配式（S1）</summary>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(19)</span></div>
+<math display="block"><mrow>
+<mi>V</mi><mo>=</mo><msub><mo>∮</mo></msub><mo>(</mo><mn>0</mn><mo>,</mo><mn>0</mn><mo>,</mo><mi>z</mi><mo>)</mo><mo>·</mo><mi>n</mi><mspace width="0.2em"/><mi>d</mi><mi>A</mi>
+<mo>,</mo><mspace width="1em"/>
+<msub><mi>x</mi><mi>B</mi></msub><mi>V</mi><mo>=</mo><msub><mo>∮</mo></msub><mo>(</mo><mn>0</mn><mo>,</mo><mn>0</mn><mo>,</mo><mi>x</mi><mi>z</mi><mo>)</mo><mo>·</mo><mi>n</mi><mspace width="0.2em"/><mi>d</mi><mi>A</mi>
+</mrow></math>
+<math display="block"><mrow>
+<msub><mi>y</mi><mi>B</mi></msub><mi>V</mi><mo>=</mo><msub><mo>∮</mo></msub><mo>(</mo><mn>0</mn><mo>,</mo><mn>0</mn><mo>,</mo><mi>y</mi><mi>z</mi><mo>)</mo><mo>·</mo><mi>n</mi><mspace width="0.2em"/><mi>d</mi><mi>A</mi>
+<mo>,</mo><mspace width="1em"/>
+<msub><mi>z</mi><mi>B</mi></msub><mi>V</mi><mo>=</mo><msub><mo>∮</mo></msub><mo>(</mo><mn>0</mn><mo>,</mo><mn>0</mn><mo>,</mo><mfrac><msup><mi>z</mi><mn>2</mn></msup><mn>2</mn></mfrac><mo>)</mo><mo>·</mo><mi>n</mi><mspace width="0.2em"/><mi>d</mi><mi>A</mi>
+</mrow></math>
+<div class="eqnote">浸水部の体積 <math><mi>V</mi></math> と浮心 <math><mo>(</mo><msub><mi>x</mi><mi>B</mi></msub><mo>,</mo><msub><mi>y</mi><mi>B</mi></msub><mo>,</mo><msub><mi>z</mi><mi>B</mi></msub><mo>)</mo></math> を発散定理（面積分）で厳密に積分する。被積分関数が<b>すべて z を因子に持つ</b>ため、水線面のキャップ上では z=0 となり<b>水線面の穴を塞がなくてよい</b>（寄与は恒等的に 0）。三角形上の積分は辺中点の<b>3 点則</b>（2 次まで厳密）で評価するため、離散化誤差の原因はメッシュ解像度だけになる。<math><msub><mi>A</mi><mi>wp</mi></msub></math> と <math><msub><mi>I</mi><mi>T</mi></msub></math> も同じ面積分の副産物として得る。</div></div>
+<p>平衡は heave を Newton 法で解く（浮力の解析的な感度 <math><mrow><mi>d</mi><mi>V</mi><mo>/</mo><mi>d</mi><mo>(</mo><mi>d</mi><mi>z</mi><mo>)</mo><mo>=</mo><mo>−</mo><msub><mi>A</mi><mi>wp</mi></msub></mrow></math> が使えるため収束が速い）。trim は割線法で、傾斜角ごとに前の解から継続する。<b>トリムは必ず地球座標の横軸まわりで掛ける</b> — 船体座標で掛けると heel=90° でトリム軸が鉛直（＝ヨー）に退化し方程式が解けなくなる（実際に踏んだ落とし穴）。</p>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">検証（較正ではない）</span><span class="eqno">(20)</span></div>
+<p style="margin:6px 0 0;font-size:14px">直方体 4.0×1.0×0.8 m・喫水 0.2 m で、喫水・KB・I_T・A_wp・BM・GM・GZ(5°) の <b>7 量すべてが解析解と機械精度（&lt;1e-16）で一致</b>する（<code>gz.py --selftest</code>）。</p></div>
+<div class="tbl"><table>
+<tr><th>収束チェック</th><th class="num">結果</th></tr>
+<tr><td>メッシュ 3 倍細分での GM 変化</td><td class="num">1.9%</td></tr>
+<tr><td>メッシュ 3 倍細分での AVS 変化</td><td class="num">0.1°</td></tr>
+<tr><td>メッシュ 3 倍細分での復帰エネルギー変化</td><td class="num">0.2%</td></tr>
+<tr><td>傾斜角刻み 2.5°→1° での変化</td><td class="num">0.1% 以内</td></tr>
+</table></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（KG 閉形式）</span><span class="bdg rep">再計算せず解析的に平行移動</span><span class="eqno">(21)</span></div>
+<math display="block"><mrow>
+<mi>G</mi><mi>Z</mi><mo>(</mo><mi>φ</mi><mo>,</mo><mi>K</mi><mi>G</mi><mo>)</mo><mo>=</mo>
+<mi>G</mi><msub><mi>Z</mi><mi>ref</mi></msub><mo>(</mo><mi>φ</mi><mo>)</mo><mo>−</mo>
+<mo>(</mo><mi>K</mi><mi>G</mi><mo>−</mo><mi>K</mi><msub><mi>G</mi><mi>ref</mi></msub><mo>)</mo><mo>·</mo><mi>sin</mi><mi>φ</mi>
+</mrow></math>
+<div class="eqnote">S1 の浮力配置（浮心・水線面）は重心高 KG に依存しないため、GZ 曲線は KG_ref で 1 本だけ計算・格納すれば、任意の KG はこの閉形式で即時に求まる（回転中心を変えても浮力分布は同じという事実の帰結）。<code>usv-hydro.gz</code> はこの方式で 1 本だけ格納する。</div></div>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式（復原力の地形）</span><span class="eqno">(22)</span></div>
+<math display="block"><mrow>
+<mi>U</mi><mo>(</mo><mi>φ</mi><mo>)</mo><mo>=</mo>
+<msubsup><mo>∫</mo><mn>0</mn><mi>φ</mi></msubsup><mi>W</mi><mo>·</mo><mi>G</mi><mi>Z</mi><mo>(</mo><msup><mi>φ</mi><mo>′</mo></msup><mo>)</mo><mspace width="0.2em"/><mi>d</mi><msup><mi>φ</mi><mo>′</mo></msup>
+<mo>,</mo><mspace width="1em"/><mi>W</mi><mo>=</mo><mi>m</mi><mi>g</mi>
+</mrow></math>
+<div class="eqnote">GZ を復原モーメントのポテンシャルとして積分した「地形」。<b>平衡は GZ=0</b>（U の極値）で、GZ が −→+ に変わる点が安定（U の谷）、+→− が不安定（U の峰）。左右非対称形状では 180° が平衡でなくなるため、必ず −180°〜+180° 全周を評価し、±180° をまたいで巡回的に閉じる。<b>AVS±</b>＝直立平衡から最初に出会う不安定平衡角、<b>転覆姿勢</b>＝直立から 20° 超で最も深い（U が最小の）安定平衡（存在しなければ「なし」＝自己復原）、<b>E_転覆／E_復帰</b>＝それぞれの安定平衡から左右いずれか近い方の不安定平衡（峰）までの U の差（要る仕事）。GM は静水力学の恒等式 <math><mrow><mi>G</mi><mi>M</mi><mo>=</mo><mi>K</mi><mi>B</mi><mo>+</mo><mi>B</mi><mi>M</mi><mo>−</mo><mi>K</mi><mi>G</mi></mrow></math> で得る（I_T/∇+KB−KG。GZ 曲線の傾きから読むと wall-sided の 2 次項が混ざるため分けている）。</div></div>
+<p class="std">実装: <code>tools/usv_hull/gz.py</code>（<code>upright / gz_curve / landscape / metrics</code>）。船体タブ §H2 の GZ 地形はこの定義を JS へ移植したもの（数値検証は §13.4 参照）。</p>
+</details>
+
+<!-- ═══════════ §13.4 ═══════════ -->
+<details class="sub" open><summary>13.4 結果 S1 — Lightfish 相当船型の復原力</summary>
+<p style="font-size:12.5px;color:var(--muted)">実行: 形状は <code>usv-core</code> の <code>hullGeom()</code>（L_wl 3.2 m・B 0.9 m・m 159 kg）。メッシュ N=80 M=14 Mc=4 K=10（7406 三角形）、傾斜角刻み 2.5°、自由トリム、全周 −180〜+180°。</p>
+
+<h3>13.4.1 0 次元モデルの船型仮定とのずれ</h3>
+<div class="tbl"><table>
+<tr><th>量</th><th class="num">0-D モデル</th><th class="num">3D 形状（実測）</th><th class="num">差</th></tr>
+<tr><td>方形係数 C_b</td><td class="num">0.45（入力）</td><td class="num"><b>0.368</b></td><td class="num">−18%</td></tr>
+<tr><td>喫水 d</td><td class="num">0.1197 m（C_b から）</td><td class="num"><b>0.1464 m</b></td><td class="num"><b>+22%</b></td></tr>
+<tr><td>濡れ面積 S</td><td class="num">1.947 m²（Denny-Mumford）</td><td class="num">2.002 m²（裸殻）／<b>2.231 m²（キール込み）</b></td><td class="num">+2.8% ／ <b>+14.6%</b></td></tr>
+<tr><td>水線面積 A_wp</td><td class="num">—</td><td class="num">1.746 m²</td><td class="num">—</td></tr>
+<tr><td>KB / BM</td><td class="num">—</td><td class="num">0.0894 m / 0.3776 m</td><td class="num">—</td></tr>
+<tr><td>予備浮力（デッキまで）</td><td class="num">—</td><td class="num"><b>3.03 倍</b></td><td class="num">—</td></tr>
+</table></div>
+<p><b>注記 —</b> 濡れ面積が一見合っている（+2.8%）のは<b>誤差の打ち消し</b>である。Denny-Mumford を正しい喫水 0.1464 m で評価すると 1.856 m²（−7.3%）で、C_b を 0.45 と置いた誤りが Denny-Mumford の過小評価を相殺している。<b>両方直さないと片方直しただけで悪化する。</b>キールフィンの濡れ面積 0.229 m²（裸殻の +11%）は 0-D モデルが一切数えておらず、付加物抵抗として明示的に持つべき量である。<code>CrBase</code> は V1 実測で較正済みなので較正点の平水抵抗そのものは合っているが、ずれるのは<b>摩擦と剰余の内訳</b>で、両者は速度依存が違う（<math><mrow><msub><mi>C</mi><mi>f</mi></msub><mo>∝</mo><msup><mi>Re</mi><mrow><mo>−</mo><mn>0.2</mn></mrow></msup></mrow></math> 級 vs <math><mrow><msub><mi>C</mi><mi>r</mi></msub><mo>∝</mo><mn>1</mn><mo>+</mo><mo>(</mo><mi>Fn</mi><mo>/</mo><msub><mi>Fn</mi><mi>ref</mi></msub><msup><mo>)</mo><mn>4</mn></msup></mrow></math>）ため、較正点から離れた速度で効く。→ <b>S4 の作業項目</b>: 0-D モデルの d と S を 3D 実測値で与え直し、<code>CrBase</code> を再較正する（§13.7）。</p>
+
+<h3>13.4.2 重心高 KG が支配的（平甲板・現状形状）</h3>
+<div class="tbl"><table>
+<tr><th>KG [m]</th><th class="num">GM [m]</th><th class="num">GZmax [m]</th><th class="num">AVS [deg]</th><th class="num">E_転覆 [J]</th><th class="num">E_復帰 [J]</th></tr>
+<tr><td>0.05</td><td class="num">0.417</td><td class="num">0.208</td><td class="num">128.3</td><td class="num">466</td><td class="num">75</td></tr>
+<tr><td>0.10</td><td class="num">0.367</td><td class="num">0.172</td><td class="num">116.5</td><td class="num">346</td><td class="num">111</td></tr>
+<tr><td>0.15</td><td class="num">0.317</td><td class="num">0.138</td><td class="num">102.3</td><td class="num">242</td><td class="num">163</td></tr>
+<tr><td>0.175</td><td class="num">0.292</td><td class="num">0.121</td><td class="num">94.5</td><td class="num">198</td><td class="num">196</td></tr>
+<tr><td>0.20</td><td class="num">0.267</td><td class="num">0.108</td><td class="num">86.5</td><td class="num">158</td><td class="num">235</td></tr>
+<tr><td>0.25</td><td class="num">0.217</td><td class="num">0.080</td><td class="num">70.1</td><td class="num">96</td><td class="num">329</td></tr>
+<tr><td>0.30</td><td class="num">0.167</td><td class="num">0.056</td><td class="num">55.6</td><td class="num">54</td><td class="num">442</td></tr>
+</table></div>
+<div class="find"><span class="fl">FINDING 3</span><br>
+<b>KG を 0.10→0.20 m（船体深さ D=0.301 m の 33%→66%）にすると転覆に要る仕事が 346→158 J（−54%）、復帰に要る仕事が 111→235 J（+111%）。</b>他のどの形状変数よりも桁違いに効く。KG ≈ 0.175 m（0.58 D）が分水嶺で、ここで E_転覆 ≈ E_復帰 になり、これより重心が高いと「転覆する方が復帰するより easy」な船になる。AVS は KG にほぼ線形（0.05 m 上がるごとに約 −8°）。<b>KG は現状ただの仮定値</b>で、重量配分の実測（各コンポーネントの質量と搭載位置）が S1 の精度を決める最大の未知数——形状の議論より先に潰すべき（§13.9）。</div>
+
+<h3>13.4.3 上部構造 — 密閉キャノピーと左右非対称（KG=0.15 m 固定）</h3>
+<div class="tbl"><table>
+<tr><th>形状</th><th class="num">AVS+</th><th class="num">AVS−</th><th class="num">転覆姿勢</th><th class="num">E_転覆 [J]</th><th class="num">E_復帰 [J]</th></tr>
+<tr><td>平甲板（現状）</td><td class="num">102.3</td><td class="num">−102.3</td><td class="num">180.0°</td><td class="num">242</td><td class="num"><b>163</b></td></tr>
+<tr><td>密閉キャノピー・対称</td><td class="num">118.8</td><td class="num">−118.8</td><td class="num">180.0°</td><td class="num"><b>271</b></td><td class="num"><b>45</b></td></tr>
+<tr><td>同・非対称 yOff 0.15</td><td class="num">121.4</td><td class="num">−114.5</td><td class="num">−169.6°</td><td class="num">255</td><td class="num"><b>33</b></td></tr>
+<tr><td>同・非対称 yOff 0.30</td><td class="num">122.6</td><td class="num">−108.5</td><td class="num">−160.9°</td><td class="num">245</td><td class="num">35</td></tr>
+<tr><td>同・非対称 yOff 0.45</td><td class="num">122.8</td><td class="num">−102.6</td><td class="num">−157.8°</td><td class="num">242</td><td class="num">47</td></tr>
+<tr><td>同・非対称 yOff 0.60</td><td class="num">122.3</td><td class="num">−102.3</td><td class="num">−157.1°</td><td class="num">242</td><td class="num">60</td></tr>
+<tr><td>同・非対称 yOff 0.80</td><td class="num">120.7</td><td class="num">−102.3</td><td class="num">−157.6°</td><td class="num">242</td><td class="num">75</td></tr>
+</table></div>
+<p style="font-size:12.5px;color:var(--muted)">キャノピー＝長さ 0.25L〜0.75L・幅 0.55×甲板幅・高さ 0.6D の密閉容積。yOff は甲板幅に対する横オフセット量。</p>
+<div class="find"><span class="fl">FINDING 4</span><br>
+<b>効くのは「甲板上に密閉容積があること」であって、左右非対称ではない。</b>対称キャノピーだけで復帰仕事が 163→45 J（−72%）、しかも転覆させる仕事も 242→271 J に増える（両方向に改善）。非対称は「転覆姿勢を 180° から外す」ことが本体の効果——完全対称形状では 180° がきれいな安定平衡になって居座るが、非対称だと −170°〜−157° の傾いた姿勢になり、そこからの障壁が下がる。ただし最適点は小さい方（yOff 0.15 で 33 J が最小）で、0.45 を超えると単調に悪化する（75 J＝対称より悪い）。代償は左右非対称な脆さ（yOff 0.30 で AVS+ 122.6° に対し AVS− −108.5°）。直立時の水線には影響しない（全ケースで定常ヒール 0.0°・GM 0.317 m で変わらない＝静水力学的には操舵性のペナルティはない。懸念すべきは空気力と波中での動的影響）。→ <b>設計の優先順位: ①KG を下げる ≫ ②甲板上を密閉容積にする ≫ ③控えめな左右非対称</b>（非対称は「やるなら小さく」）。</div>
+
+<h3>13.4.4 副産物 — ロール固有周期の初期見積り</h3>
+<p>GM = 0.317 m（KG=0.15）、ロール慣動半径を k ≈ 0.35〜0.40 B = 0.32〜0.36 m と仮定し、付加慣性 +20〜30% を見込むと <b>T_roll ≈ 1.2〜1.4 s</b>。想定波周期 5〜11 s に対して桁で短い——ロール共振域に入らない代わりに、波面の傾斜をそのままなぞる挙動になる（GM/B = 0.35 は船舶として極端に大きい＝極端に硬い筏）。良い面: 転覆に至るロール共振は起きにくい。悪い面: ロール角 ≒ 波面傾斜なので荒天では姿勢が常に大きく振れ、加速度は高周波成分で決まりペイロードに効く。→ この見積りは §13.6（S3・BEM）で実測値に置き換える。</p>
+</details>
+
+<!-- ═══════════ §13.5 ═══════════ -->
+<details class="sub" open><summary>13.5 BEM（S3）— 耐航性能係数の実測</summary>
+<p>0-D の耐航性能は 2 次系近似で、係数がすべて仮定値だった（下表）。S3 は capytaine（線形ポテンシャル流の 3D パネル法）でこれを置き換える。</p>
+<div class="tbl"><table>
+<tr><th>0-D の仮定値</th><th>意味</th><th>S3 で置き換えるもの</th></tr>
+<tr><td><code>sea.maHeaveFrac = 0.8</code></td><td>ヒーブ付加質量比 A33/m</td><td>A33(ω)</td></tr>
+<tr><td><code>sea.zetaHeave = 0.35</code></td><td>ヒーブ減衰比</td><td>B33(ω) → ζ(ω)</td></tr>
+<tr><td><code>sea.maPitchFrac = 0.8</code></td><td>ピッチ付加慣性比 A55/I55</td><td>A55(ω)</td></tr>
+<tr><td><code>sea.zetaPitch = 0.35</code></td><td>ピッチ減衰比</td><td>B55(ω)</td></tr>
+<tr><td><code>sea.Cw = 0.72</code></td><td>水線面積係数（C33, C55 に入る）</td><td>C33, C55（静水力学・S1 と一致するはず）</td></tr>
+<tr><td>exp(−kd)·sinc</td><td>Froude-Krylov 近似の起振力</td><td>F3(ω), F5(ω)（回折込み）</td></tr>
+<tr><td>（無し）</td><td><b>ロール</b></td><td>A44, B44, C44, F4 — <b>新設</b></td></tr>
+</table></div>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式（線形ポテンシャル流・周波数域）</span><span class="eqno">(23)</span></div>
+<math display="block"><mrow>
+<mo>[</mo><mo>−</mo><msup><mi>ω</mi><mn>2</mn></msup><mo>(</mo><mi>M</mi><mo>+</mo><mi>A</mi><mo>(</mo><mi>ω</mi><mo>)</mo><mo>)</mo><mo>+</mo><mi>i</mi><mi>ω</mi><mi>B</mi><mo>(</mo><mi>ω</mi><mo>)</mo><mo>+</mo><mi>C</mi><mo>]</mo><mi>x</mi><mo>=</mo><mi>F</mi><mo>(</mo><mi>ω</mi><mo>)</mo>
+</mrow></math>
+<div class="eqnote">6 自由度の運動方程式。<math><mi>A</mi></math>＝付加質量（輻射問題）、<math><mi>B</mi></math>＝輻射減衰、<math><mi>C</mi></math>＝静水復原（capytaine 計算値・S1 と照合）、<math><mi>F</mi></math>＝波強制力（回折＋Froude-Krylov、単位振幅・複素）。RAO は <math><mrow><mi>x</mi><mo>=</mo><mi>Z</mi><msup><mo>(</mo><mo>−</mo><mn>1</mn><mo>)</mo></msup><mi>F</mi></mrow></math>。<b>capytaine はゼロ速度</b>——前進速度は出会い周波数 <math><mrow><msub><mi>ω</mi><mi>e</mi></msub><mo>=</mo><mi>ω</mi><mo>+</mo><msup><mi>ω</mi><mn>2</mn></msup><mi>V</mi><mo>/</mo><mi>g</mi></mrow></math> で係数を評価する STF 型近似で接続する（§13.7）。</div></div>
+<h3>受入結果（実測済みの事実）</h3>
+<div class="tbl"><table>
+<tr><th>チェック</th><th class="num">結果</th></tr>
+<tr><td>濡れ面積（gz.py 独立実装との一致・7406 三角形・設計喫水）</td><td class="num">0.01%（2.2317 vs 2.2314 m²）</td></tr>
+<tr><td>静水復原係数 C44 の一致（差は粗メッシュ・キール無しの排水量 2.7% 減で説明可）</td><td class="num">3% 以内</td></tr>
+<tr><td>対称性 A35≈A53, B35≈B53</td><td class="num">相対 2% 以内</td></tr>
+<tr><td>メッシュ収束（粗~700 vs 中~1500 パネル・共振近傍の |RAO3| 差）</td><td class="num">5% 以内</td></tr>
+<tr><td>長波極限</td><td class="num">|RAO3|=0.9998・|RAO5|/k=1.0003</td></tr>
+<tr><td>粗・細メッシュのヒーブ共振近傍 |RAO3| 差</td><td class="num">1.35%</td></tr>
+<tr><td>実行時間（粗 738 パネル・輻射9+回折3=12問題）</td><td class="num">1.1 s（240 問題フルは 粗 6.4 s・細 47 s）</td></tr>
+</table></div>
+<p style="font-size:12.5px;color:var(--muted)">連成項 A35/A53 の非対称 2〜4% は連成項自体が対角の 5% しかないため RAO に効かない（使うときは (A+Aᵀ)/2 で対称化する）。</p>
+<h3>出せないもの（必ず別手当てが要る）</h3>
+<ul>
+<li><b>ロール減衰</b>——ポテンシャル流の B44 は実測で 0.0004〜2.7 Nms しか出ない（ほぼゼロ）。実機のロール減衰は渦放出・摩擦・ビルジキールという<b>粘性支配</b>で、BEM の守備範囲外。経験式（Ikeda 法）か CFD か水槽試験で別に入れる必要がある</li>
+<li><b>前進速度</b>——capytaine はゼロ速度。出会い周波数近似（STF 型）で接続する</li>
+<li><b>短波長の反射域</b>（λ/L&lt;0.5）——パネルを異常に細かくしないと解けない。既存の解析式（Faltinsen 漸近／STAWAVE-1）を残すハイブリッドにする</li>
+<li><b>付加抵抗</b>——2 次量。S3 では出さない（必要なら遠方場法で後続）</li>
+</ul>
+<h3>座標系の落とし穴（実際に踏んだ）</h3>
+<p>STL の原点は<b>船底基線</b>（z=0）。capytaine は<b>自由表面</b>（z=0）を原点とする系で解く。<code>translated_z(-喫水)</code> した後は<b>重心の z も −喫水</b>すること。忘れると KG が喫水ぶん高く評価され、C44 が 1.9 倍ずれる——<b>無言で通るので気づきにくい</b>。</p>
+<h3>四角形パネル</h3>
+<p><code>lib/mesh.mjs</code> は四角形を作ってから三角形に割っている。BEM は四角形パネルをそのまま扱えるため、Nemoh <code>.dat</code>/<code>.mar</code> 形式で四角形のまま出せばパネル数は半減する。密行列の求解は O(N³) なので、これだけで約 8 倍速くなる（三角形になる船首・トランサム扇形は最後の頂点を重複させる Nemoh の規約に従う）。</p>
+</details>
+
+<!-- ═══════════ §13.6 ═══════════ -->
+<details class="sub" open><summary>13.6 結果 S3 — BEM で出した耐航性能係数</summary>
+<p style="font-size:12.5px;color:var(--muted)">実行: <code>bem.py</code>／メッシュ: 粗（没水 738 パネル・キール無し）と細（3020 パネル・キール込み）。ω=0.5〜8.0 rad/s の 30 点、向い波（180°）と横波（90°）、ゼロ速度。KG=0.15 m、k44=0.35B、k55=0.25L。</p>
+<p><b>受入</b>: C33 は S1 と 0.01%、C44 は 0.55% で一致（細メッシュ）。長波極限で |RAO3|=0.9998、|RAO5|/k=1.0003。粗・細メッシュでヒーブ共振近傍の |RAO3| 差 1.35%。連成項 A35/A53 の非対称 2〜4% は連成項自体が対角の 5% しかないため RAO に効かない。実行時間: 粗 6.4 s・細 47 s（240 問題）。</p>
+<div class="tbl"><table>
+<tr><th>係数</th><th class="num">0-D の仮定値</th><th class="num">BEM（細メッシュ）</th><th>備考</th></tr>
+<tr><td>Cw（水線面積係数）</td><td class="num">0.72</td><td class="num"><b>0.606</b></td><td>S1 の A_wp=1.746 m² と整合</td></tr>
+<tr><td>maHeaveFrac（A33/m）</td><td class="num">0.8</td><td class="num"><b>1.94</b></td><td>平底・幅広（B/T≈6）の平板的な付加質量</td></tr>
+<tr><td>zetaHeave</td><td class="num">0.35</td><td class="num"><b>0.285</b></td><td></td></tr>
+<tr><td>maPitchFrac（A55/I55）</td><td class="num">0.8</td><td class="num"><b>1.47</b></td><td></td></tr>
+<tr><td>zetaPitch</td><td class="num">0.35</td><td class="num"><b>0.234</b></td><td></td></tr>
+<tr><td>ma44（A44/I44）</td><td class="num">—</td><td class="num">0.54</td><td>新設</td></tr>
+<tr><td>zeta44</td><td class="num">—</td><td class="num">0.055</td><td><b>ポテンシャル流のみ。粘性減衰を別途足す</b></td></tr>
+</table></div>
+<div class="tbl"><table>
+<tr><th>固有周期（自己無撞着・ゼロ速度）</th><th class="num">0-D（仮定値から逆算）</th><th class="num">BEM</th></tr>
+<tr><td>ヒーブ T_n</td><td class="num">0.74 s</td><td class="num"><b>1.03 s</b></td></tr>
+<tr><td>ピッチ T_n</td><td class="num">—</td><td class="num">0.98 s</td></tr>
+<tr><td>ロール T_n</td><td class="num">S1 の推定 1.2〜1.4 s</td><td class="num"><b>1.40 s</b></td></tr>
+</table></div>
+<p>付加質量が仮定の約 2 倍なので、<b>0-D は固有周波数を約 40% 高く見積もっていた</b>。うねり域（T 5〜11 s）では両者とも RAO≈1 で差は出ないが、風浪域（T 2〜3 s）と加速度判定（m0a は ω_e⁴ で重み付くので共振の位置に敏感）に効く——影響の定量化は §13.8（S4-5）。ロール固有周期 1.40 s は S1 の GM ベース推定（1.2〜1.4 s）の上端に一致し、「波面追従する硬い筏」の結論は変わらない。</p>
+<p class="std">実装: <code>tools/usv_hull/bem.py</code>。船体タブ §H3 の A33/B33・A55/B55 図、RAO 比較図、等価定数表・固有周期表はこの結果（<code>usv-hydro.bem</code>）を毎回読み直して描画する。</p>
+</details>
+
+<!-- ═══════════ §13.7 ═══════════ -->
+<details class="sub" open><summary>13.7 0-D への組み込み（S4）— usv-hydro とスイッチ</summary>
+<p>S1/S3 の結果を index.html に埋め込む形式が <code>&lt;script id="usv-hydro" type="application/json"&gt;</code>（dimensional で格納。無次元化は core 側の Froude スケーリングで扱う）。骨子:</p>
+<div class="tbl"><table>
+<tr><th>キー</th><th>内容</th></tr>
+<tr><td><code>hull</code></td><td>係数表がどの船体（Lwl, B, m, Cb）で作られたかの指紋（<code>hash</code> は sha1）</td></tr>
+<tr><td><code>hydrostatics</code></td><td>draft_m・Awp_m2・Swet_m2／Swet_bare_m2・Cb_eff・KB_m・BM_m・IT_m4・vol_total_m3・lcg_m（gz.py の base 実行から）</td></tr>
+<tr><td><code>gz</code></td><td>kg_ref_m・angles_deg（−180〜180 を 2.5° 刻み）・variants（形状バリアントごとの GZ_m 配列）</td></tr>
+<tr><td><code>bem</code></td><td>omega・A/B の {33,44,55,35}・C・F（head/beam×3,5,4・複素）・rao_ref（6×6厳密解・V9 検証用）・fit（等価定数）</td></tr>
+</table></div>
+<p><code>USV.hydro</code> はこの JSON のパース結果（無ければ null）。DOM 依存を避けるため、core 冒頭で
+<code>typeof document !== 'undefined' ? JSON.parse(document.getElementById('usv-hydro')?.textContent ?? 'null') : (globalThis.USV_HYDRO ?? null)</code>
+という分岐で読む（Node の受入スクリプトは <code>globalThis.USV_HYDRO</code> を注入して代替する）。</p>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（スイッチ）</span><span class="bdg rep">既定は analytic のまま＝V1〜V8 の数値は不変</span><span class="eqno">(24)</span></div>
+<p style="margin:6px 0 0;font-size:14px"><code>sea.mode</code>: <code>'analytic'</code>（既定・2 次系近似）／<code>'bem'</code>（表補間。<code>hydroMatch(hull).ok</code> のときだけ有効、それ以外は自動的に解析式へ退避し UI が理由を表示する）。</p></div>
+<h3>hydroMatch と Froude 相似則</h3>
+<p><code>hydroMatch(h)</code> は現在の船体寸法と係数表の船体を比較し <code>{ok, scale, reason}</code> を返す: 寸法比（L・B・m^(1/3)）が全て 1（±1e-6）＝<b>形状一致</b>、全て等しい比 s（±1%）＝<b>相似</b>（Froude 則で換算）、それ以外＝<b>不一致</b>（解析式へ退避）。相似スケール s の換算は質量∝s³・時間∝√s の Froude 則から:</p>
+<div class="tbl"><table>
+<tr><th>量</th><th>スケール指数</th></tr>
+<tr><td>ω（表参照周波数）</td><td>ω/√s</td></tr>
+<tr><td>A33</td><td>s³</td></tr>
+<tr><td>A55 / A44</td><td>s⁵</td></tr>
+<tr><td>A35</td><td>s⁴</td></tr>
+<tr><td>B33</td><td><b>s^2.5</b></td></tr>
+<tr><td>B55 / B44</td><td><b>s^4.5</b></td></tr>
+<tr><td>B35</td><td><b>s^3.5</b></td></tr>
+<tr><td>C33</td><td>s²</td></tr>
+<tr><td>C35</td><td>s³</td></tr>
+<tr><td>C55</td><td>s⁴</td></tr>
+<tr><td>F3</td><td>s²</td></tr>
+<tr><td>F5</td><td>s³</td></tr>
+</table></div>
+<p><b>注記（SPEC からの訂正）</b> — 当初の仕様書は減衰の指数を B33·s^3.5／B55・B44·s^5.5／B35·s^4.5 としていたが、実装・実データ検証の結果は上表（2.5／4.5／3.5）が正しい。標準的な無次元化 <math><mrow><mi>B</mi><mo>′</mo><mo>=</mo><mi>B</mi><mo>/</mo><mo>(</mo><mi>ρ</mi><mo>∇</mo><msub><mi>ω</mi><mn>0</mn></msub><mo>)</mo></mrow></math>（<math><mrow><msub><mi>ω</mi><mn>0</mn></msub><mo>=</mo><msqrt><mi>g</mi><mo>/</mo><mi>L</mi></msqrt></mrow></math>）で導くとこの指数になり、<math><mrow><mo>[</mo><mo>−</mo><msubsup><mi>ω</mi><mi>e</mi><mn>2</mn></msubsup><mo>(</mo><mi>M</mi><mo>+</mo><mi>A</mi><mo>)</mo><mo>+</mo><mi>i</mi><msub><mi>ω</mi><mi>e</mi></msub><mi>B</mi><mo>+</mo><mi>C</mi><mo>]</mo><mi>x</mi><mo>=</mo><mi>F</mi></mrow></math> の各項が相似スケール間で一様な比になって RAO3 の厳密不変性（受入④）が成立する。実データで数値検証済み（相対誤差 &lt;1e-12）。C33/C55 も「再計算しない」のではなく面積・慣性相当の s²/s⁴ でスケールする方が同じ理由で正しい（通常経路の scale=1・形状一致では無関係）。</p>
+<h3>C35（ヒーブ・ピッチ静復原連成）の必要性</h3>
+<p>SPEC_S4.md の当初仕様（S4-1）には C の 33/44/55 のみで 35 は無かったが、実 BEM データで検証すると、この項を 0 とみなすと LCG 位置によってはピッチ RAO が実際の<b>数倍〜十倍</b>にずれる帯域がある（静復原の連成が支配的な帯域があるため）。そのため実装は <code>hydro.bem.C['35']</code> があれば読み、無ければ 0 にフォールバックする（この場合は仕様書どおり対角のみの挙動になる）。<code>pack_hydro.mjs</code> が (C35+C53)/2 で対称化して追加することが望ましい——S4-1 側への申し送り。</p>
+<h3>2×2 と 6×6 の差（検証 V9）</h3>
+<p>表補間 RAO（<code>raoTableHeavePitch</code>）はヒーブ・ピッチの 2×2 に縮約した近似で、6×6 の厳密解にはサージ等の連成分だけ残るはず。V9 は BEM の生データ（<code>rao_ref</code>・6×6厳密解）と突き合わせて縮約の精度を定量化する: <b>mode=bem・V=0 で表の各 ω の RAO3/RAO5 が rao_ref と相対 6% 以内</b>（値&gt;1e-3 の点のみ）で Pass。2×2 が省くサージ連成・ヒーブ-ピッチ静復原連成（C35）により約 5% の差が残ることを許容している。hydro が無ければ「対象外」表示。</p>
+<h3>ロール（新設・出力専用）</h3>
+<p><code>raoRoll(w, h, sea, der)</code> は 1 自由度: <math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><mo>(</mo><msub><mi>k</mi><mn>44</mn></msub><mi>B</mi><msup><mo>)</mo><mn>2</mn></msup></mrow></math>、<math><mrow><msub><mi>C</mi><mn>44</mn></msub><mo>=</mo><mi>ρ</mi><mi>g</mi><mo>∇</mo><mi>G</mi><mi>M</mi></mrow></math>（GM=KB+BM−KG。KG は <code>hull.KG</code>・新規入力・既定 0.15 m）、<math><mrow><msub><mi>B</mi><mn>44</mn></msub><mo>=</mo><msub><mi>B</mi><mrow><mn>44</mn><mo>,</mo><mi>bem</mi></mrow></msub><mo>+</mo><mn>2</mn><msub><mi>ζ</mi><mrow><mn>44</mn><mo>,</mo><mi>visc</mi></mrow></msub><msqrt><msub><mi>C</mi><mn>44</mn></msub><mo>(</mo><msub><mi>I</mi><mn>44</mn></msub><mo>+</mo><msub><mi>A</mi><mn>44</mn></msub><mo>)</mo></msqrt></mrow></math>（<code>sea.zeta44Visc=0.08</code> は粘性減衰の仮定値）。<code>seakeeping()</code> の戻り値に <code>rollRmsDeg</code> を追加するが<b>判定には入れない</b>（出力・参考表示のみ）。</p>
+</details>
+
+<!-- ═══════════ §13.8 ═══════════ -->
+<details class="sub" open><summary>13.8 結果 S4-5 — ミッション成功率への影響</summary>
+<div class="find"><span class="fl">FINDING 5</span><br>
+<b>BEM モードは限界 Hs を一律 15〜17% 下げる（付加質量 ≈2× で共振が低周波側へ寄り加速度判定が厳しくなる）。既定計画では北大西洋 Hs 5 m/Tp 11 s と北太平洋 Hs 7 m/Tp 13 s の 2 状態が ok→NG に反転するが、いずれも既にエネルギーで失敗する状態のため 5 海域の成功率（43.3 / 0.8 / 14.4 / 27.5 / 97.9%）は不変。支配要因はエネルギー、という結論は BEM 係数でも変わらない。</b></div>
+<div class="tbl"><table>
+<tr><th>Hs [m] / Tp [s]</th><th class="num">limitHs 解析式</th><th class="num">limitHs BEM</th><th>判定</th></tr>
+<tr><td>0.5 / 5</td><td class="num">1.54</td><td class="num">1.25</td><td></td></tr>
+<tr><td>1.5 / 7</td><td class="num">2.58</td><td class="num">2.16</td><td></td></tr>
+<tr><td>3 / 9</td><td class="num">3.88</td><td class="num">3.31</td><td></td></tr>
+<tr><td>1 / 6</td><td class="num">2.02</td><td class="num">1.68</td><td></td></tr>
+<tr><td>5 / 11</td><td class="num">5.43</td><td class="num">4.67</td><td class="ok">ok→NG</td></tr>
+<tr><td>7.5 / 13</td><td class="num">7.24</td><td class="num">6.24</td><td></td></tr>
+<tr><td>7 / 13</td><td class="num">7.24</td><td class="num">6.24</td><td class="ok">ok→NG</td></tr>
+<tr><td>1.2 / 8</td><td class="num">3.19</td><td class="num">2.71</td><td></td></tr>
+<tr><td>3.2 / 10</td><td class="num">4.62</td><td class="num">3.97</td><td></td></tr>
+</table></div>
+<p style="font-size:12.5px;color:var(--muted)">「判定」列の ok→NG は、既定計画のその海象状態で当該フェーズの成否判定が反転したケース（いずれも当該シナリオはエネルギー枯渇で既に失敗しており、成功率の分母には影響しない）。海域別 5 海域の成功率は熱帯 97.9%・汎用 43.3%・日本近海 27.5%・北太平洋 14.4%・北大西洋 0.8%（§12 の値のまま不変）。</p>
+</details>
+
+<!-- ═══════════ §13.9 ═══════════ -->
+<details class="sub" open><summary>13.9 限界と次の課題</summary>
+<div class="caveat"><b>限界（明示）:</b>
+①<b>粘性ロール減衰</b>は BEM の守備範囲外で仮定値（ζ44Visc=0.08）のまま——Ikeda 法・CFD・水槽試験での置換が必要。
+②<b>前進速度</b>は出会い周波数の STF 型近似（capytaine はゼロ速度）で、厳密解（Neumann-Kelvin 等）ではない。
+③<b>S2 の波高換算</b>（エネルギー障壁 [J] → 転覆に必要な波高）は、波が転覆船に渡す仕事の割合・転覆時のロール減衰・砕波の運動量伝達・浸水の有無という 4 つの不確かな仮定を要し、S1/S3/S4 では未着手のまま（S1 の GZ/AVS 自体は信じてよいが、波高換算は感度幅つきの目安にしかならない）。
+④<b>重量配分の実測</b>——KG は依然として入力（仮定値）で、§13.4.2 の通り復原性の精度を決める最大の未知数。各コンポーネントの質量・搭載位置の実測が形状の議論より優先度が高い。
+⑤<b>d・S・付加物抵抗の 0-D 反映と CrBase 再較正</b>——§13.4.1 で見つかった喫水・濡れ面積のずれ（+22%／+14.6%）と、キールフィンの濡れ面積（0-D が一切数えていない付加物抵抗）はまだ §2〜§11 の抵抗モデルへ反映されておらず、反映後は較正値 <code>CrBase</code> の再較正が要る。</div>
+<p class="std">実装（追加）: <code>tools/usv_hull/{export_stl.mjs, lib/mesh.mjs, gz.py, bem.py, pack_hydro.mjs}</code>。</p>
+</details>
+
+</details>
+
+
 <div class="foot">
-DP-20260825-01 Rev.2 ／ ベース調査: RR-20260824-01 ／ 実装: tools/usv_model/interactive/index.html（Phase 1–3・検証 6/6 PASS）<br>
+DP-20260825-01 Rev.3 ／ ベース調査: RR-20260824-01 ／ 実装: tools/usv_model/interactive/index.html（Phase 1–4・検証 9/9 PASS）<br>
 主要参照: ITTC 7.5-02-02-02（抵抗）・ITTC 7.5-04-01-01（速力試運転・風圧/波浪修正）・ISO 15016 / STAWAVE-1・JONSWAP（Hasselmann 1973）・Haurwitz 晴天 GHI・Torqeedo Cruise 3.0 FP 公称値。<br>
 数式は MathML ネイティブ描画（外部ライブラリ不使用）。グラフはすべて実装コアから計算した実データ。
 </div>
 </div></div>
 
+<script id="usv-hydro" type="application/json">{"version":1,"generated":"2026-09-08T23:55:50.398Z","hull":{"Lwl":3.2,"B":0.9,"m":159,"Cb":0.45,"hash":"0148bbc194b6b16ec3a76a7327801f1755ab3dcc"},"hydrostatics":{"draft_m":0.146371,"Awp_m2":1.7464,"Swet_m2":2.23139,"Swet_bare_m2":2.00204,"Cb_eff":0.367981,"KB_m":0.089427,"BM_m":0.377572,"IT_m4":0.0585697,"vol_total_m3":0.469612,"lcg_m":1.30012},"gz":{"kg_ref_m":0.15,"angles_deg":[-180,-177.5,-175,-172.5,-170,-167.5,-165,-162.5,-160,-157.5,-155,-152.5,-150,-147.5,-145,-142.5,-140,-137.5,-135,-132.5,-130,-127.5,-125,-122.5,-120,-117.5,-115,-112.5,-110,-107.5,-105,-102.5,-100,-97.5,-95,-92.5,-90,-87.5,-85,-82.5,-80,-77.5,-75,-72.5,-70,-67.5,-65,-62.5,-60,-57.5,-55,-52.5,-50,-47.5,-45,-42.5,-40,-37.5,-35,-32.5,-30,-27.5,-25,-22.5,-20,-17.5,-15,-12.5,-10,-7.5,-5,-2.5,0,2.5,5,7.5,10,12.5,15,17.5,20,22.5,25,27.5,30,32.5,35,37.5,40,42.5,45,47.5,50,52.5,55,57.5,60,62.5,65,67.5,70,72.5,75,77.5,80,82.5,85,87.5,90,92.5,95,97.5,100,102.5,105,107.5,110,112.5,115,117.5,120,122.5,125,127.5,130,132.5,135,137.5,140,142.5,145,147.5,150,152.5,155,157.5,160,162.5,165,167.5,170,172.5,175,177.5,180],"variants":{"base":{"label":"平甲板（現状）","GZ_m":[8.57296e-17,0.0249184,0.0470611,0.0661852,0.0827364,0.0969176,0.107646,0.115009,0.119661,0.122143,0.122891,0.122274,0.120553,0.117924,0.11453,0.11048,0.105864,0.100753,0.0952044,0.0892694,0.0829926,0.0764138,0.0695669,0.0624833,0.0551931,0.0477245,0.0401049,0.0323594,0.024511,0.016583,0.0085988,0.000581452,-0.00744581,-0.0154599,-0.0234376,-0.031359,-0.0392056,-0.0469571,-0.0545922,-0.0620882,-0.0694217,-0.076219,-0.0823191,-0.0884163,-0.0944105,-0.100222,-0.105784,-0.111041,-0.115941,-0.12049,-0.124687,-0.128434,-0.131667,-0.134331,-0.136358,-0.137665,-0.138154,-0.137715,-0.136254,-0.13371,-0.129974,-0.124988,-0.118962,-0.111884,-0.103645,-0.0941253,-0.0831812,-0.0706871,-0.0566479,-0.0420562,-0.027833,-0.013856,-9.30307e-18,0.013856,0.027833,0.0420562,0.0566479,0.0706871,0.0831812,0.0941253,0.103645,0.111884,0.118962,0.124988,0.129974,0.13371,0.136254,0.137715,0.138154,0.137665,0.136358,0.134331,0.131667,0.128434,0.124687,0.12049,0.115941,0.111041,0.105784,0.100222,0.0944105,0.0884163,0.0823191,0.076219,0.0694217,0.0620882,0.0545922,0.0469571,0.0392056,0.031359,0.0234376,0.0154599,0.00744581,-0.000581452,-0.0085988,-0.016583,-0.024511,-0.0323594,-0.0401049,-0.0477245,-0.0551931,-0.0624833,-0.0695669,-0.0764138,-0.0829926,-0.0892694,-0.0952044,-0.100753,-0.105864,-0.11048,-0.11453,-0.117924,-0.120553,-0.122274,-0.122891,-0.122143,-0.119661,-0.115009,-0.107646,-0.0969176,-0.0827364,-0.0661852,-0.0470611,-0.0249184,-8.71245e-17]},"canopy_sym":{"label":"密閉キャノピー・対称","GZ_m":[3.44691e-17,0.00935582,0.0173568,0.0236076,0.0282794,0.0316777,0.0340031,0.0354446,0.0362693,0.0366749,0.0368047,0.036772,0.0366755,0.0366043,0.0365229,0.0359656,0.0347009,0.0326202,0.0297907,0.0263331,0.0223487,0.0179205,0.013121,0.00801455,0.00265594,-0.0029058,-0.00862481,-0.0144581,-0.0203679,-0.0263187,-0.0322753,-0.0382028,-0.0440673,-0.0498394,-0.0554887,-0.0609828,-0.0662878,-0.0713681,-0.0761951,-0.0807896,-0.0851655,-0.0892993,-0.0923513,-0.0953477,-0.0989821,-0.10313,-0.107523,-0.111977,-0.116356,-0.120612,-0.124696,-0.128434,-0.131667,-0.134331,-0.136358,-0.137665,-0.138154,-0.137715,-0.136254,-0.13371,-0.129974,-0.124988,-0.118962,-0.111884,-0.103645,-0.0941253,-0.0831812,-0.0706871,-0.0566479,-0.0420562,-0.027833,-0.013856,-9.30307e-18,0.013856,0.027833,0.0420562,0.0566479,0.0706871,0.0831812,0.0941253,0.103645,0.111884,0.118962,0.124988,0.129974,0.13371,0.136254,0.137715,0.138154,0.137665,0.136358,0.134331,0.131667,0.128434,0.124696,0.120612,0.116356,0.111977,0.107523,0.10313,0.0989821,0.0953477,0.0923513,0.0892993,0.0851655,0.0807896,0.0761951,0.0713681,0.0662878,0.0609828,0.0554887,0.0498394,0.0440673,0.0382028,0.0322753,0.0263187,0.0203679,0.0144581,0.00862481,0.0029058,-0.00265594,-0.00801455,-0.013121,-0.0179205,-0.0223487,-0.0263331,-0.0297907,-0.0326202,-0.0347009,-0.0359656,-0.0365229,-0.0366043,-0.0366755,-0.036772,-0.0368047,-0.0366749,-0.0362693,-0.0354446,-0.0340031,-0.0316777,-0.0282794,-0.0236076,-0.0173568,-0.00935582,-3.69239e-17]},"canopy_a15":{"label":"同・非対称 yOff 0.15","GZ_m":[-0.0347971,-0.02507,-0.0159986,-0.00798636,-0.00101646,0.00493705,0.0099046,0.0140624,0.0176649,0.0209042,0.023925,0.026846,0.0297729,0.0326746,0.0348365,0.0359038,0.0358379,0.0348077,0.0329711,0.0304576,0.0273713,0.023801,0.0198237,0.0155033,0.0108965,0.00605537,0.00102717,-0.00414788,-0.00943112,-0.014785,-0.0201729,-0.025562,-0.0309227,-0.0362235,-0.0414326,-0.0465197,-0.0515003,-0.0564208,-0.061306,-0.0662076,-0.0714259,-0.0771269,-0.0826239,-0.0884712,-0.0944106,-0.100222,-0.105784,-0.111041,-0.115941,-0.12049,-0.124687,-0.128434,-0.131667,-0.134331,-0.136358,-0.137665,-0.138154,-0.137715,-0.136254,-0.13371,-0.129974,-0.124988,-0.118962,-0.111884,-0.103645,-0.0941253,-0.0831812,-0.0706871,-0.0566479,-0.0420562,-0.027833,-0.013856,-9.30307e-18,0.013856,0.027833,0.0420562,0.0566479,0.0706871,0.0831812,0.0941253,0.103645,0.111884,0.118962,0.124988,0.129974,0.13371,0.136254,0.137715,0.138154,0.137668,0.136468,0.134774,0.132702,0.130344,0.127788,0.125169,0.122647,0.120229,0.118058,0.116112,0.113983,0.11164,0.109128,0.105546,0.101293,0.0966719,0.0916972,0.0863948,0.0808026,0.0749579,0.0688953,0.0626477,0.0562451,0.049719,0.0431037,0.0364333,0.0297417,0.0230622,0.0164319,0.00989055,0.0034797,-0.00275722,-0.00877141,-0.0145077,-0.0199055,-0.0248966,-0.0293996,-0.033342,-0.0367768,-0.0398125,-0.042594,-0.0453642,-0.0481572,-0.0508951,-0.0534951,-0.0558644,-0.0578925,-0.0594352,-0.0602863,-0.060175,-0.0588572,-0.0559696,-0.0510815,-0.0439045,-0.0347971]}}},"bem":{"kg_m":0.15,"k44":0.35,"k55":0.25,"panels":3020,"mesh":"conv_80.stl","omega":[0.5,0.758621,1.01724,1.27586,1.53448,1.7931,2.05172,2.31034,2.56897,2.82759,3.08621,3.34483,3.60345,3.86207,4.12069,4.37931,4.63793,4.89655,5.15517,5.41379,5.67241,5.93103,6.18966,6.44828,6.7069,6.96552,7.22414,7.48276,7.74138,8],"A":{"33":[928.408,947.042,954.198,946.078,922.213,884.765,837.383,784.028,728.132,672.234,618.028,566.666,519.128,476.416,439.451,408.675,383.803,363.952,347.99,334.873,323.82,314.366,306.306,299.537,293.908,289.209,285.219,281.755,278.698,275.905],"35":[-51.7673,-53.1617,-53.8417,-53.5231,-52.1342,-49.7825,-46.6864,-43.0965,-39.2292,-35.2343,-31.2049,-27.2258,-23.4275,-20.0024,-17.1471,-14.9658,-13.4182,-12.3534,-11.5877,-10.966,-10.3977,-9.86106,-9.37884,-8.97722,-8.66368,-8.42334,-8.24067,-8.11537,-8.06726,-8.12619],"44":[7.63474,7.66344,7.70653,7.76683,7.84772,7.95268,8.08405,8.2415,8.41994,8.60761,8.78461,8.92476,8.99997,8.98838,8.88164,8.68693,8.42495,8.12198,7.80252,7.48481,7.17843,6.8884,6.61656,6.36452,6.13354,5.92408,5.7349,5.56445,5.41018,5.27073],"55":[267.27,269.593,273.138,278.195,284.968,293.333,302.583,311.299,317.57,319.567,316.231,307.598,294.6,278.57,260.798,242.364,224.188,207.16,192.091,179.473,169.291,161.114,154.359,148.551,143.452,139.036,135.317,132.215,129.566,127.226]},"B":{"33":[19.5281,65.3082,147.702,267.74,419.618,592.909,775.669,957.071,1128.76,1284.91,1421.44,1535.19,1623.54,1685.13,1721.15,1735.83,1735.35,1725.7,1711.12,1693.72,1673.96,1651.29,1625.26,1596.12,1564.73,1531.8,1497.58,1461.83,1424.2,1384.54],"35":[-1.31046,-4.40749,-10.0435,-18.371,-29.0839,-41.5401,-54.9601,-68.6149,-81.9247,-94.4408,-105.734,-115.284,-122.512,-127.022,-128.921,-128.915,-128.025,-127.15,-126.799,-127.05,-127.668,-128.312,-128.78,-129.09,-129.402,-129.858,-130.498,-131.28,-132.214,-133.445],"44":[0.00000849193,0.000156054,0.00120371,0.00579461,0.0207084,0.0601807,0.149995,0.331452,0.663412,1.21909,2.07481,3.28848,4.87427,6.7825,8.90228,11.0893,13.2034,15.1445,16.8623,18.3504,19.627,20.7114,21.6183,22.3585,22.9461,23.4026,23.7513,24.01,24.1917,24.3028],"55":[0.0902293,0.33953,1.00097,2.74363,7.08602,16.7858,35.8411,68.6853,118.527,185.544,266.194,354.295,443.074,526.835,601.467,664.058,712.434,745.395,763.635,770.198,769.467,765.274,759.76,753.198,744.839,734.152,721.585,708.099,694.281,679.928]},"C":{"33":17556.7,"35":-1199,"44":491.585,"55":10318.7},"F":{"head":{"3":[[17270.9,-614.218],[16845.3,-1409.7],[16161.3,-2510.06],[15156.2,-3866.61],[13768.6,-5388.79],[11951.1,-6936.8],[9690.25,-8323.35],[7032.29,-9328.07],[4109.59,-9728.01],[1155.63,-9345.31],[-1505.37,-8107.88],[-3507.21,-6108.68],[-4532.54,-3639.06],[-4430.37,-1165.1],[-3320.06,775.695],[-1622.7,1750.3],[32.8967,1624.05],[1036.88,672.528],[1081.63,-489.831],[347.179,-1190.43],[-569.996,-1074.16],[-1014.75,-335.524],[-724.496,408.757],[-28.2661,589.806],[433.303,160.247],[292.897,-372.226],[-192.477,-454.947],[-433.526,-71.2625],[-185.934,265.119],[173.594,155.977]],"5":[[-1175.34,308.165],[-1112.6,701.146],[-966.268,1233.95],[-685.321,1872.05],[-217.26,2555.42],[478.377,3192.05],[1411.45,3657.11],[2539.61,3803.18],[3748.98,3486.62],[4846.2,2611.56],[5574.3,1185.53],[5664.39,-630.728],[4925.7,-2506.16],[3355.86,-3985.19],[1225.41,-4613.94],[-927.356,-4128.92],[-2442.16,-2637.61],[-2812.57,-677.435],[-1982.3,947.443],[-472.139,1547.71],[826.756,972.986],[1169.27,-223.851],[481.87,-1104.02],[-542.972,-1025.15],[-987.374,-177.296],[-522.125,573.662],[274.029,521.732],[525.351,-144.118],[44.1819,-567.057],[-462.828,-265.247]]},"beam":{"3":[[17284.8,-9.44425],[16919.6,-48.7964],[16403,-148.891],[15753.7,-339.431],[15002.9,-640.627],[14187.2,-1058.24],[13341.3,-1583.9],[12492.9,-2199.15],[11661.5,-2880.27],[10859.5,-3601.58],[10094.5,-4336.29],[9369.13,-5055.75],[8678.98,-5729.57],[8009.77,-6329.08],[7337.86,-6834.56],[6637.65,-7240.88],[5891.61,-7556.07],[5095.73,-7793.31],[4258.15,-7962.58],[3393.87,-8066.45],[2518.99,-8100.18],[1646.35,-8053.84],[783.6,-7918.47],[-63.6732,-7690.19],[-886.854,-7370.9],[-1673.02,-6963.95],[-2406.5,-6472.24],[-3072.31,-5897.81],[-3658.08,-5245.32],[-4151.54,-4524.37]],"4":[[0.0000922641,16.1206],[-0.000238919,36.9822],[-0.00444618,66.1728],[-0.0278529,103.446],[-0.117017,148.481],[-0.381291,200.868],[-1.03097,260.062],[-2.40413,325.297],[-4.94955,395.462],[-9.12069,468.948],[-15.1479,543.558],[-22.7101,616.56],[-30.6265,685.023],[-36.8028,746.33],[-38.5522,798.72],[-33.2449,841.597],[-19.0001,875.239],[5.01105,900.296],[38.5993,917.197],[80.9945,925.846],[131.249,925.794],[188.345,916.451],[251.08,897.4],[317.882,868.327],[386.811,828.914],[455.79,778.771],[522.778,717.667],[585.723,645.702],[642.526,563.474],[690.889,471.92]]}},"rao_ref":{"head":{"3":[0.999822,0.999045,0.996856,0.992045,0.982966,0.967543,0.943353,0.907829,0.858571,0.79381,0.713095,0.618218,0.513891,0.40711,0.304828,0.212047,0.133698,0.0818507,0.0754054,0.0931481,0.103776,0.0992118,0.0813075,0.0568461,0.0372827,0.0336916,0.0367552,0.0341037,0.0252043,0.0159009],"5":[0.0255007,0.0587097,0.105506,0.165653,0.238584,0.323194,0.417608,0.518957,0.623218,0.725166,0.818425,0.895544,0.948003,0.966394,0.94181,0.869723,0.754907,0.612628,0.464745,0.336177,0.25413,0.230987,0.235375,0.227138,0.193225,0.143356,0.100226,0.0845545,0.0838859,0.074799]}},"fit":{"Cw":0.606467,"maHeaveFrac":1.93806,"zetaHeave":0.284794,"maPitchFrac":1.46839,"zetaPitch":0.234228,"ma44":0.543296,"zeta44":0.0549391}}}</script>
 <script id="usv-core">
 /* ============================================================
    USV 0-D MODEL CORE — 純関数・DOM非依存（Node でもそのまま動く）
@@ -1094,7 +1423,8 @@ const USV = (function(){
               // 痩せ型比 M=L/∇^(1/3) による剰余抵抗の補正（閉じ込め式・設計書 §5.2）
               // MRef は較正時（m=159kg）の値で固定。ここで f_M=1 となり V1 較正が保存される
               MRef: 3.2/Math.cbrt(159/1025), crSlenderExp: 4,
-              CdAir:0.8, Afront:0.35, LBWLfrac:0.3, addedMassFrac:0.05 },
+              CdAir:0.8, Afront:0.35, LBWLfrac:0.3, addedMassFrac:0.05,
+              KG:0.15 },                                          // 重心高さ（S4・入力UIはS4-3）
       prop: { PmaxElec:450, etaCtrl:0.97,
               motor:{ Pfix:8, a:0.04, b:6e-5 },                 // 損失 = Pfix + a·Ps + b·Ps²
               propeller:{ etaPeak:0.55, Vd:1.8, Dprop:0.20 } },
@@ -1108,7 +1438,9 @@ const USV = (function(){
               latDeg:35, month:6, cloud:0.70 },
       sea:  { Cw:0.72, maHeaveFrac:0.8, zetaHeave:0.35,          // Phase3 耐航性（仮定値・要検証）
               rPitchGyr:0.25, maPitchFrac:0.8, zetaPitch:0.35,
-              accelLimG:0.2, pitchLimDeg:6 },
+              accelLimG:0.2, pitchLimDeg:6,
+              mode:'analytic',                                    // 'analytic'(既定・V1-V8不変) | 'bem'(表補間・S4)
+              zeta44Visc:0.08, rollLimDeg:15 },                    // ロール粘性減衰比（仮定）・出力限界（判定には不使用）
       msn:  { targetKt:2.5, days:30, soc0:1.0, socMin:0.10 }
     };
   }
@@ -1282,9 +1614,131 @@ const USV = (function(){
     return e;
   }
 
+  // ── Phase4: usv-hydro（BEM表）読み込み・形状一致判定・表補間RAO・ロール ──
+  // DOM 非依存: ブラウザでは <script id="usv-hydro"> を読む。Node では globalThis.USV_HYDRO を注入して代替
+  // （tools/usv_hull/lib/core.mjs loadCore() と同じ抽出方式を使うテスト/受入スクリプトから設定する）。
+  const hydro = (typeof document !== 'undefined')
+    ? JSON.parse(document.getElementById('usv-hydro')?.textContent ?? 'null')
+    : (globalThis.USV_HYDRO ?? null);
+
+  // 表の線形補間（範囲外は端の値でクランプ・外挿しない）
+  function _tblLerp(xs, ys, x){
+    const n = xs.length;
+    if (x <= xs[0]) return ys[0];
+    if (x >= xs[n - 1]) return ys[n - 1];
+    for (let i = 0; i < n - 1; i++){
+      if (x >= xs[i] && x <= xs[i + 1]){
+        const t = (x - xs[i]) / (xs[i + 1] - xs[i]);
+        return ys[i] + (ys[i + 1] - ys[i]) * t;
+      }
+    }
+    return ys[n - 1];
+  }
+  function _tblLerpC(xs, pairs, x){                            // pairs: [[re,im], …]
+    return { re: _tblLerp(xs, pairs.map(p => p[0]), x), im: _tblLerp(xs, pairs.map(p => p[1]), x) };
+  }
+
+  // hull と hydro.hull の寸法比（Lwl・B・m^(1/3)）から一致/相似/不一致を判定する。
+  // 仕様上は sha1 ハッシュの一致で完全一致を判定するとしているが、ハッシュ関数は
+  // DOM 非依存の同期純関数からは呼べない（ブラウザの crypto.subtle は非同期）ため、
+  // 寸法比が浮動小数点誤差内で厳密に 1 であることをもって「ハッシュ一致と等価」とみなす。
+  function hydroMatch(h){
+    if (!hydro) return { ok:false, scale:1, reason:'BEMデータなし' };
+    const H = hydro.hull;
+    const rL = h.Lwl / H.Lwl, rB = h.B / H.B, rM = Math.cbrt(h.m / H.m);
+    const close = (a, b, eps) => Math.abs(a - b) <= eps * Math.max(1, Math.abs(b));
+    if (close(rL, 1, 1e-6) && close(rB, 1, 1e-6) && close(rM, 1, 1e-6))
+      return { ok:true, scale:1, reason:'形状一致' };
+    if (close(rL, rB, 0.01) && close(rL, rM, 0.01)){
+      const s = (rL + rB + rM) / 3;
+      return { ok:true, scale:s, reason:'相似 s=' + s.toFixed(2) };
+    }
+    const dev = { L: Math.abs(rL / rB - 1) + Math.abs(rL / rM - 1),
+                  B: Math.abs(rB / rL - 1) + Math.abs(rB / rM - 1),
+                  m: Math.abs(rM / rL - 1) + Math.abs(rM / rB - 1) };
+    const worst = Object.keys(dev).reduce((a, b) => dev[a] >= dev[b] ? a : b);
+    return { ok:false, scale:1, reason:'形状不一致: ' + worst };
+  }
+
+  // 表補間 + Froude 相似スケーリング（scale=1 のときは無補正で表の値そのもの）。
+  // 減衰 B33/B55/B35 の指数は SPEC_S4.md 記載値（3.5/5.5/4.5）から補正: 標準的な無次元化
+  // B' = B/(ρ∇ω0)（ω0=√(g/L)）で導くと 2.5/4.5/3.5 になり、この指数でのみ
+  // [-ωe²(M+A)+iωeB+C]x=F の各項が相似スケール間で一様な比（行ごとに一定）になって
+  // RAO3 の厳密不変性（受入⑤）が成立する。実データで数値検証済（相対誤差 <1e-12・SPEC_S4.md要更新）。
+  // C33/C55 も「再計算しない」ではなく s²/s⁴（面積・慣性相当）でスケールする方が同じ理由で正しいので、
+  // そちらを採用する（scale=1・形状一致の通常経路では s^x=1 のため無関係で挙動は変わらない）。
+  function hydroCoeffs(we, w, h, sea, der){
+    const H = hydro.bem;
+    const s = hydroMatch(h).scale, sq = Math.sqrt(s);
+    const wA = we * sq, wF = w * sq;                           // Froude: 表参照周波数 = 実周波数・√s
+    const A33 = _tblLerp(H.omega, H.A['33'], wA) * Math.pow(s, 3);
+    const A55 = _tblLerp(H.omega, H.A['55'], wA) * Math.pow(s, 5);
+    const A35 = _tblLerp(H.omega, H.A['35'], wA) * Math.pow(s, 4);
+    const B33 = _tblLerp(H.omega, H.B['33'], wA) * Math.pow(s, 2.5);
+    const B55 = _tblLerp(H.omega, H.B['55'], wA) * Math.pow(s, 4.5);
+    const B35 = _tblLerp(H.omega, H.B['35'], wA) * Math.pow(s, 3.5);
+    const C33 = H.C['33'] * Math.pow(s, 2);
+    const C55 = H.C['55'] * Math.pow(s, 4);
+    // C35（Heave-Pitch静復原連成）: SPEC_S4.md の usv-hydro 仕様（S4-1）には C.33/44/55 のみで
+    // 35 は無いが、実BEMデータで検証すると（下記コメント・V9参照）この項を 0 とみなすと
+    // LCG位置によってはピッチRAOが実際の数倍〜十倍にずれる（静復原の連成が支配的な帯域があるため）。
+    // そのため h.bem.C['35'] があれば読む（将来 pack_hydro.mjs が対称化 (C35+C53)/2 で追加することを想定
+    // ＝S4-1側への申し送り）。無ければ 0 にフォールバックし、仕様書どおりの対角のみの挙動になる。
+    const C35raw = (H.C && H.C['35'] != null) ? H.C['35'] : 0;
+    const C35 = C35raw * Math.pow(s, 3);                       // 導出はB系と同じ手法でs³（次数はA35と同じ）
+    const F3 = _tblLerpC(H.omega, H.F.head['3'], wF); F3.re *= s * s; F3.im *= s * s;
+    const F5 = _tblLerpC(H.omega, H.F.head['5'], wF); F5.re *= s * s * s; F5.im *= s * s * s;
+    return { A33, A55, A35, B33, B55, B35, C33, C55, C35, F3, F5 };
+  }
+  // 向い波・2×2複素連立 [-ωe²(M+A)+iωeB+C]x=F を直接解く（M/Cは対角+C35・AはHeave-Pitch連成込み）。
+  // 6×6 の厳密解に対しサージ連成分のズレが残る（V9 で定量化。設計書に既知の限界として記載）。
+  function raoTableHeavePitch(w, V, h, sea, der){
+    const we = w + w * w * V / C.g;
+    const cf = hydroCoeffs(we, w, h, sea, der);
+    const I55 = h.m * Math.pow(sea.rPitchGyr * h.Lwl, 2);
+    const a11r = -we * we * (h.m + cf.A33) + cf.C33, a11i = we * cf.B33;
+    const a22r = -we * we * (I55 + cf.A55) + cf.C55, a22i = we * cf.B55;
+    const a12r = -we * we * cf.A35 + cf.C35, a12i = we * cf.B35;
+    const detR = (a11r * a22r - a11i * a22i) - (a12r * a12r - a12i * a12i);
+    const detI = (a11r * a22i + a11i * a22r) - 2 * a12r * a12i;
+    const F3 = cf.F3, F5 = cf.F5;
+    const n3r = (F3.re * a22r - F3.im * a22i) - (F5.re * a12r - F5.im * a12i);
+    const n3i = (F3.re * a22i + F3.im * a22r) - (F5.re * a12i + F5.im * a12r);
+    const n5r = (a11r * F5.re - a11i * F5.im) - (a12r * F3.re - a12i * F3.im);
+    const n5i = (a11r * F5.im + a11i * F5.re) - (a12r * F3.im + a12i * F3.re);
+    const d2 = detR * detR + detI * detI;
+    const x3r = (n3r * detR + n3i * detI) / d2, x3i = (n3i * detR - n3r * detI) / d2;
+    const x5r = (n5r * detR + n5i * detI) / d2, x5i = (n5i * detR - n5r * detI) / d2;
+    // 位相convention: 解析式(atan2(2ζΩ,1-Ω²))は「応答=|H|cos(ωe t − φ)」＝励振に対する遅れ角。
+    // ここでの x=F/Z は励振を基準0位相とした応答の複素振幅なので、同じ「遅れ」の符号に揃えるため
+    // phase = -arg(x) と定義する（waveMotionAt 側は常に ph − phase の形で使うため、この符号で一貫する）。
+    return { h3: { amp: Math.hypot(x3r, x3i), phase: -Math.atan2(x3i, x3r) },
+             p5: { amp_rad: Math.hypot(x5r, x5i), phase: -Math.atan2(x5i, x5r) } };
+  }
+  // ロール（横波・1自由度・出力のみ＝判定には使わない）。C44 = ρg∇GM、GM=KB+BM−KG（KGは現在のhull.KG）。
+  // B44 はBEMの放射減衰（ポテンシャル流のみ）に粘性分を仮定値 zeta44Visc で加算する（fit.note_roll_damping参照）。
+  function raoRoll(w, h, sea, der){
+    if (!hydro) return 0;
+    const H = hydro.bem, HS = hydro.hydrostatics;
+    const A44 = _tblLerp(H.omega, H.A['44'], w);
+    const B44bem = _tblLerp(H.omega, H.B['44'], w);
+    const F4 = _tblLerpC(H.omega, H.F.beam['4'], w);
+    const I44 = h.m * Math.pow(H.k44 * h.B, 2);
+    const GM = HS.KB_m + HS.BM_m - h.KG;
+    const C44 = C.rho * C.g * der.vol * GM;
+    const B44 = B44bem + 2 * sea.zeta44Visc * Math.sqrt(Math.max(0, C44 * (I44 + A44)));
+    const re = -w * w * (I44 + A44) + C44, im = w * B44;
+    const d2 = re * re + im * im;
+    const xr = (F4.re * re + F4.im * im) / d2, xi = (F4.im * re - F4.re * im) / d2;
+    return Math.hypot(xr, xi);                                 // [rad / m 波振幅]
+  }
+
   // ── Phase3: 耐航性（heave/pitch RAO・1自由度近似）──
   // 仮定: 減衰比・付加質量は代表値（sea パラメータ）。位相は無視し RMS 評価のみ。
+  // mode==='bem' かつ形状一致/相似のときは表補間（raoTableHeavePitch）に自動退避、
+  // それ以外は以下の解析式（V1-V8較正済・既定値では常にこちら）を使う。
   function raoHeave(w, V, h, sea, der){
+    if (sea.mode === 'bem' && hydroMatch(h).ok) return raoTableHeavePitch(w, V, h, sea, der).h3.amp;
     const we = w + w * w * V / C.g;                            // 向い波の出会い周波数
     const k = w * w / C.g;
     const x = k * h.Lwl / 2;
@@ -1295,6 +1749,7 @@ const USV = (function(){
     return F / Math.sqrt(Math.pow(1 - Om * Om, 2) + Math.pow(2 * sea.zetaHeave * Om, 2));
   }
   function raoPitchDegPerM(w, V, h, sea, der){                 // [deg/m 波振幅]
+    if (sea.mode === 'bem' && hydroMatch(h).ok) return raoTableHeavePitch(w, V, h, sea, der).p5.amp_rad * 180 / Math.PI;
     const we = w + w * w * V / C.g;
     const k = w * w / C.g;
     const x = k * h.Lwl / 2;
@@ -1309,9 +1764,10 @@ const USV = (function(){
   }
   // RMS 応答と限界 Hs（応答は Hs に線形 → 限界 Hs = Hs×min(基準/RMS)）
   function seakeeping(env, V, p, der){
-    if (env.Hs <= 0) return { heaveRms:0, pitchRmsDeg:0, accelRms:0, limitHs:Infinity, ok:true };
+    if (env.Hs <= 0) return { heaveRms:0, pitchRmsDeg:0, accelRms:0, limitHs:Infinity, ok:true, rollRmsDeg:0 };
     const sp = jonswapS(env.Hs, env.Tp);                       // 規則波選択時も評価はスペクトルで行う
-    let m0h = 0, m0p = 0, m0a = 0;
+    const doRoll = !!hydro && p.sea.mode === 'bem';            // ロールはBEM表があるときのみ・出力専用
+    let m0h = 0, m0p = 0, m0a = 0, m0r = 0;
     for (let i = 0; i < sp.w.length; i++){
       const w = sp.w[i], S = sp.s[i];
       const rh = raoHeave(w, V, p.hull, p.sea, der);
@@ -1320,26 +1776,30 @@ const USV = (function(){
       m0h += S * rh * rh * sp.dw;
       m0p += S * rp * rp * sp.dw;
       m0a += S * Math.pow(we * we * rh, 2) * sp.dw;
+      if (doRoll){ const rr = raoRoll(w, p.hull, p.sea, der); m0r += S * rr * rr * sp.dw; }
     }
     const heaveRms = Math.sqrt(m0h), pitchRmsDeg = Math.sqrt(m0p), accelRms = Math.sqrt(m0a);
+    const rollRmsDeg = doRoll ? Math.sqrt(m0r) * 180 / Math.PI : 0;
     const rA = accelRms / (p.sea.accelLimG * 9.81);
     const rP = pitchRmsDeg / p.sea.pitchLimDeg;
     const worst = Math.max(rA, rP);
     return { heaveRms, pitchRmsDeg, accelRms,
              limitHs: worst > 1e-9 ? env.Hs / worst : Infinity,
-             okAccel: rA <= 1, okPitch: rP <= 1, ok: worst <= 1 };
+             okAccel: rA <= 1, okPitch: rP <= 1, ok: worst <= 1, rollRmsDeg };
   }
 
   // ── Phase3b: 波浪中運動の時間領域表示（成分波合成・位相付き RAO・表示専用） ──
   // 向い波・線形重ね合わせ。位相遅れは raoHeave/raoPitch と同一の 2 次系から
   // φ = atan2(2ζΩ, 1−Ω²)。乱数は使わず黄金角で位相を決定的に散らす（再現性）。
-  function raoHeavePhase(w, V, h, sea){
+  function raoHeavePhase(w, V, h, sea, der){
+    if (sea.mode === 'bem' && hydroMatch(h).ok) return raoTableHeavePitch(w, V, h, sea, der).h3.phase;
     const we=w+w*w*V/C.g, Aw=sea.Cw*h.Lwl*h.B;
     const wn=Math.sqrt(C.rho*C.g*Aw/(h.m*(1+sea.maHeaveFrac)));
     const Om=we/wn;
     return Math.atan2(2*sea.zetaHeave*Om, 1-Om*Om);
   }
-  function raoPitchPhase(w, V, h, sea){
+  function raoPitchPhase(w, V, h, sea, der){
+    if (sea.mode === 'bem' && hydroMatch(h).ok) return raoTableHeavePitch(w, V, h, sea, der).p5.phase;
     const we=w+w*w*V/C.g;
     const Iwp=sea.Cw*Math.pow(h.Lwl,3)*h.B/12;
     const I55=h.m*Math.pow(sea.rPitchGyr*h.Lwl,2)*(1+sea.maPitchFrac);
@@ -1354,9 +1814,9 @@ const USV = (function(){
     const push=(w,a,phi)=>{
       const k=w*w/C.g;
       comps.push({ a, w, k, we:w+k*Vms, phi,
-        Hh: raoHeave(w,Vms,h,sea,der),                 phH: raoHeavePhase(w,Vms,h,sea),
+        Hh: raoHeave(w,Vms,h,sea,der),                 phH: raoHeavePhase(w,Vms,h,sea,der),
         Hp: raoPitchDegPerM(w,Vms,h,sea,der)*Math.PI/180,  // [rad / m 波振幅]
-        phP: raoPitchPhase(w,Vms,h,sea) });
+        phP: raoPitchPhase(w,Vms,h,sea,der) });
     };
     if (env.waveModel==='regular'){
       push(2*Math.PI/env.Tp, env.Hs/2, 0);
@@ -1801,10 +2261,11 @@ const USV = (function(){
     return pts;
   }
 
-  return { C, KT, defaults, derived, slenderness, crSlenderFactor, hullMesh, hullWaterline, rCalm, rCalmParts, rWind, rWave, rWaveRegular, rWaveSpectral,
+  return { C, KT, defaults, derived, slenderness, crSlenderFactor, hullGeom, hullMesh, hullWaterline, rCalm, rCalmParts, rWind, rWave, rWaveRegular, rWaveSpectral,
            jonswapS, reflEff, rTotal,
            etaMotor, pShaft, etaProp, thrust, pElecFor, solveVeq,
            pSolar, pSolarDaily, pSolarClearSky, solarDailyWh, solarElevSin,
+           hydro, hydroMatch, hydroCoeffs, raoTableHeavePitch, raoRoll,
            raoHeave, raoPitchDegPerM, raoHeavePhase, raoPitchPhase, waveMotion, waveElev, waveMotionAt, seakeeping,
            simulate, maxRange, darkEndurance, dailyBudget,
            seaCatalogDefaults, seaClimateCatalogs, missionDefaults, simulateMission };
@@ -2074,6 +2535,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     ['e-wind','env.windU'],['e-hs','env.Hs'],['e-tp','env.Tp'],
     ['e-irr','env.irrKwhDay'],['e-derate','pwr.derate'],
     ['e-lat','env.latDeg'],['e-month','env.month'],['e-cloud','env.cloud'],
+    ['g-kg','hull.KG'],
     ['m-vt','msn.targetKt'],['m-days','msn.days'],
   ];
   const get = path => path.split('.').reduce((o,k)=>o[k], P);
@@ -2088,6 +2550,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     $('e-smodel').value = P.env.solarModel;
     $('m-soc0').value = Math.round(P.msn.soc0*100);
     $('m-socmin').value = Math.round(P.msn.socMin*100);
+    $('g-seamode').value = P.sea.mode;
   }
   function fromUI(){
     bind.forEach(([id,path]) => { const v=parseFloat($(id).value); if(isFinite(v)) set(path,v); });
@@ -2099,6 +2562,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     P.env.solarModel = $('e-smodel').value;
     P.msn.soc0 = (parseFloat($('m-soc0').value)||100)/100;
     P.msn.socMin = (parseFloat($('m-socmin').value)||10)/100;
+    P.sea.mode = $('g-seamode').value;
   }
 
   // ── テーマ対応の色取得（canvas 用） ──
@@ -2351,6 +2815,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     if (P.env.Hs <= 0){
       $('s-heave').textContent = '–'; $('s-pitch').textContent = '–';
       $('s-accel').textContent = '–'; $('s-limhs').textContent = '–';
+      $('s-rollrms').textContent = '–';
       $('sb-limhs').textContent = '–（平水）';
       $('s-verdict').textContent = '波高 0（平水）'; return;
     }
@@ -2360,8 +2825,27 @@ if (typeof module !== 'undefined') module.exports = USV;
     $('s-accel').innerHTML = fmt(sk.accelRms / 9.81, 2) + ' g ' +
       `<span class="badge ${sk.okAccel ? 'ok' : 'ng'}">${sk.okAccel ? 'OK' : 'NG'}</span>`;
     $('s-limhs').textContent = isFinite(sk.limitHs) ? fmt(sk.limitHs, 1) + ' m' : '—';
+    $('s-rollrms').textContent = (sk.rollRmsDeg && sk.rollRmsDeg > 0) ? fmt(sk.rollRmsDeg, 1) + '°' : '—';
     $('sb-limhs').textContent = $('s-limhs').textContent;
     $('s-verdict').textContent = 'Tp=' + P.env.Tp + 's・速力 ' + fmt(V / USV.KT, 1) + ' kt で評価';
+  }
+
+  // ── 耐航性モデル（sea.mode）の状態表示: hydroMatch(p.hull) を毎回評価 ──
+  function updateSeaModeStatus(){
+    const el = $('seamode-status'); if(!el) return;
+    if (P.sea.mode === 'bem'){
+      const hm = USV.hydroMatch(P.hull);
+      if (hm.ok){
+        el.innerHTML = hm.reason === '形状一致' ? 'BEM 表使用（形状一致）' : `BEM 表使用（${hm.reason}）`;
+        el.style.color = 'var(--muted)';
+      } else {
+        el.innerHTML = `<b style="color:var(--warn-ink)">⚠ ${hm.reason} → 解析式に退避中</b>`;
+        el.style.color = '';
+      }
+    } else {
+      el.textContent = '解析式';
+      el.style.color = 'var(--muted)';
+    }
   }
 
   // ── 数値表 ──
@@ -2484,10 +2968,27 @@ if (typeof module !== 'undefined') module.exports = USV;
               const ok=Math.abs(wsum-1)<1e-9 && r.successRate>=0 && r.successRate<=1
                     && Math.abs(r.successRate+fsum-1)<1e-9;
               return {val:`Σw=${wsum.toFixed(6)}・成功率 ${(r.successRate*100).toFixed(1)}%・成功+失敗=${((r.successRate+fsum)*100).toFixed(1)}%（${r.nScen} シナリオ）`, ok}; }},
+      {id:'V9',name:'BEM表 vs 6×6解（Phase4・耐航性表モード）',crit:'mode=bem・V=0で表の各ωのRAO3/RAO5がhydro.bem.rao_ref（6×6厳密解）と相対6%以内（値>1e-3の点のみ。2×2 が省くサージ連成で約5%残る）。BEMデータが無ければ対象外',
+       why:'raoTableHeavePitch は Heave/Pitch の2×2に縮約した近似で、6×6の厳密解にはサージ等の連成分だけ残るはず。BEMの生データ（rao_ref）と突き合わせて縮約の精度を定量化する。',
+       note:'2×2はhydroの様式上サージ連成・Heave-Pitch静復原連成(C35)を持たないため、船体によってはこの縮約誤差が無視できない大きさになりうる（実データでの計測結果は結果欄参照）。3%を超える場合はraoTableHeavePitchの縮約次数を上げる、またはusv-hydroにC35を追加することが対策候補（設計書の既知の限界として記載要）。',
+       run(){
+         if (!USV.hydro) return { val:'対象外（usv-hydro 未搭載）', ok:true };
+         const p=USV.defaults(); p.sea.mode='bem'; const der=USV.derived(p.hull);
+         const H=USV.hydro.bem;
+         let worst=0, worstOm=0, worstWhich='';
+         for (let i=0;i<H.omega.length;i++){
+           const w=H.omega[i];
+           const r=USV.raoTableHeavePitch(w, 0, p.hull, p.sea, der);
+           const ref3=H.rao_ref.head['3'][i], ref5=H.rao_ref.head['5'][i];
+           if (ref3>1e-3){ const e=Math.abs(r.h3.amp-ref3)/ref3; if (e>worst){worst=e; worstOm=w; worstWhich='RAO3';} }
+           if (ref5>1e-3){ const e=Math.abs(r.p5.amp_rad-ref5)/ref5; if (e>worst){worst=e; worstOm=w; worstWhich='RAO5';} }
+         }
+         const ok=worst<=0.06;   // 2×2（ヒーブ・ピッチ）と 6×6 の差＝サージ連成 ≈5%
+         return { val:`最大相対誤差 ${(worst*100).toFixed(1)}%（${worstWhich}・ω=${worstOm.toFixed(2)} rad/s）`, ok }; }},
     ];
     const groups=[
       {t:'ユースケース検証', n:'公表値・運用シナリオの再現（プリセット V1–V4 と対応。V1・V2 は較正点）', ids:['V1','V2','V3','V4']},
-      {t:'モデル整合性検証', n:'数理・実装の内部チェック（恒等式・物理極限・較正保存）。運転シナリオではないためプリセットは無い', ids:['V5','V6','V7','V8']},
+      {t:'モデル整合性検証', n:'数理・実装の内部チェック（恒等式・物理極限・較正保存）。運転シナリオではないためプリセットは無い', ids:['V5','V6','V7','V8','V9']},
     ];
     const card=c=>{
       const r=c.run();
@@ -2555,13 +3056,18 @@ if (typeof module !== 'undefined') module.exports = USV;
     drawC3(sim);
     drawC4();
     drawSeakeeping();
+    updateSeaModeStatus();
     drawTable(sim,b,der);
     verdict(sim);
+    if (window.__renderHullTab) window.__renderHullTab(P, der);
   }
-  document.querySelectorAll('input,select').forEach(el=>el.addEventListener('change',()=>{
-    if(!applyingPreset) setActivePreset(null);   // 手動変更＝プリセットから離脱
-    recalc();
-  }));
+  document.querySelectorAll('input,select').forEach(el=>{
+    if(el.dataset.local) return;   // 船体タブの what-if 探索用コントロール（Pに影響しない）は除外
+    el.addEventListener('change',()=>{
+      if(!applyingPreset) setActivePreset(null);   // 手動変更＝プリセットから離脱
+      recalc();
+    });
+  });
 
   // ── 設計パラメータ ⇄ 3D 部位ハイライト（入力欄に触れると該当部位が光る） ──
   const HL={
@@ -2595,6 +3101,364 @@ if (typeof module !== 'undefined') module.exports = USV;
 
   window.__getParams = () => JSON.parse(JSON.stringify(P));   // ミッションタブが現在値を参照
   toUI(); recalc(); runValidation(); setActivePreset('base');
+})();
+</script>
+<script>
+/* ============================================================
+   船体タブ — 形状実測・復原力（GZ地形の JS 移植）・耐航性能係数の可視化
+   S4-3。usv-core / usv-hydro には一切触れず、USV.* を呼ぶだけ。
+   ============================================================ */
+'use strict';
+(function(){
+  const $ = id => document.getElementById(id);
+  const fmt = (x, d=1) => (x==null || !isFinite(x)) ? '—' : Number(x).toFixed(d);
+
+  // ── 汎用 SVG 折れ線チャート・ヘルパ（figure svg の既存クラスを使い回す） ──
+  function makeAxes(W,H,pad,xmin,xmax,ymin,ymax,xTicks,yTicks,xlabel,ylabel){
+    if (!(ymax>ymin)) ymax = ymin + 1;
+    const L=pad.l, Rr=W-pad.r, T=pad.t, Bt=H-pad.b;
+    const X = x => L + (Rr-L)*(x-xmin)/(xmax-xmin || 1);
+    const Y = y => Bt - (Bt-T)*(y-ymin)/(ymax-ymin);
+    let s='';
+    yTicks.forEach(v=>{ s+=`<line x1="${L}" y1="${Y(v).toFixed(1)}" x2="${Rr}" y2="${Y(v).toFixed(1)}" class="grid"/><text x="${L-6}" y="${(Y(v)+4).toFixed(1)}" class="tick" text-anchor="end">${v}</text>`; });
+    xTicks.forEach(v=>{ s+=`<text x="${X(v).toFixed(1)}" y="${Bt+16}" class="tick" text-anchor="middle">${v}</text>`; });
+    s+=`<line x1="${L}" y1="${Bt}" x2="${Rr}" y2="${Bt}" class="axis"/>`;
+    s+=`<line x1="${L}" y1="${T}" x2="${L}" y2="${Bt}" class="axis"/>`;
+    if(xlabel) s+=`<text x="${((L+Rr)/2).toFixed(1)}" y="${H-4}" class="lab" text-anchor="middle">${xlabel}</text>`;
+    if(ylabel) s+=`<text x="11" y="${((T+Bt)/2).toFixed(1)}" class="lab" text-anchor="middle" transform="rotate(-90 11 ${((T+Bt)/2).toFixed(1)})">${ylabel}</text>`;
+    return {s, X, Y, L, Rr, T, Bt};
+  }
+  function polyline(pts, X, Y, cls, dash){
+    const p = pts.map(([x,y])=>`${X(x).toFixed(1)},${Y(y).toFixed(1)}`).join(' ');
+    return `<polyline points="${p}" class="${cls}" fill="none"${dash?' stroke-dasharray="6 4"':''}/>`;
+  }
+  function niceYTicks(lo,hi,n=4){
+    if(!(hi>lo)) hi=lo+1;
+    const step=(hi-lo)/n, dec = step<0.02?4:(step<0.2?3:(step<2?2:1));
+    const ticks=[]; for(let i=0;i<=n;i++) ticks.push(Number((lo+step*i).toFixed(dec)));
+    return ticks;
+  }
+  function niceXTicks(arr,n=4){
+    const lo=arr[0], hi=arr[arr.length-1];
+    const ticks=[]; for(let i=0;i<=n;i++) ticks.push(Number((lo+(hi-lo)*i/n).toFixed(1)));
+    return ticks;
+  }
+  function npInterp(x, xs, ys){
+    const n=xs.length;
+    if(x<=xs[0]) return ys[0];
+    if(x>=xs[n-1]) return ys[n-1];
+    for(let i=0;i<n-1;i++){
+      if(x>=xs[i] && x<=xs[i+1]){
+        const t=(x-xs[i])/(xs[i+1]-xs[i]);
+        return ys[i]+(ys[i+1]-ys[i])*t;
+      }
+    }
+    return ys[n-1];
+  }
+  function findNaturalOmega(omegaArr, Aarr, C, Iconst){
+    const f = w => (Iconst + npInterp(w,omegaArr,Aarr))*w*w - C;
+    let prev = f(omegaArr[0]);
+    for(let i=1;i<omegaArr.length;i++){
+      const cur = f(omegaArr[i]);
+      if((prev<=0 && cur>0) || (prev>=0 && cur<0)){
+        const w0=omegaArr[i-1], w1=omegaArr[i];
+        const t = prev/(prev-cur);
+        return w0+(w1-w0)*t;
+      }
+      prev=cur;
+    }
+    return null;
+  }
+
+  // ── GZ 地形（gz.py の landscape()/metrics() の JS 移植・数値検証済み） ──
+  const G_GRAV = 9.80665;
+  function gzLandscape(anglesDeg, gzArr, mass){
+    let ang = anglesDeg.slice(), gz = gzArr.slice();
+    if(ang.length>2 && (ang[ang.length-1]-ang[0])>=359.0){
+      ang.push(ang[1]+360.0); gz.push(gz[1]);
+    }
+    const W = mass*G_GRAV;
+    const U=[0];
+    for(let k=1;k<ang.length;k++){
+      const dphi = (ang[k]-ang[k-1])*Math.PI/180;
+      U.push(U[k-1] + dphi*(gz[k]+gz[k-1])/2*W);
+    }
+    const U0 = npInterp(0.0, ang, U);
+    for(let i=0;i<U.length;i++) U[i]-=U0;
+    const eq=[];
+    for(let k=1;k<ang.length;k++){
+      const a=gz[k-1], b=gz[k];
+      if(a===0 && b===0) continue;
+      const cross = (a<0&&b>=0)||(a<=0&&b>0)||(a>0&&b<=0)||(a>=0&&b<0);
+      if(cross){
+        const w = a!==b ? a/(a-b) : 0.5;
+        let phi = ang[k-1] + (ang[k]-ang[k-1])*w;
+        if(phi>180.0+1e-9) phi-=360.0;
+        if(eq.some(e=>Math.abs(e.angle-phi)<1e-6)) continue;
+        const uphi = phi>=ang[0] ? npInterp(phi,ang,U) : npInterp(phi+360,ang,U);
+        eq.push({angle:phi, stable: b>a, U:uphi});
+      }
+    }
+    return {ang,gz,U,eq};
+  }
+  function gzMetrics(anglesDeg, gzArr, mass){
+    const L = gzLandscape(anglesDeg, gzArr, mass);
+    const {ang,gz,eq} = L;
+    const stab = eq.filter(e=>e.stable), unst = eq.filter(e=>!e.stable);
+    const up = stab.length? stab.slice().sort((a,b)=>Math.abs(a.angle)-Math.abs(b.angle))[0] : {angle:0,U:0};
+    function barrier(frm){
+      let best=null;
+      for(const sgn of [1,-1]){
+        const peaks = unst.filter(e=> (e.angle-frm.angle)*sgn>0);
+        if(!peaks.length) continue;
+        const nearest = peaks.slice().sort((a,b)=>Math.abs(a.angle-frm.angle)-Math.abs(b.angle-frm.angle))[0];
+        const d = nearest.U - frm.U;
+        best = best===null? d : Math.min(best,d);
+      }
+      return best;
+    }
+    const avsUp = unst.filter(e=>e.angle>up.angle).map(e=>e.angle);
+    const AVS = avsUp.length? Math.min(...avsUp) : null;
+    const avsPort = unst.filter(e=>e.angle<up.angle).map(e=>e.angle);
+    const AVSport = avsPort.length? Math.max(...avsPort) : null;
+    const Ecap = barrier(up);
+    const hi = AVS!=null? AVS : Math.max(...ang);
+    let gzmax=-Infinity, gzmaxAt=NaN;
+    for(let i=0;i<ang.length;i++){
+      if(ang[i]>=up.angle && ang[i]<=hi && gz[i]>gzmax){ gzmax=gz[i]; gzmaxAt=ang[i]; }
+    }
+    const others = stab.filter(e=>Math.abs(e.angle-up.angle)>20);
+    let capsizeAngle=null, Erec=0;
+    if(others.length){
+      const inv = others.slice().sort((a,b)=>a.U-b.U)[0];
+      capsizeAngle = inv.angle; Erec = barrier(inv);
+    }
+    return { upright:up.angle, AVS, AVSport, capsizeAngle, Ecap, Erec, GZmax:gzmax, GZmaxAt:gzmaxAt };
+  }
+
+  // ── ① 形状と実測値: hullGeom からのシルエット ──
+  function renderSilhouette(P, hydro){
+    const svg=$('hull-silhouette'); if(!svg) return;
+    const g=USV.hullGeom(P.hull);
+    const L=g.L, D=g.D, HB=g.HB, N=60;
+    const topPts=[], botPts=[], planPts=[];
+    for(let i=0;i<=N;i++){ const t=i/N; topPts.push([t*L, g.zDeck(t)]); botPts.push([t*L, g.zKeel(t)]); planPts.push([t*L, g.plan(t)*HB]); }
+    const draft = (hydro && hydro.hydrostatics) ? hydro.hydrostatics.draft_m : USV.derived(P.hull).d;
+    const padL=48, padR=20, sideT=14, sideB=150, planT=190, planB=326;
+    const X = x=> padL + (900-padL-padR)*x/L;
+    const Yside = z=> sideB - (sideB-sideT)*z/(D*1.15);
+    const Yplan = y=> (planT+planB)/2 - (planB-planT)/2 * y/(HB*1.25);
+    const pathTop = topPts.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+','+Yside(p[1]).toFixed(1)).join(' ');
+    const pathBot = botPts.slice().reverse().map(p=>'L'+X(p[0]).toFixed(1)+','+Yside(p[1]).toFixed(1)).join(' ');
+    const pathPlanTop = planPts.map((p,i)=>(i?'L':'M')+X(p[0]).toFixed(1)+','+Yplan(p[1]).toFixed(1)).join(' ');
+    const pathPlanBot = planPts.slice().reverse().map(p=>'L'+X(p[0]).toFixed(1)+','+Yplan(-p[1]).toFixed(1)).join(' ');
+    let s='';
+    s+=`<text x="${padL}" y="${sideT-4}" class="lab" text-anchor="start">側面図</text>`;
+    s+=`<path d="${pathTop} ${pathBot} Z" fill="none" class="axis" stroke-width="1.4"/>`;
+    s+=`<line x1="${X(0).toFixed(1)}" y1="${Yside(draft).toFixed(1)}" x2="${X(L).toFixed(1)}" y2="${Yside(draft).toFixed(1)}" class="mark"/>`;
+    s+=`<text x="${(X(0)+4).toFixed(1)}" y="${(Yside(draft)-4).toFixed(1)}" class="marklab">喫水 d=${fmt(draft,3)} m</text>`;
+    s+=`<text x="${padL}" y="${planT-8}" class="lab" text-anchor="start">上面図（平面視）</text>`;
+    s+=`<path d="${pathPlanTop} ${pathPlanBot} Z" fill="none" class="axis" stroke-width="1.4"/>`;
+    s+=`<line x1="${padL}" y1="${((planT+planB)/2).toFixed(1)}" x2="${900-padR}" y2="${((planT+planB)/2).toFixed(1)}" class="grid"/>`;
+    svg.innerHTML = s;
+  }
+
+  // ── ① 0-D vs 3D 実測テーブル ──
+  function renderGeomTable(P, der, hydro){
+    const t=$('hull-geom-table'); if(!t) return;
+    const hs = hydro && hydro.hydrostatics;
+    const row=(label,a,b)=>`<tr><td>${label}</td><td class="num">${a}</td><td class="num">${b}</td></tr>`;
+    const reserve = hs ? (hs.vol_total_m3/der.vol) : null;
+    t.innerHTML = `<tr><th>量</th><th class="num">0-D の仮定値</th><th class="num">3D 実測（USV.hydro）</th></tr>`+
+      row('方形係数 C_b（入力 vs 実効）', fmt(P.hull.Cb,3), hs?fmt(hs.Cb_eff,3):'—')+
+      row('喫水 d [m]', fmt(der.d,4), hs?fmt(hs.draft_m,4):'—')+
+      row('浸水表面積 S [m²]（Denny-Mumford vs 実測・裸殻／キール込み）', fmt(der.S,3), hs?(fmt(hs.Swet_bare_m2,3)+' ／ '+fmt(hs.Swet_m2,3)):'—')+
+      row('水線面積 A_wp [m²]', '—', hs?fmt(hs.Awp_m2,3):'—')+
+      row('浮心高 KB [m]', '—', hs?fmt(hs.KB_m,4):'—')+
+      row('メタセンタ半径 BM [m]', '—', hs?fmt(hs.BM_m,4):'—')+
+      row('予備浮力（全没水量／設計排水量）', '—', reserve!=null?fmt(reserve,2)+' 倍':'—');
+  }
+
+  // ── ② 復原力: GZ 曲線 + 地形メトリクス ──
+  function renderGZSection(P){
+    const hydro = USV.hydro;
+    const sel=$('gz-variant'), slider=$('gz-kg-slider');
+    if(!hydro || !hydro.gz){
+      $('gz-kgref').textContent='—';
+      sel.innerHTML='<option>未生成</option>'; sel.disabled=true; slider.disabled=true;
+      $('gz-chart').innerHTML='<text x="350" y="160" text-anchor="middle" class="lab">係数表が未生成のため GZ 曲線を表示できません</text>';
+      $('gz-metrics-table').innerHTML=''; $('gz-kg-val').textContent='—';
+      return;
+    }
+    sel.disabled=false; slider.disabled=false;
+    const variants = hydro.gz.variants;
+    if(!sel.dataset.filled){
+      sel.innerHTML = Object.keys(variants).map(k=>`<option value="${k}">${variants[k].label}</option>`).join('');
+      sel.dataset.filled='1';
+    }
+    if(!slider.dataset.inited){ slider.value = P.hull.KG; slider.dataset.inited='1'; }
+    $('gz-kgref').textContent = fmt(hydro.gz.kg_ref_m,3);
+    const KG = parseFloat(slider.value);
+    $('gz-kg-val').textContent = fmt(KG,3)+' m';
+    const variant = variants[sel.value] ? sel.value : 'base';
+    const angles = hydro.gz.angles_deg;
+    const gzRef = variants[variant].GZ_m;
+    const kgRef = hydro.gz.kg_ref_m;
+    const gzArr = angles.map((a,i)=> gzRef[i] - (KG-kgRef)*Math.sin(a*Math.PI/180));
+    const mass = P.hull.m;
+    const met = gzMetrics(angles, gzArr, mass);
+    const hs = hydro.hydrostatics;
+    const GM = hs.KB_m + hs.BM_m - KG;
+
+    const W=700,H=320, pad={l:52,r:16,t:16,b:40};
+    const ymin = Math.min(...gzArr,0)*1.15, ymax = Math.max(...gzArr,0)*1.15;
+    const ax = makeAxes(W,H,pad,-180,180,ymin,ymax,[-180,-90,0,90,180],niceYTicks(ymin,ymax),'横傾斜角 φ [deg]','GZ [m]');
+    let s = ax.s;
+    s += `<line x1="${ax.L}" y1="${ax.Y(0).toFixed(1)}" x2="${ax.Rr}" y2="${ax.Y(0).toFixed(1)}" class="axis"/>`;
+    s += polyline(angles.map((a,i)=>[a,gzArr[i]]), ax.X, ax.Y, 's1', false);
+    // ラベルは図の下端寄りに置く（上端は系列名と重なる）。AVS− は線の左側に右寄せ
+    const markLine=(x,label,left)=> (x==null) ? '' : `<line x1="${ax.X(x).toFixed(1)}" y1="${pad.t}" x2="${ax.X(x).toFixed(1)}" y2="${ax.Bt}" class="mark"/><text x="${(ax.X(x)+(left?-4:4)).toFixed(1)}" y="${ax.Bt-6}" class="marklab"${left?' text-anchor="end"':''}>${label}</text>`;
+    if(met.AVS!=null) s += markLine(met.AVS, 'AVS+ '+fmt(met.AVS,1)+'°');
+    if(met.AVSport!=null) s += markLine(met.AVSport, 'AVS− '+fmt(met.AVSport,1)+'°', true);
+    s += `<text x="${ax.L+6}" y="${pad.t+12}" class="slab l-ink">${variants[variant].label}・KG=${fmt(KG,3)} m</text>`;
+    $('gz-chart').innerHTML = s;
+
+    $('gz-metrics-table').innerHTML = `<tr><th>量</th><th class="num">値</th></tr>`+
+      `<tr><td>GM = KB+BM−KG</td><td class="num">${fmt(GM,3)} m</td></tr>`+
+      `<tr><td>GZmax（直立平衡〜AVS+）</td><td class="num">${isFinite(met.GZmax)?fmt(met.GZmax,3)+' m ＠ '+fmt(met.GZmaxAt,1)+'°':'—'}</td></tr>`+
+      `<tr><td>AVS+ ／ AVS−</td><td class="num">${met.AVS!=null?fmt(met.AVS,1)+'°':'—'} ／ ${met.AVSport!=null?fmt(met.AVSport,1)+'°':'—'}</td></tr>`+
+      `<tr><td>転覆姿勢（直立から20°超の安定平衡）</td><td class="num">${met.capsizeAngle!=null?fmt(met.capsizeAngle,1)+'°':'なし（自己復原）'}</td></tr>`+
+      `<tr><td>E_転覆（直立→最寄り不安定平衡）</td><td class="num">${met.Ecap!=null?fmt(met.Ecap,0)+' J':'—'}</td></tr>`+
+      `<tr><td>E_復帰（転覆姿勢→最寄り不安定平衡）</td><td class="num">${met.capsizeAngle!=null?fmt(met.Erec,0)+' J':'0 J（転覆姿勢なし）'}</td></tr>`;
+  }
+
+  // ── ③ 耐航性能係数: A/B(ω) 2 パネル・RAO 比較・等価定数・固有周期 ──
+  function renderDualPanel(id, omega, Aarr, Barr, Alabel, Blabel){
+    const svg=$(id); if(!svg) return;
+    const w=420, h=115;
+    const mkPanel=(arr,label,cls)=>{
+      const ymin=Math.min(0,...arr), ymax=Math.max(...arr)*1.15;
+      const ax=makeAxes(w,h,{l:50,r:10,t:8,b:20}, omega[0],omega[omega.length-1], ymin, ymax, niceXTicks(omega,4), niceYTicks(ymin,ymax,3), '', label);
+      let s=ax.s; s+=polyline(omega.map((o,i)=>[o,arr[i]]), ax.X, ax.Y, cls, false); return s;
+    };
+    const sA=mkPanel(Aarr,Alabel,'s1'), sB=mkPanel(Barr,Blabel,'s2');
+    svg.innerHTML = `<svg x="0" y="0" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${sA}</svg>`+
+                    `<svg x="0" y="${h+22}" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${sB}</svg>`+
+                    `<text x="${w-70}" y="${2*h+18}" class="tick" text-anchor="end">ω [rad/s]</text>`;
+  }
+  function renderRaoPanel(omega,hB,hA,pB,pA){
+    const svg=$('hull-rao'); if(!svg) return;
+    const w=700, h=128;
+    const mk=(bem,ana,label)=>{
+      const all=[...bem,...ana];
+      const ymin=Math.min(0,...all), ymax=Math.max(...all)*1.15;
+      const ax=makeAxes(w,h,{l:54,r:16,t:10,b:24}, omega[0],omega[omega.length-1], ymin,ymax, niceXTicks(omega,6), niceYTicks(ymin,ymax,3), 'ω [rad/s]', label);
+      let s=ax.s;
+      s+=polyline(omega.map((o,i)=>[o,bem[i]]), ax.X, ax.Y, 's1', false);
+      s+=polyline(omega.map((o,i)=>[o,ana[i]]), ax.X, ax.Y, 's2', true);
+      return s;
+    };
+    const sH=mk(hB,hA,'|H_heave| [m/m]'), sP=mk(pB,pA,'|H_pitch| [deg/m]');
+    svg.innerHTML = `<svg x="0" y="0" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${sH}</svg>`+
+                    `<svg x="0" y="${h+18}" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${sP}</svg>`+
+                    `<text x="${w-16}" y="14" class="slab l-mut" text-anchor="end">実線=BEM表・破線=解析式</text>`;
+  }
+  function renderSeaCoeffSection(P, der, hydro){
+    if(!hydro){
+      ['hull-a33b33','hull-a55b55','hull-rao'].forEach(id=>{ $(id).innerHTML=`<text x="200" y="120" text-anchor="middle" class="lab">係数表が未生成</text>`; });
+      $('hull-fit-table').innerHTML=''; $('hull-tn-table').innerHTML='';
+      return;
+    }
+    const H=hydro.bem, omega=H.omega, C=H.C;
+    renderDualPanel('hull-a33b33', omega, H.A['33'], H.B['33'], 'A33 [kg]', 'B33 [kg/s]');
+    renderDualPanel('hull-a55b55', omega, H.A['55'], H.B['55'], 'A55 [kg·m²]', 'B55 [kg·m²/s]');
+
+    const pB = JSON.parse(JSON.stringify(P)); pB.sea.mode='bem';
+    const pA = JSON.parse(JSON.stringify(P)); pA.sea.mode='analytic';
+    const heaveBem = omega.map(w=>USV.raoHeave(w,0,pB.hull,pB.sea,der));
+    const heaveAna = omega.map(w=>USV.raoHeave(w,0,pA.hull,pA.sea,der));
+    const pitchBem = omega.map(w=>USV.raoPitchDegPerM(w,0,pB.hull,pB.sea,der));
+    const pitchAna = omega.map(w=>USV.raoPitchDegPerM(w,0,pA.hull,pA.sea,der));
+    renderRaoPanel(omega, heaveBem, heaveAna, pitchBem, pitchAna);
+
+    const fit = H.fit, sea0 = USV.defaults().sea;
+    $('hull-fit-table').innerHTML = `<tr><th>等価定数</th><th class="num">0-D 仮定値</th><th class="num">BEM（fit）</th></tr>`+
+      `<tr><td>C_w（水線面積係数）</td><td class="num">${fmt(sea0.Cw,3)}</td><td class="num">${fmt(fit.Cw,3)}</td></tr>`+
+      `<tr><td>maHeaveFrac（A33/m）</td><td class="num">${fmt(sea0.maHeaveFrac,2)}</td><td class="num">${fmt(fit.maHeaveFrac,2)}</td></tr>`+
+      `<tr><td>ζ_heave</td><td class="num">${fmt(sea0.zetaHeave,3)}</td><td class="num">${fmt(fit.zetaHeave,3)}</td></tr>`+
+      `<tr><td>maPitchFrac（A55/I55）</td><td class="num">${fmt(sea0.maPitchFrac,2)}</td><td class="num">${fmt(fit.maPitchFrac,2)}</td></tr>`+
+      `<tr><td>ζ_pitch</td><td class="num">${fmt(sea0.zetaPitch,3)}</td><td class="num">${fmt(fit.zetaPitch,3)}</td></tr>`+
+      `<tr><td>ma44（A44/I44・新設）</td><td class="num">—</td><td class="num">${fmt(fit.ma44,3)}</td></tr>`+
+      `<tr><td>ζ44（ポテンシャル流のみ）</td><td class="num">—</td><td class="num">${fmt(fit.zeta44,4)}</td></tr>`;
+
+    const rho=USV.C.rho, g=USV.C.g;
+    const Aw0 = sea0.Cw*P.hull.Lwl*P.hull.B;
+    const wnHeave0 = Math.sqrt(rho*g*Aw0/(P.hull.m*(1+sea0.maHeaveFrac)));
+    const Iwp0 = sea0.Cw*Math.pow(P.hull.Lwl,3)*P.hull.B/12;
+    const I55_0 = P.hull.m*Math.pow(sea0.rPitchGyr*P.hull.Lwl,2)*(1+sea0.maPitchFrac);
+    const wnPitch0 = Math.sqrt(rho*g*Iwp0/I55_0);
+    const wnHeaveBem = findNaturalOmega(omega, H.A['33'], C['33'], P.hull.m);
+    const I55 = P.hull.m*Math.pow(sea0.rPitchGyr*P.hull.Lwl,2);
+    const wnPitchBem = findNaturalOmega(omega, H.A['55'], C['55'], I55);
+    const HS = hydro.hydrostatics, GM = HS.KB_m+HS.BM_m-P.hull.KG;
+    const C44 = rho*g*der.vol*GM;
+    const I44 = P.hull.m*Math.pow(H.k44*P.hull.B,2);
+    const wnRollBem = findNaturalOmega(omega, H.A['44'], C44, I44);
+    const Tn = w=> w? (2*Math.PI/w) : null;
+    const rows = [
+      ['ヒーブ T_n', fmt(Tn(wnHeave0),2)+' s', fmt(Tn(wnHeaveBem),2)+' s'],
+      ['ピッチ T_n', fmt(Tn(wnPitch0),2)+' s', fmt(Tn(wnPitchBem),2)+' s'],
+      ['ロール T_n', 'S1推定 1.2〜1.4 s（GMベース概算）', fmt(Tn(wnRollBem),2)+' s'],
+    ];
+    $('hull-tn-table').innerHTML = `<tr><th>固有周期</th><th class="num">0-D</th><th class="num">BEM</th></tr>`+
+      rows.map(([l,a,b])=>`<tr><td>${l}</td><td class="num">${a}</td><td class="num">${b}</td></tr>`).join('');
+  }
+
+  // ── ④ 係数表の状態と再生成コマンド ──
+  function renderStatusSection(P, hydro, der){
+    const L=P.hull.Lwl, B=P.hull.B, m=P.hull.m, Cb=P.hull.Cb, KG=P.hull.KG;
+    const draft = (hydro && hydro.hydrostatics) ? hydro.hydrostatics.draft_m : der.d;
+    const cmds = [
+      `node tools/usv_hull/export_stl.mjs --Lwl ${L} --B ${B} --m ${m} --Cb ${Cb} --out out/base.stl`,
+      `python tools/usv_hull/gz.py out/base.stl --kg ${KG} --json out/base_gz.json`,
+      `python tools/usv_hull/bem.py out/base.stl --draft ${fmt(draft,4)} --mass ${m} --lcg auto --kg ${KG} --json out/base_bem.json`,
+      `node tools/usv_hull/pack_hydro.mjs --gz base=out/base_gz.json --bem out/base_bem.json`,
+    ];
+    $('hull-regen-cmd').textContent = cmds.join('\n');
+    const el = $('hull-regen-status');
+    if(!hydro){
+      el.innerHTML = `<b style="color:var(--warn-ink)">係数表が未生成</b> — 下のコマンド列で <code>tools/usv_hull/</code> の STL/GZ/BEM/pack_hydro を実行すると usv-hydro ブロックが埋まる。`;
+      return;
+    }
+    const hm = USV.hydroMatch(P.hull);
+    el.innerHTML = `<div>生成日時: ${hydro.generated}</div>`+
+      `<div>係数表の船体: L=${hydro.hull.Lwl} m ・ B=${hydro.hull.B} m ・ m=${hydro.hull.m} kg ・ C_b=${hydro.hull.Cb} ・ hash=${hydro.hull.hash.slice(0,8)}…</div>`+
+      `<div>BEM: panels=${hydro.bem.panels} ・ mesh=${hydro.bem.mesh}</div>`+
+      `<div>現在のモデル入力との照合（<code>USV.hydroMatch</code>）: <b style="color:${hm.ok?'var(--ok-ink)':'var(--warn-ink)'}">${hm.ok?'一致（'+hm.reason+'）':'不一致（'+hm.reason+'）'}</b></div>`;
+  }
+
+  // ── 統合エントリ ──
+  let curP=null, curDer=null;
+  function renderHullTab(P, der){
+    curP=P; curDer=der;
+    const hydro = USV.hydro;
+    renderSilhouette(P, hydro);
+    renderGeomTable(P, der, hydro);
+    renderGZSection(P);
+    renderSeaCoeffSection(P, der, hydro);
+    renderStatusSection(P, hydro, der);
+  }
+  window.__renderHullTab = renderHullTab;
+
+  const gzSlider=$('gz-kg-slider'), gzSel=$('gz-variant');
+  if(gzSlider) gzSlider.addEventListener('input', ()=>{ if(curP) renderGZSection(curP); });
+  if(gzSel) gzSel.addEventListener('change', ()=>{ if(curP) renderGZSection(curP); });
+
+  // 初回描画（model タブのスクリプトが既に P を確定させている）
+  if(window.__getParams){
+    const p = window.__getParams();
+    renderHullTab(p, USV.derived(p.hull));
+  }
 })();
 </script>
 <script>
@@ -2875,9 +3739,11 @@ if (typeof module !== 'undefined') module.exports = USV;
 (function(){
   const sbar=document.getElementById('sbar');
   function showTab(name){
-    document.getElementById('tab-model').hidden   = name!=='model';
-    document.getElementById('tab-mission').hidden = name!=='mission';
-    document.getElementById('tab-doc').hidden     = name!=='doc';
+    // 汎用: nav.tabs の data-tab 属性から対応する #tab-<name> を開閉する（タブ追加時はボタンと div だけ増やせばよい）
+    document.querySelectorAll('.tabs button[data-tab]').forEach(b=>{
+      const el=document.getElementById('tab-'+b.dataset.tab);
+      if(el) el.hidden = b.dataset.tab!==name;
+    });
     if(name==='mission' && window.__missionShown) window.__missionShown();
     document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
     if(name!=='model' && sbar) sbar.classList.remove('show');
