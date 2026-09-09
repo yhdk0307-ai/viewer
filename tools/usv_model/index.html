@@ -462,7 +462,7 @@
 </div>
 
 <h2>検証ケース（自動実行）</h2>
-<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">2 種類ある: <b>ユースケース検証（V1–V4）</b>は公表値・運用シナリオの再現で、上のプリセットと対応する。<b>モデル整合性検証（V5–V12）</b>は数理・実装の内部チェック（恒等式・物理極限・較正保存）で、運転シナリオではないためプリセットは無い。いずれも既定パラメータで毎回ロード時に実行される。</div>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">2 種類ある: <b>ユースケース検証（V1–V4）</b>は公表値・運用シナリオの再現で、上のプリセットと対応する。<b>モデル整合性検証（V5–V13）</b>は数理・実装の内部チェック（恒等式・物理極限・較正保存）で、運転シナリオではないためプリセットは無い。いずれも既定パラメータで毎回ロード時に実行される。</div>
 <div class="vgrid" id="vgrid"></div>
 
 <footer>
@@ -598,6 +598,32 @@
 <figcaption>図H2: GZ 曲線（実線）。ゼロ線との交点が平衡角、−→+ の交差が安定（自己復原）、+→− が不安定（そこを越えると転覆側へ落ちる）。</figcaption></figure>
 <div class="tbl" style="overflow-x:auto"><table id="gz-metrics-table"></table></div>
 
+<h3>転覆と復帰の目安（S2・砕波エネルギー換算）</h3>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 10px">
+  上の GZ 地形のエネルギー障壁 E_転覆／E_復帰 [J] を、砕波（ローラー）が艇に渡すエネルギーとして目安の波高 H_b に換算する（設計書§13.13）。
+  伝達効率 η・砕波の判定・風の影響のいずれも<b>△（推定・目安）</b>——数値は<b>1 桁の不確かさ</b>を持つ目安として扱うこと。下端の「不確かさ」欄を必ず参照。
+  風は転覆側（直立→AVS）のみに効かせる（復帰側は無風の GZ で評価）。
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:4px 0 10px">
+  <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px">η（伝達効率）
+    <input type="number" id="g-s2eta" step="0.01" min="0.03" max="0.5" style="width:64px"></label>
+  <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px">s_break（砕波判定の波形勾配）
+    <input type="number" id="g-sbreak" step="0.01" min="0.05" max="0.15" style="width:64px"></label>
+  <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px">風の投影面積 A_lat
+    <input type="number" id="g-wala" step="0.05" min="0" max="3" style="width:64px"><span class="unit">m²</span></label>
+  <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px">風の作用高さ z_a
+    <input type="number" id="g-wza" step="0.05" min="0" max="2" style="width:64px"><span class="unit">m</span></label>
+</div>
+<div class="tbl" style="overflow-x:auto"><table id="gz-s2-etatable"></table></div>
+<div id="gz-s2-rot" style="font-size:12.5px;color:var(--muted);margin:6px 0"></div>
+<div id="gz-s2-envline" style="font-size:13px;margin:8px 0"></div>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:6px 0 4px">Hs×Tp グリッド — 復帰までの期待時間 [h]（η=0.15・現在の形状バリアント/KG。&gt;1000 は「実質うねりでは起きない」の意）</div>
+<div class="tbl" style="overflow-x:auto"><table id="gz-s2-recgrid"></table></div>
+<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12.5px;color:var(--muted)">転覆側の期待時間グリッド（η=0.15・現風速）</summary>
+<div class="tbl" style="overflow-x:auto;margin-top:6px"><table id="gz-s2-capgrid"></table></div>
+</details>
+<div id="gz-s2-caveats" style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6"></div>
+
 <h2>耐航性能係数</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 10px">
   BEM（<code>tools/usv_hull/bem.py</code>・S3）で出した付加質量 A・減衰 B の周波数依存と、0-D の代表値（一定）を比較する。
@@ -629,7 +655,7 @@
   <div class="eyebrow">DP-20260825-01 · PHASE 1–4 実装済み · REV.5</div>
   <h1>USV 0次元モデル設計書</h1>
   <div class="std">長期外洋ミッションの<b>エネルギー成立性</b>と<b>動力性能成立性</b>を評価する点質量モデル。
-  ベースライン: Seasats Lightfish（RR-20260824-01 調査値）／ 実装: <code>tools/usv_model/interactive/index.html</code>（検証 12/12 PASS）<br>
+  ベースライン: Seasats Lightfish（RR-20260824-01 調査値）／ 実装: <code>tools/usv_model/interactive/index.html</code>（検証 13/13 PASS）<br>
   本書は<b>支配式（一般形）と閉じ込め式（実験式・仮定）を分離して記述</b>する。閉じ込め式は将来、実験・CFD 等のマップで差し替える前提の「置換対象」であり、各所にその旨と推奨手段を明記する。</div>
 </div>
 
@@ -1183,6 +1209,8 @@
 <b>ホテル負荷が推進と同オーダーの第 1 級項。</b>公称航続 575 nm の逆算から P<sub>hotel</sub>≈104 W（航法計算機・Starlink・センサー）。この艇級のエネルギー成立性はホテル負荷の見積り精度で決まる。</div>
 <div class="find"><span class="fl">FINDING 2</span><br>
 <b>日射 4.5 kWh/m²/日では日平均発電 54 W ＝ ホテル負荷 104 W を恒常的に賄えない。</b>公称「6 ヶ月滞留」はホテル負荷 ≤45 W の省電力モードが前提と推定（V3 で成立確認）。長期滞留の成否は推進ではなくホテル負荷の管理で決まる。</div>
+<div class="find"><span class="fl">FINDING 3</span><br>
+<b>転覆も復帰もうねりではなく短周期の砕ける風浪で起きる；密閉キャノピーで復帰に要る砕波高は約 0.74 → 0.48 m（η=0.15）。</b>GZ 地形のエネルギー障壁を砕波高に換算すると（S2・§13.13）、Hs=2 m・Tp=6 s 級のうねりでは砕波の下限（波形勾配しきい値）が H_b,復帰・H_b,転覆 のどちらよりずっと高く、期待時間は約 9400 時間（400 日弱）＝実質「起きない」。差が効くのは砕波下限がまだ低い短周期の局所風浪側（例: Hs=0.4 m・Tp=2 s で base の復帰期待時間 0.44 h に対し密閉キャノピーは 0.057 h）——転覆・復帰対策は「大きいうねりへの備え」ではなく「短周期の砕ける風浪の頻度」を見るべき、という運用上の含意。ただし換算の伝達効率 η・砕波判定はいずれも△（設計書§13.13）。</div>
 <div class="caveat"><b>限界（明示）:</b> ①運動起因の抵抗増加は未評価（抵抗は反射成分のみ＝荒天は下振れ方向の不確かさ）。②耐航性は 1 自由度・減衰比仮定・位相/連成/相対水位運動なし。③ 0 次元の原理的限界として斜め波・横風の横力・回頭は表現不可。④ △印パラメータ（特に f_der・ζ・C_d）は仮定であり §10 の置換で解消する。⑤ Lightfish の船型・ポッド型式・実ホテル負荷は非公開＝公称値の測定条件も不明という二重の不確かさ。</div>
 </details>
 
@@ -1652,11 +1680,73 @@ crit = false の滞留（<b>充電待機</b>など）は下限タッチを許容
 <p class="std">回帰検証: V12（検証ケース一覧・モデル整合性検証グループ）。実装: <code>massProps</code>／<code>effectiveMass</code>／<code>keelDeployed</code>（usv-core・S5/S6）。</p>
 </details>
 
+<!-- ═══════════ §13.13 ═══════════ -->
+<details class="sub" open><summary>13.13 S2 — 転覆・復帰の砕波高換算</summary>
+<p>§13.3〜§13.4 の GZ 地形が出すのはエネルギー障壁 E_転覆／E_復帰 [J] という<b>仕事</b>で、それ単体では「どんな海況で起きるか」の直感が湧かない。ここではこの障壁を、砕波（ローラー）が艇に渡すエネルギーとして<b>目安の波高</b> H_b に換算し、さらに JONSWAP 海象での発生頻度・期待時間まで一段落とし込む。<b>換算に使う伝達効率・砕波判定・風の影響はいずれも△（推定）で、結果は 1 桁の不確かさを持つ「目安」</b>——設計判断の根拠には使えるが、定量的な安全率の根拠にはできない。</p>
+
+<h3>13.13.1 準静的な議論が成り立つ理由</h3>
+<p>波の最大傾斜角は、波高 H・波長 λ の正弦波近似で <math><mrow><msub><mi>θ</mi><mi>max</mi></msub><mo>≈</mo><mi>arctan</mi><mo>(</mo><mi>π</mi><mi>H</mi><mo>/</mo><mi>λ</mi><mo>)</mo></mrow></math>。砕波限界に近い H/λ≈0.14（Stokes 限界 1/7≈0.143 の近傍）で θ_max≈arctan(π·0.14)≈<b>25°</b>。一方 AVS は §13.4.2 の通り ±100°前後、ロール固有周期は §13.4.4 で T_roll≈1.2〜1.4 s ≪ 想定波周期 5〜11 s。<b>波面の傾き（≤25°）だけでは AVS には遠く届かず、うねりの緩やかな昇降に艇が準静的に追従するだけでは転覆も復帰も起きない</b>——起こり得るとすれば、波面形状ではなく砕波（ローラー）が運動量とエネルギーを直接叩き込む瞬間的な事象としてのみ。これが本節でエネルギー収支（傾斜の準静的な釣り合いではなく）を主役に置く理由であり、S2 全体の前提。</p>
+
+<h3>13.13.2 砕波ローラーのエネルギー — 目安の波高への換算</h3>
+<p>砕波ローラー（巻き波の白濁部）が単位クレスト長あたりに持つ運動エネルギーを、代表的な断面積とローラー速度から見積もる。断面積 ≈0.1·H_b²（△・幅 0.1H_b×深さH_b程度の三角形近似）、ローラー速度は砕波位相速度 c²≈1.6·g·H_b（△・H_b/λ≈0.1 での浅水砕波の経験則）とすると、単位長あたり運動エネルギー</p>
+<div class="eq"><math display="block"><mrow>
+<mfrac><mi>E'</mi><mn>1</mn></mfrac><mo>≈</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mi>ρ</mi><mo>·</mo><mo>(</mo><mn>0.1</mn><msubsup><mi>H</mi><mi>b</mi><mn>2</mn></msubsup><mo>)</mo><mo>·</mo><mo>(</mo><mn>1.6</mn><mi>g</mi><msub><mi>H</mi><mi>b</mi></msub><mo>)</mo>
+<mo>=</mo><mn>0.08</mn><mi>ρ</mi><mi>g</mi><msubsup><mi>H</mi><mi>b</mi><mn>3</mn></msubsup><mo>≡</mo><mi>α</mi><mi>ρ</mi><mi>g</mi><msubsup><mi>H</mi><mi>b</mi><mn>3</mn></msubsup>
+</mrow></math></div>
+<p>すなわち α=0.5×0.1×1.6=<b>0.08</b>（△・両係数とも文献の代表値で船体固有ではない）。艇の全長 L にわたってこのローラーが作用し、伝達効率 η（△・0.05〜0.30。砕波の一部だけが艇の回転運動に渡る割合）で仕事 E を渡すと仮定すると、E=α·ρ·g·L·η·H_b³ という釣り合いが成り立ち、これを H_b について解いたものが換算式:</p>
+<div class="eq"><math display="block"><mrow><msub><mi>H</mi><mi>b</mi></msub><mo>=</mo><msup><mrow><mo>(</mo><mfrac><mi>E</mi><mrow><mi>α</mi><mi>ρ</mi><mi>g</mi><mi>L</mi><mi>η</mi></mrow></mfrac><mo>)</mo></mrow><mrow><mn>1</mn><mo>/</mo><mn>3</mn></mrow></msup></mrow></math></div>
+<p>E に E_転覆 を入れれば「転覆させるのに必要な砕波高」H_b,転覆、E_復帰 を入れれば「復帰させるのに必要な砕波高」H_b,復帰。<b>風の影響は転覆側の障壁だけに効かせる</b>——風の定常横傾斜モーメント <math><mrow><msub><mi>M</mi><mi>w</mi></msub><mo>(</mo><mi>φ</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msub><mi>ρ</mi><mi>a</mi></msub><msup><mi>U</mi><mn>2</mn></msup><msub><mi>A</mi><mrow><mi>lat</mi></mrow></msub><msub><mi>z</mi><mi>a</mi></msub><mi>cos</mi><mi>φ</mi></mrow></math>（ρ_a=1.225・A_lat=0.60 m²△・z_a=0.25 m△、いずれも艇の投影面積・作用高さの概算）による実効復原てこ GZ_eff(φ)=GZ(φ)−M_w(φ)/(mg) で GZ 地形を評価し直し、直立→AVS 側の障壁 E_転覆 だけを風込みで求める（<code>USV.gzLandscape(...,{windArm})</code>）。転覆した艇を風下に押し戻す力は復帰の障壁を実質的に変えないため、E_復帰 は常に無風の GZ で評価する。</p>
+
+<h3>13.13.3 発生頻度・期待時間 — Rayleigh × 波形勾配の砕波判定</h3>
+<p>個々の波が実際に砕けるのは、換算した H_b があっても波形が急峻（H/λ が大きい）でなければ砕波は起きないため、周期 T_p の波の砕波しきい値を波形勾配 s_break（△・既定 0.10）で <math><mrow><msub><mi>λ</mi><mi>p</mi></msub><mo>=</mo><mi>g</mi><msubsup><mi>T</mi><mi>p</mi><mn>2</mn></msubsup><mo>/</mo><mo>(</mo><mn>2</mn><mi>π</mi><mo>)</mo></mrow></math>・砕波下限 = s_break·λ_p として置く。実際に効く閾値は両者の大きい方 H*=max(H_b, s_break·λ_p)——エネルギーは足りていても波形が緩ければ砕けない、という向きの制約。個々の波高は Rayleigh 分布に従うとして超過確率 P(H&gt;H*)=exp(−2(H*/Hs)²)（Hs で正規化した恒等式 P(H&gt;Hs)=e^-2 は V13②で検証）。波数/時 = 3600/T_z（T_z=0.78 T_p・JONSWAP γ=3.3 の標準関係）、発生率 = P×波数/時、期待時間 = 1/発生率。</p>
+
+<h3>13.13.4 結果 — η スイープ（table KG・無風）</h3>
+<div class="tbl"><table>
+<tr><th>形状</th><th class="num">KG [m]</th><th class="num">E_転覆 [J]</th><th class="num">E_復帰 [J]</th><th class="num">H_b,転覆 [m]<br>η=.05/.15/.30</th><th class="num">H_b,復帰 [m]<br>η=.05/.15/.30</th></tr>
+<tr><td>平甲板（base）</td><td class="num">0.1465</td><td class="num">249</td><td class="num">159</td><td class="num">1.25 / 0.86 / 0.69</td><td class="num">1.07 / 0.74 / 0.59</td></tr>
+<tr><td>密閉キャノピー・対称</td><td class="num">0.1465</td><td class="num">279</td><td class="num">42</td><td class="num">1.30 / 0.90 / 0.71</td><td class="num">0.69 / 0.48 / 0.38</td></tr>
+<tr><td>同・非対称 yOff 0.15</td><td class="num">0.1465</td><td class="num">263</td><td class="num">30</td><td class="num">1.27 / 0.88 / 0.70</td><td class="num">0.62 / 0.43 / 0.34</td></tr>
+</table></div>
+<p>§13.4.3 で見た「密閉キャノピーで復帰の仕事が 163→45 J に下がる」（KG=0.15 固定・GZ_ref 直接値）という結果が、ここでは<b>復帰に要る砕波高 H_b,復帰（η=0.15）が base の 0.74 m から canopy_sym の 0.48 m へ約 35% 下がる</b>という、体感しやすい形に変換される（table KG=0.1465 のため §13.4.3 の絶対値とは僅かにずれる）。H_b,転覆 側は逆にキャノピーで僅かに上がる（0.86→0.90 m）——転覆させにくく・かつ復帰させやすい、という §13.4.3 の「両方向に改善」がここでも保たれる。</p>
+<p><b>風の効果（base・table KG・η=0.15）:</b> U=0/10/20 m/s で E_転覆 = 249/240/215 J、H_b,転覆 = 0.86/0.85/0.82 m——20 m/s の強風で転覆に要る砕波高が約 5% 下がる（風下側に定常的に押されている分、砕波の後押しが少なくて済む）。E_復帰・H_b,復帰 は定義上不変（V13④）。</p>
+
+<h3>13.13.5 現在海象での例と経験則との対比</h3>
+<p>例: Hs=2 m・Tp=6 s（base・table KG・η=0.15・無風）—— λ_p=56.2 m、砕波の下限 s_break·λ_p=5.62 m。これは H_b,転覆=0.86 m・H_b,復帰=0.74 m のどちらよりもずっと大きいため、実際に効く閾値 H* はどちらも 5.62 m（<b>砕波下限で頭打ち＝うねりは砕けない</b>）。発生率 ≈1.06×10⁻⁴/h、期待時間 ≈9400 時間（≈390 日）——<b>実質「起きない」</b>。これは §13.13.1 の準静的な議論（うねりでは届かない）と整合する定量的な裏付けであり、13.13.6 の 6×6 グリッドで見るとおり、この海象カタログの試験点（Hs≤6 m・Tp≥3 s）では base・canopy_sym とも Tp≥3 s では砕波下限が支配的になり、両形状の期待時間はほぼ一致する（H_b の差が効くのは砕波下限が低い短周期側のみ・§13.13.6 末尾参照）。</p>
+<p><b>経験則との対比:</b> Wolfson Unit 等で使われる目安「砕波高 ≈ 船幅 B」で本船なら B=0.90 m。η=0.15 での H_b,転覆（base 0.86 m・canopy_sym 0.90 m）はこの経験則にほぼ一致し、η=0.15 という△の値がこの船型では<b>桁として妥当</b>であることの目安になる（V13③）。</p>
+
+<h3>13.13.6 Hs×Tp グリッド — 復帰までの期待時間 [h]（η=0.15・table KG・無風）</h3>
+<div class="tbl" style="overflow-x:auto"><table>
+<tr><th>Hs＼Tp</th><th class="num">3s</th><th class="num">4s</th><th class="num">5s</th><th class="num">6s</th><th class="num">8s</th><th class="num">10s</th></tr>
+<tr><td>1 m</td><td class="num">0.03</td><td class="num">228</td><td class="num">&gt;1000</td><td class="num">&gt;1000</td><td class="num">∞</td><td class="num">∞</td></tr>
+<tr><td>2 m</td><td class="num">0.00</td><td class="num">0.02</td><td class="num">2.2</td><td class="num">&gt;1000</td><td class="num">∞</td><td class="num">∞</td></tr>
+<tr><td>3 m</td><td class="num">0.00</td><td class="num">0.00</td><td class="num">0.03</td><td class="num">1.5</td><td class="num">&gt;1000</td><td class="num">∞</td></tr>
+<tr><td>4 m</td><td class="num">0.00</td><td class="num">0.00</td><td class="num">0.01</td><td class="num">0.07</td><td class="num">456</td><td class="num">∞</td></tr>
+<tr><td>5 m</td><td class="num">0.00</td><td class="num">0.00</td><td class="num">0.00</td><td class="num">0.02</td><td class="num">5.1</td><td class="num">&gt;1000</td></tr>
+<tr><td>6 m</td><td class="num">0.00</td><td class="num">0.00</td><td class="num">0.00</td><td class="num">0.01</td><td class="num">0.44</td><td class="num">&gt;1000</td></tr>
+</table></div>
+<p>base・canopy_sym は<b>このグリッドの全マスで一致</b>する（Tp≥3 s では s_break·λ_p が両形状の H_b,復帰 を上回り、H* が砕波下限で頭打ちになるため——13.13.5 の注記のとおり）。<b>形状の差（H_b,復帰 の 0.74→0.48 m）が実際の期待時間に効くのは、砕波下限がまだ低い短周期の局所風浪側</b>: 例えば Hs=0.4 m・Tp=2 s（λ_p=6.25 m・砕波下限 0.625 m）では base の H* は自身の H_b,復帰=0.744 m（砕波下限より大きい方）で期待時間 ≈0.44 h（26 分）、canopy_sym は H_b,復帰=0.477 m が砕波下限 0.625 m を下回るため H* が砕波下限そのものまで下がり期待時間 ≈0.057 h（3.4 分）——<b>密閉キャノピーが実際に効くのは、うねりではなく短周期の砕ける風浪の中でのみ</b>という結論の定量的な根拠。転覆側のグリッドは η=0.15・現風速で同じ計算を行ったもので、船体タブの折りたたみに実データを表示する。</p>
+
+<h3>13.13.7 △の注記（限界・目安であることの明示）</h3>
+<div class="caveat"><b>不確かさ（明示）:</b> ①エネルギー伝達効率 η は文献幅 0.05〜0.30 で 1 桁の不確かさ（結果の H_b は η^(−1/3) でしか効かないため実際の広がりは 0.05〜0.30 の桁ほど大きくはないが、なお±40%程度は動く）。②転覆時のロール減衰・浸水・ペイロードの移動は入っていない——実際は減衰が仕事の一部を吸収し、浸水は復原性自体を悪化させ得る（いずれも本節の対象外）。③砕波判定は波形勾配のみ（s_break·λ_p）で、風による砕波の増加（風速が高いほど同じ Hs でも砕けやすい）は未考慮——強風下では本節の期待時間は保守的（長め）に出ている可能性が高い。④「うねりでは転覆も復帰も起きない」という 13.13.5/13.13.6 の結論は、準静的な議論（AVS≫最大波面傾斜 25°）と 13.13.6 の数値の両方に基づくが、砕波そのものの発生機序（風波の重畳・ウェーブグループの collision breaking 等）は本モデルに含まれていない簡略化。</div>
+<p class="std">回帰検証: V13（検証ケース一覧・モデル整合性検証グループ）。実装: <code>gzLandscape</code>／<code>windHeelArm</code>／<code>breakingWaveLimits</code>／<code>breakingEventRate</code>／<code>capsizeRecoveryAssessment</code>（usv-core・S2）。船体タブ「転覆と復帰の目安（S2・砕波エネルギー換算）」に η・s_break・風パラメータの入力と結果を表示。</p>
+<h3>解釈上の注意 — しきい値モデルの限界と「直立している時間の割合」</h3>
+<p>本換算は「砕波 1 発のエネルギーがしきい値を超えるか」しか見ない。実際の砕波（Tp≥3 s で 1.4 m 以上）が渡すエネルギーは
+E_転覆・E_復帰 のどちらよりも 1 桁大きいため、<b>同じ砕波は艇を起こしもすれば再び転覆させもする</b>。したがって砕波が続く海面では
+艇は繰り返し転がされ、上記の「復帰までの期待時間」は「最初に起きるまでの時間」であって「その後起きたままでいる時間」ではない。
+形状（密閉キャノピー・非対称）の価値は、E_復帰 ≪ E_転覆 となることで<b>「起こすには足りるが転覆させるには足りない」砕波の帯域</b>が
+生まれる点にある。その帯域が存在するのは砕波下限が低い短周期の風浪（Tp 2〜3 s・Hs 0.3〜0.6 m）で、
+本文の Hs=0.4 m・Tp=2 s の例（base 0.44 h → 密閉キャノピー 0.057 h）がそれに当たる。
+逆に言えば、<b>完全な自己復原（AVS=180°・E_復帰=0）だけが波に頼らず重力で起き上がる</b>。密閉キャノピーで E_復帰 を 30〜45 J まで
+下げるのはその手前の状態であり、「波を待つ復帰」から「波を要さない復帰」へ移るには AVS を 180° に届かせる設計（上部構造の浮力を
+さらに増す、または非対称で転覆平衡を消す）が要る。これは S1 の GZ 地形で直接判定でき、S2 の換算を待たない。</p>
+
+</details>
+
 </details>
 
 
 <div class="foot">
-DP-20260825-01 Rev.3 ／ ベース調査: RR-20260824-01 ／ 実装: tools/usv_model/interactive/index.html（Phase 1–4・検証 12/12 PASS）<br>
+DP-20260825-01 Rev.3 ／ ベース調査: RR-20260824-01 ／ 実装: tools/usv_model/interactive/index.html（Phase 1–4・検証 13/13 PASS）<br>
 主要参照: ITTC 7.5-02-02-02（抵抗）・ITTC 7.5-04-01-01（速力試運転・風圧/波浪修正）・ISO 15016 / STAWAVE-1・JONSWAP（Hasselmann 1973）・Haurwitz 晴天 GHI・Torqeedo Cruise 3.0 FP 公称値。<br>
 数式は MathML ネイティブ描画（外部ライブラリ不使用）。グラフはすべて実装コアから計算した実データ。
 </div>
@@ -1724,7 +1814,10 @@ const USV = (function(){
               mode:'analytic',                                    // 'analytic'(既定・V1-V8不変) | 'bem'(表補間・S4)
               zeta44Visc:0.08, rollLimDeg:15,                      // rollDamp='const' 用の一定ロール粘性減衰比（旧モデル・出力限界は判定には不使用）
               rollDamp:'drag',                                     // 'drag'(既定・S4-7 抗力モデル・振幅依存) | 'const'(旧: ζ=zeta44Visc 一定)
-              cdBottom:1.2, cdKeel:1.2, keelFin:true },            // 船底平板・キールフィンの等価抗力係数（△仮置き・設計書§8.3）。keelFin は互換維持用フラグ、実際の展開判定は keelDeployed(hull,sea)=!hull.keelUp&&sea.keelFin（S6）
+              cdBottom:1.2, cdKeel:1.2, keelFin:true,              // 船底平板・キールフィンの等価抗力係数（△仮置き・設計書§8.3）。keelFin は互換維持用フラグ、実際の展開判定は keelDeployed(hull,sea)=!hull.keelUp&&sea.keelFin（S6）
+              // S2（設計書§13.13）: 転覆・復帰の砕波高換算の△パラメータ。いずれも目安（1桁の不確かさ）
+              windALat:0.60, windZa:0.25,                          // △風の横風投影面積[m²]・作用高さ[m]（L×(乾舷+マスト有効高)の概算）
+              etaBreak:0.15, sBreak:0.10 },                        // △砕波エネルギー伝達効率η（文献0.05〜0.30）・砕波判定の波形勾配しきい値 s=H/λ
       msn:  { targetKt:2.5, days:30, soc0:1.0, socMin:0.10 }
     };
   }
@@ -2731,6 +2824,165 @@ const USV = (function(){
     return pts;
   }
 
+  // ── GZ 地形（gz.py の landscape()/metrics() の JS 移植・数値検証済み。船体タブ §H2 と共通の唯一実装） ──
+  //   opts.windArm: 風の横傾斜てこ φ→arm[m] 関数（windHeelArm() で作る）。渡すと E_capsize_J（直立→AVS 側の障壁）
+  //   のみ GZ_eff(φ)=GZ(φ)−windArm(φ) で評価し直す（転覆側だけに効かせる・復帰側 E_recover_J は常に無風の GZ で評価＝設計書§13.13）。
+  //   eq[] の各要素は {angle, stable, U}（U は直立平衡を 0 に取った復原モーメントのポテンシャル [J]）。
+  function npInterpLocal(x, xs, ys){
+    const n=xs.length;
+    if(x<=xs[0]) return ys[0];
+    if(x>=xs[n-1]) return ys[n-1];
+    for(let i=0;i<n-1;i++){
+      if(x>=xs[i] && x<=xs[i+1]){
+        const t=(x-xs[i])/(xs[i+1]-xs[i]);
+        return ys[i]+(ys[i+1]-ys[i])*t;
+      }
+    }
+    return ys[n-1];
+  }
+  function gzLandscape(anglesDeg, gzArr, mass, opts){
+    opts = opts || {};
+    const G_GRAV = 9.80665;   // gz.py の landscape() と同じ定数（usv-core 共通の C.g=9.81 とは意図的に別値・移植元を保存）
+    function computeMetrics(ang0, gz0){
+      let ang = ang0.slice(), gz = gz0.slice();
+      if(ang.length>2 && (ang[ang.length-1]-ang[0])>=359.0){
+        ang.push(ang[1]+360.0); gz.push(gz[1]);
+      }
+      const W = mass*G_GRAV;
+      const U=[0];
+      for(let k=1;k<ang.length;k++){
+        const dphi = (ang[k]-ang[k-1])*Math.PI/180;
+        U.push(U[k-1] + dphi*(gz[k]+gz[k-1])/2*W);
+      }
+      const U0 = npInterpLocal(0.0, ang, U);
+      for(let i=0;i<U.length;i++) U[i]-=U0;
+      const eq=[];
+      for(let k=1;k<ang.length;k++){
+        const a=gz[k-1], b=gz[k];
+        if(a===0 && b===0) continue;
+        const cross = (a<0&&b>=0)||(a<=0&&b>0)||(a>0&&b<=0)||(a>=0&&b<0);
+        if(cross){
+          const w = a!==b ? a/(a-b) : 0.5;
+          let phi = ang[k-1] + (ang[k]-ang[k-1])*w;
+          if(phi>180.0+1e-9) phi-=360.0;
+          if(eq.some(e=>Math.abs(e.angle-phi)<1e-6)) continue;
+          const uphi = phi>=ang[0] ? npInterpLocal(phi,ang,U) : npInterpLocal(phi+360,ang,U);
+          eq.push({angle:phi, stable: b>a, U:uphi});
+        }
+      }
+      const stab = eq.filter(e=>e.stable), unst = eq.filter(e=>!e.stable);
+      const up = stab.length? stab.slice().sort((a,b)=>Math.abs(a.angle)-Math.abs(b.angle))[0] : {angle:0,U:0};
+      function barrier(frm){
+        let best=null;
+        for(const sgn of [1,-1]){
+          const peaks = unst.filter(e=> (e.angle-frm.angle)*sgn>0);
+          if(!peaks.length) continue;
+          const nearest = peaks.slice().sort((a,b)=>Math.abs(a.angle-frm.angle)-Math.abs(b.angle-frm.angle))[0];
+          const d = nearest.U - frm.U;
+          best = best===null? d : Math.min(best,d);
+        }
+        return best;
+      }
+      const avsUp = unst.filter(e=>e.angle>up.angle).map(e=>e.angle);
+      const AVS = avsUp.length? Math.min(...avsUp) : null;
+      const avsPort = unst.filter(e=>e.angle<up.angle).map(e=>e.angle);
+      const AVSport = avsPort.length? Math.max(...avsPort) : null;
+      const Ecap = barrier(up);
+      const hi = AVS!=null? AVS : Math.max(...ang);
+      let gzmax=-Infinity, gzmaxAt=NaN;
+      for(let i=0;i<ang.length;i++){
+        if(ang[i]>=up.angle && ang[i]<=hi && gz[i]>gzmax){ gzmax=gz[i]; gzmaxAt=ang[i]; }
+      }
+      const others = stab.filter(e=>Math.abs(e.angle-up.angle)>20);
+      let capsizeAngle=null, Erec=0;
+      if(others.length){
+        const inv = others.slice().sort((a,b)=>a.U-b.U)[0];
+        capsizeAngle = inv.angle; Erec = barrier(inv);
+      }
+      return { eq, upright:up.angle, AVS, AVSport, capsizeAngle, Ecap, Erec, GZmax:gzmax, GZmaxAt:gzmaxAt };
+    }
+    const base = computeMetrics(anglesDeg, gzArr);
+    let Ecap = base.Ecap;
+    if (typeof opts.windArm === 'function'){
+      const gzEff = anglesDeg.map((a,i)=> gzArr[i] - opts.windArm(a));
+      Ecap = computeMetrics(anglesDeg, gzEff).Ecap;
+    }
+    return {
+      eq: base.eq,
+      upright_eq_deg: base.upright,
+      AVS_deg: base.AVS,
+      AVS_port_deg: base.AVSport,
+      inverted_eq_deg: base.capsizeAngle,
+      E_capsize_J: Ecap,
+      E_recover_J: base.Erec,
+      GZmax_m: base.GZmax,
+      GZmaxAt_deg: base.GZmaxAt,
+    };
+  }
+  // ── 風の横傾斜てこ（設計書§13.13）: M_w(φ)=½ρ_a U² A_lat z_a cos φ、arm(φ)=M_w(φ)/(m·g) ──
+  function windHeelArm(U, Alat, za, mass, rhoA){
+    const ra = rhoA!=null ? rhoA : C.rhoA;
+    return function(phiDeg){
+      if (!(mass>0)) return 0;
+      const Mw = 0.5*ra*U*U*Alat*za*Math.cos(phiDeg*Math.PI/180);
+      return Mw/(mass*C.g);
+    };
+  }
+  // ── S2: エネルギー障壁 [J] → 目安の砕波高 H_b [m]（設計書§13.13） ──
+  //   ローラーの単位クレスト長あたりエネルギー ≈ alpha·ρ·g·Hb³（alpha=0.08 既定・△）が艇の全長 L・伝達効率 eta で
+  //   仕事 E を渡すという釣り合い E = alpha·ρ·g·L·eta·Hb³ を Hb について解く。
+  function breakingWaveLimits(E_cap, E_rec, L, eta, alpha){
+    const a = alpha!=null ? alpha : 0.08;
+    const denom = a*C.rho*C.g*L*eta;
+    const Hb = E => (denom>0 && E>0) ? Math.cbrt(E/denom) : 0;
+    return { Hb_cap: Hb(E_cap), Hb_rec: Hb(E_rec) };
+  }
+  // ── S2: 砕波事象の発生率・期待時間（設計書§13.13） ──
+  //   H*=max(Hstar, sBreak·λ_p)（周期 Tp の波が砕けるための波形勾配しきい値との大きい方）。
+  //   Rayleigh: P(H>H*)=exp(−2(H*/Hs)²)。波数/時 = 3600/Tz（Tz=0.78Tp・JONSWAP γ=3.3）。rate=P×波数/時。
+  function breakingEventRate(Hs, Tp, Hstar, sBreak){
+    const sB = sBreak!=null ? sBreak : 0.10;
+    const lambda_p = C.g*Tp*Tp/(2*Math.PI);
+    const breakLimit = sB*lambda_p;
+    const Hcrit = Math.max(Hstar, breakLimit);
+    const Tz = 0.78*Tp;
+    const P = Hs>0 ? Math.exp(-2*Math.pow(Hcrit/Hs,2)) : 0;
+    const rate = Tz>0 ? (3600/Tz)*P : 0;
+    const t_expect = rate<1e-9 ? Infinity : 1/rate;
+    return { Hstar:Hcrit, lambda_p, breakLimit, rate_per_h:rate, t_expect_h:t_expect, limitedByBreaking: breakLimit>Hstar };
+  }
+  // ── S2 便宜関数: 形状バリアント・KG から風込みの GZ 地形→砕波高換算→現在海象での事象率までを一括評価 ──
+  function capsizeRecoveryAssessment(p, variantKey, kg){
+    if (!hydro || !hydro.gz) return null;
+    const variants = hydro.gz.variants;
+    const vkey = variants[variantKey] ? variantKey : 'base';
+    const angles = hydro.gz.angles_deg;
+    const gzRef = variants[vkey].GZ_m;
+    const kgRef = hydro.gz.kg_ref_m;
+    const em = effectiveMass(p.hull, p.sea);
+    const KG = kg!=null ? kg : em.KG;
+    const gzArr = angles.map((a,i)=> gzRef[i] - (KG-kgRef)*Math.sin(a*Math.PI/180));
+    const mass = em.m;
+    const sea = p.sea || {};
+    const windU = (p.env && p.env.windU) || 0;
+    const Alat = sea.windALat!=null ? sea.windALat : 0.60;
+    const za = sea.windZa!=null ? sea.windZa : 0.25;
+    const land = gzLandscape(angles, gzArr, mass, { windArm: windHeelArm(windU, Alat, za, mass, C.rhoA) });
+    const L = p.hull.Lwl;
+    const etaDefault = sea.etaBreak!=null ? sea.etaBreak : 0.15;
+    const sBreak = sea.sBreak!=null ? sea.sBreak : 0.10;
+    const sweep = [0.05,0.15,0.30].map(eta=>{
+      const lim = breakingWaveLimits(land.E_capsize_J, land.E_recover_J, L, eta);
+      return { eta, Hb_cap: lim.Hb_cap, Hb_rec: lim.Hb_rec };
+    });
+    const limDefault = breakingWaveLimits(land.E_capsize_J, land.E_recover_J, L, etaDefault);
+    const Hs = (p.env && p.env.Hs) || 0, Tp = (p.env && p.env.Tp) || 6;
+    const rateCap = breakingEventRate(Hs, Tp, limDefault.Hb_cap, sBreak);
+    const rateRec = breakingEventRate(Hs, Tp, limDefault.Hb_rec, sBreak);
+    return { variant:vkey, KG, mass, windU, Alat, za, landscape:land, sweep,
+             etaDefault, sBreak, Hb_cap:limDefault.Hb_cap, Hb_rec:limDefault.Hb_rec, rateCap, rateRec };
+  }
+
   return { C, KT, defaults, derived, massProps, effectiveMass, keelDeployed, slenderness, crSlenderFactor, hullGeom, hullMesh, hullWaterline, rCalm, rCalmParts, rWind, rWave, rWaveRegular, rWaveSpectral,
            jonswapS, reflEff, rTotal,
            etaMotor, pShaft, etaProp, thrust, pElecFor, solveVeq,
@@ -2739,7 +2991,8 @@ const USV = (function(){
            bottomI4, keelFinGeom, bFriction, bqBottom, bqKeel, rollB44, rollStiffness, rollNaturalFreq, rollConverge,
            raoHeave, raoPitchDegPerM, raoHeavePhase, raoPitchPhase, waveMotion, waveElev, waveMotionAt, seakeeping,
            simulate, maxRange, darkEndurance, dailyBudget,
-           seaCatalogDefaults, seaClimateCatalogs, missionDefaults, simulateMission };
+           seaCatalogDefaults, seaClimateCatalogs, missionDefaults, simulateMission,
+           gzLandscape, windHeelArm, breakingWaveLimits, breakingEventRate, capsizeRecoveryAssessment };
 })();
 if (typeof module !== 'undefined') module.exports = USV;
 </script>
@@ -3008,6 +3261,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     ['e-lat','env.latDeg'],['e-month','env.month'],['e-cloud','env.cloud'],
     ['g-kg','hull.KG'],
     ['g-cdbot','sea.cdBottom'],['g-cdkeel','sea.cdKeel'],
+    ['g-s2eta','sea.etaBreak'],['g-sbreak','sea.sBreak'],['g-wala','sea.windALat'],['g-wza','sea.windZa'],
     ['m-vt','msn.targetKt'],['m-days','msn.days'],
   ];
   const get = path => path.split('.').reduce((o,k)=>o[k], P);
@@ -3570,10 +3824,36 @@ if (typeof module !== 'undefined') module.exports = USV;
          const ok3=Math.abs(mp.M-159.0)<=0.01 && mp.KG>=0.10 && mp.KG<=0.20;
          const ok=ok1&&ok2&&ok3;
          return { val:`2点質点: LCG=${mp2.LCG.toFixed(3)}・k55=${mp2.k55.toFixed(3)}・k44=${mp2.k44.toFixed(3)}／平行軸誤差 pitch=${err55.toExponential(1)}・roll=${err44.toExponential(1)}／既定表 M=${mp.M.toFixed(2)}kg・KG=${mp.KG.toFixed(4)}m・LCG=${mp.LCG.toFixed(4)}m・k44=${mp.k44.toFixed(4)}m（点質量のみ${mp.k44_point.toFixed(4)}m）・k55=${mp.k55.toFixed(4)}m（点質量のみ${mp.k55_point.toFixed(4)}m）`, ok }; }},
+      {id:'V13',name:'S2 換算の整合（設計書§13.13・砕波エネルギー換算）',crit:'①H_b∝E^(1/3)・H_b∝η^(−1/3)（2つの比の相対誤差とも1e-9以内）②Rayleigh恒等式 P(H&gt;Hs)=e^(−2)（誤差1e-12以内）③base形状・重量表KG・η=0.15・U=0でH_b,転覆∈[0.5,1.5]m（経験則B=0.9mとの整合の目安）④風U=20m/sでE_転覆がU=0時より減る（usv-hydro未搭載なら③④は対象外）',
+       why:'breakingWaveLimits/breakingEventRate の実装が定義式（ローラーのエネルギー∝H_b³・Rayleigh 分布の裾）どおりに動くかをスケーリング恒等式で検出する回帰チェック。③は換算結果が物理的に意味のある帯域（経験則の船幅程度）に収まっているかの桁チェック、④は風が GZ_eff を通じて転覆側の障壁だけを下げる（設計書§13.13 の主張）ことの符号確認。',
+       note:'①②は E・η・Hs によらず厳密に成り立つべき恒等式で、Hb/breakingEventRate 内部の指数・係数の実装ミスを検出する。③④は S2 の目安値そのものが妥当な範囲・向きにあるかの実データ確認で、§13.13 の測定表と対応する。',
+       run(){
+         const L=3.2, eta=0.15;
+         const l1=USV.breakingWaveLimits(100,0,L,eta), l2=USV.breakingWaveLimits(250,0,L,eta);
+         const relE=Math.abs((l2.Hb_cap/l1.Hb_cap)/Math.pow(250/100,1/3)-1);
+         const le1=USV.breakingWaveLimits(150,0,L,0.10), le2=USV.breakingWaveLimits(150,0,L,0.20);
+         const relEta=Math.abs((le2.Hb_cap/le1.Hb_cap)/Math.pow(0.10/0.20,1/3)-1);
+         const ok1 = relE<1e-9 && relEta<1e-9;
+         const Hs=3, Tp=5, Tz=0.78*Tp;
+         const r=USV.breakingEventRate(Hs,Tp,Hs,0);   // sBreak=0・Hstar=Hs ⇒ H*=Hs ⇒ P=exp(-2)
+         const Pval=r.rate_per_h*Tz/3600;
+         const errRay=Math.abs(Pval-Math.exp(-2));
+         const ok2 = errRay<1e-12;
+         if(!USV.hydro) return {val:`スケーリング誤差 E:${relE.toExponential(1)}・η:${relEta.toExponential(1)}／Rayleigh誤差 ${errRay.toExponential(1)}／③④は対象外（usv-hydro 未搭載）`, ok: ok1&&ok2};
+         const p=USV.defaults(); p.hull.massFrom='table'; p.env.windU=0; p.sea.etaBreak=0.15;
+         const asmt0=USV.capsizeRecoveryAssessment(p,'base');
+         const Hbcap0=asmt0.Hb_cap;
+         const ok3 = Hbcap0>=0.5 && Hbcap0<=1.5;
+         const p2=USV.defaults(); p2.hull.massFrom='table'; p2.env.windU=20; p2.sea.etaBreak=0.15;
+         const asmt20=USV.capsizeRecoveryAssessment(p2,'base');
+         const Ecap0=asmt0.landscape.E_capsize_J, Ecap20=asmt20.landscape.E_capsize_J;
+         const ok4 = Ecap20 < Ecap0;
+         const ok = ok1&&ok2&&ok3&&ok4;
+         return { val:`スケーリング誤差 E:${relE.toExponential(1)}・η:${relEta.toExponential(1)}／Rayleigh誤差 ${errRay.toExponential(1)}／H_b,転覆(base・表KG・U=0)=${Hbcap0.toFixed(2)}m／E_転覆 U=0→20m/s: ${Ecap0.toFixed(0)}→${Ecap20.toFixed(0)} J`, ok }; }},
     ];
     const groups=[
       {t:'ユースケース検証', n:'公表値・運用シナリオの再現（プリセット V1–V4 と対応。V1・V2 は較正点）', ids:['V1','V2','V3','V4']},
-      {t:'モデル整合性検証', n:'数理・実装の内部チェック（恒等式・物理極限・較正保存）。運転シナリオではないためプリセットは無い', ids:['V5','V6','V7','V8','V9','V10','V11','V12']},
+      {t:'モデル整合性検証', n:'数理・実装の内部チェック（恒等式・物理極限・較正保存）。運転シナリオではないためプリセットは無い', ids:['V5','V6','V7','V8','V9','V10','V11','V12','V13']},
     ];
     const card=c=>{
       const r=c.run();
@@ -3759,71 +4039,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     return null;
   }
 
-  // ── GZ 地形（gz.py の landscape()/metrics() の JS 移植・数値検証済み） ──
-  const G_GRAV = 9.80665;
-  function gzLandscape(anglesDeg, gzArr, mass){
-    let ang = anglesDeg.slice(), gz = gzArr.slice();
-    if(ang.length>2 && (ang[ang.length-1]-ang[0])>=359.0){
-      ang.push(ang[1]+360.0); gz.push(gz[1]);
-    }
-    const W = mass*G_GRAV;
-    const U=[0];
-    for(let k=1;k<ang.length;k++){
-      const dphi = (ang[k]-ang[k-1])*Math.PI/180;
-      U.push(U[k-1] + dphi*(gz[k]+gz[k-1])/2*W);
-    }
-    const U0 = npInterp(0.0, ang, U);
-    for(let i=0;i<U.length;i++) U[i]-=U0;
-    const eq=[];
-    for(let k=1;k<ang.length;k++){
-      const a=gz[k-1], b=gz[k];
-      if(a===0 && b===0) continue;
-      const cross = (a<0&&b>=0)||(a<=0&&b>0)||(a>0&&b<=0)||(a>=0&&b<0);
-      if(cross){
-        const w = a!==b ? a/(a-b) : 0.5;
-        let phi = ang[k-1] + (ang[k]-ang[k-1])*w;
-        if(phi>180.0+1e-9) phi-=360.0;
-        if(eq.some(e=>Math.abs(e.angle-phi)<1e-6)) continue;
-        const uphi = phi>=ang[0] ? npInterp(phi,ang,U) : npInterp(phi+360,ang,U);
-        eq.push({angle:phi, stable: b>a, U:uphi});
-      }
-    }
-    return {ang,gz,U,eq};
-  }
-  function gzMetrics(anglesDeg, gzArr, mass){
-    const L = gzLandscape(anglesDeg, gzArr, mass);
-    const {ang,gz,eq} = L;
-    const stab = eq.filter(e=>e.stable), unst = eq.filter(e=>!e.stable);
-    const up = stab.length? stab.slice().sort((a,b)=>Math.abs(a.angle)-Math.abs(b.angle))[0] : {angle:0,U:0};
-    function barrier(frm){
-      let best=null;
-      for(const sgn of [1,-1]){
-        const peaks = unst.filter(e=> (e.angle-frm.angle)*sgn>0);
-        if(!peaks.length) continue;
-        const nearest = peaks.slice().sort((a,b)=>Math.abs(a.angle-frm.angle)-Math.abs(b.angle-frm.angle))[0];
-        const d = nearest.U - frm.U;
-        best = best===null? d : Math.min(best,d);
-      }
-      return best;
-    }
-    const avsUp = unst.filter(e=>e.angle>up.angle).map(e=>e.angle);
-    const AVS = avsUp.length? Math.min(...avsUp) : null;
-    const avsPort = unst.filter(e=>e.angle<up.angle).map(e=>e.angle);
-    const AVSport = avsPort.length? Math.max(...avsPort) : null;
-    const Ecap = barrier(up);
-    const hi = AVS!=null? AVS : Math.max(...ang);
-    let gzmax=-Infinity, gzmaxAt=NaN;
-    for(let i=0;i<ang.length;i++){
-      if(ang[i]>=up.angle && ang[i]<=hi && gz[i]>gzmax){ gzmax=gz[i]; gzmaxAt=ang[i]; }
-    }
-    const others = stab.filter(e=>Math.abs(e.angle-up.angle)>20);
-    let capsizeAngle=null, Erec=0;
-    if(others.length){
-      const inv = others.slice().sort((a,b)=>a.U-b.U)[0];
-      capsizeAngle = inv.angle; Erec = barrier(inv);
-    }
-    return { upright:up.angle, AVS, AVSport, capsizeAngle, Ecap, Erec, GZmax:gzmax, GZmaxAt:gzmaxAt };
-  }
+  // ── GZ 地形（S2 移植・設計書§13.13）: 唯一実装は usv-core の USV.gzLandscape。ここでは呼ぶだけ ──
 
   // ── ① 形状と実測値: hullGeom からのシルエット ──
   function renderSilhouette(P, hydro){
@@ -3997,7 +4213,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     const kgRef = hydro.gz.kg_ref_m;
     const gzArr = angles.map((a,i)=> gzRef[i] - (KG-kgRef)*Math.sin(a*Math.PI/180));
     const mass = USV.effectiveMass(P.hull, P.sea).m;
-    const met = gzMetrics(angles, gzArr, mass);
+    const met = USV.gzLandscape(angles, gzArr, mass);   // 単一実装（usv-core）を呼ぶだけ・無風（opts省略）＝従来どおりの値
     const hs = hydro.hydrostatics;
     const GM = hs.KB_m + hs.BM_m - KG;
 
@@ -4009,18 +4225,60 @@ if (typeof module !== 'undefined') module.exports = USV;
     s += polyline(angles.map((a,i)=>[a,gzArr[i]]), ax.X, ax.Y, 's1', false);
     // ラベルは図の下端寄りに置く（上端は系列名と重なる）。AVS− は線の左側に右寄せ
     const markLine=(x,label,left)=> (x==null) ? '' : `<line x1="${ax.X(x).toFixed(1)}" y1="${pad.t}" x2="${ax.X(x).toFixed(1)}" y2="${ax.Bt}" class="mark"/><text x="${(ax.X(x)+(left?-4:4)).toFixed(1)}" y="${ax.Bt-6}" class="marklab"${left?' text-anchor="end"':''}>${label}</text>`;
-    if(met.AVS!=null) s += markLine(met.AVS, 'AVS+ '+fmt(met.AVS,1)+'°');
-    if(met.AVSport!=null) s += markLine(met.AVSport, 'AVS− '+fmt(met.AVSport,1)+'°', true);
+    if(met.AVS_deg!=null) s += markLine(met.AVS_deg, 'AVS+ '+fmt(met.AVS_deg,1)+'°');
+    if(met.AVS_port_deg!=null) s += markLine(met.AVS_port_deg, 'AVS− '+fmt(met.AVS_port_deg,1)+'°', true);
     s += `<text x="${ax.L+6}" y="${pad.t+12}" class="slab l-ink">${variants[variant].label}・KG=${fmt(KG,3)} m</text>`;
     $('gz-chart').innerHTML = s;
 
     $('gz-metrics-table').innerHTML = `<tr><th>量</th><th class="num">値</th></tr>`+
       `<tr><td>GM = KB+BM−KG</td><td class="num">${fmt(GM,3)} m</td></tr>`+
-      `<tr><td>GZmax（直立平衡〜AVS+）</td><td class="num">${isFinite(met.GZmax)?fmt(met.GZmax,3)+' m ＠ '+fmt(met.GZmaxAt,1)+'°':'—'}</td></tr>`+
-      `<tr><td>AVS+ ／ AVS−</td><td class="num">${met.AVS!=null?fmt(met.AVS,1)+'°':'—'} ／ ${met.AVSport!=null?fmt(met.AVSport,1)+'°':'—'}</td></tr>`+
-      `<tr><td>転覆姿勢（直立から20°超の安定平衡）</td><td class="num">${met.capsizeAngle!=null?fmt(met.capsizeAngle,1)+'°':'なし（自己復原）'}</td></tr>`+
-      `<tr><td>E_転覆（直立→最寄り不安定平衡）</td><td class="num">${met.Ecap!=null?fmt(met.Ecap,0)+' J':'—'}</td></tr>`+
-      `<tr><td>E_復帰（転覆姿勢→最寄り不安定平衡）</td><td class="num">${met.capsizeAngle!=null?fmt(met.Erec,0)+' J':'0 J（転覆姿勢なし）'}</td></tr>`;
+      `<tr><td>GZmax（直立平衡〜AVS+）</td><td class="num">${isFinite(met.GZmax_m)?fmt(met.GZmax_m,3)+' m ＠ '+fmt(met.GZmaxAt_deg,1)+'°':'—'}</td></tr>`+
+      `<tr><td>AVS+ ／ AVS−</td><td class="num">${met.AVS_deg!=null?fmt(met.AVS_deg,1)+'°':'—'} ／ ${met.AVS_port_deg!=null?fmt(met.AVS_port_deg,1)+'°':'—'}</td></tr>`+
+      `<tr><td>転覆姿勢（直立から20°超の安定平衡）</td><td class="num">${met.inverted_eq_deg!=null?fmt(met.inverted_eq_deg,1)+'°':'なし（自己復原）'}</td></tr>`+
+      `<tr><td>E_転覆（直立→最寄り不安定平衡）</td><td class="num">${met.E_capsize_J!=null?fmt(met.E_capsize_J,0)+' J':'—'}</td></tr>`+
+      `<tr><td>E_復帰（転覆姿勢→最寄り不安定平衡）</td><td class="num">${met.inverted_eq_deg!=null?fmt(met.E_recover_J,0)+' J':'0 J（転覆姿勢なし）'}</td></tr>`;
+
+    renderGZWaveSection(P, variant, KG);
+  }
+
+  // ── ②b S2: 転覆・復帰の砕波高換算（設計書§13.13）── GZ 地形と同じ変位計算路（variant/KG/env）を再利用 ──
+  const fmtH = t => (!isFinite(t)) ? '∞' : (t>1000 ? '&gt;1000' : fmt(t, t<1?2:(t<10?1:0)));
+  function renderGZWaveSection(P, variant, KG){
+    const tblEta=$('gz-s2-etatable'), lineEnv=$('gz-s2-envline'), rot=$('gz-s2-rot'),
+          gridRec=$('gz-s2-recgrid'), gridCap=$('gz-s2-capgrid'), caveats=$('gz-s2-caveats');
+    if(!tblEta) return;   // HTML未対応（旧キャッシュ等）なら何もしない
+    const hydro = USV.hydro;
+    if(!hydro || !hydro.gz){ tblEta.innerHTML=''; if(lineEnv) lineEnv.textContent='—'; return; }
+    const asmt = USV.capsizeRecoveryAssessment(P, variant, KG);
+    if(!asmt){ tblEta.innerHTML=''; return; }
+
+    tblEta.innerHTML = `<tr><th>η（伝達効率）</th><th class="num">H_b,転覆 [m]</th><th class="num">H_b,復帰 [m]</th></tr>`+
+      asmt.sweep.map(r=>`<tr><td>${fmt(r.eta,2)}${Math.abs(r.eta-asmt.etaDefault)<1e-9?'（現在値）':''}</td>`+
+        `<td class="num">${fmt(r.Hb_cap,2)} m</td><td class="num">${fmt(r.Hb_rec,2)} m</td></tr>`).join('');
+    if(rot) rot.textContent = `経験則: 砕波高 ≈ 船幅 B = ${fmt(P.hull.B,2)} m（Wolfson Unit）と比較する目安。`;
+
+    const rc=asmt.rateCap, rr=asmt.rateRec;
+    const warn = (rc.limitedByBreaking || rr.limitedByBreaking)
+      ? `<div style="color:var(--warn-ink)">この周期では H_b,crit より砕波下限が高い（うねりは砕けない）</div>` : '';
+    if(lineEnv) lineEnv.innerHTML = `Hs ${fmt(P.env.Hs,2)} m・Tp ${fmt(P.env.Tp,1)} s（η=${fmt(asmt.etaDefault,2)}・風 ${fmt(asmt.windU,1)} m/s）では: `+
+      `λ_p ${fmt(rc.lambda_p,2)} m、砕波の下限 H ${fmt(rc.breakLimit,2)} m。`+
+      `転覆事象 ${fmt(rc.rate_per_h,3)}/h（期待 ${fmtH(rc.t_expect_h)} h）、`+
+      `復帰事象 ${fmt(rr.rate_per_h,3)}/h（期待 ${fmtH(rr.t_expect_h)} h）` + warn;
+
+    const hsList=[1,2,3,4,5,6], tpList=[3,4,5,6,8,10];
+    const gridHTML = (label, Hb) => `<tr><th>${label}: Hs＼Tp</th>`+tpList.map(tp=>`<th class="num">${tp}s</th>`).join('')+`</tr>`+
+      hsList.map(hs=>`<tr><td>${hs} m</td>`+tpList.map(tp=>{
+        const r = USV.breakingEventRate(hs, tp, Hb, asmt.sBreak);
+        return `<td class="num">${fmtH(r.t_expect_h)}</td>`;
+      }).join('')+`</tr>`).join('');
+    if(gridRec) gridRec.innerHTML = gridHTML('復帰・期待時間[h]（η=0.15）', asmt.Hb_rec);
+    if(gridCap) gridCap.innerHTML = gridHTML('転覆・期待時間[h]（η=0.15・現風速）', asmt.Hb_cap);
+
+    if(caveats) caveats.innerHTML = `<b>△ この換算の主要な不確かさ（目安として扱うこと）:</b><ul style="margin:4px 0 0 18px;line-height:1.6">`+
+      `<li>①エネルギー伝達効率 η は文献幅 0.05〜0.30 で 1 桁の不確かさ</li>`+
+      `<li>②転覆時のロール減衰・浸水・ペイロードの移動は入っていない</li>`+
+      `<li>③砕波判定は波形勾配のみ（風による砕波の増加は未考慮）</li>`+
+      `<li>④うねりでは転覆も復帰も起きないという結論は準静的な議論（AVS≫最大波面傾斜 25°）に基づく</li></ul>`;
   }
 
   // ── ③ 耐航性能係数: A/B(ω) 2 パネル・RAO 比較・等価定数・固有周期 ──
