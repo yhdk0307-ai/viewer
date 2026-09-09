@@ -347,6 +347,10 @@
       <option value="hydro">3D 実測（喫水・濡れ面積）</option>
     </select></span></div>
     <span id="geom-status" style="display:block;font-size:12px;color:var(--muted);margin:2px 0 8px;line-height:1.6"></span>
+    <div class="row"><label>引込キール</label><span class="val"><select id="g-keel">
+      <option value="down">展開</option>
+      <option value="up">格納</option>
+    </select></span></div>
     <div class="row" id="g-cb-row"><label>方形係数 C_b</label><span class="val"><input type="number" id="g-cb" step="0.01" min="0.30" max="0.70"><span class="unit">—</span></span></div>
     <div class="row"><label>形状係数 (1+k)</label><span class="val"><input type="number" id="g-k1" step="0.05" min="1.0" max="1.6"><span class="unit">—</span></span></div>
     <div class="row"><label>風圧抗力係数 C_d</label><span class="val"><input type="number" id="g-cd" step="0.05" min="0.4" max="1.2"><span class="unit">—</span></span></div>
@@ -559,8 +563,9 @@
 
 <h2>重量表（Lightfish 推定）</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 10px">
-  部品ごとの質量・位置（設計書§13.12）から質量特性（M・LCG/TCG/KG・ロール/ピッチ慣動半径 k44/k55）を積み上げる。
-  点質量の集計のため各部品自身の慣性は含まれない（<b>k44/k55 は下限値</b>）。
+  部品ごとの質量・位置・自己慣性（設計書§13.12）から質量特性（M・LCG/TCG/KG・ロール/ピッチ慣動半径 k44/k55）を積み上げる。
+  r44/r55[m] は各部品<b>自身の重心まわり</b>のロール/ピッチ慣動半径（一様分布近似・薄肉シェル/箱/板等・S6）で、平行軸の定理により合成 k44/k55 に加算される。
+  未入力（0）なら従来どおり点質量として扱われる。結果欄の「点質量のみ」表示が自己慣性を含まない旧来の下限値。
   x は艫（トランサム）を 0 とし艏方向が正・y は右舷方向が正・z はキール基線から上向きが正。根拠: <b>◎</b>公称　<b>○</b>公称から導出　<b>△</b>推定・要確認。
 </div>
 <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:4px 0 10px">
@@ -569,7 +574,7 @@
   </label>
   <button id="wt-reset" type="button">重量表を既定値へ戻す</button>
 </div>
-<div style="overflow-x:auto"><table class="mtbl" id="wt-table" style="min-width:860px"></table></div>
+<div style="overflow-x:auto"><table class="mtbl" id="wt-table" style="min-width:1040px"></table></div>
 <button id="wt-add" type="button" style="margin:8px 0 4px">行を追加</button>
 <div class="tbl" style="overflow-x:auto;margin-top:10px"><table id="wt-results"></table></div>
 <div id="wt-oc" style="font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.7"></div>
@@ -745,8 +750,8 @@
 <tr><td class="sym"><math><msub><mi>ω</mi><mrow><mi>n</mi><mo>,</mo><mi>h</mi></mrow></msub></math></td><td>ヒーブ固有角周波数</td><td>共振周期 T<sub>n</sub>≈1.6 s を与える</td><td>rad/s</td><td class="num">○</td></tr>
 <tr><td class="sym"><math><msub><mi>ζ</mi><mi>h</mi></msub></math>, <math><msub><mi>ζ</mi><mi>θ</mi></msub></math></td><td>ヒーブ・ピッチ減衰比</td><td>共振ピークの高さを決める（放射＋粘性）</td><td>—</td><td class="num">0.35 △</td></tr>
 <tr><td class="sym"><math><msub><mi>μ</mi><mi>a</mi></msub></math></td><td>付加質量比（ヒーブ／ピッチ）</td><td>固有周波数の分母補正。0.8 と仮定</td><td>—</td><td class="num">0.8 △</td></tr>
-<tr><td class="sym"><math><msub><mi>k</mi><mn>44</mn></msub></math></td><td>ロール慣動半径</td><td>ロール慣性 <math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>。既定（<code>hull.massFrom='manual'</code>）は 0.35B の仮定、<code>'table'</code> なら重量表（§13.12）の <code>massProps()</code> から算出</td><td>m</td><td class="num">0.315（=0.35B）△／表 0.103 ○</td></tr>
-<tr><td class="sym"><math><msub><mi>k</mi><mn>55</mn></msub></math></td><td>ピッチ慣動半径</td><td>ピッチ慣性 <math><mrow><msub><mi>I</mi><mn>55</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>55</mn><mn>2</mn></msubsup></mrow></math>。既定は <math><mrow><msub><mi>r</mi><mi>g</mi></msub><msub><mi>L</mi><mi>wl</mi></msub></mrow></math> の仮定、<code>'table'</code> なら重量表（§13.12）から算出</td><td>m</td><td class="num">0.8（=0.25L）△／表 0.590 ○</td></tr>
+<tr><td class="sym"><math><msub><mi>k</mi><mn>44</mn></msub></math></td><td>ロール慣動半径</td><td>ロール慣性 <math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>。既定（<code>hull.massFrom='manual'</code>）は 0.35B の仮定、<code>'table'</code> なら重量表（§13.12）の <code>massProps()</code> から部品自己慣性 r44 込みで算出（S6）</td><td>m</td><td class="num">0.315（=0.35B）△／表 0.212 ○（点質量のみ 0.103）</td></tr>
+<tr><td class="sym"><math><msub><mi>k</mi><mn>55</mn></msub></math></td><td>ピッチ慣動半径</td><td>ピッチ慣性 <math><mrow><msub><mi>I</mi><mn>55</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>55</mn><mn>2</mn></msubsup></mrow></math>。既定は <math><mrow><msub><mi>r</mi><mi>g</mi></msub><msub><mi>L</mi><mi>wl</mi></msub></mrow></math> の仮定、<code>'table'</code> なら重量表（§13.12）から部品自己慣性 r55 込みで算出（S6）</td><td>m</td><td class="num">0.8（=0.25L）△／表 0.765 ○（点質量のみ 0.590）</td></tr>
 <tr><td class="sym"><math><mrow><msub><mi>H</mi><mi>h</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math>, <math><mrow><msub><mi>H</mi><mi>θ</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math></td><td>ヒーブ・ピッチ RAO</td><td>単位波振幅あたりの応答</td><td>m/m, deg/m</td><td class="num">—</td></tr>
 <tr><td class="sym"><math><msub><mi>m</mi><mi>n</mi></msub></math></td><td>応答スペクトルの n 次モーメント</td><td>RMS = √m₀</td><td>—</td><td class="num">—</td></tr>
 <tr><td class="sym"><math><msub><mi>H</mi><mrow><mi>s</mi><mo>,</mo><mi>lim</mi></mrow></msub></math></td><td>運用限界有義波高</td><td>基準（加速度 0.2g・ピッチ 6°）に達する Hs</td><td>m</td><td class="num">—</td></tr>
@@ -1130,6 +1135,7 @@
 <div class="eqnote">2次抗力モーメント <math><mi>Bq</mi><mover><mi>φ</mi><mo>˙</mo></mover><mo>|</mo><mover><mi>φ</mi><mo>˙</mo></mover><mo>|</mo></math> をガウス応答（RMS σ_φ̇）のもとで平均消散仕事が等しくなるよう等価線形化した係数（E[|x|³]=2√(2/π)σ³ から導出・恒等式は V11③で検証）。JONSWAP スペクトルで σ_φ（ロール角RMS）・σ_φ̇（ロール角速度RMS、出会い周波数 ω_e で重み）を積分→φ_a,σ_φ̇ を更新→B44→再積分、を σ_φ の変化が0.5%未満になるまで（最大12回）反復する（旧一定ζモデルを初期値に使用・<code>rollConverge</code>）。収束後の <math><mrow><msub><mi>ζ</mi><mn>44</mn></msub><mi>Eff</mi><mo>=</mo><msub><mi>B</mi><mn>44</mn></msub><mo>(</mo><msub><mi>ω</mi><mi>n</mi></msub><mo>)</mo><mo>/</mo><mn>2</mn><msqrt><msub><mi>C</mi><mn>44</mn></msub><mo>(</mo><msub><mi>I</mi><mn>44</mn></msub><mo>+</mo><msub><mi>A</mi><mn>44</mn></msub><mo>(</mo><msub><mi>ω</mi><mi>n</mi></msub><mo>)</mo><mo>)</mo></msqrt></mrow></math>（ロール固有周波数 <math><msub><mi>ω</mi><mi>n</mi></msub></math> での不動点解）と、BEM/摩擦/船底/キールの寄与比を <code>seakeeping()</code> が <code>rollZeta</code>/<code>rollDampParts</code> として返す。</div></div>
 
 <p><b>Ikeda の簡易造波・渦流・揚力・摩擦の合算式（簡易法）はそのまま使わない</b>——同法の適用範囲は概ね <math><msub><mi>C</mi><mi>b</mi></msub></math> 0.5–0.85・B/d 2.5–4.5 とされるが、本船体は <math><mrow><msub><mi>C</mi><mi>b</mi></msub><mo>≈</mo><mn>0.37</mn></mrow></math>（<code>Cb_eff</code>）・B/d≈6.1（B=0.9m, d≈0.146m）と、どちらの軸でも範囲外の高速滑走艇型のため。摩擦成分（Kato 1958）のみは船型に依存しない一般形として流用し、渦流・揚力・造波の各成分は流用せず、代わりに実際のチャイン形状（船底平板）とキールフィンの2次抗力を直接積分する構成にした。<b>前進速度による揚力減衰（ロール-横流れ連成・bilge keel の動的効果に相当）は未反映</b>——静止相当（V に依存しない）の抗力モデルであり、§10 の置換候補（模型試験・CFD）で前進速度依存性の追加が今後の課題。</p>
+<p><b>引込キール格納時（<code>hull.keelUp=true</code>・S6）</b>——展開判定は <code>keelDeployed(hull,sea)=!hull.keelUp&amp;&amp;sea.keelFin</code> に一本化した（<code>sea.keelFin</code> 単独は互換維持用に残すが、実際の有無はこの関数を経由する）。格納時は式(27)の <math><msub><mi>Bq</mi><mi>keel</mi></msub></math> 項が厳密に0になり（<code>bqKeel()</code> が <code>keelDeployed()</code> を見て早期return）、<code>derived()</code> の付加物濡れ面積も消える（<code>hull.geom='hydro'</code> 時 <math><msub><mi>S</mi><mi>app</mi></msub></math>=0・<math>S</math>=<math><msub><mi>S</mi><mi>bare</mi></msub></math>）。<b>既知の限界</b>——本節冒頭の BEM 放射減衰 <math><msub><mi>A</mi><mn>44</mn></msub></math><sup>bem</sup>／<math><msub><mi>B</mi><mn>44</mn></msub></math><sup>bem</sup>（<code>usv-hydro.bem</code>）はキールフィン込みの細メッシュ（3020パネル）で1回だけ計算されたテーブルで、<code>hull.keelUp</code> を切り替えても<b>切り替わらない</b>（格納状態のBEM係数は別途計算していない）。したがって格納時のロール減衰は「粘性項（摩擦・船底）は正しく格納形状で評価するが、ポテンシャル流の放射減衰だけ展開形状のまま」という一部整合の状態にとどまる——キール抵抗が全体の1〜9%程度（本節の実測結果参照）であるためBEM側の寄与が支配的な帯域では影響は小さいが、厳密な格納時ロール特性には格納形状のBEM再計算が必要（§10 の課題）。</p>
 </details>
 </details>
 
@@ -1555,7 +1561,7 @@ crit = false の滞留（<b>充電待機</b>など）は下限タッチを許容
 </details>
 
 <details class="sub" open><summary>13.12 重量表と質量特性（Lightfish 推定）</summary>
-<p>船体・機器・艤装を部品ごとの点質量として積み上げ、モデルが現在<b>仮定している</b> m・KG・k44・k55 を実際の重量配分から導出し比較する（<code>hull.weights</code>・<code>massProps()</code>・<code>effectiveMass()</code>・S5）。船体タブ「重量表（Lightfish 推定）」で編集でき、<code>hull.massFrom='table'</code> のとき本節の導出値が <code>hull.m</code>・<code>hull.KG</code>・ロール/ピッチ慣性（k44/k55）を置き換える。既定は <code>'manual'</code>（従来どおり m=159 kg・KG=0.15 m・k44=0.35B・k55=0.25L の直接入力＋仮定）で、数値は本節の追加前と<b>ビット単位で不変</b>。</p>
+<p>船体・機器・艤装を部品ごとの質量として積み上げ、モデルが現在<b>仮定している</b> m・KG・k44・k55 を実際の重量配分から導出し比較する（<code>hull.weights</code>・<code>massProps()</code>・<code>effectiveMass()</code>・S5/S6）。船体タブ「重量表（Lightfish 推定）」で編集でき、<code>hull.massFrom='table'</code> のとき本節の導出値が <code>hull.m</code>・<code>hull.KG</code>・ロール/ピッチ慣性（k44/k55）を置き換える。既定は <code>'manual'</code>（従来どおり m=159 kg・KG=0.15 m・k44=0.35B・k55=0.25L の直接入力＋仮定）で、数値は本節の追加前と<b>ビット単位で不変</b>。S6 で各部品<b>自身</b>の重心まわりの慣動半径 r44/r55（一様分布近似）を追加し、平行軸の定理で自己慣性を積み増せるようにした（未入力なら従来どおり点質量）。また引込キールの格納状態（<code>hull.keelUp</code>）を重量表・ロール減衰・濡れ面積・3D表示に一貫して反映できるようにした。</p>
 <h3>部品ごとの質量・位置（x=艫0起点・艏が正／y=右舷が正／z=キール基線から上向きが正）</h3>
 <div class="tbl" style="overflow-x:auto"><table>
 <tr><th>部品</th><th class="num">質量 [kg]</th><th class="num">x [m]</th><th class="num">y [m]</th><th class="num">z [m]</th><th>根拠</th><th>備考</th></tr>
@@ -1591,23 +1597,59 @@ crit = false の滞留（<b>充電待機</b>など）は下限タッチを許容
 <h3>これまでの仮定値との比較</h3>
 <div class="tbl" style="overflow-x:auto"><table>
 <tr><th>量</th><th class="num">仮定値（0-D・manual）</th><th class="num">重量表（table）</th><th>差の向き</th></tr>
-<tr><td>KG</td><td class="num">0.15 m</td><td class="num">0.1465 m</td><td>table の方がわずかに低い（−0.004 m）</td></tr>
-<tr><td>k44（ロール慣動半径）</td><td class="num">0.315 m（=0.35B）</td><td class="num">0.103 m</td><td>table の方が大幅に小さい（点質量が中心線上に集中しているため）</td></tr>
-<tr><td>k55（ピッチ慣動半径）</td><td class="num">0.8 m（=0.25L）</td><td class="num">0.590 m</td><td>table の方が小さい</td></tr>
-<tr><td>ロール固有周期 T_n（geom=hydro・sea.mode=bem）</td><td class="num">1.394 s</td><td class="num">0.741 s</td><td>k44 が小さい分だけ短周期化</td></tr>
-<tr><td>ピッチ固有周期 T_n（同上）</td><td class="num">0.980 s</td><td class="num">0.850 s</td><td>同様に短周期化</td></tr>
-<tr><td>ζ44_eff ＠ Hs=1 m・Tp=6 s</td><td class="num">0.087</td><td class="num">0.235</td><td>table の方が大（同じ B44 を小さい I44 で割るため）</td></tr>
-<tr><td>ζ44_eff ＠ Hs=2 m・Tp=6 s</td><td class="num">0.110</td><td class="num">0.262</td><td>同様</td></tr>
-<tr><td>ロール RMS ＠ Hs=1 m・Tp=6 s</td><td class="num">8.79°</td><td class="num">5.02°</td><td>table の方が小（固有周期が波エネルギー帯から離れ共振が弱まる）</td></tr>
-<tr><td>ロール RMS ＠ Hs=2 m・Tp=6 s</td><td class="num">16.02°</td><td class="num">9.98°</td><td>同様</td></tr>
-<tr><td>GZmax（平甲板 base 形状）</td><td class="num">0.1382 m ＠40°（KG=0.15）</td><td class="num">0.1404 m ＠40°（KG=0.1465）</td><td>KG がわずかに低い分だけ大</td></tr>
+<tr><td>KG</td><td class="num">0.15 m</td><td class="num">0.1465 m</td><td>table の方がわずかに低い（−0.004 m）。自己慣性 r44/r55 は KG に効かない</td></tr>
+<tr><td>k44（ロール慣動半径・自己慣性込み・S6）</td><td class="num">0.315 m（=0.35B）</td><td class="num">0.212 m（点質量のみ 0.103 m）</td><td>table の方が小さい。自己慣性を足しても中心線集中配置の効果が残る</td></tr>
+<tr><td>k55（ピッチ慣動半径・自己慣性込み・S6）</td><td class="num">0.8 m（=0.25L）</td><td class="num">0.765 m（点質量のみ 0.590 m）</td><td>自己慣性込みだと manual にほぼ並ぶ</td></tr>
+<tr><td>ロール固有周期 T_n（geom=hydro・sea.mode=bem）</td><td class="num">1.394 s</td><td class="num">1.050 s（点質量のみ 0.741 s）</td><td>自己慣性でk44が増え、点質量のみより長周期化</td></tr>
+<tr><td>ピッチ固有周期 T_n（同上）</td><td class="num">0.980 s</td><td class="num">0.957 s（点質量のみ 0.850 s）</td><td>自己慣性込みだと manual にほぼ並ぶ</td></tr>
+<tr><td>ζ44_eff ＠ Hs=1 m・Tp=6 s</td><td class="num">0.087</td><td class="num">0.169（点質量のみ 0.235）</td><td>k44 が増えた分だけ点質量のみより小さくなる（I44 で割るため）</td></tr>
+<tr><td>ζ44_eff ＠ Hs=2 m・Tp=6 s</td><td class="num">0.110</td><td class="num">0.204（点質量のみ 0.262）</td><td>同様</td></tr>
+<tr><td>ロール RMS ＠ Hs=1 m・Tp=6 s</td><td class="num">8.79°</td><td class="num">6.08°（点質量のみ 5.02°）</td><td>固有周期が長周期化し共振が強まる分だけ点質量のみより増える</td></tr>
+<tr><td>ロール RMS ＠ Hs=2 m・Tp=6 s</td><td class="num">16.02°</td><td class="num">11.67°（点質量のみ 9.98°）</td><td>同様</td></tr>
+<tr><td>GZmax（平甲板 base 形状）</td><td class="num">0.1382 m ＠40°（KG=0.15）</td><td class="num">0.1404 m ＠40°（KG=0.1465）</td><td>KG がわずかに低い分だけ大。自己慣性は無関係（GZ は KG のみに依存）</td></tr>
 <tr><td>AVS+ ／ AVS−</td><td class="num">102.3° ／ −102.3°</td><td class="num">103.4° ／ −103.4°</td><td>同様にわずかに拡大</td></tr>
 <tr><td>E_転覆（直立→最寄り不安定平衡）</td><td class="num">242 J</td><td class="num">249 J</td><td>同様にわずかに拡大</td></tr>
 <tr><td>E_復帰（転覆姿勢→最寄り不安定平衡）</td><td class="num">163 J</td><td class="num">159 J</td><td>わずかに縮小</td></tr>
 </table></div>
-<p style="font-size:12.5px;color:var(--muted)">測定: <code>tools/usv_hull/lib/core.mjs</code> の <code>loadCore()</code> で正本の usv-core を Node に読み込み、<code>hull.massFrom</code> を 'manual'/'table' で切り替えて比較（<code>hull.geom='hydro'</code>・<code>sea.mode='bem'</code>・乱数なし・決定論）。GZ 地形（AVS±・E_転覆・E_復帰）は §13.3 の <code>landscape()/metrics()</code> の JS 移植を base 形状の格納済み GZ 曲線に対し閉形式 <code>GZ(φ,KG)=GZ_ref(φ)−(KG−KG_ref)·sinφ</code> で KG だけ振って評価した。5 海域ミッション成功率（<code>simulateMission</code>・<code>seaClimateCatalogs()</code>）は manual/table で<b>完全一致</b>——耐航性の成立判定（<code>seakeeping().ok</code>）が加速度・ピッチのみで決まり、ロールは判定に使わない設計（§8）のため、質量特性の変更はロールの数値自体（RMS・ζ44・固有周期）にのみ表れ、ミッション成立性には伝播しない。</p>
-<p><b>既知の限界</b> — ① k44/k55 は点質量のみの下限値（上記）。② <b>引込式キールフィン</b>（本表では展開位置 z=−0.13 m で計上）は、<code>sea.keelFin=false</code>（格納）にすると <code>bqKeel()</code> のキール抗力減衰項は正しく 0 になるが、本表の重量・重心（KG・z 分布）は展開状態のまま固定されており、格納時の実際の KG 変化（キールが引き上がる分だけ KG がわずかに上がる）は反映されない——格納状態の質量特性を厳密に扱うには、<code>sea.keelFin</code> と連動して重量表のキール行の z を切り替える拡張が今後の課題。</p>
-<p class="std">回帰検証: V12（検証ケース一覧・モデル整合性検証グループ）。実装: <code>massProps</code>／<code>effectiveMass</code>（usv-core・S5）。</p>
+<p style="font-size:12.5px;color:var(--muted)">測定: <code>tools/usv_hull/lib/core.mjs</code> の <code>loadCore()</code> で正本の usv-core を Node に読み込み、<code>hull.massFrom</code> を 'manual'/'table' で切り替えて比較（<code>hull.geom='hydro'</code>・<code>sea.mode='bem'</code>・乱数なし・決定論）。table 列の「点質量のみ」括弧内は重量表の r44/r55 をすべて 0 にした場合（＝S6 追加前と同じ扱い）。固有周期はロール・ピッチとも <code>rollNaturalFreq</code> 相当の不動点反復（ピッチは <code>hydroCoeffs().{A55,C55}</code>・重心まわり慣性 <code>I55=m·k55²</code> を用いた非連成近似・heave-pitch連成 C35 は無視）。GZ 地形（AVS±・E_転覆・E_復帰）は §13.3 の <code>landscape()/metrics()</code> の JS 移植を base 形状の格納済み GZ 曲線に対し閉形式 <code>GZ(φ,KG)=GZ_ref(φ)−(KG−KG_ref)·sinφ</code> で KG だけ振って評価した。5 海域ミッション成功率（<code>simulateMission</code>・<code>seaClimateCatalogs()</code>）は manual/table・自己慣性の有無を問わず<b>完全一致</b>——耐航性の成立判定（<code>seakeeping().ok</code>）が加速度・ピッチのみで決まり、ロールは判定に使わない設計（§8）のため、質量特性の変更はロールの数値自体（RMS・ζ44・固有周期）にのみ表れ、ミッション成立性には伝播しない。</p>
+<h3>部品ごとの自己慣性 r44/r55（一様分布近似・S6）</h3>
+<div class="tbl" style="overflow-x:auto"><table>
+<tr><th>部品</th><th class="num">r44 [m]</th><th class="num">r55 [m]</th><th>近似（basisR）</th></tr>
+<tr><td>船体構造（複合材・平甲板）</td><td class="num">0.30</td><td class="num">0.85</td><td>薄肉シェル（外皮に質量が分布）</td></tr>
+<tr><td>電池 4 kWh Li-ion</td><td class="num">0.09</td><td class="num">0.15</td><td>箱（パック形状の一様直方体近似）</td></tr>
+<tr><td>太陽電池 415 W</td><td class="num">0.26</td><td class="num">0.66</td><td>板（フレキシブルパネルの薄板近似）</td></tr>
+<tr><td>Torqeedo ポッド</td><td class="num">0.10</td><td class="num">0.10</td><td>小物一様塊近似</td></tr>
+<tr><td>舵＋サーボ</td><td class="num">0.05</td><td class="num">0.05</td><td>小物一様塊近似</td></tr>
+<tr><td>メタノール発電機</td><td class="num">0.10</td><td class="num">0.10</td><td>箱</td></tr>
+<tr><td>メタノール燃料</td><td class="num">0.12</td><td class="num">0.12</td><td>箱（タンク形状）</td></tr>
+<tr><td>電子機器・通信</td><td class="num">0.10</td><td class="num">0.10</td><td>箱</td></tr>
+<tr><td>マスト＋レドーム</td><td class="num">0.15</td><td class="num">0.15</td><td>箱（マスト構造の代表寸法）</td></tr>
+<tr><td>通信ウィング</td><td class="num">0.20</td><td class="num">0.05</td><td>板（薄いパネル形状）</td></tr>
+<tr><td>キールフィン（引込式）</td><td class="num">0.10</td><td class="num">0.12</td><td>板（フィン翼形状）</td></tr>
+<tr><td>配線・艤装・塗装</td><td class="num">0.25</td><td class="num">0.80</td><td>船内分布（船体全長に沿う配線・艤装）</td></tr>
+<tr><td>ペイロード（基準）</td><td class="num">0.12</td><td class="num">0.12</td><td>箱</td></tr>
+<tr><td>余裕・不明分</td><td class="num">0.25</td><td class="num">0.80</td><td>船内分布</td></tr>
+</table></div>
+<div class="eqnote">r44/r55 は各部品<b>自身の重心まわり</b>の慣動半径（一様分布形状の代表寸法から一様分布近似で置いた△推定値。実測ではなく設計仕様が固まり次第の要更新項目）。<code>massProps()</code> は平行軸の定理 <math><mrow><mi>k</mi><msup><mn>2</mn></msup><mo>=</mo><mo>Σ</mo><mi>m</mi><mo>[</mo><mo>(</mo><mtext>offset</mtext><msup><mo>)</mo><mn>2</mn></msup><mo>+</mo><mi>r</mi><msup><mn>2</mn></msup><mo>]</mo><mo>/</mo><mi>M</mi></mrow></math> で自部品の自己慣性を積み増す。r44/r55 未入力（0）の行は従来どおり点質量として扱われる。</div>
+<h3>引込キール（<code>hull.keelUp</code>）展開時・格納時の比較（S6）</h3>
+<div class="tbl" style="overflow-x:auto"><table>
+<tr><th>量</th><th class="num">展開（keelUp=false・既定）</th><th class="num">格納（keelUp=true）</th><th>差の向き</th></tr>
+<tr><td>KG</td><td class="num">0.1465 m</td><td class="num">0.1518 m</td><td>格納時は本表の +0.28 m オフセットにより KG がわずかに上がる</td></tr>
+<tr><td>k44（自己慣性込み）</td><td class="num">0.2117 m</td><td class="num">0.2082 m</td><td>キールの質量が中心線寄りにわずかに近づく分だけ小さい</td></tr>
+<tr><td>濡れ面積 S（hydro）</td><td class="num">2.2314 m²（S_app=0.2294）</td><td class="num">2.0020 m²（S_app=0）</td><td>付加物濡れ面積が消える（キール抵抗が消える）</td></tr>
+<tr><td>V_eq（全力・V1条件）</td><td class="num">4.500 kt</td><td class="num">4.520 kt</td><td>抵抗が減る分だけわずかに増速</td></tr>
+<tr><td>ζ44_eff ＠ Hs=1 m・Tp=6 s（内訳 BEM/摩擦/船底/キール）</td><td class="num">0.169（74.1%/0.6%/20.7%/4.6%）</td><td class="num">0.165（77.1%/0.6%/22.2%/0.0%）</td><td>キール寄与が消え、他成分の比率が相対的に上がる</td></tr>
+<tr><td>ロール RMS ＠ Hs=1 m・Tp=6 s（V4条件・2.5kt）</td><td class="num">6.08°</td><td class="num">6.23°</td><td>キール抵抗が消え減衰が減る分だけわずかに増える</td></tr>
+<tr><td>ζ44_eff ＠ Hs=2 m・Tp=6 s（内訳）</td><td class="num">0.204（61.4%/0.6%/31.1%/6.9%）</td><td class="num">0.196（65.1%/0.6%/34.3%/0.0%）</td><td>同様</td></tr>
+<tr><td>ロール RMS ＠ Hs=2 m・Tp=6 s</td><td class="num">11.67°</td><td class="num">11.99°</td><td>同様</td></tr>
+<tr><td>AVS+ ／ AVS−（base 形状）</td><td class="num">103.4° ／ −101.6°</td><td class="num">101.8° ／ −98.2°</td><td>KG がわずかに上がる分だけ縮小</td></tr>
+<tr><td>E_転覆</td><td class="num">249 J</td><td class="num">239 J</td><td>同様に縮小</td></tr>
+<tr><td>E_復帰</td><td class="num">159 J</td><td class="num">165 J</td><td>KG が上がる分だけわずかに拡大</td></tr>
+<tr><td>5 海域ミッション成功率（generic/natl/npac/japan/trade）</td><td class="num">43.3% / 0.8% / 14.4% / 27.5% / 97.9%</td><td class="num">43.3% / 0.8% / 14.4% / 27.5% / 97.9%</td><td>完全一致——ロールは判定に不使用（上記と同じ理由）</td></tr>
+</table></div>
+<div class="eqnote">展開判定は <code>keelDeployed(hull,sea)=!hull.keelUp&amp;&amp;sea.keelFin</code>（§8.3・S6）。格納時は重量表のキール行の z を保存値+0.28 m として <code>massProps(weights,{keelUp:true})</code> が評価する（保存されている行の値自体は展開位置のまま）。V_eq・ζ44・ロールRMS は <code>hull.geom='hydro'・sea.mode='bem'</code>・V1（全力）／V4（Hs=2.5,Tp=7,windU=15,2.5kt）相当の条件を流用。<b>既知の限界</b>——BEM放射減衰（<code>usv-hydro.bem</code> の A44/B44）はキール込み形状で1回だけ計算された固定テーブルで、<code>hull.keelUp</code> を切り替えても再計算されない（§8.3 追記）。</div>
+<p><b>既知の限界</b> — k44/k55 は依然として一様分布近似の代表寸法から推定した△の自己慣性項を含む値（詳細設計・実測で更新見込み）。引込キールの格納時 KG オフセット（+0.28 m）は形状からの概算で、実機の展開機構の詳細（ヒンジ位置・格納後の姿勢）までは反映していない。</p>
+<p class="std">回帰検証: V12（検証ケース一覧・モデル整合性検証グループ）。実装: <code>massProps</code>／<code>effectiveMass</code>／<code>keelDeployed</code>（usv-core・S5/S6）。</p>
 </details>
 
 </details>
@@ -1644,23 +1686,26 @@ const USV = (function(){
               CdAir:0.8, Afront:0.35, LBWLfrac:0.3, addedMassFrac:0.05,
               KG:0.15,                                             // 重心高さ（S4・入力UIはS4-3）
               massFrom:'manual',                                   // 'manual'(既定・m/KG直入力) | 'table'(下記 weights から massProps() で導出)
-              // 重量表（Lightfish 推定・S5）: 部品ごとの質量[kg]・位置[m]（x=艫0→艏・y=右舷+・z=キール基線から上向き）
+              keelUp:false,                                        // 引込キール: false=展開(既定) | true=格納（S6・keelDeployed() 参照）
+              // 重量表（Lightfish 推定・S5/S6）: 部品ごとの質量[kg]・位置[m]（x=艫0→艏・y=右舷+・z=キール基線から上向き）
+              // r44/r55[m] = 部品自身の重心まわりのロール/ピッチ慣動半径（一様分布近似・S6・massProps() で自己慣性として加算）
               // basis: ◎公称 ○公称から導出 △推定・要確認（設計書§13.12）
+              // basisR（自己慣性の近似根拠・doc表のみ注記）: hull=薄肉シェル／batt・pv・keel・misc・payload・margin=箱／wing=板／mast・elec・gen・fuel=箱／motor・rudder=小物一様球近似／
               weights: [
-                { id:'hull',    name:'船体構造（複合材・平甲板）',            m:28,   x:1.55,  y:0, z:0.16,  basis:'△', note:'表面積≈5.5 m²×4 kg/m²＋隔壁' },
-                { id:'batt',    name:'電池 4 kWh Li-ion',                    m:31,   x:1.40,  y:0, z:0.08,  basis:'○', note:'130 Wh/kg パック（公称 4 kWh）' },
-                { id:'pv',      name:'太陽電池 415 W',                       m:6,    x:1.60,  y:0, z:0.31,  basis:'○', note:'フレキシブル 2.6 kg/m²×2.1 m²' },
-                { id:'motor',   name:'Torqeedo ポッド（Cruise 3.0 FP 級）',   m:15,   x:-0.05, y:0, z:0.05,  basis:'△', note:'公称≈15 kg・トランサム架装' },
-                { id:'rudder',  name:'舵＋サーボ',                           m:2,    x:0.10,  y:0, z:0.05,  basis:'◎', note:'サーボ<0.5 kg 公称' },
-                { id:'gen',     name:'メタノール発電機',                     m:9,    x:1.10,  y:0, z:0.15,  basis:'◎', note:'公称 9 kg' },
-                { id:'fuel',    name:'メタノール燃料',                       m:15,   x:1.20,  y:0, z:0.10,  basis:'△', note:'30 kWh 電気÷効率0.3÷LHV 5.5 kWh/kg' },
-                { id:'elec',    name:'電子機器・通信（Certus/Starlink/GNSS/計算機）', m:8, x:2.20, y:0, z:0.22, basis:'△', note:'' },
-                { id:'mast',    name:'マスト＋レドーム',                     m:4,    x:2.56,  y:0, z:0.55,  basis:'○', note:'形状から' },
-                { id:'wing',    name:'通信ウィング',                         m:2.5,  x:0.60,  y:0, z:0.45,  basis:'△', note:'' },
-                { id:'keel',    name:'キールフィン（引込式）',               m:3,    x:1.85,  y:0, z:-0.13, basis:'○', note:'形状の重心' },
-                { id:'misc',    name:'配線・艤装・塗装',                     m:8,    x:1.50,  y:0, z:0.15,  basis:'△', note:'' },
-                { id:'payload', name:'ペイロード（基準）',                   m:15,   x:1.90,  y:0, z:0.20,  basis:'△', note:'最大 50 kg の 30%' },
-                { id:'margin',  name:'余裕・不明分',                         m:12.5, x:1.50,  y:0, z:0.15,  basis:'△', note:'公称 159 kg との差' },
+                { id:'hull',    name:'船体構造（複合材・平甲板）',            m:28,   x:1.55,  y:0, z:0.16,  r44:0.30, r55:0.85, basis:'△', note:'表面積≈5.5 m²×4 kg/m²＋隔壁' },
+                { id:'batt',    name:'電池 4 kWh Li-ion',                    m:31,   x:1.40,  y:0, z:0.08,  r44:0.09, r55:0.15, basis:'○', note:'130 Wh/kg パック（公称 4 kWh）' },
+                { id:'pv',      name:'太陽電池 415 W',                       m:6,    x:1.60,  y:0, z:0.31,  r44:0.26, r55:0.66, basis:'○', note:'フレキシブル 2.6 kg/m²×2.1 m²' },
+                { id:'motor',   name:'Torqeedo ポッド（Cruise 3.0 FP 級）',   m:15,   x:-0.05, y:0, z:0.05,  r44:0.10, r55:0.10, basis:'△', note:'公称≈15 kg・トランサム架装' },
+                { id:'rudder',  name:'舵＋サーボ',                           m:2,    x:0.10,  y:0, z:0.05,  r44:0.05, r55:0.05, basis:'◎', note:'サーボ<0.5 kg 公称' },
+                { id:'gen',     name:'メタノール発電機',                     m:9,    x:1.10,  y:0, z:0.15,  r44:0.10, r55:0.10, basis:'◎', note:'公称 9 kg' },
+                { id:'fuel',    name:'メタノール燃料',                       m:15,   x:1.20,  y:0, z:0.10,  r44:0.12, r55:0.12, basis:'△', note:'30 kWh 電気÷効率0.3÷LHV 5.5 kWh/kg' },
+                { id:'elec',    name:'電子機器・通信（Certus/Starlink/GNSS/計算機）', m:8, x:2.20, y:0, z:0.22, r44:0.10, r55:0.10, basis:'△', note:'' },
+                { id:'mast',    name:'マスト＋レドーム',                     m:4,    x:2.56,  y:0, z:0.55,  r44:0.15, r55:0.15, basis:'○', note:'形状から' },
+                { id:'wing',    name:'通信ウィング',                         m:2.5,  x:0.60,  y:0, z:0.45,  r44:0.20, r55:0.05, basis:'△', note:'' },
+                { id:'keel',    name:'キールフィン（引込式）',               m:3,    x:1.85,  y:0, z:-0.13, r44:0.10, r55:0.12, basis:'○', note:'形状の重心' },
+                { id:'misc',    name:'配線・艤装・塗装',                     m:8,    x:1.50,  y:0, z:0.15,  r44:0.25, r55:0.80, basis:'△', note:'' },
+                { id:'payload', name:'ペイロード（基準）',                   m:15,   x:1.90,  y:0, z:0.20,  r44:0.12, r55:0.12, basis:'△', note:'最大 50 kg の 30%' },
+                { id:'margin',  name:'余裕・不明分',                         m:12.5, x:1.50,  y:0, z:0.15,  r44:0.25, r55:0.80, basis:'△', note:'公称 159 kg との差' },
               ] },
       prop: { PmaxElec:450, etaCtrl:0.97,
               motor:{ Pfix:8, a:0.04, b:6e-5 },                 // 損失 = Pfix + a·Ps + b·Ps²
@@ -1679,49 +1724,70 @@ const USV = (function(){
               mode:'analytic',                                    // 'analytic'(既定・V1-V8不変) | 'bem'(表補間・S4)
               zeta44Visc:0.08, rollLimDeg:15,                      // rollDamp='const' 用の一定ロール粘性減衰比（旧モデル・出力限界は判定には不使用）
               rollDamp:'drag',                                     // 'drag'(既定・S4-7 抗力モデル・振幅依存) | 'const'(旧: ζ=zeta44Visc 一定)
-              cdBottom:1.2, cdKeel:1.2, keelFin:true },            // 船底平板・キールフィンの等価抗力係数（△仮置き・設計書§8.3）
+              cdBottom:1.2, cdKeel:1.2, keelFin:true },            // 船底平板・キールフィンの等価抗力係数（△仮置き・設計書§8.3）。keelFin は互換維持用フラグ、実際の展開判定は keelDeployed(hull,sea)=!hull.keelUp&&sea.keelFin（S6）
       msn:  { targetKt:2.5, days:30, soc0:1.0, socMin:0.10 }
     };
   }
 
-  // ── 重量表からの質量特性（S5・設計書§13.12）── 点質量のみ（自身の慣性は含まない＝下限値）
-  //   M=Σm・LCG/TCG/KGは質量加重・k44²=Σm[(y−TCG)²+(z−KG)²]/M（roll軸=x軸まわり）等。
+  // ── 重量表からの質量特性（S5/S6・設計書§13.12）──
+  //   M=Σm・LCG/TCG/KGは質量加重。k44²=Σm[(y−TCG)²+(z−KG)²+r44²]/M（roll軸=x軸まわり）、
+  //   k55²=Σm[(x−LCG)²+(z−KG)²+r55²]/M（pitch軸=y軸まわり）、k66²=Σm[(x−LCG)²+(y−TCG)²+r55²]/M（yaw軸もr55を流用）。
+  //   r44/r55（各部品の自身の重心まわりの慣動半径・S6）を含めることで平行軸の定理により自己慣性を積み増す。
+  //   r44/r55 未指定の行（旧データ・カスタム追加行）は 0（＝点質量）として扱う。
+  //   opts.keelUp=true のとき id='keel' の行だけ z を +0.28m（格納時オフセット）して評価する（保存値は展開時のまま・S6）。
+  //   k44_point/k55_point は自己慣性を含めない旧来の点質量のみの値（比較表示用）。
   //   trimArm = LCG − LCB（usv-hydro.hydrostatics.lcg_m。無ければ null）。
-  function massProps(weights){
+  function massProps(weights, opts){
+    const keelUp = !!(opts && opts.keelUp);
+    const zOf = w => (keelUp && w.id === 'keel') ? w.z + 0.28 : w.z;
     const M = weights.reduce((s, w) => s + w.m, 0);
     const wsum = f => weights.reduce((s, w) => s + w.m * f(w), 0);
     const LCG = M > 0 ? wsum(w => w.x) / M : 0;
     const TCG = M > 0 ? wsum(w => w.y) / M : 0;
-    const KG  = M > 0 ? wsum(w => w.z) / M : 0;
+    const KG  = M > 0 ? wsum(w => zOf(w)) / M : 0;
     const sq = v => v * v;
-    const I44 = wsum(w => sq(w.y - TCG) + sq(w.z - KG));
-    const I55 = wsum(w => sq(w.x - LCG) + sq(w.z - KG));
-    const I66 = wsum(w => sq(w.x - LCG) + sq(w.y - TCG));
+    const r44sq = w => sq(w.r44 || 0), r55sq = w => sq(w.r55 || 0);
+    const I44 = wsum(w => sq(w.y - TCG) + sq(zOf(w) - KG) + r44sq(w));
+    const I55 = wsum(w => sq(w.x - LCG) + sq(zOf(w) - KG) + r55sq(w));
+    const I66 = wsum(w => sq(w.x - LCG) + sq(w.y - TCG) + r55sq(w));
+    const I44p = wsum(w => sq(w.y - TCG) + sq(zOf(w) - KG));
+    const I55p = wsum(w => sq(w.x - LCG) + sq(zOf(w) - KG));
     const k44 = M > 0 ? Math.sqrt(I44 / M) : 0;
     const k55 = M > 0 ? Math.sqrt(I55 / M) : 0;
     const k66 = M > 0 ? Math.sqrt(I66 / M) : 0;
+    const k44_point = M > 0 ? Math.sqrt(I44p / M) : 0;
+    const k55_point = M > 0 ? Math.sqrt(I55p / M) : 0;
     const lcb = (hydro && hydro.hydrostatics) ? hydro.hydrostatics.lcg_m : null;
     const trimArm = lcb != null ? LCG - lcb : null;
-    return { M, LCG, TCG, KG, k44, k55, k66, trimArm, pointMassOnly: true };
+    return { M, LCG, TCG, KG, k44, k55, k66, k44_point, k55_point, trimArm };
   }
   // ── 質量・重心・ロール/ピッチ慣動半径の実効値（hull.massFrom スイッチ） ──
-  //   'table': weights から massProps() で導出。'manual'(既定): hull.m/hull.KG を直接使い、
+  //   'table': weights から massProps() で導出（自己慣性込み・hull.keelUp を反映）。
+  //   'manual'(既定): hull.m/hull.KG を直接使い、
   //   k44=0.35B・k55=sea.rPitchGyr·L（従来どおりの仮定値。manual時は既存モデルとビット一致）。
   function effectiveMass(h, sea){
     if (h.massFrom === 'table' && Array.isArray(h.weights) && h.weights.length){
-      const mp = massProps(h.weights);
-      return { m: mp.M, KG: mp.KG, k44: mp.k44, k55: mp.k55, source: 'table' };
+      const mp = massProps(h.weights, { keelUp: h.keelUp });
+      return { m: mp.M, KG: mp.KG, k44: mp.k44, k55: mp.k55,
+               k44_point: mp.k44_point, k55_point: mp.k55_point, source: 'table' };
     }
     return { m: h.m, KG: h.KG, k44: 0.35 * h.B, k55: sea ? sea.rPitchGyr * h.Lwl : null, source: 'manual' };
   }
+  // ── 引込キールの展開判定（S6）: 格納(hull.keelUp)されていない、かつ sea.keelFin が真のときのみ「有り」 ──
+  //   bqKeel()（ロール減衰）・derived()（濡れ面積 Sapp）・hullMesh()（3D表示）が共通してこれを参照する。
+  function keelDeployed(h, sea){ return !h.keelUp && !!(sea && sea.keelFin); }
 
-  function derived(h){
+  //   sea は省略可（省略時は展開扱い＝従来どおり）。'hydro' モードでキール格納時は付加物濡れ面積が
+  //   消える（Sapp=0・S=Sbare）——解析式モードはもともと付加物を数えないため無変化（S6・keelDeployed）。
+  function derived(h, sea){
     const vol = effectiveMass(h).m / C.rho;
     if (h.geom === 'hydro'){
       const hm = hydroMatch(h);
       if (hm.ok){
         const s = hm.scale, s2 = s * s, H = hydro.hydrostatics;
-        const S = H.Swet_m2 * s2, Sbare = H.Swet_bare_m2 * s2;
+        const Sbare = H.Swet_bare_m2 * s2;
+        const deployed = sea ? keelDeployed(h, sea) : !h.keelUp;
+        const S = deployed ? H.Swet_m2 * s2 : Sbare;
         return { vol, d: H.draft_m * s, S, Sbare, Sapp: S - Sbare, geom:'hydro' };
       }
     }
@@ -2021,7 +2087,7 @@ const USV = (function(){
   function bqBottom(h, sea){ return 0.5 * C.rho * sea.cdBottom * bottomI4(h); }
   // キールフィンの等価線形化2次抗力係数 Bq = ½ρC_D·A_fin·r_k³（r_k=KG−z_centroid）
   function bqKeel(h, sea){
-    if (!sea.keelFin) return 0;
+    if (!keelDeployed(h, sea)) return 0;
     const fin = keelFinGeom(h);
     return 0.5 * C.rho * sea.cdKeel * fin.area * Math.pow(effectiveMass(h, sea).KG - fin.cz, 3);
   }
@@ -2229,7 +2295,7 @@ const USV = (function(){
 
   // ── ミッション時間積分（準定常・dt=600s） ──
   function simulate(p){
-    const der = derived(p.hull);
+    const der = derived(p.hull, p.sea);
     const dt = 600, N = Math.round(p.msn.days * 86400 / dt);
     const capWh = p.pwr.battWh;
     let soc = p.msn.soc0, fuel = p.pwr.gen.fuelWh, genOn = false, drift = false;
@@ -2339,7 +2405,7 @@ const USV = (function(){
   }
   // フェーズ×海象状態の定常量を前計算（速力・推進電力・耐航限界）
   function phaseStateOps(p, mis, states){
-    const der = derived(p.hull);
+    const der = derived(p.hull, p.sea);
     return mis.phases.map(ph => states.map(st => {
       const env = Object.assign({}, p.env,
         { Hs:st.Hs, Tp:st.Tp, windU:st.windU, windDirDeg:0,
@@ -2453,7 +2519,7 @@ const USV = (function(){
 
   // ── KPI ──
   function maxRange(p){                          // 無日照・電池+燃料を速度掃引で最適化 [nm]
-    const der = derived(p.hull);
+    const der = derived(p.hull, p.sea);
     const E = p.pwr.battWh * (1 - p.msn.socMin) + (p.pwr.gen.enabled ? p.pwr.gen.fuelWh : 0);
     let best = 0, bestKt = 0;
     for (let kt = 1.0; kt <= 4.5; kt += 0.1){
@@ -2467,7 +2533,7 @@ const USV = (function(){
     return { nm: best, kt: bestKt };
   }
   function darkEndurance(p){                     // 無日照・目標速力での電池持続 [h]
-    const der = derived(p.hull);
+    const der = derived(p.hull, p.sea);
     const Vt = p.msn.targetKt * KT;
     let Pe = 0;
     if (Vt > 0){
@@ -2478,7 +2544,7 @@ const USV = (function(){
     return p.pwr.battWh * (p.msn.soc0 - p.msn.socMin) / (Pe + p.pwr.hotelW);
   }
   function dailyBudget(p){                       // 図2用の日平均 [W]
-    const der = derived(p.hull);
+    const der = derived(p.hull, p.sea);
     const Vt = p.msn.targetKt * KT;
     let Pprop = 0, reached = true;
     if (Vt > 0){
@@ -2603,8 +2669,8 @@ const USV = (function(){
       for(let k2=0;k2<KP;k2++){ const k3=(k2+1)%KP;
         F([[xm,0,z0r+rz],rings[rings.length-1][k2],rings[rings.length-1][k3]],'pod');
         F([[xm,0,z0r-rz],rings[0][k3],rings[0][k2]],'pod'); } }
-    // ── ③ キールフィン（深く・後傾。上端が前・下端が後ろへ流れる） ──
-    { const w=0.005*L, zb2=-0.95*D;
+    // ── ③ キールフィン（深く・後傾。上端が前・下端が後ろへ流れる）── 格納時(h.keelUp)は非表示（S6） ──
+    if (!h.keelUp) { const w=0.005*L, zb2=-0.95*D;
       const topF=[0.70*L,g.zKeel(0.70)], topA=[0.55*L,g.zKeel(0.55)];
       const botF=[0.50*L,zb2], botA=[0.42*L,zb2];
       for(const sgn of [1,-1])
@@ -2665,7 +2731,7 @@ const USV = (function(){
     return pts;
   }
 
-  return { C, KT, defaults, derived, massProps, effectiveMass, slenderness, crSlenderFactor, hullGeom, hullMesh, hullWaterline, rCalm, rCalmParts, rWind, rWave, rWaveRegular, rWaveSpectral,
+  return { C, KT, defaults, derived, massProps, effectiveMass, keelDeployed, slenderness, crSlenderFactor, hullGeom, hullMesh, hullWaterline, rCalm, rCalmParts, rWind, rWave, rWaveRegular, rWaveSpectral,
            jonswapS, reflEff, rTotal,
            etaMotor, pShaft, etaProp, thrust, pElecFor, solveVeq,
            pSolar, pSolarDaily, pSolarClearSky, solarDailyWh, solarElevSin,
@@ -2960,6 +3026,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     $('g-geom').value = P.hull.geom;
     $('g-rolldamp').value = P.sea.rollDamp;
     if ($('g-massfrom')) $('g-massfrom').value = P.hull.massFrom;
+    if ($('g-keel')) $('g-keel').value = P.hull.keelUp ? 'up' : 'down';
   }
   function fromUI(){
     bind.forEach(([id,path]) => { const v=parseFloat($(id).value); if(isFinite(v)) set(path,v); });
@@ -2975,6 +3042,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     P.hull.geom = $('g-geom').value;
     P.sea.rollDamp = $('g-rolldamp').value;
     if ($('g-massfrom')) P.hull.massFrom = $('g-massfrom').value;
+    if ($('g-keel')) P.hull.keelUp = $('g-keel').value === 'up';
   }
 
   // ── テーマ対応の色取得（canvas 用） ──
@@ -2985,7 +3053,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   function drawC1(){
     const cv = $('c1'), ctx = cv.getContext('2d');
     const W = cv.width, H = cv.height, L = 58, R = 16, T = 14, Bm = 40;
-    const der = USV.derived(P.hull);
+    const der = USV.derived(P.hull, P.sea);
     const Vmax = 5.5*USV.KT, n = 140;
     const rows = [];
     let ymax = 0;
@@ -3220,7 +3288,7 @@ if (typeof module !== 'undefined') module.exports = USV;
 
   // ── 耐航性（Phase 3）──
   function drawSeakeeping(){
-    const der = USV.derived(P.hull);
+    const der = USV.derived(P.hull, P.sea);
     const veq = USV.solveVeq(P.prop.PmaxElec, P.env, P, der);
     const V = Math.min(veq, P.msn.targetKt * USV.KT);
     const sk = USV.seakeeping(P.env, V, P, der);
@@ -3274,7 +3342,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     if (P.hull.geom === 'hydro'){
       const hm = USV.hydroMatch(P.hull);
       if (hm.ok){
-        const der = USV.derived(P.hull);
+        const der = USV.derived(P.hull, P.sea);
         el.innerHTML = (hm.reason==='形状一致' ? '3D 実測を使用（形状一致）' : `3D 実測を使用（${hm.reason}）`) +
           ` — d=${fmt(der.d,4)} m・S_bare=${fmt(der.Sbare,3)} m²・S_app=${fmt(der.Sapp,3)} m²`;
         el.style.color = 'var(--muted)';
@@ -3335,7 +3403,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     if(kpi){ kpi.classList.remove('flash'); void kpi.offsetWidth; kpi.classList.add('flash'); }
   }
   function verdict(sim){
-    const der=USV.derived(P.hull);
+    const der=USV.derived(P.hull, P.sea);
     const veq=USV.solveVeq(P.prop.PmaxElec,P.env,P,der);
     flashIfChanged('k-veq', veq>0.05?fmt(veq/USV.KT,2)+' kt':'0（不能）', true);
     $('k-veq-n').textContent='最大電力 '+P.prop.PmaxElec+' W 投入時';
@@ -3366,7 +3434,7 @@ if (typeof module !== 'undefined') module.exports = USV;
       {id:'V1',name:'最高速力',crit:'V_eq = 4.5 ± 0.3 kt（平水・無風・全力）',
        why:'公称最高速力 4.5 kt は Lightfish 唯一の速度系公表値で、抵抗曲線×推進チェーン全体の較正点。許容 ±0.3 kt は公称値の有効桁（1 桁）相当。',
        note:'Fn≈0.41（hull speed 直下）で釣り合っており排水量型の物理と整合。Cr_base をこの点で較正しているため定義上成立するが、以後の改修で較正が壊れていないことを検出する回帰チェックとして働く。',
-       run(){ const p=USV.defaults(); const veq=USV.solveVeq(p.prop.PmaxElec,p.env,p,USV.derived(p.hull))/USV.KT;
+       run(){ const p=USV.defaults(); const veq=USV.solveVeq(p.prop.PmaxElec,p.env,p,USV.derived(p.hull, p.sea))/USV.KT;
               return {val:veq.toFixed(2)+' kt', ok:Math.abs(veq-4.5)<=0.3}; }},
       {id:'V2',name:'無日照航続',crit:'575 ± 60 nm（電池4kWh＋燃料30kWh）',
        why:'公称無日照航続 575 nm は V1 と独立な第 2 の公表値で、エネルギー鎖（ホテル負荷・変換効率・燃料換算）の較正点。許容 ±60 nm ≈ 10% は出典間の諸元ばらつき相当。',
@@ -3382,7 +3450,7 @@ if (typeof module !== 'undefined') module.exports = USV;
        why:'Sea State 6 相当で「前進は維持しつつ明確に減速する」という公表挙動の定性確認。荒天時速力の公表値が無く定量基準を置けないため、0 < V_eq < 4.2 kt（平水より確実に遅い）を基準にした。',
        note:'約 2.7 kt まで減速。ただし波浪中抵抗はモデル中で最も不確かな項（運動起因成分なし＝§10 最高優先）で、この数字は目安。BEM/模型試験による置換までは下振れ方向の不確かさを持つ。',
        run(){ const p=USV.defaults(); p.env.Hs=2.5; p.env.Tp=7; p.env.windU=15;
-              const veq=USV.solveVeq(p.prop.PmaxElec,p.env,p,USV.derived(p.hull))/USV.KT;
+              const veq=USV.solveVeq(p.prop.PmaxElec,p.env,p,USV.derived(p.hull, p.sea))/USV.KT;
               return {val:'V_eq '+veq.toFixed(2)+' kt（平水4.5kt比）', ok:veq<4.2&&veq>=0}; }},
       {id:'V5',name:'スペクトル整合（Phase2）',crit:'m0=Hs²/16（±1%）かつ スペクトル版 R_AW ≤ STAWAVE-1 素値',
        why:'JONSWAP の数値積分が理論恒等式 m0 = Hs²/16 を再現するか（分割幅・打切りの誤差検出）。またスペクトル版は「反射効率 r≡1 で STAWAVE-1 素値に一致する」構造なので、素値以下という不等式が常に成立するはず。',
@@ -3398,7 +3466,7 @@ if (typeof module !== 'undefined') module.exports = USV;
       {id:'V6',name:'RAO 極限挙動（Phase3）',crit:'長波長で追従(RAO→1)・短波長で不応答・応答は Hs に線形',
        why:'1 自由度 RAO の物理極限——長波長では波面に追従（|H|→1）、短波長では応答しない（|H|→0）——と線形理論（応答 ∝ Hs）は、パラメータの値によらず必ず成立すべき性質。',
        note:'極限と線形性が同時に成立＝耐航性モジュールの数理が破綻していない。ただし減衰比などの仮定値の妥当性までは保証しない（§10 で BEM/模型試験に置換予定）。',
-       run(){ const p=USV.defaults(); const der=USV.derived(p.hull);
+       run(){ const p=USV.defaults(); const der=USV.derived(p.hull, p.sea);
               const lo=USV.raoHeave(0.3,0,p.hull,p.sea,der);
               const hi=USV.raoHeave(8.0,0,p.hull,p.sea,der);
               p.env.Hs=1; p.env.Tp=5;
@@ -3411,9 +3479,9 @@ if (typeof module !== 'undefined') module.exports = USV;
       {id:'V7',name:'排水量→剰余抵抗（痩せ型比補正）',crit:'較正点で f_M=1（V1 不変）・積載増で抵抗増・∇^(4/3) 則',
        why:'剰余抵抗の排水量補正（式 6′）を入れた際の回帰チェック。①較正点で f_M=1 となり V1/V2 の較正を壊さない、②重量増で抵抗が増える向き、③ f_M が薄船理論の ∇^(4/3) 則に従う、の 3 点を同時に確認する。',
        note:'補正は較正保存と理論則を同時に満たす。ただし指数 p=4 は理論導出値であり、実測（曳航水槽の排水量スイープ / CFD）による確認が §10 の課題として残る。',
-       run(){ const p=USV.defaults(); const d0=USV.derived(p.hull);
+       run(){ const p=USV.defaults(); const d0=USV.derived(p.hull, p.sea);
               const f0=USV.crSlenderFactor(p.hull,d0);
-              const heavy=USV.defaults(); heavy.hull.m=230; const dh=USV.derived(heavy.hull);
+              const heavy=USV.defaults(); heavy.hull.m=230; const dh=USV.derived(heavy.hull, heavy.sea);
               const fh=USV.crSlenderFactor(heavy.hull,dh);
               // ∇^(4/3) 則の確認: f 比 = (∇比)^(4/3)
               const pred=Math.pow(dh.vol/d0.vol,4/3);
@@ -3434,7 +3502,7 @@ if (typeof module !== 'undefined') module.exports = USV;
        note:'2×2はhydroの様式上サージ連成・Heave-Pitch静復原連成(C35)を持たないため、船体によってはこの縮約誤差が無視できない大きさになりうる（実データでの計測結果は結果欄参照）。3%を超える場合はraoTableHeavePitchの縮約次数を上げる、またはusv-hydroにC35を追加することが対策候補（設計書の既知の限界として記載要）。',
        run(){
          if (!USV.hydro) return { val:'対象外（usv-hydro 未搭載）', ok:true };
-         const p=USV.defaults(); p.sea.mode='bem'; const der=USV.derived(p.hull);
+         const p=USV.defaults(); p.sea.mode='bem'; const der=USV.derived(p.hull, p.sea);
          const H=USV.hydro.bem;
          let worst=0, worstOm=0, worstWhich='';
          for (let i=0;i<H.omega.length;i++){
@@ -3452,7 +3520,7 @@ if (typeof module !== 'undefined') module.exports = USV;
        run(){
          if (!USV.hydro) return { val:'対象外（usv-hydro 未搭載）', ok:true };
          const p=USV.defaults(); p.hull.geom='hydro';
-         const der=USV.derived(p.hull);
+         const der=USV.derived(p.hull, p.sea);
          const veq=USV.solveVeq(p.prop.PmaxElec,p.env,p,der)/USV.KT;
          const hs=USV.hydro.hydrostatics;
          const dOk=Math.abs(der.d-hs.draft_m)<1e-9, sOk=Math.abs(der.S-hs.Swet_m2)<1e-9;
@@ -3464,7 +3532,7 @@ if (typeof module !== 'undefined') module.exports = USV;
        run(){
          if (!USV.hydro) return { val:'対象外（usv-hydro 未搭載）', ok:true };
          const p=USV.defaults(); p.hull.geom='hydro'; p.sea.mode='bem'; p.sea.rollDamp='drag';
-         const der=USV.derived(p.hull);
+         const der=USV.derived(p.hull, p.sea);
          const sp0=USV.jonswapS(0.01, p.env.Tp);
          const conv0=USV.rollConverge(sp0, 0, p.hull, p.sea, der);
          const fitZeta=USV.hydro.bem.fit.zeta44;
@@ -3485,20 +3553,23 @@ if (typeof module !== 'undefined') module.exports = USV;
          const ok3 = relErrMoment<1e-6 && relErrPower<1e-6;
          const ok = ok1 && mono && ok3;
          return { val:`Hs→0.01m: ζ44=${conv0.zetaEff.toFixed(4)}(基準${fitZeta.toFixed(4)})・抗力比${(dragFrac0*100).toFixed(1)}%／単調性 ζ44(0.5,1,2,3m)=${zetas.map(z=>z.toFixed(3)).join('→')}／恒等式誤差 ${relErrMoment.toExponential(1)}・${relErrPower.toExponential(1)}`, ok }; }},
-      {id:'V12',name:'重量表の質量特性（S5・massProps）',crit:'①2点質点（1kg@x0,1kg@x2）で LCG=1・k55=1・k44=0 ②既定重量表で平行軸恒等式 Σm(x²+z²)/M = k55²+LCG²+KG²（誤差1e-9以内）③既定重量表 M=159.0±0.01kg・KG は 0.10〜0.20 m の範囲内（点質量のみ＝自身の慣性を含まない下限値）',
-       why:'massProps() の実装バグ（符号・軸の取り違え・正規化漏れ）を検出する回帰チェック。①は解析解が既知の最小ケース、②は座標系によらず成り立つべき恒等式（平行軸の定理）、③は重量表の合計・積み上げが Lightfish 公称質量 159 kg と一致し、KG が船体規模に対して妥当な範囲にあることの確認。',
-       note:'k44・k55 は点質量の分布のみから来る値で、各部品自身の慣性（電池パックの寸法・船体外殻の面内慣性等）は含まれないため物理的な下限値になる（設計書§13.12）。実測・詳細設計が進めば各部品の自己慣性を加算してこの値は増える方向にのみ動く。',
+      {id:'V12',name:'重量表の質量特性（S5/S6・massProps・自己慣性込み）',crit:'①2点質点（1kg@x0,1kg@x2・r44=r55=0）で LCG=1・k55=1・k44=0 ②既定重量表（各部品の自己慣性 r44/r55 込み）で平行軸恒等式 Σm[(x²+z²)+r55²]/M = k55²+LCG²+KG² と Σm[(y²+z²)+r44²]/M = k44²+TCG²+KG² が共に誤差1e-9以内 ③既定重量表 M=159.0±0.01kg・KG は 0.10〜0.20 m の範囲内（自己慣性は位置には効かないため不変）',
+       why:'massProps() の実装バグ（符号・軸の取り違え・正規化漏れ・自己慣性r44/r55の加算漏れ）を検出する回帰チェック。①は解析解が既知の最小ケース（r=0 なので従来どおり点質量の結果と一致すべき）、②は座標系によらず成り立つべき恒等式（平行軸の定理を自己慣性項まで拡張したもの・ロール軸/ピッチ軸の双方）、③は重量表の合計・積み上げが Lightfish 公称質量 159 kg と一致し、KG（自己慣性の影響を受けない）が船体規模に対して妥当な範囲にあることの確認。',
+       note:'k44・k55 は今回追加した各部品自身の慣動半径（r44/r55・一様分布近似・設計書§13.12）を平行軸の定理で積み上げた値。r44/r55 を明示しない行は 0（＝点質量）として扱われ、結果欄の「点質量のみ」表示（k44_point/k55_point）が従来の下限値に一致する。',
        run(){
          const p=USV.defaults();
          const mp2=USV.massProps([{m:1,x:0,y:0,z:0},{m:1,x:2,y:0,z:0}]);
          const ok1=Math.abs(mp2.LCG-1)<1e-9 && Math.abs(mp2.k55-1)<1e-9 && Math.abs(mp2.k44-0)<1e-9;
          const mp=USV.massProps(p.hull.weights);
-         const lhs=p.hull.weights.reduce((s,w)=>s+w.m*(w.x*w.x+w.z*w.z),0)/mp.M;
-         const rhs=mp.k55*mp.k55+mp.LCG*mp.LCG+mp.KG*mp.KG;
-         const ok2=Math.abs(lhs-rhs)<1e-9;
+         const lhs55=p.hull.weights.reduce((s,w)=>s+w.m*(w.x*w.x+w.z*w.z+(w.r55||0)*(w.r55||0)),0)/mp.M;
+         const rhs55=mp.k55*mp.k55+mp.LCG*mp.LCG+mp.KG*mp.KG;
+         const lhs44=p.hull.weights.reduce((s,w)=>s+w.m*(w.y*w.y+w.z*w.z+(w.r44||0)*(w.r44||0)),0)/mp.M;
+         const rhs44=mp.k44*mp.k44+mp.TCG*mp.TCG+mp.KG*mp.KG;
+         const err55=Math.abs(lhs55-rhs55), err44=Math.abs(lhs44-rhs44);
+         const ok2=err55<1e-9 && err44<1e-9;
          const ok3=Math.abs(mp.M-159.0)<=0.01 && mp.KG>=0.10 && mp.KG<=0.20;
          const ok=ok1&&ok2&&ok3;
-         return { val:`2点質点: LCG=${mp2.LCG.toFixed(3)}・k55=${mp2.k55.toFixed(3)}・k44=${mp2.k44.toFixed(3)}／平行軸誤差 ${Math.abs(lhs-rhs).toExponential(1)}／既定表 M=${mp.M.toFixed(2)}kg・KG=${mp.KG.toFixed(4)}m・LCG=${mp.LCG.toFixed(4)}m・k44=${mp.k44.toFixed(4)}m・k55=${mp.k55.toFixed(4)}m`, ok }; }},
+         return { val:`2点質点: LCG=${mp2.LCG.toFixed(3)}・k55=${mp2.k55.toFixed(3)}・k44=${mp2.k44.toFixed(3)}／平行軸誤差 pitch=${err55.toExponential(1)}・roll=${err44.toExponential(1)}／既定表 M=${mp.M.toFixed(2)}kg・KG=${mp.KG.toFixed(4)}m・LCG=${mp.LCG.toFixed(4)}m・k44=${mp.k44.toFixed(4)}m（点質量のみ${mp.k44_point.toFixed(4)}m）・k55=${mp.k55.toFixed(4)}m（点質量のみ${mp.k55_point.toFixed(4)}m）`, ok }; }},
     ];
     const groups=[
       {t:'ユースケース検証', n:'公表値・運用シナリオの再現（プリセット V1–V4 と対応。V1・V2 は較正点）', ids:['V1','V2','V3','V4']},
@@ -3562,7 +3633,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   // ── 再計算 ──
   function recalc(){
     fromUI();
-    const der=USV.derived(P.hull);
+    const der=USV.derived(P.hull, P.sea);
     if(window.__hullView) window.__hullView.update(P, der, USV.solveVeq(P.prop.PmaxElec,P.env,P,der));
     drawC1();
     const b=drawPB();
@@ -3761,7 +3832,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     const L=g.L, D=g.D, HB=g.HB, N=60;
     const topPts=[], botPts=[], planPts=[];
     for(let i=0;i<=N;i++){ const t=i/N; topPts.push([t*L, g.zDeck(t)]); botPts.push([t*L, g.zKeel(t)]); planPts.push([t*L, g.plan(t)*HB]); }
-    const draft = (hydro && hydro.hydrostatics) ? hydro.hydrostatics.draft_m : USV.derived(P.hull).d;
+    const draft = (hydro && hydro.hydrostatics) ? hydro.hydrostatics.draft_m : USV.derived(P.hull, P.sea).d;
     const padL=48, padR=20, sideT=14, sideB=150, planT=190, planB=326;
     const X = x=> padL + (900-padL-padR)*x/L;
     const Yside = z=> sideB - (sideB-sideT)*z/(D*1.15);
@@ -3808,19 +3879,25 @@ if (typeof module !== 'undefined') module.exports = USV;
     const table = $('wt-table'); if (!table) return;
     const weights = P.hull.weights || [];
     const basisSel = (i,b) => `<select data-wt="${i}:basis">${['◎','○','△'].map(v=>`<option value="${v}"${v===b?' selected':''}>${v}</option>`).join('')}</select>`;
-    const rows = weights.map((r,i)=>`<tr>
+    const rows = weights.map((r,i)=>{
+      const keelHint = r.id==='keel'
+        ? `<span class="cap" style="display:block;font-size:11px;color:var(--muted);white-space:nowrap">（格納時 z=${fmt(r.z+0.28,2)}）</span>` : '';
+      return `<tr>
       <td><input class="wide" data-wt="${i}:name" value="${r.name}"></td>
       <td><input type="number" step="0.1" data-wt="${i}:m" value="${r.m}"></td>
       <td><input type="number" step="0.01" data-wt="${i}:x" value="${r.x}"></td>
       <td><input type="number" step="0.01" data-wt="${i}:y" value="${r.y}"></td>
-      <td><input type="number" step="0.01" data-wt="${i}:z" value="${r.z}"></td>
+      <td><input type="number" step="0.01" data-wt="${i}:z" value="${r.z}">${keelHint}</td>
+      <td><input type="number" step="0.01" data-wt="${i}:r44" value="${r.r44!=null?r.r44:0}"></td>
+      <td><input type="number" step="0.01" data-wt="${i}:r55" value="${r.r55!=null?r.r55:0}"></td>
       <td>${basisSel(i, r.basis)}</td>
       <td><input class="wide" data-wt="${i}:note" value="${r.note||''}"></td>
-      <td><button class="del" data-wtdel="${i}">削除</button></td></tr>`).join('');
+      <td><button class="del" data-wtdel="${i}">削除</button></td></tr>`;
+    }).join('');
     const Msum = weights.reduce((s,r)=>s+(+r.m||0), 0);
-    table.innerHTML = `<tr><th>部品</th><th>質量[kg]</th><th>x[m]</th><th>y[m]</th><th>z[m]</th><th>根拠</th><th>備考</th><th></th></tr>`+
+    table.innerHTML = `<tr><th>部品</th><th>質量[kg]</th><th>x[m]</th><th>y[m]</th><th>z[m]</th><th>r44[m]</th><th>r55[m]</th><th>根拠</th><th>備考</th><th></th></tr>`+
       rows+
-      `<tr><td><b>合計</b></td><td><b>${fmt(Msum,2)}</b></td><td colspan="4"></td><td></td><td></td></tr>`;
+      `<tr><td><b>合計</b></td><td><b>${fmt(Msum,2)}</b></td><td colspan="6"></td><td></td><td></td></tr>`;
     table.querySelectorAll('[data-wt]').forEach(el=>{
       const ev = el.tagName==='SELECT' ? 'change' : 'input';
       el.addEventListener(ev, ()=>{
@@ -3840,7 +3917,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   function renderWeightsResults(P){
     const el = $('wt-results'); if (!el) return;
     const weights = P.hull.weights || [];
-    const mp = USV.massProps(weights);
+    const mp = USV.massProps(weights, { keelUp: P.hull.keelUp });
     const armTxt = mp.trimArm!=null ? fmt(mp.trimArm,3)+' m' : '—（usv-hydro 未搭載のため LCB 不明）';
     let verdict;
     if (mp.trimArm==null) verdict = '—';
@@ -3859,9 +3936,11 @@ if (typeof module !== 'undefined') module.exports = USV;
       `<tr><td>M（合計質量）</td><td class="num">${fmt(mp.M,2)} kg</td></tr>`+
       `<tr><td>LCG</td><td class="num">${fmt(mp.LCG,3)} m</td></tr>`+
       `<tr><td>TCG</td><td class="num">${fmt(mp.TCG,3)} m</td></tr>`+
-      `<tr><td>KG</td><td class="num">${fmt(mp.KG,3)} m</td></tr>`+
-      `<tr><td>k44（ロール慣動半径・点質量のみ＝下限値）</td><td class="num">${fmt(mp.k44,3)} m（B比 ${fmt(P.hull.B?mp.k44/P.hull.B:null,3)}）</td></tr>`+
-      `<tr><td>k55（ピッチ慣動半径・点質量のみ＝下限値）</td><td class="num">${fmt(mp.k55,3)} m（L比 ${fmt(P.hull.Lwl?mp.k55/P.hull.Lwl:null,3)}）</td></tr>`+
+      `<tr><td>KG${P.hull.keelUp?'（キール格納中）':''}</td><td class="num">${fmt(mp.KG,3)} m</td></tr>`+
+      `<tr><td>k44（ロール慣動半径・自己慣性込み）</td><td class="num">${fmt(mp.k44,3)} m（B比 ${fmt(P.hull.B?mp.k44/P.hull.B:null,3)}）`+
+        `<div class="cap" style="font-size:11px;color:var(--muted)">点質量のみ ${fmt(mp.k44_point,3)}</div></td></tr>`+
+      `<tr><td>k55（ピッチ慣動半径・自己慣性込み）</td><td class="num">${fmt(mp.k55,3)} m（L比 ${fmt(P.hull.Lwl?mp.k55/P.hull.Lwl:null,3)}）`+
+        `<div class="cap" style="font-size:11px;color:var(--muted)">点質量のみ ${fmt(mp.k55_point,3)}</div></td></tr>`+
       `<tr><td>トリム腕 LCG−LCB</td><td class="num">${armTxt}　${verdict}</td></tr>`;
     const ocEl = $('wt-oc');
     if (ocEl){
@@ -3876,7 +3955,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   const wtAdd = $('wt-add'), wtReset = $('wt-reset');
   if (wtAdd) wtAdd.addEventListener('click', ()=>{
     const P2 = window.__getLiveP ? window.__getLiveP() : curP;
-    P2.hull.weights.push({ id:'custom'+Date.now(), name:'新規部品', m:0, x:0, y:0, z:0, basis:'△', note:'' });
+    P2.hull.weights.push({ id:'custom'+Date.now(), name:'新規部品', m:0, x:0, y:0, z:0, r44:0, r55:0, basis:'△', note:'' });
     triggerRecalc(P2);
   });
   if (wtReset) wtReset.addEventListener('click', ()=>{
@@ -4086,7 +4165,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   // 初回描画（model タブのスクリプトが既に P を確定させている）
   if(window.__getParams){
     const p = window.__getParams();
-    renderHullTab(p, USV.derived(p.hull));
+    renderHullTab(p, USV.derived(p.hull, p.sea));
   }
 })();
 </script>
