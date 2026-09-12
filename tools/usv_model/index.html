@@ -409,10 +409,9 @@
   <span><span class="sk">最大航続</span><span class="sv" id="sb-range">–</span></span>
 </div>
 <header><div class="head-in">
-  <div class="eyebrow">USV 0-D MODEL · PHASE 1–3</div>
+  <div class="eyebrow">USV 0-D MODEL</div>
   <h1>USV 0次元モデル — エネルギー・動力性能成立性</h1>
-  <div class="sub">ベースライン: Seasats Lightfish 級（公開情報にもとづく推定主要目）／ surge 1自由度 (m+mₐ)V̇ = T − R ＋ JONSWAP スペクトル ＋ heave/pitch RAO による耐航性判定 ＋ GZ による復原性評価</div>
-  <div class="caveat"><b>注意</b> — 波浪抵抗は反射成分のみ（運動起因は未評価）・耐航性は 1 自由度近似（減衰比は仮定値）。荒天側の絶対値は傾向把握用。前提と置換計画の全文は「設計書」タブを参照。</div>
+  <div class="sub">Seasats Lightfish 級を想定した、速力・電力・耐航性・復原性の試算モデル</div>
 </div></header>
 <nav class="tabs" aria-label="表示切替">
   <button id="toc-toggle" type="button" aria-expanded="false" aria-controls="tocdrawer" title="目次"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg></button>
@@ -794,7 +793,7 @@
 
 <h3>転覆と復帰の目安（S2・砕波エネルギー換算）</h3>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 10px">
-  上の GZ 地形のエネルギー障壁 E_転覆／E_復帰 [J] を、砕波（ローラー）が艇に渡すエネルギーとして目安の波高 H_b に換算する（設計書§13.13）。
+  上の GZ 曲線のエネルギー障壁 E_転覆／E_復帰 [J] を、砕波（ローラー）が艇に渡すエネルギーとして目安の波高 H_b に換算する（設計書§13.13）。
   伝達効率 η・砕波の判定・風の影響のいずれも<b>△（推定・目安）</b>——数値は<b>1 桁の不確かさ</b>を持つ目安として扱うこと。下端の「不確かさ」欄を必ず参照。
   風は転覆側（直立→AVS）のみに効かせる（復帰側は無風の GZ で評価）。
 </div>
@@ -848,9 +847,7 @@
 <div class="doc-head">
   <div class="eyebrow">USV 0次元モデル · 技術詳細設計書 · Rev.5</div>
   <h1>USV 0次元モデル設計書</h1>
-  <div class="std">長期外洋ミッションの<b>エネルギー成立性</b>と<b>動力性能成立性</b>を評価する点質量モデル。
-  ベースライン: Seasats Lightfish（公開情報にもとづく推定主要目）。本書と同じページ内に計算コアを実装しており、記載の数値・グラフはすべてその実装から生成したもの（自動検証 16 項目すべて PASS）。<br>
-  本書は<b>支配式（一般形）と閉じ込め式（実験式・仮定）を分離して記述</b>する。閉じ込め式は将来、実験・CFD 等のマップで差し替える前提の「置換対象」であり、各所にその旨と推奨手段を明記する。</div>
+  <div class="std">Seasats Lightfish 級を想定し、長期外洋ミッションで<b>電力がもつか</b>と<b>必要な速力が出るか</b>を評価する点質量モデル。</div>
 </div>
 
 <nav class="toc"><div class="th">目次 — CONTENTS</div>
@@ -864,7 +861,7 @@
 <li><a href="#s7">電源・エネルギー（PWR）</a></li>
 <li><a href="#s8">耐航性（SEA）</a></li>
 <li><a href="#s9">較正と検証</a></li>
-<li><a href="#s10">閉じ込め式の置換ロードマップ</a></li>
+<li><a href="#s10">実験式・仮定を実測値に置き換える計画</a></li>
 <li><a href="#s11">発見・限界</a></li>
 <li><a href="#s12">ミッションシミュレーション（決定論シナリオ木）</a></li>
 <li><a href="#s13">船体形状・復原力・耐航性能係数（S1〜S4）</a></li>
@@ -874,7 +871,7 @@
 
 <!-- ═══════════ §1 ═══════════ -->
 <details class="sec" id="s1" open><summary><span class="no">§1</span><span class="ttl">目的とスコープ</span></summary>
-<p>解きたい問いは3つ。<b>①その海象で前に進めるか</b> — 推力と全抵抗の釣合いから達成可能速力 <math><msub><mi>V</mi><mi>eq</mi></msub></math> を求める（§4〜§6）。<b>②電力収支が破綻しないか</b> — 日射・電池・補助発電・ホテル負荷を時間積分し、SOC が下限を割らずにミッションを完走できるかを判定する（§7・§12）。<b>③転覆せず、転覆しても復帰するか</b> — 復原てこ <math><mi>GZ</mi></math> の地形から転覆／復帰に要するエネルギー障壁を求め、それを砕波高の目安に換算する（§13）。</p>
+<p>解きたい問いは3つ。<b>①その海象で前に進めるか</b> — 推力と全抵抗の釣合いから達成可能速力 <math><msub><mi>V</mi><mi>eq</mi></msub></math> を求める（§4〜§6）。<b>②電力収支が破綻しないか</b> — 日射・電池・補助発電・ホテル負荷を時間積分し、SOC が下限を割らずにミッションを完走できるかを判定する（§7・§12）。<b>③転覆せず、転覆しても復帰するか</b> — 復原てこ <math><mi>GZ</mi></math> 曲線から転覆／復帰に要するエネルギー障壁を求め、それを砕波高の目安に換算する（§13）。</p>
 <p><b>自由度の扱いは問いごとに異なり、相互に連成させていない。</b></p>
 <div class="tbl"><table>
 <tr><th>問い</th><th>自由度</th><th>解き方</th><th>節</th></tr>
@@ -939,11 +936,11 @@
 <tr><th>記号</th><th>名称</th><th>役割</th><th>単位</th><th class="num">値</th></tr>
 <tr><td class="sym">Re, Fn</td><td>Reynolds 数・Froude 数</td><td>摩擦／造波の無次元支配数</td><td>—</td><td class="num">—</td></tr>
 <tr><td class="sym"><math><msub><mi>C</mi><mi>F</mi></msub></math></td><td>摩擦抵抗係数</td><td>ITTC-1957 相関線</td><td>—</td><td class="num">—</td></tr>
-<tr><td class="sym"><math><msub><mi>C</mi><mi>R</mi></msub></math></td><td>剰余（造波）抵抗係数</td><td>Fn と排水量に依存する閉じ込め式。<math><msub><mi>C</mi><mrow><mi>R</mi><mn>0</mn></mrow></msub></math>=較正値</td><td>—</td><td class="num">C_R0=0.00284</td></tr>
+<tr><td class="sym"><math><msub><mi>C</mi><mi>R</mi></msub></math></td><td>剰余（造波）抵抗係数</td><td>Fn と排水量に依存する実験式・仮定。<math><msub><mi>C</mi><mrow><mi>R</mi><mn>0</mn></mrow></msub></math>=較正値</td><td>—</td><td class="num">C_R0=0.00284</td></tr>
 <tr><td class="sym"><math><mi>M</mi></math></td><td>痩せ型比（slenderness ratio）</td><td><math><mrow><mi>M</mi><mo>=</mo><msub><mi>L</mi><mi>wl</mi></msub><mo>/</mo><mroot><mo>∇</mo><mn>3</mn></mroot></mrow></math>。積載で艇が肥ると小さくなる</td><td>—</td><td class="num">5.96（基準時）</td></tr>
 <tr><td class="sym"><math><msub><mi>M</mi><mi>ref</mi></msub></math></td><td>痩せ型比の基準値</td><td>較正時（m=159 kg）の M。ここで f_M=1 となり較正を保存</td><td>—</td><td class="num">5.956 ○</td></tr>
 <tr><td class="sym"><math><msub><mi>f</mi><mi>M</mi></msub></math></td><td>剰余抵抗の排水量補正</td><td>積載による造波抵抗の増加を表す（式6′） </td><td>—</td><td class="num">—</td></tr>
-<tr><td class="sym"><math><mi>p</mi></math></td><td>痩せ型比の指数</td><td>薄船理論＋幾何相似から 4。<b>閉じ込めパラメータ</b>（置換対象）</td><td>—</td><td class="num">4 △</td></tr>
+<tr><td class="sym"><math><mi>p</mi></math></td><td>痩せ型比の指数</td><td>薄船理論＋幾何相似から 4。<b>仮定したパラメータ</b>（置換対象）</td><td>—</td><td class="num">4 △</td></tr>
 <tr><td class="sym"><math><msub><mi>C</mi><mi>T</mi></msub></math></td><td>全抵抗係数</td><td><math><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>k</mi><mo>)</mo><msub><mi>C</mi><mi>F</mi></msub><mo>+</mo><msub><mi>C</mi><mi>R</mi></msub></mrow></math></td><td>—</td><td class="num">—</td></tr>
 <tr><td class="sym"><math><msub><mi>R</mi><mi>calm</mi></msub></math>, <math><msub><mi>R</mi><mi>AW</mi></msub></math>, <math><msub><mi>R</mi><mi>wind</mi></msub></math></td><td>平水抵抗・波浪中抵抗増加・風圧抵抗</td><td>全抵抗の 3 成分</td><td>N</td><td class="num">—</td></tr>
 <tr><td class="sym"><math><mrow><msub><mi>Φ</mi><mi>aw</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math></td><td>波浪中抵抗増加の応答関数（QTF）</td><td>単位波振幅² あたりの抵抗増加</td><td>N/m²</td><td class="num">—</td></tr>
@@ -988,7 +985,7 @@
 
 <!-- ═══════════ §3 ═══════════ -->
 <details class="sec" id="s3" open><summary><span class="no">§3</span><span class="ttl">アーキテクチャ — 構成とデータフロー</span></summary>
-<p>全モジュールは<b>純関数</b>。SI 単位で受け渡し、各モジュールに <code>model</code> セレクタを持たせて閉じ込め式を差し替える。数式コアは DOM 非依存で Python へそのまま移植できる。本モデルは 2 段構成である——船型を変えたときだけ動かす<b>オフライン・パイプライン</b>（Node/Python。詳細は §13）と、入力を変えるたび即時に再計算する<b>ブラウザ内モデル</b>（<code>usv-core</code>）——で、両者は <code>&lt;script id="usv-hydro"&gt;</code> ブロック 1 つだけで繋がる。次図はその全体像と、5 個の切替スイッチが挟まる位置を示す。</p>
+<p>全モジュールは<b>純関数</b>。SI 単位で受け渡し、各モジュールに <code>model</code> セレクタを持たせて実験式・仮定を差し替える。数式コアは DOM 非依存で Python へそのまま移植できる。本モデルは 2 段構成である——船型を変えたときだけ動かす<b>オフライン・パイプライン</b>（Node/Python。詳細は §13）と、入力を変えるたび即時に再計算する<b>ブラウザ内モデル</b>（<code>usv-core</code>）——で、両者は <code>&lt;script id="usv-hydro"&gt;</code> ブロック 1 つだけで繋がる。次図はその全体像と、5 個の切替スイッチが挟まる位置を示す。</p>
 <figure><svg viewBox="0 0 760 560" role="img" aria-label="USVモデルのアーキテクチャ図。上段はオフライン・パイプライン（hullGeom→export_stl.mjs→STL→gz.py/bem.py→pack_hydro.mjs→usv-hydroブロック）、下段はブラウザ内のusv-core（DYN・HULL・PROP・PWR・SEA・MISSION・検証の各モジュールと重量表、5個の切替スイッチ、4つの消費先タブ）" style="width:100%;height:auto;display:block"><defs><marker id="aGov" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--gov)"/></marker><marker id="aInk" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--ink)"/></marker><marker id="aMuted" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--muted)"/></marker><marker id="aClo" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--clo)"/></marker><marker id="aFaint" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--faint)"/></marker></defs><rect x="6" y="24" width="748" height="224" rx="5" style="stroke:var(--line2);stroke-width:1;fill:var(--ink);fill-opacity:0.032"/><text x="20.0" y="41.0" text-anchor="start" style="font-size:12px;fill:var(--ink);font-weight:700;">オフライン・パイプライン（Node / Python — 形状ごとに 1 回）</text><rect x="16" y="54" width="140" height="34" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="86.0" y="62.0" text-anchor="middle" style="font-size:11.5px;fill:var(--ink);font-weight:700;">hullGeom()</text><text x="86.0" y="75.0" text-anchor="middle" style="font-size:10.2px;fill:var(--muted);font-weight:400;">形状パラメータ L,B,m,C_b</text><text x="86.0" y="86.0" text-anchor="middle" style="font-size:10.2px;fill:var(--muted);font-weight:400;">唯一の正本</text><rect x="172" y="54" width="150" height="34" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="247.0" y="68.0" text-anchor="middle" style="font-size:11.5px;fill:var(--ink);font-weight:700;">export_stl.mjs</text><text x="247.0" y="81.0" text-anchor="middle" style="font-size:10.2px;fill:var(--muted);font-weight:400;">水理メッシュ（水密・法線検査）</text><rect x="338" y="54" width="124" height="34" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="400.0" y="75.0" text-anchor="middle" style="font-size:11.5px;fill:var(--ink);font-weight:700;">STL / Nemoh .dat</text><line x1="156.0" y1="71.0" x2="170.0" y2="71.0" style="stroke:var(--gov);stroke-width:1.2;fill:none" marker-end="url(#aGov)"/><line x1="322.0" y1="71.0" x2="336.0" y2="71.0" style="stroke:var(--gov);stroke-width:1.2;fill:none" marker-end="url(#aGov)"/><text x="490.0" y="44.0" text-anchor="start" style="font-size:11px;fill:var(--muted);font-weight:700;">外部 STL</text><text x="490.0" y="55.5" text-anchor="start" style="font-size:9.8px;fill:var(--muted);font-weight:400;">（他所で作った船体）</text><polyline points="560.0,60.0 464.0,62.0" style="stroke:var(--muted);stroke-width:1.1;fill:none;stroke-dasharray:3 3" marker-end="url(#aMuted)"/><rect x="172" y="110" width="150" height="38" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="247.0" y="126.0" text-anchor="middle" style="font-size:11.5px;fill:var(--ink);font-weight:700;">gz.py（S1）</text><text x="247.0" y="139.0" text-anchor="middle" style="font-size:10.2px;fill:var(--muted);font-weight:400;">GZ(φ) 全周・A_wp・S・I4</text><rect x="342" y="110" width="158" height="38" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="421.0" y="126.0" text-anchor="middle" style="font-size:11.5px;fill:var(--ink);font-weight:700;">bem.py（S3）</text><text x="421.0" y="139.0" text-anchor="middle" style="font-size:10.2px;fill:var(--muted);font-weight:400;">BEM: A(ω) B(ω) F(ω) C</text><line x1="386.0" y1="88.0" x2="247.0" y2="109.0" style="stroke:var(--gov);stroke-width:1.2;fill:none" marker-end="url(#aGov)"/><line x1="414.0" y1="88.0" x2="421.0" y2="109.0" style="stroke:var(--gov);stroke-width:1.2;fill:none" marker-end="url(#aGov)"/><text x="178.0" y="161.0" text-anchor="start" style="font-size:9.8px;fill:var(--muted);font-weight:400;font-style:italic">重量表 → KG は閉形式でシフト</text><rect x="250" y="180" width="200" height="30" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="350.0" y="199.0" text-anchor="middle" style="font-size:11.5px;fill:var(--ink);font-weight:700;">pack_hydro.mjs</text><line x1="247.0" y1="148.0" x2="320.0" y2="180.0" style="stroke:var(--gov);stroke-width:1.2;fill:none" marker-end="url(#aGov)"/><line x1="421.0" y1="148.0" x2="380.0" y2="180.0" style="stroke:var(--gov);stroke-width:1.2;fill:none" marker-end="url(#aGov)"/><rect x="230" y="222" width="260" height="26" rx="3" style="stroke:var(--gov);stroke-width:1.4;fill:var(--gov);fill-opacity:0.06"/><text x="360.0" y="239.0" text-anchor="middle" style="font-size:11px;fill:var(--gov);font-weight:700;">usv-hydro ブロック（index.html に埋め込み）</text><line x1="350.0" y1="210.0" x2="360.0" y2="221.0" style="stroke:var(--gov);stroke-width:1.2;fill:none" marker-end="url(#aGov)"/><rect x="6" y="258" width="748" height="290" rx="5" style="stroke:var(--line2);stroke-width:1;fill:var(--ink);fill-opacity:0.018"/><text x="20.0" y="275.0" text-anchor="start" style="font-size:12px;fill:var(--ink);font-weight:700;">ブラウザ内（index.html — 入力を変えるたび即時）</text><line x1="456" y1="266" x2="476" y2="266" style="stroke:var(--ink);stroke-width:1.3"/><text x="482.0" y="269.0" text-anchor="start" style="font-size:10px;fill:var(--muted);font-weight:400;">＝データ</text><line x1="548" y1="266" x2="568" y2="266" style="stroke:var(--muted);stroke-width:1.1;stroke-dasharray:3 3"/><text x="574.0" y="269.0" text-anchor="start" style="font-size:10px;fill:var(--muted);font-weight:400;">＝任意入力</text><rect x="644" y="260.25" width="17" height="8.5" rx="4.25" style="stroke:var(--clo);stroke-width:1.2;fill:none"/><circle cx="648.2" cy="264.5" r="3.1" style="fill:var(--clo)"/><text x="666.0" y="269.0" text-anchor="start" style="font-size:10px;fill:var(--muted);font-weight:400;">＝切替スイッチ</text><text x="150.0" y="300.0" text-anchor="middle" style="font-size:9.8px;fill:var(--muted);font-weight:400;">d, S, S_app</text><text x="300.0" y="300.0" text-anchor="middle" style="font-size:9.6px;fill:var(--muted);font-weight:400;">GZ・静水力学</text><text x="462.0" y="300.0" text-anchor="middle" style="font-size:9.8px;fill:var(--muted);font-weight:400;">A, B, F, C, GZ</text><rect x="197" y="312.75" width="17" height="8.5" rx="4.25" style="stroke:var(--clo);stroke-width:1.2;fill:none"/><circle cx="201.2" cy="317.0" r="3.1" style="fill:var(--clo)"/><text x="219.0" y="313.6" text-anchor="start" style="font-size:10.2px;fill:var(--clo);font-weight:700;">hull.geom</text><text x="219.0" y="324.6" text-anchor="start" style="font-size:9.4px;fill:var(--muted);font-weight:400;">解析式（既定） / 3D実測</text><rect x="418" y="312.75" width="17" height="8.5" rx="4.25" style="stroke:var(--clo);stroke-width:1.2;fill:none"/><circle cx="422.2" cy="317.0" r="3.1" style="fill:var(--clo)"/><text x="440.0" y="313.6" text-anchor="start" style="font-size:10.2px;fill:var(--clo);font-weight:700;">sea.mode</text><text x="440.0" y="324.6" text-anchor="start" style="font-size:9.4px;fill:var(--muted);font-weight:400;">解析式（既定） / BEM表</text><rect x="560" y="312.75" width="17" height="8.5" rx="4.25" style="stroke:var(--clo);stroke-width:1.2;fill:none"/><circle cx="564.2" cy="317.0" r="3.1" style="fill:var(--clo)"/><text x="582.0" y="313.6" text-anchor="start" style="font-size:10.2px;fill:var(--clo);font-weight:700;">sea.rollDamp</text><text x="582.0" y="324.6" text-anchor="start" style="font-size:9.4px;fill:var(--muted);font-weight:400;">抗力（既定） / 一定ζ</text><text x="16.0" y="327.0" text-anchor="start" style="font-size:12px;fill:var(--ink);font-weight:700;">usv-core（純関数・DOM 非依存）</text><rect x="10" y="333" width="740" height="44" rx="4" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><rect x="16" y="339" width="96" height="32" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="64.0" y="352.0" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:700;">DYN</text><text x="64.0" y="365.0" text-anchor="middle" style="font-size:9.6px;fill:var(--muted);font-weight:400;">運動方程式</text><rect x="120" y="339" width="96" height="32" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="168.0" y="352.0" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:700;">HULL</text><text x="168.0" y="365.0" text-anchor="middle" style="font-size:9.6px;fill:var(--muted);font-weight:400;">抵抗</text><rect x="224" y="339" width="96" height="32" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="272.0" y="352.0" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:700;">PROP</text><text x="272.0" y="365.0" text-anchor="middle" style="font-size:9.6px;fill:var(--muted);font-weight:400;">推進</text><rect x="328" y="339" width="96" height="32" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="376.0" y="352.0" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:700;">PWR</text><text x="376.0" y="365.0" text-anchor="middle" style="font-size:9.6px;fill:var(--muted);font-weight:400;">電源</text><rect x="432" y="339" width="96" height="32" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="480.0" y="352.0" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:700;">SEA</text><text x="480.0" y="365.0" text-anchor="middle" style="font-size:9.6px;fill:var(--muted);font-weight:400;">耐航性</text><rect x="536" y="339" width="96" height="32" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="584.0" y="352.0" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:700;">MISSION</text><text x="584.0" y="365.0" text-anchor="middle" style="font-size:9.6px;fill:var(--muted);font-weight:400;">シナリオ木</text><rect x="640" y="339" width="100" height="32" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="690.0" y="352.0" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:700;">検証</text><text x="690.0" y="365.0" text-anchor="middle" style="font-size:9.6px;fill:var(--muted);font-weight:400;">V1〜V14（毎ロード）</text><line x1="290.0" y1="248.0" x2="168.0" y2="338.0" style="stroke:var(--gov);stroke-width:1.2;fill:none" marker-end="url(#aGov)"/><line x1="430.0" y1="248.0" x2="480.0" y2="338.0" style="stroke:var(--gov);stroke-width:1.2;fill:none" marker-end="url(#aGov)"/><line x1="324.0" y1="248.0" x2="325.0" y2="405.0" style="stroke:var(--gov);stroke-width:1.2;fill:none" marker-end="url(#aGov)"/><rect x="235" y="406" width="180" height="34" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="325.0" y="420.0" text-anchor="middle" style="font-size:11px;fill:var(--ink);font-weight:700;">重量表</text><text x="325.0" y="433.0" text-anchor="middle" style="font-size:9.8px;fill:var(--muted);font-weight:400;">→ m, KG, k44, k55</text><line x1="253.0" y1="406.0" x2="64.0" y2="372.0" style="stroke:var(--gov);stroke-width:1.2;fill:none" marker-end="url(#aGov)"/><line x1="397.0" y1="406.0" x2="480.0" y2="372.0" style="stroke:var(--gov);stroke-width:1.2;fill:none" marker-end="url(#aGov)"/><line x1="168.0" y1="382" x2="480.0" y2="382" style="stroke:var(--clo);stroke-width:1.1;stroke-dasharray:2.5 3"/><line x1="168.0" y1="371.0" x2="168.0" y2="382" style="stroke:var(--clo);stroke-width:1.1;stroke-dasharray:2.5 3"/><line x1="480.0" y1="371.0" x2="480.0" y2="382" style="stroke:var(--clo);stroke-width:1.1;stroke-dasharray:2.5 3"/><rect x="16" y="385.75" width="17" height="8.5" rx="4.25" style="stroke:var(--clo);stroke-width:1.2;fill:none"/><circle cx="20.2" cy="390.0" r="3.1" style="fill:var(--clo)"/><text x="38.0" y="386.6" text-anchor="start" style="font-size:10.2px;fill:var(--clo);font-weight:700;">hull.keelUp</text><text x="38.0" y="397.6" text-anchor="start" style="font-size:9.4px;fill:var(--muted);font-weight:400;">展開（既定） / 格納 → HULL+SEA</text><rect x="230" y="385.75" width="17" height="8.5" rx="4.25" style="stroke:var(--clo);stroke-width:1.2;fill:none"/><circle cx="234.2" cy="390.0" r="3.1" style="fill:var(--clo)"/><text x="252.0" y="386.6" text-anchor="start" style="font-size:10.2px;fill:var(--clo);font-weight:700;">hull.massFrom</text><text x="252.0" y="397.6" text-anchor="start" style="font-size:9.4px;fill:var(--muted);font-weight:400;">手入力（既定） / 重量表</text><rect x="25" y="500" width="170" height="32" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="110.0" y="513.0" text-anchor="middle" style="font-size:11.5px;fill:var(--ink);font-weight:700;">モデル</text><text x="110.0" y="526.0" text-anchor="middle" style="font-size:9.8px;fill:var(--muted);font-weight:400;">定常解・判定</text><rect x="205" y="500" width="170" height="32" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="290.0" y="513.0" text-anchor="middle" style="font-size:11.5px;fill:var(--ink);font-weight:700;">ミッション</text><text x="290.0" y="526.0" text-anchor="middle" style="font-size:9.8px;fill:var(--muted);font-weight:400;">成功率</text><rect x="385" y="500" width="170" height="32" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="470.0" y="513.0" text-anchor="middle" style="font-size:11.5px;fill:var(--ink);font-weight:700;">船体</text><text x="470.0" y="526.0" text-anchor="middle" style="font-size:9.8px;fill:var(--muted);font-weight:400;">GZ・係数・S2</text><rect x="565" y="500" width="170" height="32" rx="3" style="stroke:var(--ink);stroke-width:1.1;fill:none"/><text x="650.0" y="513.0" text-anchor="middle" style="font-size:11.5px;fill:var(--ink);font-weight:700;">設計書</text><text x="650.0" y="526.0" text-anchor="middle" style="font-size:9.8px;fill:var(--muted);font-weight:400;">（本書）</text><line x1="64.0" y1="371.0" x2="110.0" y2="499.0" style="stroke:var(--muted);stroke-width:1;fill:none" marker-end="url(#aMuted)"/><line x1="584.0" y1="371.0" x2="290.0" y2="499.0" style="stroke:var(--muted);stroke-width:1;fill:none" marker-end="url(#aMuted)"/><line x1="355.0" y1="440.0" x2="470.0" y2="499.0" style="stroke:var(--muted);stroke-width:1;fill:none" marker-end="url(#aMuted)"/><line x1="690.0" y1="371.0" x2="650.0" y2="499.0" style="stroke:var(--muted);stroke-width:1;fill:none" marker-end="url(#aMuted)"/></svg>
 <figcaption>読み方: 上段は船型を変えたときだけ Node/Python で走らせる<b>オフライン・パイプライン</b>、下段は入力を変えるたびブラウザ内で即時に再計算される<b>usv-core</b>。上段の出力は <code>usv-hydro</code> ブロックとして index.html に埋め込まれ、下段の HULL・SEA・重量表がそれを読む（青の矢印＝データの流れ）。オレンジのトグルが 5 個の切替スイッチで、既定値はいずれも導入前の値のまま——挙動を変えるには明示的に選ぶ必要がある。<b>不変条件</b>: (1) 形状定義は <code>hullGeom()</code> ただ一つで、外部で作った船体（§13.14）も <code>export_stl.mjs</code> と同じ「STL / Nemoh .dat」の入口から入る。(2) 既定スイッチのままなら V1〜V8 の数値は変更前と一致する。</figcaption></figure>
 <div class="tbl"><table>
@@ -1035,7 +1032,7 @@
 <msub><mi>C</mi><mi>T</mi></msub><mo>(</mo><mi>Re</mi><mo>,</mo><mi>Fn</mi><mo>)</mo>
 <msup><mi>V</mi><mn>2</mn></msup>
 </mrow></math>
-<div class="eqnote">平水抵抗の無次元形。全抵抗係数 <math><msub><mi>C</mi><mi>T</mi></msub></math> の中身が閉じ込めの対象。</div></div>
+<div class="eqnote">平水抵抗の無次元形。全抵抗係数 <math><msub><mi>C</mi><mi>T</mi></msub></math> の中身が実測で置き換える対象。</div></div>
 <div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(4)</span></div>
 <math display="block"><mrow>
 <msub><mi>R</mi><mi>AW</mi></msub><mo>=</mo>
@@ -1056,8 +1053,8 @@
 <div class="eqnote">風圧抵抗の一般形（ITTC 7.5-04-01-01 と同型）。<math><msub><mi>C</mi><mi>X</mi></msub></math> は相対風向角の関数＝風洞試験のテーブルを受け取れる形。</div></div>
 </details>
 
-<details class="sub" open><summary>5.2 平水抵抗の閉じ込め式（ITTC-1957 ＋ 剰余抵抗）</summary>
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（実験相関・仮定）</span><span class="bdg rep">置換: 曳航水槽試験 / CFD(RANS)</span><span class="eqno">(6)</span></div>
+<details class="sub" open><summary>5.2 平水抵抗の実験式・仮定（ITTC-1957 ＋ 剰余抵抗）</summary>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">実験式（実験相関・仮定）</span><span class="bdg rep">置換: 曳航水槽試験 / CFD(RANS)</span><span class="eqno">(6)</span></div>
 <math display="block"><mrow>
 <msub><mi>C</mi><mi>T</mi></msub><mo>=</mo>
 <mo>(</mo><mn>1</mn><mo>+</mo><mi>k</mi><mo>)</mo><msub><mi>C</mi><mi>F</mi></msub>
@@ -1073,7 +1070,7 @@
 </mrow></math>
 <div class="eqnote"><math><msub><mi>C</mi><mi>F</mi></msub></math> は ITTC-1957 模型船相関線（実験相関・信頼度高）。<math><msub><mi>C</mi><mi>R</mi></msub></math> の Fn⁴ 形は<b>本設計の仮定</b>で、<math><msub><mi>C</mi><mrow><mi>R</mi><mn>0</mn></mrow></msub></math>=0.00284 は最高速力 4.5 kt からの較正値。<math><msub><mi>f</mi><mi>M</mi></msub></math> は排水量（積載）による肥瘦の補正で式(6′)。曳航試験または CFD で <math><mrow><msub><mi>C</mi><mi>R</mi></msub><mo>(</mo><mi>Fn</mi><mo>,</mo><mi>M</mi><mo>)</mo></mrow></math> の2次元テーブルに置換するのが本命。</div></div>
 
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（理論形＋指数は仮定）</span><span class="bdg rep">置換: 曳航水槽の系統試験 / CFD(RANS) の排水量スイープ</span><span class="eqno">(6′)</span></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">実験式・仮定（理論形＋指数は仮定）</span><span class="bdg rep">置換: 曳航水槽の系統試験 / CFD(RANS) の排水量スイープ</span><span class="eqno">(6′)</span></div>
 <math display="block"><mrow>
 <msub><mi>f</mi><mi>M</mi></msub><mo>=</mo>
 <msup><mrow><mo>(</mo><mfrac><msub><mi>M</mi><mi>ref</mi></msub><mi>M</mi></mfrac><mo>)</mo></mrow><mi>p</mi></msup>
@@ -1093,13 +1090,13 @@
 <math><mrow><msub><mi>C</mi><mi>R</mi></msub><mo>∝</mo><msup><mo>∇</mo><mrow><mn>4</mn><mo>/</mo><mn>3</mn></mrow></msup><mo>∝</mo><msup><mi>M</mi><mrow><mo>−</mo><mn>4</mn></mrow></msup></mrow></math>。
 <math><msub><mi>M</mi><mi>ref</mi></msub></math>=5.956 は<b>較正時（m=159 kg）の値で固定</b>してあるため、較正点で
 <math><mrow><msub><mi>f</mi><mi>M</mi></msub><mo>=</mo><mn>1</mn></mrow></math> となり V1 の較正がそのまま保存される（検証 V7）。
-<b>指数 p は閉じ込めパラメータ</b>（<code>crSlenderExp</code>）であり、系統試験や CFD の排水量スイープで実測値に置き換えられる。
+<b>指数 p は仮定したパラメータ</b>（<code>crSlenderExp</code>）であり、系統試験や CFD の排水量スイープで実測値に置き換えられる。
 なお <math><msub><mi>f</mi><mi>M</mi></msub></math> は <math><msub><mi>C</mi><mi>R</mi></msub></math> 全体（低 Fn の形状抵抗分を含む）に掛けている——肥瘦は両成分に効くという判断。</div></div>
 
 <h3>船型の喫水・濡れ面積の与え方（解析式 / 3D 実測・S4-6）</h3>
 <p><code>hull.geom</code> スイッチで喫水 <math><mi>d</mi></math> と濡れ面積 <math><mi>S</mi></math> の出所を選べる（既定 <code>'analytic'</code>＝上記 C_b・Denny-Mumford のまま。V1〜V9 の数値は不変）。<code>'hydro'</code> を選ぶと §13.4 の 3D 実測（<code>usv-hydro.hydrostatics</code>）に差し替わり、<code>hydroMatch(hull).ok</code>（形状一致 or 相似）のときだけ有効で、不一致なら自動的に解析式へ退避する（<code>derived()</code> が返す <code>geom</code> フィールドで判別可能）。相似時は Froude 則で <math><mrow><mi>d</mi><mo>∝</mo><mi>s</mi></mrow></math>・<math><mrow><mi>S</mi><mo>∝</mo><msup><mi>s</mi><mn>2</mn></msup></mrow></math>（s=寸法比）としてスケールする。</p>
 <p>3D 実測は<b>裸殻濡れ面積</b> <math><msub><mi>S</mi><mi>bare</mi></msub></math> と<b>付加物（キールフィン等）濡れ面積</b> <math><msub><mi>S</mi><mi>app</mi></msub></math><math><mrow><mo>(</mo><mo>=</mo><mi>S</mi><mo>−</mo><msub><mi>S</mi><mi>bare</mi></msub><mo>)</mo></mrow></math> を分けて持つため、摩擦抵抗もこの2つを分離して計算する（剰余抵抗は裸殻面積のみに掛かる——付加物の造波寄与は無視できる薄い翼形状という仮定）:</p>
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（付加物形状係数）</span><span class="bdg rep">置換: 付加物単独の曳航試験 / CFD</span><span class="eqno">(6″)</span></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">実験式・仮定（付加物形状係数）</span><span class="bdg rep">置換: 付加物単独の曳航試験 / CFD</span><span class="eqno">(6″)</span></div>
 <math display="block"><mrow>
 <msub><mi>R</mi><mi>F</mi></msub><mo>=</mo>
 <mfrac><mn>1</mn><mn>2</mn></mfrac><mi>ρ</mi><msup><mi>V</mi><mn>2</mn></msup><msub><mi>C</mi><mi>F</mi></msub>
@@ -1109,7 +1106,7 @@
 <msub><mi>R</mi><mi>R</mi></msub><mo>=</mo>
 <mfrac><mn>1</mn><mn>2</mn></mfrac><mi>ρ</mi><msub><mi>S</mi><mi>bare</mi></msub><msup><mi>V</mi><mn>2</mn></msup><msub><mi>C</mi><mi>R</mi></msub>
 </mrow></math>
-<div class="eqnote">解析式モード（<code>Sapp=0・Sbare=S</code>）では上式は §5.2 の式(6)にそのまま一致し、数値は変わらない。<math><msub><mi>k</mi><mi>app</mi></msub></math>=1.10 は<b>△閉じ込めパラメータ</b>（キールフィンのような薄翼付加物の代表形状係数の仮置き。<code>hull.kApp</code>）で、単独の曳航試験や CFD による置換が対象。剰余抵抗の係数 <math><msub><mi>C</mi><mi>R</mi></msub></math> は解析式モードでは <code>CrBase</code>、3D 実測モードでは <code>CrBaseHydro</code>（下記）を使う——<math><msub><mi>S</mi><mi>bare</mi></msub></math> の値が変わる（実測 2.002 m² vs 解析式 1.947 m²・§13.4.1）ため無次元化の基準面積が変わり、同じ較正点でも異なる次元係数になる。</div></div>
+<div class="eqnote">解析式モード（<code>Sapp=0・Sbare=S</code>）では上式は §5.2 の式(6)にそのまま一致し、数値は変わらない。<math><msub><mi>k</mi><mi>app</mi></msub></math>=1.10 は<b>△仮定したパラメータ</b>（キールフィンのような薄翼付加物の代表形状係数の仮置き。<code>hull.kApp</code>）で、単独の曳航試験や CFD による置換が対象。剰余抵抗の係数 <math><msub><mi>C</mi><mi>R</mi></msub></math> は解析式モードでは <code>CrBase</code>、3D 実測モードでは <code>CrBaseHydro</code>（下記）を使う——<math><msub><mi>S</mi><mi>bare</mi></msub></math> の値が変わる（実測 2.002 m² vs 解析式 1.947 m²・§13.4.1）ため無次元化の基準面積が変わり、同じ較正点でも異なる次元係数になる。</div></div>
 <p><b>再較正（V1）</b> — 3D 実測モードへ切り替えると摩擦・剰余の内訳（速度依存が異なる 2 項）が変わるため、<code>CrBase</code> を <code>CrBaseHydro</code> として V1（4.5 kt 平水・全力）に対し二分法で再較正した: <b><code>CrBaseHydro = 0.00264474030671497</code></b>（2026-09-09・<code>lib/core.mjs</code> 経由で <code>solveVeq</code> を目的関数に Node で二分法・V_eq=4.50 kt を 1e-6 kt 精度で再現）。痩せ型比補正 <math><msub><mi>f</mi><mi>M</mi></msub></math>（式6′）は <math><mi>vol</mi></math>（=m/ρ）にのみ依存し geom に依存しないため、較正点で <math><mrow><msub><mi>f</mi><mi>M</mi></msub><mo>=</mo><mn>1</mn></mrow></math> はどちらのモードでも成立する。結果と実測表は §13.10。</p>
 
 <details class="sub" open><summary>図1 — 平水抵抗の内訳（ベースライン）</summary>
@@ -1120,8 +1117,8 @@
 </details>
 </details>
 
-<details class="sub" open><summary>5.3 波浪中抵抗増加の閉じ込め式（JONSWAP × 成分別反射）</summary>
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（スペクトル・準実験式）</span><span class="eqno">(7)</span></div>
+<details class="sub" open><summary>5.3 波浪中抵抗増加の実験式・仮定（JONSWAP × 成分別反射）</summary>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">実験式・仮定（スペクトル・準実験式）</span><span class="eqno">(7)</span></div>
 <math display="block"><mrow>
 <mi>S</mi><mo>(</mo><mi>ω</mi><mo>)</mo><mo>∝</mo>
 <msup><mi>ω</mi><mrow><mo>−</mo><mn>5</mn></mrow></msup>
@@ -1132,7 +1129,7 @@
 <mo>=</mo><mfrac><msubsup><mi>H</mi><mi>s</mi><mn>2</mn></msubsup><mn>16</mn></mfrac>
 </mrow></math>
 <div class="eqnote">JONSWAP スペクトル（γ=3.3、m₀ に数値正規化）。海域の実測スペクトルが得られればそのまま差し替え可。</div></div>
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（仮定）</span><span class="bdg rep">置換: BEM / 耐航性能Sim / 波浪中模型試験</span><span class="eqno">(8)</span></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">仮定値</span><span class="bdg rep">置換: BEM / 耐航性能Sim / 波浪中模型試験</span><span class="eqno">(8)</span></div>
 <math display="block"><mrow>
 <msub><mi>Φ</mi><mi>aw</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo><mo>=</mo>
 <mfrac><mn>1</mn><mn>2</mn></mfrac><mi>ρ</mi><mi>g</mi><mi>B</mi>
@@ -1151,8 +1148,8 @@
 </details>
 </details>
 
-<details class="sub" open><summary>5.4 風圧抵抗の閉じ込め式</summary>
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（仮定）</span><span class="bdg rep">置換: 風洞試験 / CFD（風向角別 C_X テーブル）</span><span class="eqno">(9)</span></div>
+<details class="sub" open><summary>5.4 風圧抵抗の実験式・仮定</summary>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">仮定値</span><span class="bdg rep">置換: 風洞試験 / CFD（風向角別 C_X テーブル）</span><span class="eqno">(9)</span></div>
 <math display="block"><mrow>
 <msub><mi>u</mi><mi>r</mi></msub><mo>=</mo>
 <msub><mi>U</mi><mi>w</mi></msub><mi>cos</mi><mi>ψ</mi><mo>+</mo><mi>V</mi>
@@ -1182,10 +1179,10 @@
 <mo>,</mo><mspace width="0.4em"/><msub><mi>T</mi><mi>b</mi></msub>
 <mo>)</mo></mrow>
 </mrow></math>
-<div class="eqnote">電力 → 制御器 → モーター → プロペラの直列チェーン。各段の効率が閉じ込めの対象。全体拘束: η<sub>total</sub> ≤ 0.51（Torqeedo Cruise 3.0 FP 公称の総合効率。実装の最大実測 0.49）。</div></div>
+<div class="eqnote">電力 → 制御器 → モーター → プロペラの直列チェーン。各段の効率が実測で置き換える対象。全体拘束: η<sub>total</sub> ≤ 0.51（Torqeedo Cruise 3.0 FP 公称の総合効率。実装の最大実測 0.49）。</div></div>
 </details>
-<details class="sub" open><summary>6.2 閉じ込め式（損失分解・効率カーブ・ボラード上限）</summary>
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（仮定）</span><span class="bdg rep">置換: モーターベンチ試験の効率マップ（トルク×回転数）</span><span class="eqno">(11)</span></div>
+<details class="sub" open><summary>6.2 実験式・仮定（損失分解・効率カーブ・ボラード上限）</summary>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">仮定値</span><span class="bdg rep">置換: モーターベンチ試験の効率マップ（トルク×回転数）</span><span class="eqno">(11)</span></div>
 <math display="block"><mrow>
 <msub><mi>P</mi><mi>loss</mi></msub><mo>=</mo>
 <msub><mi>P</mi><mi>fix</mi></msub><mo>+</mo>
@@ -1196,7 +1193,7 @@
 <mfrac><msub><mi>P</mi><mi>s</mi></msub><mrow><msub><mi>P</mi><mi>s</mi></msub><mo>+</mo><msub><mi>P</mi><mi>loss</mi></msub></mrow></mfrac>
 </mrow></math>
 <div class="eqnote">固定損（制御器待機）＋線形損（鉄損系）＋2 乗損（銅損系）の物理ベース分解。低負荷での効率急落を 3 係数で再現する。</div></div>
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（仮定）</span><span class="bdg rep">置換: プロペラ単独試験（open-water の K_T/K_Q–J 特性）</span><span class="eqno">(12)</span></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">仮定値</span><span class="bdg rep">置換: プロペラ単独試験（open-water の K_T/K_Q–J 特性）</span><span class="eqno">(12)</span></div>
 <math display="block"><mrow>
 <msub><mi>η</mi><mi>prop</mi></msub><mo>(</mo><mi>V</mi><mo>)</mo><mo>=</mo>
 <msub><mi>η</mi><mi>pk</mi></msub>
@@ -1237,10 +1234,10 @@
 <msub><mi>P</mi><mi>panel</mi></msub>
 <msub><mi>f</mi><mi>der</mi></msub>
 </mrow></math>
-<div class="eqnote">太陽光発電の一般形。日射 G(t) の与え方が閉じ込めの対象。</div></div>
+<div class="eqnote">太陽光発電の一般形。日射 G(t) の与え方が実測で置き換える対象。</div></div>
 </details>
-<details class="sub" open><summary>7.2 日射の閉じ込め式（2 モデル選択式）</summary>
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（実験相関）</span><span class="bdg rep">置換: 対象海域の日射統計（衛星再解析）＋実艇の汚損実測</span><span class="eqno">(15)</span></div>
+<details class="sub" open><summary>7.2 日射の実験式・仮定（2 モデル選択式）</summary>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">実験式（実験相関）</span><span class="bdg rep">置換: 対象海域の日射統計（衛星再解析）＋実艇の汚損実測</span><span class="eqno">(15)</span></div>
 <math display="block"><mrow>
 <mi>G</mi><mo>=</mo>
 <mn>1098</mn><mspace width="0.2em"/>
@@ -1275,7 +1272,7 @@
 <mo>,</mo><mspace width="1em"/>
 <msub><mi>RMS</mi><mi>x</mi></msub><mo>=</mo><msqrt><msub><mi>m</mi><mn>0</mn></msub></msqrt>
 </mrow></math>
-<div class="eqnote">線形耐航性理論の標準形。応答 x（ヒーブ・ピッチ・加速度）の RAO <math><msub><mi>H</mi><mi>x</mi></msub></math> が閉じ込めの対象。<b>BEM や耐航性能 Sim の RAO をそのまま受け取れる形</b>。</div></div>
+<div class="eqnote">線形耐航性理論の標準形。応答 x（ヒーブ・ピッチ・加速度）の RAO <math><msub><mi>H</mi><mi>x</mi></msub></math> が実測で置き換える対象。<b>BEM や耐航性能 Sim の RAO をそのまま受け取れる形</b>。</div></div>
 <div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(17)</span></div>
 <math display="block"><mrow>
 <msub><mi>ω</mi><mi>e</mi></msub><mo>=</mo>
@@ -1284,8 +1281,8 @@
 </mrow></math>
 <div class="eqnote">向い波の出会い周波数（深水）。</div></div>
 </details>
-<details class="sub" open><summary>8.2 RAO の閉じ込め式（1 自由度近似）</summary>
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（仮定）</span><span class="bdg rep">置換: BEM（3D パネル法）/ ストリップ法 / 耐航性能Sim / 模型試験</span><span class="eqno">(18)</span></div>
+<details class="sub" open><summary>8.2 RAO の実験式・仮定（1 自由度近似）</summary>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">仮定値</span><span class="bdg rep">置換: BEM（3D パネル法）/ ストリップ法 / 耐航性能Sim / 模型試験</span><span class="eqno">(18)</span></div>
 <math display="block"><mrow>
 <mrow><mo>|</mo><msub><mi>H</mi><mi>h</mi></msub><mo>|</mo></mrow><mo>=</mo>
 <mfrac>
@@ -1305,9 +1302,9 @@
 </details>
 
 <!-- ═══════════ §8.3 ═══════════ -->
-<details class="sub" open><summary>8.3 粘性ロール減衰（閉じ込め式・S4-7）</summary>
+<details class="sub" open><summary>8.3 粘性ロール減衰（実験式・仮定・S4-7）</summary>
 <p>BEM の放射減衰 <math><msub><mi>B</mi><mn>44</mn></msub></math><sup>bem</sup> はポテンシャル流のみで、粘性起因の減衰（摩擦・剥離渦・付加物抗力）を含まない。従来はこれを一定値 <math><mrow><msub><mi>ζ</mi><mn>44</mn></msub><mi>Visc</mi><mo>=</mo><mn>0.08</mn></mrow></math>（仮定・波高非依存）で加算していたが、ここでは<b>摩擦（Kato 1958）＋船底平板・キールフィンの2次抗力を確率的線形化した振幅依存モデル</b>に置き換える（<code>sea.rollDamp</code> スイッチ・既定 <code>'drag'</code>、旧モデルは <code>'const'</code> として温存）。ロール軸は重心 (x=LCG, y=0, z=KG)、水線は z=d（<code>der.d</code>）。<math><mrow><mi>OG</mi><mo>=</mo><mi>d</mi><mo>−</mo><mi>KG</mi></mrow></math>（G が喫水下なら正）。</p>
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（Kato 1958・Ikeda法の摩擦成分）</span><span class="bdg rep">置換: 実測ロール減衰試験（自由減衰）</span><span class="eqno">(25)</span></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">実験式・仮定（Kato 1958・Ikeda法の摩擦成分）</span><span class="bdg rep">置換: 実測ロール減衰試験（自由減衰）</span><span class="eqno">(25)</span></div>
 <math display="block"><mrow>
 <msub><mi>B</mi><mi>F</mi></msub><mo>=</mo>
 <mn>0.787</mn><mi>ρ</mi><mi>S</mi><msubsup><mi>r</mi><mi>f</mi><mn>2</mn></msubsup>
@@ -1324,7 +1321,7 @@
 </mrow></math>
 <div class="eqnote">S = 濡れ面積（<code>der.S</code>）。<math><msub><mi>C</mi><mi>b</mi></msub></math> は <code>hull.geom='hydro'</code> 時のみ実測 <code>Cb_eff</code>、それ以外は入力の <math><msub><mi>C</mi><mi>b</mi></msub></math>。φ_a は下の等価線形化 σ_φ から φ_a=√2σ_φ で与える（式28）。r_f は下限 0.05B にクランプ。</div></div>
 
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（船底平板の2次抗力・等価線形化）</span><span class="bdg rep">置換: CFD（船底圧力分布）/ 模型のロール強制動揺試験</span><span class="eqno">(26)</span></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">実験式・仮定（船底平板の2次抗力・等価線形化）</span><span class="bdg rep">置換: CFD（船底圧力分布）/ 模型のロール強制動揺試験</span><span class="eqno">(26)</span></div>
 <math display="block"><mrow>
 <msub><mi>I</mi><mn>4</mn></msub><mo>=</mo>
 <msubsup><mo>∫</mo><mn>0</mn><mi>L</mi></msubsup>
@@ -1334,14 +1331,14 @@
 </mrow></math>
 <div class="eqnote">船底が重心周りに回転するときの鉛直速度 <math><mi>y</mi><mover><mi>φ</mi><mo>˙</mo></mover></math> による2次抗力モーメントを y 方向に積分した等価線形化前の係数。<math><msub><mi>y</mi><mi>wl</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></math> は<b>水線（喫水 d）での半幅</b>——station ごとに <code>hullGeom</code> の zKeel/zChine/zDeck・sect() で <code>hullWaterline()</code> と同じ3分岐（キール未満は0・キール〜チャイン間は sect(t,(d−z0)/(zc−z0))・チャイン〜デッキ間は sect(t,1) を deckIn へ内挿）で求める。<b>旧実装はチャイン半幅 chineF·HB·plan(t)（chineF はチャインの深さ位置を決める係数であり半幅ではない——2026-09-12 まで残っていた仕様ミス）を使っており、実測値（gz.py が没水面を直接積分した値）よりこの船型で約5割小さい過小評価だった</b>。単値な船底（水線が各 x で高々1点）では ∫|n_z||y|³dA（実メッシュの没水面積分）はこの投影積分と数学的に厳密に一致するため、水線半幅に直した現在は両者が一致する（差はメッシュ離散化誤差のみ・V14②）。<math><msub><mi>I</mi><mn>4</mn></msub></math> は Simpson 400 区間で数値積分し L,B,d でメモ化（<code>bottomI4Analytic</code>）。実利用の <code>bottomI4()</code> は実測値（<code>hydro.hydrostatics.I4_m4</code>）があればそれを優先し、この解析式はフォールバックおよび V14②の照合基準として使う。<math><msub><mi>C</mi><mi>D</mi></msub></math>=<code>sea.cdBottom</code>（△仮置き 1.2）。</div></div>
 
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（キールフィンの2次抗力・等価線形化）</span><span class="bdg rep">置換: 付加物単独の強制動揺試験 / CFD</span><span class="eqno">(27)</span></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">実験式・仮定（キールフィンの2次抗力・等価線形化）</span><span class="bdg rep">置換: 付加物単独の強制動揺試験 / CFD</span><span class="eqno">(27)</span></div>
 <math display="block"><mrow>
 <msub><mi>Bq</mi><mi>keel</mi></msub><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mi>ρ</mi><msub><mi>C</mi><mi>D</mi></msub><msub><mi>A</mi><mi>fin</mi></msub><msubsup><mi>r</mi><mi>k</mi><mn>3</mn></msubsup><mo>,</mo><mspace width="0.8em"/>
 <msub><mi>r</mi><mi>k</mi></msub><mo>=</mo><mi>KG</mi><mo>−</mo><msub><mi>z</mi><mi>centroid</mi></msub>
 </mrow></math>
 <div class="eqnote"><math><msub><mi>A</mi><mi>fin</mi></msub></math>（片面）と重心深さ <math><msub><mi>z</mi><mi>centroid</mi></msub></math> は <code>lib/mesh.mjs</code> の <code>keelSolid</code> と同じ4点四角形（(0.70L,zKeel(0.70))–(0.55L,zKeel(0.55))–(0.42L,−0.95D)–(0.50L,−0.95D)）の多角形面積・重心（<code>keelFinGeom</code>）。<math><msub><mi>C</mi><mi>D</mi></msub></math>=<code>sea.cdKeel</code>（△仮置き 1.2）。<code>sea.keelFin=false</code> なら 0。</div></div>
 
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（確率的線形化・収束手順）</span><span class="bdg rep">置換: 実測ロール減衰の振幅依存フィット</span><span class="eqno">(28)</span></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">実験式・仮定（確率的線形化・収束手順）</span><span class="bdg rep">置換: 実測ロール減衰の振幅依存フィット</span><span class="eqno">(28)</span></div>
 <math display="block"><mrow>
 <msub><mi>B</mi><mi>eq</mi></msub><mo>=</mo>
 <msqrt><mfrac><mn>8</mn><mi>π</mi></mfrac></msqrt><mi>Bq</mi><msub><mi>σ</mi><mover><mi>φ</mi><mo>˙</mo></mover></msub><mo>,</mo><mspace width="0.8em"/>
@@ -1381,10 +1378,10 @@
 </details>
 
 <!-- ═══════════ §10 ═══════════ -->
-<details class="sec" id="s10" open><summary><span class="no">§10</span><span class="ttl">閉じ込め式の置換ロードマップ</span></summary>
-<p>本モデルの精度は閉じ込め式の質で決まる。各閉じ込めは<b>関数インターフェースを変えずにテーブル/マップへ差し替えられる</b>よう設計してある（<code>model</code> セレクタ）。優先度は「結果への感度 × 現在の不確かさ」で付けた。</p>
+<details class="sec" id="s10" open><summary><span class="no">§10</span><span class="ttl">実験式・仮定を実測値に置き換える計画</span></summary>
+<p>本モデルの精度は実験式・仮定の質で決まる。各実験式・仮定は<b>関数インターフェースを変えずにテーブル/マップへ差し替えられる</b>よう設計してある（<code>model</code> セレクタ）。優先度は「結果への感度 × 現在の不確かさ」で付けた。</p>
 <div class="tbl"><table>
-<tr><th>閉じ込め式</th><th>現状</th><th>置換インターフェース</th><th>推奨手段</th><th>優先度</th></tr>
+<tr><th>実験式・仮定</th><th>現状</th><th>置換インターフェース</th><th>推奨手段</th><th>優先度</th></tr>
 <tr><td>波浪中 QTF <math><msub><mi>Φ</mi><mi>aw</mi></msub></math>（式8）</td><td>反射漸近×仮定減衰。<b>運動起因成分なし</b></td><td><math><mrow><msub><mi>Φ</mi><mi>aw</mi></msub><mo>(</mo><mi>ω</mi><mo>,</mo><mi>V</mi><mo>)</mo></mrow></math> テーブル</td><td><b>BEM（3D パネル法）→ 波浪中模型試験</b>。耐航性能 Sim（ストリップ法）でも可</td><td><b>最高</b></td></tr>
 <tr><td>RAO <math><msub><mi>H</mi><mi>h</mi></msub></math>, <math><msub><mi>H</mi><mi>θ</mi></msub></math>（式18）</td><td>1 自由度近似・減衰比仮定</td><td><math><mrow><mi>H</mi><mo>(</mo><mi>ω</mi><mo>,</mo><mi>V</mi><mo>,</mo><mi>χ</mi><mo>)</mo></mrow></math> テーブル（波向 χ 含む）</td><td><b>BEM / 耐航性能 Sim</b>（QTF と同時に得られる）→ 模型試験で検証</td><td><b>最高</b></td></tr>
 <tr><td>剰余抵抗 <math><msub><mi>C</mi><mi>R</mi></msub></math>（式6・6′）</td><td>Fn⁴ 形・1 点較正。排水量依存は薄船理論の p=4 で近似（2026-08-26 追加）</td><td><math><mrow><msub><mi>C</mi><mi>R</mi></msub><mo>(</mo><mi>Fn</mi><mo>,</mo><mi>M</mi><mo>)</mo></mrow></math> の 2 次元テーブル</td><td><b>曳航水槽の系統試験</b>（排水量スイープ）または CFD（RANS・自由表面）。<b>造波成分のみなら BEM</b>（ポテンシャル流: ミッチェル積分・ランキンパネル法）でも計算可——ただし剰余には粘性形状分も含まれ、BEM は (1+k)C_F を扱えないため摩擦系と分けた検証が必要。指数 p の実測が第一目標</td><td>高</td></tr>
@@ -1405,7 +1402,7 @@
 <div class="find"><span class="fl">FINDING 2</span><br>
 <b>日射 4.5 kWh/m²/日では日平均発電 54 W ＝ ホテル負荷 104 W を恒常的に賄えない。</b>公称「6 ヶ月滞留」はホテル負荷 ≤45 W の省電力モードが前提と推定（V3 で成立確認）。長期滞留の成否は推進ではなくホテル負荷の管理で決まる。</div>
 <div class="find"><span class="fl">FINDING 3</span><br>
-<b>転覆も復帰もうねりではなく短周期の砕ける風浪で起きる；密閉キャノピーで復帰に要る砕波高は約 0.74 → 0.48 m（η=0.15）。</b>GZ 地形のエネルギー障壁を砕波高に換算すると（S2・§13.13）、Hs=2 m・Tp=6 s 級のうねりでは砕波の下限（波形勾配しきい値）が H_b,復帰・H_b,転覆 のどちらよりずっと高く、期待時間は約 9400 時間（400 日弱）＝実質「起きない」。差が効くのは砕波下限がまだ低い短周期の局所風浪側（例: Hs=0.4 m・Tp=2 s で base の復帰期待時間 0.44 h に対し密閉キャノピーは 0.057 h）——転覆・復帰対策は「大きいうねりへの備え」ではなく「短周期の砕ける風浪の頻度」を見るべき、という運用上の含意。ただし換算の伝達効率 η・砕波判定はいずれも△（設計書§13.13）。</div>
+<b>転覆も復帰もうねりではなく短周期の砕ける風浪で起きる；密閉キャノピーで復帰に要る砕波高は約 0.74 → 0.48 m（η=0.15）。</b>GZ 曲線のエネルギー障壁を砕波高に換算すると（S2・§13.13）、Hs=2 m・Tp=6 s 級のうねりでは砕波の下限（波形勾配しきい値）が H_b,復帰・H_b,転覆 のどちらよりずっと高く、期待時間は約 9400 時間（400 日弱）＝実質「起きない」。差が効くのは砕波下限がまだ低い短周期の局所風浪側（例: Hs=0.4 m・Tp=2 s で base の復帰期待時間 0.44 h に対し密閉キャノピーは 0.057 h）——転覆・復帰対策は「大きいうねりへの備え」ではなく「短周期の砕ける風浪の頻度」を見るべき、という運用上の含意。ただし換算の伝達効率 η・砕波判定はいずれも△（設計書§13.13）。</div>
 <div class="caveat"><b>限界（明示）:</b> ①運動起因の抵抗増加は未評価（抵抗は反射成分のみ＝荒天は下振れ方向の不確かさ）。②耐航性は 1 自由度・減衰比仮定・位相/連成/相対水位運動なし。③ 0 次元の原理的限界として斜め波・横風の横力・回頭は表現不可。④ △印パラメータ（特に f_der・ζ・C_d）は仮定であり §10 の置換で解消する。⑤ Lightfish の船型・ポッド型式・実ホテル負荷は非公開＝公称値の測定条件も不明という二重の不確かさ。</div>
 </details>
 
@@ -1467,7 +1464,7 @@ crit = false の滞留（<b>充電待機</b>など）は下限タッチを許容
 <p>ミッションタブに<b>航路図</b>を追加し、フェーズ計画に<b>地理</b>（母港・目的地・母船搬送）を持たせた（M1）。
 狙いは「フェーズ×海象状態」という §12 の抽象的な計画に、実際の距離・海域の厳しさという裏付けを与えること。
 その上に、公称（または任意の）シナリオの trace を航路図上で再生する<b>早回し再生</b>（M2）と、
-station 距離×海域カタログで成功率がどう崩れるかを一望する<b>厳しさの地図</b>（M3）を積んだ。</p>
+station 距離×海域カタログで成功率がどう下がるかを一覧する<b>成功率マトリクス</b>（M3）を積んだ。</p>
 <h4 style="font-size:13.5px;margin:14px 0 4px">データ源と粗さ</h4>
 <p>海岸線は <b>Natural Earth 10m land（パブリックドメイン）</b>を <code>build_geo.py</code>
 で切り出し・簡略化した 3 層（<code>japan</code> 全図 約1km・<code>kanto</code> 関東沿岸 約130m・<code>sagami</code> 相模湾拡大 約65m）を
@@ -1513,7 +1510,7 @@ station 距離×海域カタログで成功率がどう崩れるかを一望す�
 （leeway）は位置に反映されない（速力は対水速度のまま）。②避航・航路取りの意思決定は無く、表示上の大圏直線を
 なぞるだけ。③早回し再生はあくまで trace の可視化であり、シミュレーション自体の物理（§12 のドリフト・エネルギー
 収支）を変えない。</p>
-<h4 style="font-size:13.5px;margin:14px 0 4px">厳しさの地図（M3）: 距離×海域の成功率マトリクス</h4>
+<h4 style="font-size:13.5px;margin:14px 0 4px">成功率マトリクス（M3）: 距離×海域の成功率マトリクス</h4>
 <p>現在のフェーズ計画の構造を保ったまま、station（最初の行き先）だけを母港からの方位に沿って
 5/10/20/30/50/75/100/150nm へ動かし（<code>destPoint</code>・直接測地問題）、距離ごとに
 ①距離帯自動判定（<code>p.geo</code> あり）と②5 海域カタログをそれぞれ全フェーズへ強制（<code>to</code> を外して
@@ -1596,21 +1593,21 @@ slerpPoint / bearingDeg / destPoint / tracePositions</code>（usv-core・純関�
 <tr><td>メッシュ 3 倍細分での復帰エネルギー変化</td><td class="num">0.2%</td></tr>
 <tr><td>傾斜角刻み 2.5°→1° での変化</td><td class="num">0.1% 以内</td></tr>
 </table></div>
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（KG 閉形式）</span><span class="bdg rep">再計算せず解析的に平行移動</span><span class="eqno">(21)</span></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">実験式・仮定（KG 閉形式）</span><span class="bdg rep">再計算せず解析的に平行移動</span><span class="eqno">(21)</span></div>
 <math display="block"><mrow>
 <mi>G</mi><mi>Z</mi><mo>(</mo><mi>φ</mi><mo>,</mo><mi>K</mi><mi>G</mi><mo>)</mo><mo>=</mo>
 <mi>G</mi><msub><mi>Z</mi><mi>ref</mi></msub><mo>(</mo><mi>φ</mi><mo>)</mo><mo>−</mo>
 <mo>(</mo><mi>K</mi><mi>G</mi><mo>−</mo><mi>K</mi><msub><mi>G</mi><mi>ref</mi></msub><mo>)</mo><mo>·</mo><mi>sin</mi><mi>φ</mi>
 </mrow></math>
 <div class="eqnote">S1 の浮力配置（浮心・水線面）は重心高 KG に依存しないため、GZ 曲線は KG_ref で 1 本だけ計算・格納すれば、任意の KG はこの閉形式で即時に求まる（回転中心を変えても浮力分布は同じという事実の帰結）。<code>usv-hydro.gz</code> はこの方式で 1 本だけ格納する。</div></div>
-<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式（復原力の地形）</span><span class="eqno">(22)</span></div>
+<div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式（復原力）</span><span class="eqno">(22)</span></div>
 <math display="block"><mrow>
 <mi>U</mi><mo>(</mo><mi>φ</mi><mo>)</mo><mo>=</mo>
 <msubsup><mo>∫</mo><mn>0</mn><mi>φ</mi></msubsup><mi>W</mi><mo>·</mo><mi>G</mi><mi>Z</mi><mo>(</mo><msup><mi>φ</mi><mo>′</mo></msup><mo>)</mo><mspace width="0.2em"/><mi>d</mi><msup><mi>φ</mi><mo>′</mo></msup>
 <mo>,</mo><mspace width="1em"/><mi>W</mi><mo>=</mo><mi>m</mi><mi>g</mi>
 </mrow></math>
-<div class="eqnote">GZ を復原モーメントのポテンシャルとして積分した「地形」。<b>平衡は GZ=0</b>（U の極値）で、GZ が −→+ に変わる点が安定（U の谷）、+→− が不安定（U の峰）。左右非対称形状では 180° が平衡でなくなるため、必ず −180°〜+180° 全周を評価し、±180° をまたいで巡回的に閉じる。<b>AVS±</b>＝直立平衡から最初に出会う不安定平衡角、<b>転覆姿勢</b>＝直立から 20° 超で最も深い（U が最小の）安定平衡（存在しなければ「なし」＝自己復原）、<b>E_転覆／E_復帰</b>＝それぞれの安定平衡から左右いずれか近い方の不安定平衡（峰）までの U の差（要る仕事）。GM は静水力学の恒等式 <math><mrow><mi>G</mi><mi>M</mi><mo>=</mo><mi>K</mi><mi>B</mi><mo>+</mo><mi>B</mi><mi>M</mi><mo>−</mo><mi>K</mi><mi>G</mi></mrow></math> で得る（I_T/∇+KB−KG。GZ 曲線の傾きから読むと wall-sided の 2 次項が混ざるため分けている）。</div></div>
-<p class="std">実装: <code>gz.py</code>（<code>upright / gz_curve / landscape / metrics</code>）。船体タブ §H2 の GZ 地形はこの定義を JS へ移植したもの（数値検証は §13.4 参照）。</p>
+<div class="eqnote">GZ を復原モーメントのポテンシャルとして積分した曲線。<b>平衡は GZ=0</b>（U の極値）で、GZ が −→+ に変わる点が安定（U の谷）、+→− が不安定（U の峰）。左右非対称形状では 180° が平衡でなくなるため、必ず −180°〜+180° 全周を評価し、±180° をまたいで巡回的に閉じる。<b>AVS±</b>＝直立平衡から最初に出会う不安定平衡角、<b>転覆姿勢</b>＝直立から 20° 超で最も深い（U が最小の）安定平衡（存在しなければ「なし」＝自己復原）、<b>E_転覆／E_復帰</b>＝それぞれの安定平衡から左右いずれか近い方の不安定平衡（峰）までの U の差（要る仕事）。GM は静水力学の恒等式 <math><mrow><mi>G</mi><mi>M</mi><mo>=</mo><mi>K</mi><mi>B</mi><mo>+</mo><mi>B</mi><mi>M</mi><mo>−</mo><mi>K</mi><mi>G</mi></mrow></math> で得る（I_T/∇+KB−KG。GZ 曲線の傾きから読むと wall-sided の 2 次項が混ざるため分けている）。</div></div>
+<p class="std">実装: <code>gz.py</code>（<code>upright / gz_curve / landscape / metrics</code>）。船体タブ §H2 の GZ 曲線はこの定義を JS へ移植したもの（数値検証は §13.4 参照）。</p>
 </details>
 
 <!-- ═══════════ §13.4 ═══════════ -->
@@ -1641,7 +1638,7 @@ slerpPoint / bearingDeg / destPoint / tracePositions</code>（usv-core・純関�
 <tr><td>0.30</td><td class="num">0.167</td><td class="num">0.056</td><td class="num">55.6</td><td class="num">54</td><td class="num">442</td></tr>
 </table></div>
 <div class="find"><span class="fl">FINDING 3</span><br>
-<b>KG を 0.10→0.20 m（船体深さ D=0.301 m の 33%→66%）にすると転覆に要る仕事が 346→158 J（−54%）、復帰に要る仕事が 111→235 J（+111%）。</b>他のどの形状変数よりも桁違いに効く。KG ≈ 0.175 m（0.58 D）が分水嶺で、ここで E_転覆 ≈ E_復帰 になり、これより重心が高いと「転覆する方が復帰するより easy」な船になる。AVS は KG にほぼ線形（0.05 m 上がるごとに約 −8°）。<b>KG は現状ただの仮定値</b>で、重量配分の実測（各コンポーネントの質量と搭載位置）が S1 の精度を決める最大の未知数——形状の議論より先に潰すべき（§13.9）。</div>
+<b>KG を 0.10→0.20 m（船体深さ D=0.301 m の 33%→66%）にすると転覆に要る仕事が 346→158 J（−54%）、復帰に要る仕事が 111→235 J（+111%）。</b>他のどの形状変数よりも桁違いに効く。KG ≈ 0.175 m（0.58 D）が境目で、ここで E_転覆 ≈ E_復帰 になり、これより重心が高いと「転覆する方が復帰するより easy」な船になる。AVS は KG にほぼ線形（0.05 m 上がるごとに約 −8°）。<b>KG は現状ただの仮定値</b>で、重量配分の実測（各コンポーネントの質量と搭載位置）が S1 の精度を決める最大の未知数——形状の議論より先に潰すべき（§13.9）。</div>
 
 <h3>13.4.3 上部構造 — 密閉キャノピーと左右非対称（KG=0.15 m 固定）</h3>
 <div class="tbl"><table>
@@ -1659,7 +1656,7 @@ slerpPoint / bearingDeg / destPoint / tracePositions</code>（usv-core・純関�
 <b>効くのは「甲板上に密閉容積があること」であって、左右非対称ではない。</b>対称キャノピーだけで復帰仕事が 163→45 J（−72%）、しかも転覆させる仕事も 242→271 J に増える（両方向に改善）。非対称は「転覆姿勢を 180° から外す」ことが本体の効果——完全対称形状では 180° がきれいな安定平衡になって居座るが、非対称だと −170°〜−157° の傾いた姿勢になり、そこからの障壁が下がる。ただし最適点は小さい方（yOff 0.15 で 33 J が最小）で、0.45 を超えると単調に悪化する（75 J＝対称より悪い）。代償は左右非対称な脆さ（yOff 0.30 で AVS+ 122.6° に対し AVS− −108.5°）。直立時の水線には影響しない（全ケースで定常ヒール 0.0°・GM 0.317 m で変わらない＝静水力学的には操舵性のペナルティはない。懸念すべきは空気力と波中での動的影響）。→ <b>設計の優先順位: ①KG を下げる ≫ ②甲板上を密閉容積にする ≫ ③控えめな左右非対称</b>（非対称は「やるなら小さく」）。</div>
 
 <h3>13.4.4 副産物 — ロール固有周期の初期見積り</h3>
-<p>GM = 0.317 m（KG=0.15）、ロール慣動半径を k ≈ 0.35〜0.40 B = 0.32〜0.36 m と仮定し、付加慣性 +20〜30% を見込むと <b>T_roll ≈ 1.2〜1.4 s</b>。想定波周期 5〜11 s に対して桁で短い——ロール共振域に入らない代わりに、波面の傾斜をそのままなぞる挙動になる（GM/B = 0.35 は船舶として極端に大きい＝極端に硬い筏）。良い面: 転覆に至るロール共振は起きにくい。悪い面: ロール角 ≒ 波面傾斜なので荒天では姿勢が常に大きく振れ、加速度は高周波成分で決まりペイロードに効く。→ この見積りは §13.6（S3・BEM）で実測値に置き換える。</p>
+<p>GM = 0.317 m（KG=0.15）、ロール慣動半径を k ≈ 0.35〜0.40 B = 0.32〜0.36 m と仮定し、付加慣性 +20〜30% を見込むと <b>T_roll ≈ 1.2〜1.4 s</b>。想定波周期 5〜11 s に対して桁で短い——ロール共振域に入らない代わりに、波面の傾斜にそのまま追従する挙動になる（GM/B = 0.35 は船舶として極端に大きい＝復原力が非常に強い）。良い面: 転覆に至るロール共振は起きにくい。悪い面: ロール角 ≒ 波面傾斜なので荒天では姿勢が常に大きく振れ、加速度は高周波成分で決まりペイロードに効く。→ この見積りは §13.6（S3・BEM）で実測値に置き換える。</p>
 </details>
 
 <!-- ═══════════ §13.5 ═══════════ -->
@@ -1725,7 +1722,7 @@ slerpPoint / bearingDeg / destPoint / tracePositions</code>（usv-core・純関�
 <tr><td>ピッチ T_n</td><td class="num">—</td><td class="num">0.98 s</td></tr>
 <tr><td>ロール T_n</td><td class="num">S1 の推定 1.2〜1.4 s</td><td class="num"><b>1.40 s</b></td></tr>
 </table></div>
-<p>付加質量が仮定の約 2 倍なので、<b>0-D は固有周波数を約 40% 高く見積もっていた</b>。うねり域（T 5〜11 s）では両者とも RAO≈1 で差は出ないが、風浪域（T 2〜3 s）と加速度判定（m0a は ω_e⁴ で重み付くので共振の位置に敏感）に効く——影響の定量化は §13.8（S4-5）。ロール固有周期 1.40 s は S1 の GM ベース推定（1.2〜1.4 s）の上端に一致し、「波面追従する硬い筏」の結論は変わらない。</p>
+<p>付加質量が仮定の約 2 倍なので、<b>0-D は固有周波数を約 40% 高く見積もっていた</b>。うねり域（T 5〜11 s）では両者とも RAO≈1 で差は出ないが、風浪域（T 2〜3 s）と加速度判定（m0a は ω_e⁴ で重み付くので共振の位置に敏感）に効く——影響の定量化は §13.8（S4-5）。ロール固有周期 1.40 s は S1 の GM ベース推定（1.2〜1.4 s）の上端に一致し、「波面にそのまま追従する」という結論は変わらない。</p>
 <p class="std">実装: <code>bem.py</code>。船体タブ §H3 の A33/B33・A55/B55 図、RAO 比較図、等価定数表・固有周期表はこの結果（<code>usv-hydro.bem</code>）を毎回読み直して描画する。</p>
 </details>
 
@@ -1742,7 +1739,7 @@ slerpPoint / bearingDeg / destPoint / tracePositions</code>（usv-core・純関�
 <p><code>USV.hydro</code> はこの JSON のパース結果（無ければ null）。DOM 依存を避けるため、core 冒頭で
 <code>typeof document !== 'undefined' ? JSON.parse(document.getElementById('usv-hydro')?.textContent ?? 'null') : (globalThis.USV_HYDRO ?? null)</code>
 という分岐で読む（Node の受入スクリプトは <code>globalThis.USV_HYDRO</code> を注入して代替する）。</p>
-<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">閉じ込め式（スイッチ）</span><span class="bdg rep">既定は analytic のまま＝V1〜V8 の数値は不変</span><span class="eqno">(24)</span></div>
+<div class="eqbox clo"><div class="eqhead"><span class="bdg clo">実験式・仮定（スイッチ）</span><span class="bdg rep">既定は analytic のまま＝V1〜V8 の数値は不変</span><span class="eqno">(24)</span></div>
 <p style="margin:6px 0 0;font-size:14px"><code>sea.mode</code>: <code>'analytic'</code>（既定・2 次系近似）／<code>'bem'</code>（表補間。<code>hydroMatch(hull).ok</code> のときだけ有効、それ以外は自動的に解析式へ退避し UI が理由を表示する）。</p></div>
 <h3>hydroMatch と Froude 相似則</h3>
 <p><code>hydroMatch(h)</code> は現在の船体寸法と係数表の船体を比較し <code>{ok, scale, reason}</code> を返す: 寸法比（L・B・m^(1/3)）が全て 1（±1e-6）＝<b>形状一致</b>、全て等しい比 s（±1%）＝<b>相似</b>（Froude 則で換算）、それ以外＝<b>不一致</b>（解析式へ退避）。相似スケール s の換算は質量∝s³・時間∝√s の Froude 則から:</p>
@@ -1909,7 +1906,7 @@ slerpPoint / bearingDeg / destPoint / tracePositions</code>（usv-core・純関�
 <tr><td>E_転覆（直立→最寄り不安定平衡）</td><td class="num">242 J</td><td class="num">249 J</td><td>同様にわずかに拡大</td></tr>
 <tr><td>E_復帰（転覆姿勢→最寄り不安定平衡）</td><td class="num">163 J</td><td class="num">159 J</td><td>わずかに縮小</td></tr>
 </table></div>
-<p style="font-size:12.5px;color:var(--muted)">測定: <code>lib/core.mjs</code> の <code>loadCore()</code> で正本の usv-core を Node に読み込み、<code>hull.massFrom</code> を 'manual'/'table' で切り替えて比較（<code>hull.geom='hydro'</code>・<code>sea.mode='bem'</code>・乱数なし・決定論）。table 列の「点質量のみ」括弧内は重量表の r44/r55 をすべて 0 にした場合（＝S6 追加前と同じ扱い）。固有周期はロール・ピッチとも <code>rollNaturalFreq</code> 相当の不動点反復（ピッチは <code>hydroCoeffs().{A55,C55}</code>・重心まわり慣性 <code>I55=m·k55²</code> を用いた非連成近似・heave-pitch連成 C35 は無視）。GZ 地形（AVS±・E_転覆・E_復帰）は §13.3 の <code>landscape()/metrics()</code> の JS 移植を base 形状の格納済み GZ 曲線に対し閉形式 <code>GZ(φ,KG)=GZ_ref(φ)−(KG−KG_ref)·sinφ</code> で KG だけ振って評価した。5 海域ミッション成功率（<code>simulateMission</code>・<code>seaClimateCatalogs()</code>）は manual/table・自己慣性の有無を問わず<b>完全一致</b>——耐航性の成立判定（<code>seakeeping().ok</code>）が加速度・ピッチのみで決まり、ロールは判定に使わない設計（§8）のため、質量特性の変更はロールの数値自体（RMS・ζ44・固有周期）にのみ表れ、ミッション成立性には伝播しない。</p>
+<p style="font-size:12.5px;color:var(--muted)">測定: <code>lib/core.mjs</code> の <code>loadCore()</code> で正本の usv-core を Node に読み込み、<code>hull.massFrom</code> を 'manual'/'table' で切り替えて比較（<code>hull.geom='hydro'</code>・<code>sea.mode='bem'</code>・乱数なし・決定論）。table 列の「点質量のみ」括弧内は重量表の r44/r55 をすべて 0 にした場合（＝S6 追加前と同じ扱い）。固有周期はロール・ピッチとも <code>rollNaturalFreq</code> 相当の不動点反復（ピッチは <code>hydroCoeffs().{A55,C55}</code>・重心まわり慣性 <code>I55=m·k55²</code> を用いた非連成近似・heave-pitch連成 C35 は無視）。GZ 曲線（AVS±・E_転覆・E_復帰）は §13.3 の <code>landscape()/metrics()</code> の JS 移植を base 形状の格納済み GZ 曲線に対し閉形式 <code>GZ(φ,KG)=GZ_ref(φ)−(KG−KG_ref)·sinφ</code> で KG だけ振って評価した。5 海域ミッション成功率（<code>simulateMission</code>・<code>seaClimateCatalogs()</code>）は manual/table・自己慣性の有無を問わず<b>完全一致</b>——耐航性の成立判定（<code>seakeeping().ok</code>）が加速度・ピッチのみで決まり、ロールは判定に使わない設計（§8）のため、質量特性の変更はロールの数値自体（RMS・ζ44・固有周期）にのみ表れ、ミッション成立性には伝播しない。</p>
 <h3>部品ごとの自己慣性 r44/r55（一様分布近似・S6）</h3>
 <div class="tbl" style="overflow-x:auto"><table>
 <tr><th>部品</th><th class="num">r44 [m]</th><th class="num">r55 [m]</th><th>近似（basisR）</th></tr>
@@ -1952,7 +1949,7 @@ slerpPoint / bearingDeg / destPoint / tracePositions</code>（usv-core・純関�
 
 <!-- ═══════════ §13.13 ═══════════ -->
 <details class="sub" open><summary>13.13 S2 — 転覆・復帰の砕波高換算</summary>
-<p>§13.3〜§13.4 の GZ 地形が出すのはエネルギー障壁 E_転覆／E_復帰 [J] という<b>仕事</b>で、それ単体では「どんな海況で起きるか」の直感が湧かない。ここではこの障壁を、砕波（ローラー）が艇に渡すエネルギーとして<b>目安の波高</b> H_b に換算し、さらに JONSWAP 海象での発生頻度・期待時間まで一段落とし込む。<b>換算に使う伝達効率・砕波判定・風の影響はいずれも△（推定）で、結果は 1 桁の不確かさを持つ「目安」</b>——設計判断の根拠には使えるが、定量的な安全率の根拠にはできない。</p>
+<p>§13.3〜§13.4 の GZ 曲線が出すのはエネルギー障壁 E_転覆／E_復帰 [J] という<b>仕事</b>で、それ単体では「どんな海況で起きるか」の直感が湧かない。ここではこの障壁を、砕波（ローラー）が艇に渡すエネルギーとして<b>目安の波高</b> H_b に換算し、さらに JONSWAP 海象での発生頻度・期待時間まで一段落とし込む。<b>換算に使う伝達効率・砕波判定・風の影響はいずれも△（推定）で、結果は 1 桁の不確かさを持つ「目安」</b>——設計判断の根拠には使えるが、定量的な安全率の根拠にはできない。</p>
 
 <h3>13.13.1 準静的な議論が成り立つ理由</h3>
 <p>波の最大傾斜角は、波高 H・波長 λ の正弦波近似で <math><mrow><msub><mi>θ</mi><mi>max</mi></msub><mo>≈</mo><mi>arctan</mi><mo>(</mo><mi>π</mi><mi>H</mi><mo>/</mo><mi>λ</mi><mo>)</mo></mrow></math>。砕波限界に近い H/λ≈0.14（Stokes 限界 1/7≈0.143 の近傍）で θ_max≈arctan(π·0.14)≈<b>25°</b>。一方 AVS は §13.4.2 の通り ±100°前後、ロール固有周期は §13.4.4 で T_roll≈1.2〜1.4 s ≪ 想定波周期 5〜11 s。<b>波面の傾き（≤25°）だけでは AVS には遠く届かず、うねりの緩やかな昇降に艇が準静的に追従するだけでは転覆も復帰も起きない</b>——起こり得るとすれば、波面形状ではなく砕波（ローラー）が運動量とエネルギーを直接叩き込む瞬間的な事象としてのみ。これが本節でエネルギー収支（傾斜の準静的な釣り合いではなく）を主役に置く理由であり、S2 全体の前提。</p>
@@ -1965,7 +1962,7 @@ slerpPoint / bearingDeg / destPoint / tracePositions</code>（usv-core・純関�
 </mrow></math></div>
 <p>すなわち α=0.5×0.1×1.6=<b>0.08</b>（△・両係数とも文献の代表値で船体固有ではない）。艇の全長 L にわたってこのローラーが作用し、伝達効率 η（△・0.05〜0.30。砕波の一部だけが艇の回転運動に渡る割合）で仕事 E を渡すと仮定すると、E=α·ρ·g·L·η·H_b³ という釣り合いが成り立ち、これを H_b について解いたものが換算式:</p>
 <div class="eq"><math display="block"><mrow><msub><mi>H</mi><mi>b</mi></msub><mo>=</mo><msup><mrow><mo>(</mo><mfrac><mi>E</mi><mrow><mi>α</mi><mi>ρ</mi><mi>g</mi><mi>L</mi><mi>η</mi></mrow></mfrac><mo>)</mo></mrow><mrow><mn>1</mn><mo>/</mo><mn>3</mn></mrow></msup></mrow></math></div>
-<p>E に E_転覆 を入れれば「転覆させるのに必要な砕波高」H_b,転覆、E_復帰 を入れれば「復帰させるのに必要な砕波高」H_b,復帰。<b>風の影響は転覆側の障壁だけに効かせる</b>——風の定常横傾斜モーメント <math><mrow><msub><mi>M</mi><mi>w</mi></msub><mo>(</mo><mi>φ</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msub><mi>ρ</mi><mi>a</mi></msub><msup><mi>U</mi><mn>2</mn></msup><msub><mi>A</mi><mrow><mi>lat</mi></mrow></msub><msub><mi>z</mi><mi>a</mi></msub><mi>cos</mi><mi>φ</mi></mrow></math>（ρ_a=1.225・A_lat=0.60 m²△・z_a=0.25 m△、いずれも艇の投影面積・作用高さの概算）による実効復原てこ GZ_eff(φ)=GZ(φ)−M_w(φ)/(mg) で GZ 地形を評価し直し、直立→AVS 側の障壁 E_転覆 だけを風込みで求める（<code>USV.gzLandscape(...,{windArm})</code>）。転覆した艇を風下に押し戻す力は復帰の障壁を実質的に変えないため、E_復帰 は常に無風の GZ で評価する。</p>
+<p>E に E_転覆 を入れれば「転覆させるのに必要な砕波高」H_b,転覆、E_復帰 を入れれば「復帰させるのに必要な砕波高」H_b,復帰。<b>風の影響は転覆側の障壁だけに効かせる</b>——風の定常横傾斜モーメント <math><mrow><msub><mi>M</mi><mi>w</mi></msub><mo>(</mo><mi>φ</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msub><mi>ρ</mi><mi>a</mi></msub><msup><mi>U</mi><mn>2</mn></msup><msub><mi>A</mi><mrow><mi>lat</mi></mrow></msub><msub><mi>z</mi><mi>a</mi></msub><mi>cos</mi><mi>φ</mi></mrow></math>（ρ_a=1.225・A_lat=0.60 m²△・z_a=0.25 m△、いずれも艇の投影面積・作用高さの概算）による実効復原てこ GZ_eff(φ)=GZ(φ)−M_w(φ)/(mg) で GZ 曲線を評価し直し、直立→AVS 側の障壁 E_転覆 だけを風込みで求める（<code>USV.gzLandscape(...,{windArm})</code>）。転覆した艇を風下に押し戻す力は復帰の障壁を実質的に変えないため、E_復帰 は常に無風の GZ で評価する。</p>
 
 <h3>13.13.3 発生頻度・期待時間 — Rayleigh × 波形勾配の砕波判定</h3>
 <p>個々の波が実際に砕けるのは、換算した H_b があっても波形が急峻（H/λ が大きい）でなければ砕波は起きないため、周期 T_p の波の砕波しきい値を波形勾配 s_break（△・既定 0.10）で <math><mrow><msub><mi>λ</mi><mi>p</mi></msub><mo>=</mo><mi>g</mi><msubsup><mi>T</mi><mi>p</mi><mn>2</mn></msubsup><mo>/</mo><mo>(</mo><mn>2</mn><mi>π</mi><mo>)</mo></mrow></math>・砕波下限 = s_break·λ_p として置く。実際に効く閾値は両者の大きい方 H*=max(H_b, s_break·λ_p)——エネルギーは足りていても波形が緩ければ砕けない、という向きの制約。個々の波高は Rayleigh 分布に従うとして超過確率 P(H&gt;H*)=exp(−2(H*/Hs)²)（Hs で正規化した恒等式 P(H&gt;Hs)=e^-2 は V13②で検証）。波数/時 = 3600/T_z（T_z=0.78 T_p・JONSWAP γ=3.3 の標準関係）、発生率 = P×波数/時、期待時間 = 1/発生率。</p>
@@ -2008,7 +2005,7 @@ E_転覆・E_復帰 のどちらよりも 1 桁大きいため、<b>同じ砕波
 本文の Hs=0.4 m・Tp=2 s の例（base 0.44 h → 密閉キャノピー 0.057 h）がそれに当たる。
 逆に言えば、<b>完全な自己復原（AVS=180°・E_復帰=0）だけが波に頼らず重力で起き上がる</b>。密閉キャノピーで E_復帰 を 30〜45 J まで
 下げるのはその手前の状態であり、「波を待つ復帰」から「波を要さない復帰」へ移るには AVS を 180° に届かせる設計（上部構造の浮力を
-さらに増す、または非対称で転覆平衡を消す）が要る。これは S1 の GZ 地形で直接判定でき、S2 の換算を待たない。</p>
+さらに増す、または非対称で転覆平衡を消す）が要る。これは S1 の GZ 曲線で直接判定でき、S2 の換算を待たない。</p>
 
 </details>
 
@@ -2025,7 +2022,7 @@ E_転覆・E_復帰 のどちらよりも 1 桁大きいため、<b>同じ砕波
   --Lwl &lt;L&gt; --B &lt;B&gt; --m &lt;m&gt; --Cb &lt;Cb&gt; --target index.html</pre><code>--mesh</code> は実装済み: 指定した STL を頂点クラスタリングで間引いて（既定セル幅=L/60・上限は約2500三角形になるまで自動で粗くする。<code>--decimate</code> でセル幅を明示指定できる）、3D 表示・水線描画用に <code>usv-hydro.mesh</code> へ <code>source:'stl'</code>・1パーツ <code>'hull'</code> として埋め込む（<code>hullMeshEmbedded</code>・§13.2 が読む）。水理側（draft・I4・A_lat・z_a）も同じ STL を gz.py が直接測る（<code>_accum_I4</code>／<code>_accum_lateral</code>・STL の三角形にしか依存しない）ので「見た目」と「計算」が別物にならない。キール形状だけは STL の三角形からは自動判別できない（どれがキールかを区別する規約が無い）ため、既知なら <code>--keel-area</code>／<code>--keel-zc</code>（片面積[m²]・重心深さ[m]）で <code>usv-hydro.keel</code> を明示する——どちらも指定しなければキール項は 0（寄与なし）として扱われ、船体タブにその旨が出る。</li>
 <li><b>0-D モデル側の入力を一致させる</b>——モデルタブの L・B・m（Cb はこれらから自動計算）を、上で使った外部船体の値に一致させる。<code>hydroMatch(hull)</code> がこの一致（または相似）を検出して初めて <code>hull.geom='hydro'</code>／<code>sea.mode='bem'</code> が有効になる（§13.7）。一致しなければ自動的に解析式へ退避し、船体タブ「係数表の状態と再生成」にその旨が表示される。</li>
 </ol>
-<div class="eqnote"><b>既知の限界（B ルートに固有）</b>——①<code>hullGeom()</code> 由来の閉じ込め式（風圧面積 <code>Afront</code>・付加物形状係数 <code>kApp</code> 等・§5.2/§5.4）は外部船体でも主要目からの推定のままで、STL 形状には連動しない。②表示メッシュは頂点クラスタリングによる間引きのみ（法線・トポロジーの再計算はしない）——元 STL が既に水密でない場合、間引き後の見た目に穴が出ることがある（表示専用なので水理計算には影響しない）。③STL からの自動判別が原理的にできないのはキール形状だけ（上記 <code>--keel-area</code>／<code>--keel-zc</code> で回避）——I4（<code>bottomI4</code>・§8.3）は<b>2026-09-12 以前はここに③として「未提供」と書いていたが誤り</b>で、実際には gz.py の <code>upright()</code> が没水面上で <math><mrow><mo>∫</mo><mo>|</mo><msub><mi>n</mi><mi>z</mi></msub><mo>|</mo><mo>|</mo><mi>y</mi><msup><mo>|</mo><mn>3</mn></msup><mi>d</mi><mi>A</mi></mrow></math> を直接積分しており（<code>hullGeom()</code> の <code>plan(x)</code> には一切依存しない）、外部 STL でも <code>hydro.hydrostatics.I4_m4</code> として最初から測れている——<code>bottomI4()</code> はこれを常に優先する（§8.3）。<code>hullGeom()</code> 由来の閉形式 <code>bottomI4Analytic</code> は hullGeom 出所の船体専用のフォールバック／V14②の照合基準であり、外部 STL 経路では最初から関与しない。</div>
+<div class="eqnote"><b>既知の限界（B ルートに固有）</b>——①<code>hullGeom()</code> 由来の実験式・仮定（風圧面積 <code>Afront</code>・付加物形状係数 <code>kApp</code> 等・§5.2/§5.4）は外部船体でも主要目からの推定のままで、STL 形状には連動しない。②表示メッシュは頂点クラスタリングによる間引きのみ（法線・トポロジーの再計算はしない）——元 STL が既に水密でない場合、間引き後の見た目に穴が出ることがある（表示専用なので水理計算には影響しない）。③STL からの自動判別が原理的にできないのはキール形状だけ（上記 <code>--keel-area</code>／<code>--keel-zc</code> で回避）——I4（<code>bottomI4</code>・§8.3）は<b>2026-09-12 以前はここに③として「未提供」と書いていたが誤り</b>で、実際には gz.py の <code>upright()</code> が没水面上で <math><mrow><mo>∫</mo><mo>|</mo><msub><mi>n</mi><mi>z</mi></msub><mo>|</mo><mo>|</mo><mi>y</mi><msup><mo>|</mo><mn>3</mn></msup><mi>d</mi><mi>A</mi></mrow></math> を直接積分しており（<code>hullGeom()</code> の <code>plan(x)</code> には一切依存しない）、外部 STL でも <code>hydro.hydrostatics.I4_m4</code> として最初から測れている——<code>bottomI4()</code> はこれを常に優先する（§8.3）。<code>hullGeom()</code> 由来の閉形式 <code>bottomI4Analytic</code> は hullGeom 出所の船体専用のフォールバック／V14②の照合基準であり、外部 STL 経路では最初から関与しない。</div>
 <p class="std">関連: §3（本図の「外部 STL」入口）・<code>README.md</code>（CLI のフルリファレンス）。</p>
 </details>
 
@@ -2083,7 +2080,7 @@ const USV = (function(){
               CrBase:0.00284, FnRef:0.30,                       // 較正済 (V1)
               geom:'analytic',                                  // 'analytic'(既定・C_b+Denny-Mumford) | 'hydro'(3D実測 d・S・S4-6。hydroMatch(h).ok必須、不一致時は自動的にanalyticへ退避)
               CrBaseHydro:0.00264474030671497, kApp:1.10,        // 較正済 (V1, geom=hydro) 2026-09-09
-              // 痩せ型比 M=L/∇^(1/3) による剰余抵抗の補正（閉じ込め式・設計書 §5.2）
+              // 痩せ型比 M=L/∇^(1/3) による剰余抵抗の補正（実験式・仮定・設計書 §5.2）
               // MRef は較正時（m=159kg）の値で固定。ここで f_M=1 となり V1 較正が保存される（geom共通・vol はgeomに依存しないため）
               MRef: 3.2/Math.cbrt(159/1025), crSlenderExp: 4,
               CdAir:0.8, Afront:0.35, LBWLfrac:0.3, addedMassFrac:0.05,
@@ -2882,7 +2879,7 @@ const USV = (function(){
     const y = Math.sin(dlon) * Math.cos(la2), x = Math.cos(la1) * Math.sin(la2) - Math.sin(la1) * Math.cos(la2) * Math.cos(dlon);
     return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
   }
-  // 直接測地問題: 点 a から方位角 bearingDeg へ距離 nm 進んだ点（M3「厳しさの地図」の station 移動に使う）
+  // 直接測地問題: 点 a から方位角 bearingDeg へ距離 nm 進んだ点（M3 成功率マトリクスの station 移動に使う）
   function destPoint(a, bearingDeg_, nm){
     const R = 3440.065, d = nm / R, brng = bearingDeg_ * Math.PI / 180;
     const la1 = a.lat * Math.PI / 180, lo1 = a.lon * Math.PI / 180;
@@ -3581,7 +3578,7 @@ const USV = (function(){
     return { mode:'polyline', pts };
   }
 
-  // ── GZ 地形（gz.py の landscape()/metrics() の JS 移植・数値検証済み。船体タブ §H2 と共通の唯一実装） ──
+  // ── GZ 曲線（gz.py の landscape()/metrics() の JS 移植・数値検証済み。船体タブ §H2 と共通の唯一実装） ──
   //   opts.windArm: 風の横傾斜てこ φ→arm[m] 関数（windHeelArm() で作る）。渡すと E_capsize_J（直立→AVS 側の障壁）
   //   のみ GZ_eff(φ)=GZ(φ)−windArm(φ) で評価し直す（転覆側だけに効かせる・復帰側 E_recover_J は常に無風の GZ で評価＝設計書§13.13）。
   //   eq[] の各要素は {angle, stable, U}（U は直立平衡を 0 に取った復原モーメントのポテンシャル [J]）。
@@ -3708,7 +3705,7 @@ const USV = (function(){
     const t_expect = rate<1e-9 ? Infinity : 1/rate;
     return { Hstar:Hcrit, lambda_p, breakLimit, rate_per_h:rate, t_expect_h:t_expect, limitedByBreaking: breakLimit>Hstar };
   }
-  // ── S2 便宜関数: 形状バリアント・KG から風込みの GZ 地形→砕波高換算→現在海象での事象率までを一括評価 ──
+  // ── S2 便宜関数: 形状バリアント・KG から風込みの GZ 曲線→砕波高換算→現在海象での事象率までを一括評価 ──
   function capsizeRecoveryAssessment(p, variantKey, kg){
     if (!hydro || !hydro.gz) return null;
     const variants = hydro.gz.variants;
@@ -4876,7 +4873,7 @@ if (typeof module !== 'undefined') module.exports = USV;
 </script>
 <script>
 /* ============================================================
-   船体タブ — 形状実測・復原力（GZ地形の JS 移植）・耐航性能係数の可視化
+   船体タブ — 形状実測・復原力（GZ 曲線の JS 移植）・耐航性能係数の可視化
    S4-3。usv-core / usv-hydro には一切触れず、USV.* を呼ぶだけ。
    ============================================================ */
 'use strict';
@@ -4941,7 +4938,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     return null;
   }
 
-  // ── GZ 地形（S2 移植・設計書§13.13）: 唯一実装は usv-core の USV.gzLandscape。ここでは呼ぶだけ ──
+  // ── GZ 曲線（S2 移植・設計書§13.13）: 唯一実装は usv-core の USV.gzLandscape。ここでは呼ぶだけ ──
 
   // ── ① 形状と実測値: hullGeom からのシルエット ──
   // 埋め込みメッシュ（usv-hydro.mesh）の 'hull' パーツ頂点を x で N+1 帯へビン分けし、
@@ -5120,7 +5117,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     triggerRecalc(P2);
   });
 
-  // ── ② 復原力: GZ 曲線 + 地形メトリクス ──
+  // ── ② 復原力: GZ 曲線 + 復原性指標 ──
   function renderGZSection(P){
     const hydro = USV.hydro;
     const sel=$('gz-variant'), slider=$('gz-kg-slider');
@@ -5181,7 +5178,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     renderGZWaveSection(P, variant, KG);
   }
 
-  // ── ②b S2: 転覆・復帰の砕波高換算（設計書§13.13）── GZ 地形と同じ変位計算路（variant/KG/env）を再利用 ──
+  // ── ②b S2: 転覆・復帰の砕波高換算（設計書§13.13）── GZ 曲線と同じ変位計算路（variant/KG/env）を再利用 ──
   const fmtH = t => (!isFinite(t)) ? '∞' : (t>1000 ? '&gt;1000' : fmt(t, t<1?2:(t<10?1:0)));
   function renderGZWaveSection(P, variant, KG){
     const tblEta=$('gz-s2-etatable'), lineEnv=$('gz-s2-envline'), rot=$('gz-s2-rot'),
