@@ -204,6 +204,8 @@
   #tab-doc{--gov:#1F6C9F;--clo:#956400;--good:#346538;--bad:#9F2F2D;--s4:#B87F00;
     font-size:15px;line-height:1.9;}
   #tab-doc .doc-wrap{max-width:740px;margin:0 auto;padding:0 22px 96px;}
+  /* doc-dock: 設計書タブ・幅1040px以上で目次を常設し、本文をその右に寄せる（280 = drawer 260 + gap 20） */
+  body.toc-docked #tab-doc .doc-wrap{margin-left:calc(50% - 520px + 280px);margin-right:auto;}
   #tab-doc .doc-head{padding:34px 0 22px;border-bottom:2px solid var(--rule);}
   #tab-doc .eyebrow{font-size:11px;letter-spacing:.22em;color:var(--muted);
     font-family:ui-monospace,"SF Mono",Menlo,monospace;}
@@ -300,13 +302,19 @@
   #toc-backdrop{display:none;position:fixed;inset:0;background:rgba(17,17,17,.28);z-index:29;}
   body.toc-open #toc-backdrop{display:block;}
   body.toc-pinned #toc-backdrop{display:none;}
-  /* ドロワーの左端は本編（.wrap 1040px）の左端に揃える。画面が狭ければ 0 */
+  body.toc-docked #toc-backdrop{display:none;}
+  /* ドロワーの左端は本編（.wrap 1040px）の左端に揃える。画面が狭ければ 0
+     #tocdrawer 自体は左端に固定したまま overflow:hidden で覆い、中の .toc-inner だけを
+     スライドさせる（本編左端より外側に何も描画されないようにするため）。 */
   #tocdrawer{position:fixed;left:max(0px,calc(50% - 520px));top:var(--toc-top,0px);width:260px;max-width:85vw;
     height:calc(100vh - var(--toc-top,0px));box-sizing:border-box;background:var(--bg);
-    border-right:1px solid var(--line);padding:16px 16px 40px;overflow-y:auto;z-index:30;
-    visibility:hidden;transform:translateX(-100%);transition:transform .18s ease,visibility 0s .18s;}
-  body.toc-open #tocdrawer{visibility:visible;transform:translateX(0);transition:transform .18s ease;}
+    border-right:1px solid var(--line);overflow:hidden;z-index:30;
+    visibility:hidden;transition:visibility 0s .18s;}
+  body.toc-open #tocdrawer{visibility:visible;transition:none;}
   body.toc-pinned #tocdrawer{left:max(8px,calc(50% - 520px - 280px));}
+  .toc-inner{width:100%;height:100%;box-sizing:border-box;padding:16px 16px 40px;overflow-y:auto;
+    transform:translateX(-100%);transition:transform .18s ease;}
+  body.toc-open .toc-inner{transform:translateX(0);}
   .toc-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;}
   .toc-head .eyebrow{margin-bottom:0;}
   #toc-pin{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;
@@ -331,10 +339,15 @@
   #tocdrawer .toc-tools button{padding:0;border:none;background:none;color:var(--muted);
     font-size:11.5px;cursor:pointer;border-bottom:1px dotted var(--faint);border-radius:0;}
   #tocdrawer .toc-tools button:hover{color:var(--ink);border-bottom-color:var(--ink);}
+  .toc-here{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;
+    padding:0;margin-right:8px;border:none;border-radius:3px;background:none;color:var(--muted);
+    cursor:pointer;vertical-align:-1px;}
+  .toc-here:hover{color:var(--ink);}
+  .toc-here svg{width:14px;height:14px;display:block;}
   @media print{
-    #tocdrawer,#toc-backdrop,#toc-toggle{display:none!important;}
+    #tocdrawer,#toc-backdrop,#toc-toggle,.toc-here{display:none!important;}
   }
-  @media (prefers-reduced-motion:reduce){#tocdrawer{transition:none}}
+  @media (prefers-reduced-motion:reduce){#tocdrawer{transition:none} .toc-inner{transition:none}}
 </style>
 </head>
 <body>
@@ -361,6 +374,7 @@
 
 <div id="toc-backdrop"></div>
 <aside id="tocdrawer" aria-label="目次">
+  <div class="toc-inner">
   <div class="toc-head">
     <div class="eyebrow" id="toc-tabname">モデル</div>
     <button type="button" id="toc-pin" aria-pressed="false" title="留める" hidden><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="7" r="3"/><line x1="10" y1="10" x2="10" y2="17"/></svg></button>
@@ -372,6 +386,7 @@
       <button type="button" id="toc-open-all">すべて開く</button>
       <button type="button" id="toc-close-all">畳む</button>
     </div>
+  </div>
   </div>
 </aside>
 
@@ -721,7 +736,7 @@
   <div class="eyebrow">DP-20260825-01 · PHASE 1–4 実装済み · REV.5</div>
   <h1>USV 0次元モデル設計書</h1>
   <div class="std">長期外洋ミッションの<b>エネルギー成立性</b>と<b>動力性能成立性</b>を評価する点質量モデル。
-  ベースライン: Seasats Lightfish（RR-20260824-01 調査値）／ 実装: <code>tools/usv_model/interactive/index.html</code>（検証 13/13 PASS）<br>
+  ベースライン: Seasats Lightfish（RR-20260824-01 調査値）／ 実装: <code>tools/usv_model/interactive/index.html</code>（検証 14/14 PASS）<br>
   本書は<b>支配式（一般形）と閉じ込め式（実験式・仮定）を分離して記述</b>する。閉じ込め式は将来、実験・CFD 等のマップで差し替える前提の「置換対象」であり、各所にその旨と推奨手段を明記する。</div>
 </div>
 
@@ -1822,7 +1837,7 @@ E_転覆・E_復帰 のどちらよりも 1 桁大きいため、<b>同じ砕波
 
 
 <div class="foot">
-DP-20260825-01 Rev.3 ／ ベース調査: RR-20260824-01 ／ 実装: tools/usv_model/interactive/index.html（Phase 1–4・検証 13/13 PASS）<br>
+DP-20260825-01 Rev.3 ／ ベース調査: RR-20260824-01 ／ 実装: tools/usv_model/interactive/index.html（Phase 1–4・検証 14/14 PASS）<br>
 主要参照: ITTC 7.5-02-02-02（抵抗）・ITTC 7.5-04-01-01（速力試運転・風圧/波浪修正）・ISO 15016 / STAWAVE-1・JONSWAP（Hasselmann 1973）・Haurwitz 晴天 GHI・Torqeedo Cruise 3.0 FP 公称値。<br>
 数式は MathML ネイティブ描画（外部ライブラリ不使用）。グラフはすべて実装コアから計算した実データ。
 </div>
@@ -5074,19 +5089,43 @@ if (typeof module !== 'undefined') module.exports = USV;
   ensureIds('#tab-mission h2','ms-');
   ensureIds('#tab-hull h2, #tab-hull h3','h-');
 
+  /* ── 章見出し脇の「ここから目次を開く」ボタン（#toc-toggle と同じグリフ） ── */
+  var TOC_HERE_SVG='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg>';
+  function makeTocHereBtn(){
+    var b=document.createElement('button');
+    b.type='button'; b.className='toc-here'; b.title='目次'; b.setAttribute('aria-label','目次を開く');
+    b.innerHTML=TOC_HERE_SVG;
+    b.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); setOpen(true); });
+    return b;
+  }
+  function ensureTocHereButtons(){
+    document.querySelectorAll('#tab-model > .wrap > h2, #tab-mission > .wrap > h2, #tab-hull > .wrap > h2').forEach(function(h){
+      if(!h.querySelector(':scope > .toc-here')) h.insertBefore(makeTocHereBtn(),h.firstChild);
+    });
+    document.querySelectorAll('#tab-doc details.sec > summary').forEach(function(s){
+      if(!s.querySelector(':scope > .toc-here')) s.insertBefore(makeTocHereBtn(),s.firstChild);
+    });
+  }
+  ensureTocHereButtons();
+
   function activeTab(){
     var b=document.querySelector('.tabs button.on');
     return b?b.dataset.tab:'model';
   }
 
-  /* ── オーバーレイ / 留める状態管理 ──
-     留める条件: 中央コンテンツ(1040px)横の余白 ((innerWidth-1040)/2) が 280px 以上 = innerWidth >= 1600 */
+  /* ── オーバーレイ / 留める / 設計書ドック状態管理 ──
+     留める条件: 中央コンテンツ(1040px)横の余白 ((innerWidth-1040)/2) が 280px 以上 = innerWidth >= 1600
+     設計書ドック条件: 設計書タブがアクティブ かつ innerWidth >= 1040（留めるより優先・留めるボタンは隠す） */
   var open=false;
   var pinned=false;
   try{ pinned = localStorage.getItem('usv.tocPinned')==='1'; }catch(e){}
+  var docked=true;
+  try{ var dv=localStorage.getItem('usv.docDock'); docked = (dv===null) ? true : dv==='1'; }catch(e){}
 
   function marginOk(){ return window.innerWidth>=1600; }
-  function pinnedActive(){ return pinned && marginOk(); }
+  function dockEligible(){ return activeTab()==='doc' && window.innerWidth>=1040; }
+  function dockActive(){ return dockEligible() && docked; }
+  function pinnedActive(){ return pinned && marginOk() && !dockEligible(); }
 
   function updateTocTop(){
     var tabs=document.querySelector('nav.tabs');
@@ -5095,22 +5134,33 @@ if (typeof module !== 'undefined') module.exports = USV;
   }
 
   function applyState(){
-    var visible = open || pinnedActive();
+    var docking=dockActive();
+    var pinnedNow=pinnedActive();
+    var visible = open || pinnedNow || docking;
     document.body.classList.toggle('toc-open',visible);
-    document.body.classList.toggle('toc-pinned',pinnedActive());
+    document.body.classList.toggle('toc-pinned',pinnedNow);
+    document.body.classList.toggle('toc-docked',docking);
     toggleBtn.setAttribute('aria-expanded',visible?'true':'false');
     if(pinBtn){
-      pinBtn.hidden = !marginOk();
-      pinBtn.setAttribute('aria-pressed',pinnedActive()?'true':'false');
+      pinBtn.hidden = !marginOk() || dockEligible();
+      pinBtn.setAttribute('aria-pressed',pinnedNow?'true':'false');
     }
   }
 
   function setOpen(v){ open=v; updateTocTop(); applyState(); }
-  function closeDrawer(){ if(!pinnedActive()) setOpen(false); }
+  function closeDrawer(){ if(!pinnedActive() && !dockActive()) setOpen(false); }
 
   updateTocTop();
   applyState();
-  toggleBtn.addEventListener('click',function(){ setOpen(!(open||pinnedActive())); });
+  toggleBtn.addEventListener('click',function(){
+    if(dockEligible()){
+      docked=!docked;
+      try{ localStorage.setItem('usv.docDock',docked?'1':'0'); }catch(e){}
+      applyState();
+      return;
+    }
+    setOpen(!(open||pinnedActive()));
+  });
   backdrop.addEventListener('click',function(){ closeDrawer(); });
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeDrawer(); });
   if(pinBtn){
@@ -5163,6 +5213,9 @@ if (typeof module !== 'undefined') module.exports = USV;
   }
 
   function render(tabName){
+    ensureTocHereButtons();
+    updateTocTop();
+    applyState();
     tabname.textContent=TAB_NAMES[tabName]||tabName;
     var items = tabName==='doc' ? buildDocItems() : buildHeadingItems('#tab-'+tabName, tabName==='hull');
     list.textContent='';
