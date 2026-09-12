@@ -255,7 +255,7 @@
      "x": 40,
      "y": 40,
      "w": 1040,
-     "h": 560
+     "h": 644
     },
     {
      "id": "g_learning",
@@ -313,6 +313,17 @@
      "icon": "chart",
      "x": 80,
      "y": 470,
+     "w": 190,
+     "h": 74
+    },
+    {
+     "id": "reports",
+     "type": "block",
+     "label": "reports/",
+     "sublabel": "技術レポート（tech-report）→ viewer /pub/reports/",
+     "icon": "chart",
+     "x": 80,
+     "y": 590,
      "w": 190,
      "h": 74
     },
