@@ -312,29 +312,38 @@
     visibility:hidden;transition:visibility 0s .18s;}
   body.toc-open #tocdrawer{visibility:visible;transition:none;}
   body.toc-pinned #tocdrawer{left:max(8px,calc(50% - 520px - 280px));}
-  .toc-inner{width:100%;height:100%;box-sizing:border-box;padding:16px 16px 40px;overflow-y:auto;
+  /* 本文（.toc-inner）はヘッダー／リスト（可変）／フッターの縦積み。ヘッダーとフッターは
+     固定、リストだけがスクロールする（設計書 nav.toc の見た目に統一）。 */
+  .toc-inner{width:100%;height:100%;box-sizing:border-box;overflow:hidden;
+    display:flex;flex-direction:column;
     transform:translateX(-100%);transition:transform .18s ease;}
   body.toc-open .toc-inner{transform:translateX(0);}
-  .toc-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;}
-  .toc-head .eyebrow{margin-bottom:0;}
+  .toc-head{flex:none;padding:18px 16px 10px;border-bottom:1px solid var(--rule);}
+  .toc-head-row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+  .toc-kicker{font-size:11px;letter-spacing:.2em;color:var(--muted);
+    font-family:ui-monospace,"SF Mono",Menlo,monospace;}
+  .toc-title{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
+    font-weight:700;font-size:15px;color:var(--ink);margin-top:5px;}
   #toc-pin{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;
     padding:0;border:1px solid var(--line);border-radius:4px;background:none;color:var(--muted);
-    cursor:pointer;}
+    cursor:pointer;flex:none;}
   #toc-pin[hidden]{display:none;}
   #toc-pin[aria-pressed="true"]{color:var(--ink);background:var(--line);border-color:var(--ink);}
   #toc-pin svg{width:13px;height:13px;display:block;}
-  #tocdrawer ul{list-style:none;margin:0;padding:0;}
+  #toc-list{list-style:none;margin:0;padding:8px 16px 8px;flex:1;overflow-y:auto;}
   #tocdrawer li{margin:0;}
-  #tocdrawer li.sub-item a{padding-left:20px;font-size:12px;}
-  #tocdrawer a{display:block;padding:4px 0 4px 8px;margin-left:-8px;font-size:12.5px;
-    color:var(--muted);text-decoration:none;white-space:nowrap;overflow:hidden;
-    text-overflow:ellipsis;border-left:2px solid transparent;}
+  #tocdrawer li.sub-item a{padding-left:32px;font-size:12px;}
+  #tocdrawer a{display:flex;align-items:baseline;gap:0;padding:5px 0 5px 10px;margin-left:-10px;
+    font-size:12.5px;color:var(--muted);text-decoration:none;
+    border-left:2px solid transparent;}
   #tocdrawer a:hover{color:var(--ink);}
   #tocdrawer a.on{color:var(--ink);font-weight:600;border-left-color:var(--ink);}
-  #tocdrawer a .num{font-family:ui-monospace,Menlo,monospace;color:var(--faint);
-    margin-right:6px;font-size:11px;}
-  #tocdrawer .toc-doctools{margin-top:4px;}
-  #tocdrawer hr.toc-rule{border:none;border-top:1px solid var(--line);margin:10px 0;}
+  #tocdrawer a .num{flex:0 0 22px;font-family:ui-monospace,Menlo,monospace;color:var(--faint);
+    font-size:11.5px;}
+  #tocdrawer a .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .toc-foot{flex:none;padding:10px 16px 16px;border-top:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;gap:14px;
+    font-size:11.5px;color:var(--muted);}
   #tocdrawer .toc-tools{display:flex;gap:14px;}
   #tocdrawer .toc-tools button{padding:0;border:none;background:none;color:var(--muted);
     font-size:11.5px;cursor:pointer;border-bottom:1px dotted var(--faint);border-radius:0;}
@@ -376,15 +385,22 @@
 <aside id="tocdrawer" aria-label="目次">
   <div class="toc-inner">
   <div class="toc-head">
-    <div class="eyebrow" id="toc-tabname">モデル</div>
-    <button type="button" id="toc-pin" aria-pressed="false" title="留める" hidden><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="7" r="3"/><line x1="10" y1="10" x2="10" y2="17"/></svg></button>
+    <div class="toc-head-row">
+      <div>
+        <div class="toc-kicker">目次 — CONTENTS</div>
+        <div class="toc-title" id="toc-tabname">モデル</div>
+      </div>
+      <button type="button" id="toc-pin" aria-pressed="false" title="留める" hidden><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="7" r="3"/><line x1="10" y1="10" x2="10" y2="17"/></svg></button>
+    </div>
   </div>
   <ul id="toc-list"></ul>
-  <div class="toc-doctools" id="toc-doctools" hidden>
-    <hr class="toc-rule">
-    <div class="toc-tools">
-      <button type="button" id="toc-open-all">すべて開く</button>
-      <button type="button" id="toc-close-all">畳む</button>
+  <div class="toc-foot">
+    <div id="toc-foot-count"></div>
+    <div class="toc-doctools" id="toc-doctools" hidden>
+      <div class="toc-tools">
+        <button type="button" id="toc-open-all">すべて開く</button>
+        <button type="button" id="toc-close-all">畳む</button>
+      </div>
     </div>
   </div>
   </div>
@@ -5076,6 +5092,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   var toggleBtn=document.getElementById('toc-toggle');
   var backdrop=document.getElementById('toc-backdrop');
   var docTools=document.getElementById('toc-doctools');
+  var footCount=document.getElementById('toc-foot-count');
   var pinBtn=document.getElementById('toc-pin');
   if(!drawer||!list||!toggleBtn) return;
   var reduceMo=window.matchMedia('(prefers-reduced-motion:reduce)');
@@ -5132,6 +5149,14 @@ if (typeof module !== 'undefined') module.exports = USV;
     var top = tabs ? Math.max(0,Math.round(tabs.getBoundingClientRect().bottom)) : 0;
     document.documentElement.style.setProperty('--toc-top',top+'px');
   }
+  function tocVisible(){ return open || pinnedActive() || dockActive(); }
+  var tocTopRaf=null;
+  function scheduleTocTop(){
+    if(!tocVisible()) return;
+    if(tocTopRaf) return;
+    tocTopRaf=requestAnimationFrame(function(){ tocTopRaf=null; updateTocTop(); });
+  }
+  window.addEventListener('scroll',scheduleTocTop,{passive:true});
 
   function applyState(){
     var docking=dockActive();
@@ -5172,18 +5197,21 @@ if (typeof module !== 'undefined') module.exports = USV;
   }
   var wasPinnedActive=pinnedActive();
   window.addEventListener('resize',function(){
-    updateTocTop();
+    scheduleTocTop();
     var nowOk=marginOk();
     if(wasPinnedActive && !nowOk){ open=false; } // 留める余白条件を割ったらオーバーレイ(閉)へ戻す
     wasPinnedActive = pinned && nowOk;
     applyState();
-  });
+  },{passive:true});
 
   function buildHeadingItems(tabSel,includeH3){
     var sel = includeH3 ? (tabSel+' > .wrap > h2, '+tabSel+' > .wrap > h3') : (tabSel+' > .wrap > h2');
     var nodes=[].slice.call(document.querySelectorAll(sel));
+    var n=0;
     return nodes.map(function(h){
-      return {id:h.id,num:'',label:(h.textContent||'').trim(),target:h,openEls:[],indent:h.tagName==='H3'};
+      var indent=h.tagName==='H3';
+      if(!indent) n++;
+      return {id:h.id,num:indent?'':String(n),label:(h.textContent||'').trim(),target:h,openEls:[],indent:indent};
     });
   }
   function buildDocItems(){
@@ -5226,12 +5254,14 @@ if (typeof module !== 'undefined') module.exports = USV;
       var a=document.createElement('a');
       a.href='#'+it.id;
       if(it.num){ var sp=document.createElement('span'); sp.className='num'; sp.textContent=it.num; a.appendChild(sp); }
-      a.appendChild(document.createTextNode(it.label));
+      var lbl=document.createElement('span'); lbl.className='lbl'; lbl.textContent=it.label;
+      a.appendChild(lbl);
       a.addEventListener('click',function(e){ e.preventDefault(); scrollToTarget(it); });
       li.appendChild(a);
       list.appendChild(li);
       if(it.target){ targets.push(it.target); linkByTarget.push(a); }
     });
+    if(footCount) footCount.textContent = items.length+' 節';
     docTools.hidden = tabName!=='doc';
     if(io){ io.disconnect(); io=null; }
     if(targets.length && 'IntersectionObserver' in window){
