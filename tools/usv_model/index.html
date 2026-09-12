@@ -157,6 +157,47 @@
   .mbar .fl{height:100%;position:absolute;left:0;top:0;}
   .mbar .pv{width:56px;text-align:right;font-variant-numeric:tabular-nums;}
   .mwarn{color:var(--warn-ink);font-size:12px;}
+  .badge.warn{background:#FBF1DA;color:var(--warn-ink);}
+  /* ── テンプレートカード（ミッションタブ） ── */
+  .tpl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:10px 0 6px;}
+  .tpl-card{border:1px solid var(--line2);border-radius:4px;padding:12px;cursor:pointer;
+    background:var(--surface);transition:border-color .12s;}
+  .tpl-card:hover{border-color:var(--ink);}
+  .tpl-card:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
+  .tpl-card.sel{border:2px solid var(--ink);padding:11px;}
+  .tpl-title{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
+    font-size:14.5px;font-weight:700;margin-bottom:4px;line-height:1.4;}
+  .tpl-route{font-size:12px;color:var(--muted);margin-bottom:6px;line-height:1.6;}
+  .tpl-phases{font-size:13px;letter-spacing:.03em;margin-bottom:6px;}
+  .tpl-cond{font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.7;}
+  .tpl-rate{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .tpl-rate.unset{font-size:12.5px;font-weight:400;color:var(--faint);}
+  /* ── 航路図: 地図内オーバーレイ（設計書§12.6・状態/海象・航走を地図内へ統合） ── */
+  .geo-toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:8px 0 12px;
+    font-size:12.5px;color:var(--muted);}
+  .geo-toolbar label{display:flex;align-items:center;gap:6px;white-space:nowrap;}
+  .geo-toolbar input[type=number]{width:60px;}
+  .geo-zones-inline{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;}
+  .geo-wrap{position:relative;width:100%;}
+  #geo-map{width:100%;height:420px;display:block;border:1px solid var(--line);border-radius:4px;}
+  @media(min-width:960px){ #geo-map{height:640px;} }
+  .geo-ov{position:absolute;background:rgba(255,255,255,.88);
+    background:color-mix(in srgb, var(--bg) 88%, transparent);
+    border:1px solid var(--line);border-radius:3px;padding:6px 9px;font-size:11.5px;
+    line-height:1.6;max-width:47%;pointer-events:none;font-variant-numeric:tabular-nums;}
+  .geo-ov b{font-weight:700;}
+  .geo-ov-tl{top:8px;left:8px;}
+  .geo-ov-tr{top:8px;right:8px;text-align:right;}
+  .geo-ov-bl{bottom:8px;left:8px;}
+  .geo-ov-bl.fail{border-color:var(--ng-ink);}
+  .geo-ov-br{bottom:8px;right:8px;text-align:right;}
+  .geo-soc-bar{width:90px;height:8px;border-radius:4px;background:var(--line);overflow:hidden;
+    display:inline-block;vertical-align:middle;}
+  .pb-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 4px;}
+  .pb-bar input[type=range]{flex:1;min-width:120px;}
+  @media(max-width:640px){
+    .geo-ov-tr,.geo-ov-br{display:none;}
+  }
   table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums;
     border-top:1.4px solid var(--rule);border-bottom:1.4px solid var(--rule);}
   th,td{padding:5px 9px 5px 0;text-align:right;border:none;}
@@ -579,74 +620,52 @@
 生起確率で重み付けして<b>ミッション成功率</b>を求める。長い滞留フェーズは分割日数ごとの区間に自動分割し、区間ごとに独立に海象を引く。
 定式化・仮定・限界は設計書 §12。</div>
 
-<div class="presets" style="margin-top:12px">
-  <button data-mtpl="obs">テンプレ: 長期観測</button>
-  <button data-mtpl="cross">テンプレ: 海峡横断</button>
-  <button data-mtpl="patrol">テンプレ: 沿岸哨戒</button>
-  <button data-mtpl="jisoSelf">テンプレ: 伊豆諸島観測・自走</button>
-  <button data-mtpl="jisoCarry">テンプレ: 伊豆諸島観測・母船搬送</button>
-</div>
+<h2>テンプレート</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">
+カードをクリックすると計画（フェーズ・海象カタログ）を読み込む。成功率は現在のモデルタブ入力に対して計算され、
+モデル入力が変わるとキャッシュは自動的に無効化される。</div>
+<div style="margin:6px 0 10px"><button id="tpl-calc-all" type="button">全テンプレを計算</button>
+<span id="tpl-calc-stat" style="font-size:12px;color:var(--muted);margin-left:10px"></span></div>
+<div class="tpl-grid" id="tpl-grid"></div>
 
 <h2>航路図</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">
-母港・目的地・距離帯（沿岸/陸棚/外洋）はいずれも概数（Natural Earth 10m の粗い海岸線・海図の代わりにはならない）。
-フェーズに行き先を指定すると大圏距離と代表位置の距離帯を自動算出する。地図の陸地表示範囲は経路の広がりに応じて
-相模湾拡大 → 関東沿岸 → 日本近海の順に自動選択する。定式化・限界は設計書 §12.6。</div>
-<div style="display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;margin:8px 0 12px">
-  <label style="font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px">母港
-    <select id="geo-port" style="padding:4px 6px;border:1px solid var(--line2);border-radius:3px;font:inherit;font-size:12.5px"></select>
-  </label>
-  <label style="font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px">母船搬送速力
-    <span class="val"><input type="number" id="geo-carrykt" step="1" min="1" max="30" style="width:64px"> <span class="unit">kt</span></span>
-  </label>
-  <label style="font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px">帰投目標日数
-    <span class="val"><input type="number" id="geo-recover" step="5" min="1" max="365" style="width:64px"> <span class="unit">日</span></span>
-  </label>
+母港・目的地・距離帯（沿岸/陸棚/外洋）はいずれも概数（海図の代わりにはならない）。地図内の早回し再生は公称シナリオ
+（またはシナリオ一覧の「再生」で選んだシナリオ）の trace を速力の時間積分で辿る模式表示（潮流・避航は非モデル化・設計書§12.6）。</div>
+<div class="geo-toolbar">
+  <label>母港<select id="geo-port"></select></label>
+  <label>母船搬送速力<input type="number" id="geo-carrykt" step="1" min="1" max="30"><span class="unit">kt</span></label>
+  <label>帰投目標日数<input type="number" id="geo-recover" step="5" min="1" max="365"><span class="unit">日</span></label>
+  <span class="geo-zones-inline" id="geo-zones-inline"></span>
 </div>
-<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
-  <div style="flex:0 0 auto;min-width:240px;max-width:320px">
-    <div style="overflow-x:auto"><table class="mtbl" id="geo-zone-table" style="min-width:220px"></table></div>
+<div class="geo-wrap">
+  <svg id="geo-map" viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid meet"
+       role="img" aria-label="航路図（母港・目的地・距離帯・フェーズ経路・早回し再生の状態オーバーレイ）"></svg>
+  <div class="geo-ov geo-ov-tl">
+    <div id="pb-date">—</div>
+    <div id="pb-daynight">—</div>
   </div>
-  <div style="flex:1 1 380px;min-width:260px">
-    <svg id="geo-map" viewBox="0 0 640 460" role="img" aria-label="航路図（母港・目的地・距離帯・フェーズ経路）"
-         style="width:100%;max-height:460px;height:auto;display:block;border:1px solid var(--line);border-radius:4px"></svg>
-    <div id="geo-legend" style="font-size:11.5px;color:var(--muted);margin-top:6px;display:flex;flex-wrap:wrap;gap:14px"></div>
+  <div class="geo-ov geo-ov-tr">
+    <div id="pb-zone">—</div>
   </div>
+  <div class="geo-ov geo-ov-bl" id="geo-ov-bl">
+    <div><b id="pb-phase">—</b>　<span id="pb-status">—</span></div>
+    <div>速力 <span id="pb-vkt">—</span>　累積 <span id="pb-nm">—</span></div>
+    <div><span class="geo-soc-bar"><span id="pb-soc-fill" style="display:block;height:100%;width:0%;background:var(--s1)"></span></span>
+      SOC <span id="pb-soc-val">—</span></div>
+  </div>
+  <div class="geo-ov geo-ov-br" id="geo-ov-br">—</div>
 </div>
-
-<h2>早回し再生</h2>
-<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">
-公称シナリオ（またはシナリオ一覧の「再生」で選んだシナリオ）の trace を、速力の時間積分で上の航路図に再生する
-（潮流・避航はモデル化していない模式表示・設計書§12.6）。位置は決定論——同じ実行結果を再生すれば毎回同じ軌跡になる。
-</div>
-<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 12px">
-  <button id="pb-play" type="button">▶ 再生</button>
-  <button id="pb-restart" type="button">⏮ 最初から</button>
-  <label style="font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px">速度
-    <select id="pb-speed" style="padding:3px 4px;border:1px solid var(--line2);border-radius:3px;font:inherit;font-size:12.5px">
-      <option value="0.5">0.5 日/秒</option><option value="1" selected>1 日/秒</option>
-      <option value="2">2 日/秒</option><option value="5">5 日/秒</option>
-    </select>
-  </label>
-  <input type="range" id="pb-scrub" min="0" max="1" value="0" step="1" style="flex:1;min-width:140px">
+<div id="geo-legend" style="font-size:11.5px;color:var(--muted);margin-top:6px;display:flex;flex-wrap:wrap;gap:14px"></div>
+<div class="pb-bar">
+  <button id="pb-play" type="button">▶</button>
+  <button id="pb-restart" type="button">⏮</button>
+  <select id="pb-speed" style="padding:3px 4px;border:1px solid var(--line2);border-radius:3px;font:inherit;font-size:12.5px">
+    <option value="0.5">0.5 日/秒</option><option value="1" selected>1 日/秒</option>
+    <option value="2">2 日/秒</option><option value="5">5 日/秒</option>
+  </select>
+  <input type="range" id="pb-scrub" min="0" max="1" value="0" step="1">
   <span id="pb-time" style="font-size:11.5px;color:var(--muted);min-width:96px;text-align:right;font-variant-numeric:tabular-nums">—</span>
-</div>
-<div class="panels">
-  <div class="panel"><h3>状態</h3>
-    <div class="row"><label>日時</label><span class="val" id="pb-date">—</span></div>
-    <div class="row"><label>昼/夜</label><span class="val" id="pb-daynight">—</span></div>
-    <div class="row"><label>フェーズ</label><span class="val" id="pb-phase">—</span></div>
-    <div class="row"><label>ステータス</label><span class="val" id="pb-status">—</span></div>
-  </div>
-  <div class="panel"><h3>海象・航走</h3>
-    <div class="row"><label>海象帯</label><span class="val" id="pb-zone" style="text-align:right;font-size:12px">—</span></div>
-    <div class="row"><label>速力</label><span class="val" id="pb-vkt">—</span></div>
-    <div class="row"><label>航走距離（累積）</label><span class="val" id="pb-nm">—</span></div>
-    <div class="row"><label>SOC</label><span class="val" style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
-      <span style="width:80px;height:8px;border-radius:4px;background:var(--line);overflow:hidden;display:inline-block">
-        <span id="pb-soc-fill" style="display:block;height:100%;width:0%;background:var(--s1)"></span></span>
-      <span id="pb-soc-val">—</span></span></div>
-  </div>
 </div>
 
 <h2>フェーズ計画</h2>
@@ -680,6 +699,7 @@
   </div>
 </div>
 <div style="margin:14px 0 6px"><button id="m-run" class="primary">シミュレーション実行</button>
+<span id="m-recalc" class="badge warn" hidden style="margin-left:8px">要再計算</span>
 <span id="m-stat" style="font-size:12px;color:var(--muted);margin-left:10px"></span></div>
 
 <h2>結果</h2>
@@ -1851,7 +1871,7 @@ slerpPoint / bearingDeg / destPoint / tracePositions</code>（usv-core・純関�
 <tr><td>余裕・不明分</td><td class="num">12.5</td><td class="num">1.50</td><td class="num">0</td><td class="num">0.15</td><td>△</td><td>公称 159 kg との差</td></tr>
 <tr><td><b>合計</b></td><td class="num"><b>159.0</b></td><td colspan="4"></td><td></td></tr>
 </table></div>
-<p style="font-size:12.5px;color:var(--muted)">根拠: ◎公称（出典確認済）／○公称から導出／△推定・要確認。△の項目（本表の大半）が OC への確認事項——特に船体構造重量・電子機器一式・燃料換算・ペイロード配分は仕様書等の裏取りが望ましい。</p>
+<p style="font-size:12.5px;color:var(--muted)">根拠: ◎公称（出典確認済）／○公称から導出／△推定・要確認。△の項目（本表の大半）が要確認事項（実測で確定すべき項目）——特に船体構造重量・電子機器一式・燃料換算・ペイロード配分は仕様書等の裏取りが望ましい。</p>
 <h3>導出した質量特性（<code>massProps(hull.weights)</code>）</h3>
 <div class="tbl"><table>
 <tr><th>量</th><th class="num">値</th></tr>
@@ -5075,7 +5095,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     if (ocEl){
       const qs = weights.filter(r=>r.basis==='△');
       ocEl.innerHTML = qs.length
-        ? `<b>OC への確認事項（根拠△の項目・${qs.length}件）:</b><ul style="margin:4px 0 0 18px">`+
+        ? `<b>要確認事項（実測で確定すべき項目・${qs.length}件）:</b><ul style="margin:4px 0 0 18px">`+
           qs.map(r=>`<li>${r.name}: m=${fmt(r.m,2)} kg・x=${fmt(r.x,2)} m・z=${fmt(r.z,2)} m${r.note?'（'+r.note+'）':''}</li>`).join('')+
           `</ul>`
         : '△（推定・要確認）の項目はありません。';
@@ -5384,11 +5404,98 @@ if (typeof module !== 'undefined') module.exports = USV;
         ], deadlineDays:90, socMin:0.10, soc0:1.0, segDays:20, tauDays:2.5,
         checks:{ energy:true, deadline:true, seakeep:true } }, cat: USV.seaCatalogDefaults() },
   };
-  document.querySelectorAll('[data-mtpl]').forEach(b=>b.addEventListener('click',()=>{
-    const t=TPL[b.dataset.mtpl];
+  const TPL_META = {
+    obs:      { title:'長期観測' },
+    cross:    { title:'海峡横断' },
+    patrol:   { title:'沿岸哨戒' },
+    jisoSelf: { title:'伊豆諸島観測・自走' },
+    jisoCarry:{ title:'伊豆諸島観測・母船搬送' },
+  };
+  let selectedTpl = 'obs';
+  const TPL_RATE_CACHE = {};
+  function tplDestName(to){
+    if(!to) return '?';
+    if(to==='port') return '母港';
+    if(typeof to==='object') return 'カスタム地点';
+    const d=USV.GEO_DEST.find(d=>d.id===to); return d?d.name:to;
+  }
+  function tplRouteSummary(mis){
+    let route=null; try{ route=USV.resolveRoute(mis, GEO, USV.geo); }catch(e){ route=null; }
+    const moves=mis.phases.map((ph,i)=>({ph,i})).filter(o=>o.ph.kind==='transit'||o.ph.kind==='carry');
+    if(!moves.length) return '滞留のみ';
+    const first=moves[0], last=moves[moves.length-1];
+    const nm = route && route[first.i] ? route[first.i].nm : first.ph.nm;
+    const returnsHome = last.ph.to==='port';
+    return `母港 → ${tplDestName(first.ph.to)} [${fmt(nm,0)}nm]`+(returnsHome?' → 母港':'');
+  }
+  function tplPhaseGlyphs(mis){
+    return mis.phases.map(ph=>{
+      if(ph.kind==='transit') return '→ トランジット';
+      if(ph.kind==='carry') return '⇢ 母船搬送';
+      return `⟳ 滞留 ${fmt(ph.days,0)}日`;
+    }).join('　');
+  }
+  function tplKeyConditions(mis){
+    const loiters=mis.phases.filter(p=>p.kind==='loiter');
+    const main=loiters.length? loiters.reduce((a,b)=>b.days>a.days?b:a) : null;
+    const moves=mis.phases.filter(p=>p.kind==='transit'||p.kind==='carry');
+    const hasCarry=moves.some(p=>p.kind==='carry');
+    const hasReturn=moves.length && moves[moves.length-1].to==='port';
+    const recover = !moves.length ? 'なし' : (hasReturn ? (hasCarry?'母船搬送':'自走') : 'なし');
+    return { hotelW: main?fmt(main.hotelW,0):'—', deadline:fmt(mis.deadlineDays,0), seg:fmt(mis.segDays,0), recover };
+  }
+  function tplCacheKey(id,p){ return id+'|'+JSON.stringify(p); }
+  function tplParamsFor(t){
+    const p=window.__getParams(); p.msn.socMin=t.mis.socMin; p.msn.soc0=t.mis.soc0; p.geo=GEO; return p;
+  }
+  function computeTplRate(id){
+    const t=TPL[id], p=tplParamsFor(t), key=tplCacheKey(id,p);
+    if(key in TPL_RATE_CACHE) return TPL_RATE_CACHE[key];
+    const r=USV.simulateMission(p, t.mis, t.cat);
+    const rate = r.error? null : r.successRate;
+    TPL_RATE_CACHE[key]=rate;
+    return rate;
+  }
+  function tplCurrentRate(id){
+    const t=TPL[id], p=tplParamsFor(t), key=tplCacheKey(id,p);
+    return (key in TPL_RATE_CACHE) ? TPL_RATE_CACHE[key] : undefined;
+  }
+  function renderTplCards(){
+    const grid=$('tpl-grid'); if(!grid) return;
+    grid.innerHTML = Object.keys(TPL).map(id=>{
+      const t=TPL[id], meta=TPL_META[id], rate=tplCurrentRate(id), kc=tplKeyConditions(t.mis);
+      const rateHtml = (rate==null)
+        ? '<span class="tpl-rate unset">未計算</span>'
+        : `<span class="tpl-rate">成功率 ${fmt(rate*100,1)}%</span>`;
+      return `<div class="tpl-card${id===selectedTpl?' sel':''}" data-tpl="${id}" role="button" tabindex="0">
+        <div class="tpl-title">${meta.title}</div>
+        <div class="tpl-route">${tplRouteSummary(t.mis)}</div>
+        <div class="tpl-phases">${tplPhaseGlyphs(t.mis)}</div>
+        <div class="tpl-cond">ホテル負荷 ${kc.hotelW} W・期限 ${kc.deadline} 日・分割 ${kc.seg} 日・回収 ${kc.recover}</div>
+        ${rateHtml}
+      </div>`;
+    }).join('');
+    grid.querySelectorAll('[data-tpl]').forEach(el=>{
+      const pick=()=>selectTpl(el.dataset.tpl);
+      el.addEventListener('click', pick);
+      el.addEventListener('keydown', ev=>{ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); pick(); } });
+    });
+  }
+  function selectTpl(id){
+    const t=TPL[id];
     MIS=JSON.parse(JSON.stringify(t.mis)); CAT=JSON.parse(JSON.stringify(t.cat));
-    renderAll(); run();
-  }));
+    selectedTpl=id; renderAll(); afterChange();
+  }
+  if ($('tpl-calc-all')) $('tpl-calc-all').addEventListener('click', async ()=>{
+    const ids=Object.keys(TPL), t0=performance.now();
+    for(let i=0;i<ids.length;i++){
+      $('tpl-calc-stat').textContent = `計算中… (${i+1}/${ids.length})`;
+      await new Promise(res=>setTimeout(res,0));
+      computeTplRate(ids[i]);
+      renderTplCards();
+    }
+    $('tpl-calc-stat').textContent = `${ids.length} 件を ${fmt(performance.now()-t0,0)} ms で計算`;
+  });
 
   // ── フェーズ表 ──
   // 距離帯 id/カタログ id → 表示名。
@@ -5457,17 +5564,17 @@ if (typeof module !== 'undefined') module.exports = USV;
       else if(key==='tolat'){ ph.to.lat=+el.value; renderPlan(); }
       else if(key==='tolon'){ ph.to.lon=+el.value; renderPlan(); }
       else ph[key]=+el.value;
-      stale(); drawMap();
+      afterChange(); drawMap();
     }));
     $('mp-table').querySelectorAll('[data-mpdel]').forEach(el=>el.addEventListener('click',()=>{
-      MIS.phases.splice(+el.dataset.mpdel,1); renderPlan(); stale(); drawMap();
+      MIS.phases.splice(+el.dataset.mpdel,1); renderPlan(); afterChange(); drawMap();
     }));
     return route;
   }
   $('mp-add').addEventListener('click',()=>{
     if(MIS.phases.length>=8){ $('m-stat').textContent='フェーズは 8 個まで'; return; }
     MIS.phases.push({name:'フェーズ'+(MIS.phases.length+1),kind:'transit',nm:50,days:0,targetKt:2.0,hotelW:45});
-    renderPlan(); stale(); drawMap();
+    renderPlan(); afterChange(); drawMap();
   });
 
   // ── 海象カタログ表 ──
@@ -5528,7 +5635,22 @@ if (typeof module !== 'undefined') module.exports = USV;
   const REASON={seakeep:'耐航限界超過',energy:'エネルギー枯渇',deadline:'期限超過'};
   const RC={seakeep:'var(--s7)',energy:'var(--s2)',deadline:'var(--s4)'};
   let lastRate=null;
+  // 再実行の自動化（設計書§12.6 UI要件）: 直近の実行が 1.5s 未満なら 300ms デバウンスで自動再実行、
+  // 遅ければ「要再計算」バッジを立てて次の実行まで残す。
+  let lastRunMs=null, rerunTimer=null;
+  function setRecalcBadge(on){ const b=$('m-recalc'); if(b) b.hidden=!on; }
+  function afterChange(){
+    if(!ranOnce) return;
+    if(rerunTimer){ clearTimeout(rerunTimer); rerunTimer=null; }
+    if(lastRunMs!=null && lastRunMs<1500){
+      setRecalcBadge(false);
+      rerunTimer=setTimeout(()=>{ rerunTimer=null; run(); },300);
+    } else {
+      setRecalcBadge(true);
+    }
+  }
   function run(){
+    if(rerunTimer){ clearTimeout(rerunTimer); rerunTimer=null; }
     const p = window.__getParams();
     p.msn.socMin = MIS.socMin; p.msn.soc0 = MIS.soc0;
     p.geo = GEO;                                  // 母港・母船搬送速力・距離帯カタログ（設計書§12.6）
@@ -5536,8 +5658,10 @@ if (typeof module !== 'undefined') module.exports = USV;
     const r = USV.simulateMission(p, MIS, CAT);
     if(r.error){ $('m-stat').innerHTML='<span class="mwarn">'+r.error+'</span>'; return; }
     ranOnce=true; lastRate=r.successRate;
+    lastRunMs = performance.now()-t0;
+    setRecalcBadge(false);
     renderPlan();                                 // フェーズ表の海象帯・自動 nm を最新の実行結果に同期
-    $('m-stat').textContent=`${r.nScen} シナリオを ${fmt(performance.now()-t0,0)} ms で実行（モデルタブの現在パラメータ使用）`;
+    $('m-stat').textContent=`${r.nScen} シナリオを ${fmt(lastRunMs,0)} ms で実行（モデルタブの現在パラメータ使用）`;
     $('mk-rate').textContent=fmt(r.successRate*100,1)+' %';
     $('mk-raten').textContent=`確率重み付き（Σp ${fmt(r.probSumRaw,2)} を正規化）`;
     $('mk-nscen').textContent=r.nScen;
@@ -5555,6 +5679,13 @@ if (typeof module !== 'undefined') module.exports = USV;
     drawScenTable(r);
     LAST_P = p; LAST_R = r;
     pbSetSource(r.nominal);
+    // 現在読み込み中の計画が選択中テンプレの原本と一致していれば、そのカードの成功率キャッシュも更新する
+    if (selectedTpl && TPL[selectedTpl] &&
+        JSON.stringify(MIS)===JSON.stringify(TPL[selectedTpl].mis) &&
+        JSON.stringify(CAT)===JSON.stringify(TPL[selectedTpl].cat)){
+      TPL_RATE_CACHE[tplCacheKey(selectedTpl,p)] = r.successRate;
+    }
+    renderTplCards();
   }
   $('m-run').addEventListener('click',run);
   window.__missionShown=()=>{ if(!ranOnce) run(); };
@@ -5697,23 +5828,24 @@ if (typeof module !== 'undefined') module.exports = USV;
   function zoneName(zid){ const z=(GEO.zones||[]).find(z=>z.id===zid); return z?z.name:zid; }
   function initGeoControls(){
     $('geo-port').innerHTML = USV.GEO_PORTS.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
-    $('geo-port').addEventListener('change',()=>{ GEO.port=$('geo-port').value; stale(); renderPlan(); drawMap(); });
-    $('geo-carrykt').addEventListener('change',()=>{ GEO.carryKt=Math.max(1,+$('geo-carrykt').value||1); stale(); renderPlan(); drawMap(); });
-    $('geo-recover').addEventListener('change',()=>{ GEO.recoverDays=Math.max(1,+$('geo-recover').value||1); stale(); });
+    $('geo-port').addEventListener('change',()=>{ GEO.port=$('geo-port').value; afterChange(); renderPlan(); drawMap(); });
+    $('geo-carrykt').addEventListener('change',()=>{ GEO.carryKt=Math.max(1,+$('geo-carrykt').value||1); afterChange(); renderPlan(); drawMap(); });
+    $('geo-recover').addEventListener('change',()=>{ GEO.recoverDays=Math.max(1,+$('geo-recover').value||1); afterChange(); });
   }
   function syncGeoInputs(){
     $('geo-port').value=GEO.port; $('geo-carrykt').value=GEO.carryKt; $('geo-recover').value=GEO.recoverDays;
   }
+  // 距離帯→カタログをツールバーへ 1 行インラインで描画（設計書§12.6・地図の直上）
   function renderGeoZones(){
     const REGIONS=USV.seaClimateCatalogs();
-    const rows=GEO.zones.map((z,i)=>`<tr>
-      <td>${z.name}</td>
-      <td style="text-align:right;white-space:nowrap">${z.maxNm===Infinity?'∞':fmt(z.maxNm,0)+' nm'}</td>
-      <td><select data-gz="${i}">${REGIONS.map(c=>`<option value="${c.id}"${c.id===z.catalog?' selected':''}>${c.name}</option>`).join('')}</select></td>
-    </tr>`).join('');
-    $('geo-zone-table').innerHTML=`<tr><th>距離帯</th><th>境界</th><th>海象カタログ</th></tr>`+rows;
-    $('geo-zone-table').querySelectorAll('[data-gz]').forEach(el=>el.addEventListener('change',()=>{
-      GEO.zones[+el.dataset.gz].catalog=el.value; stale(); renderPlan(); drawMap();
+    const host=$('geo-zones-inline'); if(!host) return;
+    host.innerHTML = GEO.zones.map((z,i)=>{
+      const bound = z.maxNm===Infinity ? '' : ` &lt;${fmt(z.maxNm,0)}nm`;
+      return `<label>${z.name}${bound}:
+        <select data-gz="${i}">${REGIONS.map(c=>`<option value="${c.id}"${c.id===z.catalog?' selected':''}>${c.name}</option>`).join('')}</select></label>`;
+    }).join('');
+    host.querySelectorAll('[data-gz]').forEach(el=>el.addEventListener('change',()=>{
+      GEO.zones[+el.dataset.gz].catalog=el.value; afterChange(); renderPlan(); drawMap();
     }));
   }
   function mercY(lat){ return Math.log(Math.tan(Math.PI/4 + lat*Math.PI/360)); }
@@ -5745,7 +5877,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   const LAYER_LABEL={sagami:'相模湾拡大',kanto:'関東沿岸',japan:'日本近海'};
   function drawMap(){
     const svg=$('geo-map'); if(!svg || !USV.geo) return;
-    const VW=640, VH=460, pad=30;
+    const VW=1000, VH=640, pad=40;
     const portDef=USV.GEO_PORTS.find(x=>x.id===GEO.port) || USV.GEO_PORTS[0];
     const hasTo=MIS.phases.some(ph=>ph.to);
     let route=null;
@@ -5780,7 +5912,7 @@ if (typeof module !== 'undefined') module.exports = USV;
           legs+=`<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" `+
             `stroke="${isCarry?'var(--muted)':'var(--ink)'}" stroke-width="${isCarry?2:1.6}"${isCarry?' stroke-dasharray="6,4"':''}/>`;
           const mx=(x0+x1)/2, my=(y0+y1)/2;
-          legs+=`<text x="${(mx+4).toFixed(1)}" y="${(my-4).toFixed(1)}" font-size="9" fill="var(--muted)">${zoneName(sl.zone)}</text>`;
+          legs+=`<text x="${(mx+4).toFixed(1)}" y="${(my-4).toFixed(1)}" font-size="9" fill="var(--muted)">${zoneCatText(sl.zone,sl.catalog)}</text>`;
           // 帯境界の小さな目盛り（区間の始点。最初の sub-leg は母港/前フェーズ終端と重なるので省略・M1）
           if(si>0) legs+=`<circle cx="${x0.toFixed(1)}" cy="${y0.toFixed(1)}" r="2" fill="var(--bg)" stroke="var(--ink)" stroke-width="1"/>`;
         });
@@ -5807,8 +5939,10 @@ if (typeof module !== 'undefined') module.exports = USV;
       '<span><svg width="12" height="12" style="vertical-align:middle"><circle cx="6" cy="6" r="4.5" fill="var(--s1)"/></svg> 滞留</span>',
       '<span><svg width="12" height="12" style="vertical-align:middle"><circle cx="6" cy="6" r="5" fill="var(--s2)"/></svg> 母港</span>',
       '<span><svg width="12" height="12" style="vertical-align:middle"><circle cx="6" cy="6" r="2" fill="var(--bg)" stroke="var(--ink)" stroke-width="1"/></svg> 帯境界</span>',
-      `<span>破線円: 10/50/150 nm ／ 表示範囲: ${LAYER_LABEL[layerName]}</span>`,
+      `<span>破線円: 10/50/150 nm</span>`,
+      `<span>距離帯→カタログ: ${(GEO.zones||[]).map(z=>zoneCatText(z.id,z.catalog)).join(' ／ ')}</span>`,
     ].join('');
+    const ovBr=$('geo-ov-br'); if(ovBr) ovBr.innerHTML = `${LAYER_LABEL[layerName]}<br><span style="color:var(--muted)">破線円 10/50/150 nm</span>`;
 
     const summary = route
       ? '航路: ' + route.map((r,i)=>`${MIS.phases[i].name}(${zoneChainText(r)}${r.nm>0?'・計'+fmt(r.nm,1)+'nm':''})`).join(' → ')
@@ -5864,6 +5998,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     if (!nom || !pos){
       ['pb-date','pb-daynight','pb-phase','pb-zone','pb-vkt','pb-nm','pb-status'].forEach(id=>set(id,'—'));
       set('pb-soc-val','—'); const f=$('pb-soc-fill'); if(f) f.style.width='0%';
+      const ovBl0=$('geo-ov-bl'); if(ovBl0) ovBl0.classList.remove('fail');
       pbDrawOverlay(null);
       return;
     }
@@ -5875,7 +6010,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     set('pb-daynight', isDay ? '☀ 昼' : '☾ 夜');
     set('pb-phase', pl.name || '—');
     set('pb-zone', pl.zone
-      ? `${zoneName(pl.zone)}・${pl.state||''}（Hs ${fmt(pl.Hs,1)}m Tp ${fmt(pl.Tp,1)}s U ${fmt(pl.windU,0)}m/s）`
+      ? `${zoneCatText(pl.zone,pl.catalog)}・${pl.state||''}<br>Hs ${fmt(pl.Hs,1)}m Tp ${fmt(pl.Tp,1)}s U ${fmt(pl.windU,0)}m/s`
       : '（帯なし）');
     set('pb-vkt', fmt(pos.Vkt,2)+' kt');
     set('pb-nm', fmt(pos.cumNm,1)+' nm');
@@ -5885,8 +6020,10 @@ if (typeof module !== 'undefined') module.exports = USV;
     if (pl.kind==='transit') status = pos.Vkt>1e-6 ? '航行中' : 'ドリフト';
     else if (pl.kind==='loiter') status = (pl.name||'').indexOf('充電')>=0 ? '充電待機' : '観測中';
     const atEnd = PB.idx === PB.positions.length-1;
-    set('pb-status', (atEnd && !nom.ok)
+    const failed = atEnd && !nom.ok;
+    set('pb-status', failed
       ? `<span style="color:var(--ng-ink)">失敗: ${REASON[nom.reason]||nom.reason}</span>` : status);
+    const ovBl=$('geo-ov-bl'); if(ovBl) ovBl.classList.toggle('fail', !!failed);
     const sc=$('pb-scrub'); if(sc) sc.value = PB.idx;
     set('pb-time', fmt(pos.d,1)+'日 / '+fmt(nom.totalDays,1)+'日');
     pbDrawOverlay(pos);
@@ -6016,7 +6153,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     mxCompute();
   });
 
-  function renderAll(){ renderPlan(); renderCat(); toUI(); syncGeoInputs(); renderGeoZones(); drawMap(); }
+  function renderAll(){ renderPlan(); renderCat(); toUI(); syncGeoInputs(); renderGeoZones(); drawMap(); renderTplCards(); }
   initGeoControls();
   renderAll();
 })();
