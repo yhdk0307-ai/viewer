@@ -295,6 +295,9 @@
   #tab-doc tr:last-child td{border-bottom:none;}
   #tab-doc td.num,#tab-doc th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
   #tab-doc td.sym{white-space:nowrap;}
+  /* §2 記号表: 名称の列が細く折れすぎるので下限幅を与える */
+  #s2 table th:nth-child(2),#s2 table td:nth-child(2){min-width:8.5em;}
+  @media(max-width:640px){#s2 table th:nth-child(2),#s2 table td:nth-child(2){min-width:6.5em;}}
   #tab-doc .ok{color:var(--good);font-weight:700;font-family:ui-monospace,monospace;font-size:12px;}
   #tab-doc figure{margin:18px 0 6px;padding:0;background:none;border:none;}
   #tab-doc figcaption{font-size:12.5px;color:var(--muted);padding:6px 0 0;line-height:1.75;}
@@ -886,7 +889,7 @@
 
 <!-- ═══════════ §2 ═══════════ -->
 <details class="sec" id="s2" open><summary><span class="no">§2</span><span class="ttl">記号・変数一覧</span></summary>
-<p>単位はすべて SI（表示のみ kt・nm へ変換）。値欄の記号: ◎=公称（出典確認済）／○=公称から導出／△=推定・仮定（較正または置換の対象）。</p>
+<p>単位はすべて SI（表示のみ kt・nm へ変換）。値欄の記号: ◎=公称（出典確認済）／○=公称から導出／△=推定・仮定（較正または置換の対象）。</p><p><b>△ の付いた量がこのモデルの不確かさの源</b>であり、それぞれを何で置き換えるか（水槽試験・CFD・BEM・実艇計測）は §10 の表に対応させてある。2 つの値が併記されている量は<b>切替スイッチ（§3）でどちらを使うか選べる</b>もので、左が既定値。</p>
 
 <details class="sub" open><summary>物理定数</summary><div class="tbl"><table>
 <tr><th>記号</th><th>名称</th><th>役割</th><th>単位</th><th class="num">値</th></tr>
@@ -904,9 +907,9 @@
 <tr><td class="sym"><math><mi>m</mi></math></td><td>質量（排水量）</td><td>運動方程式の慣性・排水容積の源</td><td>kg</td><td class="num">159 ◎</td></tr>
 <tr><td class="sym"><math><msub><mi>m</mi><mi>a</mi></msub></math></td><td>surge 付加質量</td><td>加速時に船体と共に動く水の慣性。<math><mrow><msub><mi>m</mi><mi>a</mi></msub><mo>=</mo><mn>0.05</mn><mi>m</mi></mrow></math> と仮定</td><td>kg</td><td class="num">8.0 △</td></tr>
 <tr><td class="sym"><math><mo>∇</mo></math></td><td>排水容積</td><td><math><mrow><mo>∇</mo><mo>=</mo><mi>m</mi><mo>/</mo><mi>ρ</mi></mrow></math></td><td>m³</td><td class="num">0.155 ○</td></tr>
-<tr><td class="sym"><math><msub><mi>C</mi><mi>b</mi></msub></math></td><td>方形係数</td><td>喫水の導出に使用（細長艇の代表値）</td><td>—</td><td class="num">0.45 △</td></tr>
-<tr><td class="sym"><math><mi>d</mi></math></td><td>喫水</td><td><math><mrow><mi>d</mi><mo>=</mo><mo>∇</mo><mo>/</mo><mo>(</mo><msub><mi>C</mi><mi>b</mi></msub><msub><mi>L</mi><mi>wl</mi></msub><mi>B</mi><mo>)</mo></mrow></math>。波の深度減衰にも使用</td><td>m</td><td class="num">0.120 ○</td></tr>
-<tr><td class="sym"><math><mi>S</mi></math></td><td>浸水表面積</td><td>摩擦抵抗の基準面積（Denny-Mumford 近似）</td><td>m²</td><td class="num">1.95 △</td></tr>
+<tr><td class="sym"><math><msub><mi>C</mi><mi>b</mi></msub></math></td><td>方形係数</td><td>喫水の導出に使用。<code>hull.geom</code>=解析式なら細長艇の代表値、3D 実測なら形状の断面積から算出（§13.1）</td><td>—</td><td class="num">0.45 △（解析式）／0.368 ○（3D 実測）</td></tr>
+<tr><td class="sym"><math><mi>d</mi></math></td><td>喫水</td><td><math><mrow><mi>d</mi><mo>=</mo><mo>∇</mo><mo>/</mo><mo>(</mo><msub><mi>C</mi><mi>b</mi></msub><msub><mi>L</mi><mi>wl</mi></msub><mi>B</mi><mo>)</mo></mrow></math>。波の深度減衰にも使用</td><td>m</td><td class="num">0.120 ○（解析式）／0.146 ○（3D 実測）</td></tr>
+<tr><td class="sym"><math><mi>S</mi></math></td><td>浸水表面積</td><td>摩擦抵抗の基準面積。解析式は Denny-Mumford 近似、3D 実測は濡れ面の面積分（付加物を除く裸殻は 2.00）</td><td>m²</td><td class="num">1.95 △（解析式）／2.23 ○（3D 実測）</td></tr>
 <tr><td class="sym"><math><mrow><mo>(</mo><mn>1</mn><mo>+</mo><mi>k</mi><mo>)</mo></mrow></math></td><td>形状影響係数</td><td>平板摩擦から 3 次元船体への補正</td><td>—</td><td class="num">1.25 △</td></tr>
 <tr><td class="sym"><math><msub><mi>C</mi><mi>w</mi></msub></math></td><td>水線面積係数</td><td>ヒーブ復原力・ピッチ復原モーメントの水線面積 <math><mrow><msub><mi>A</mi><mi>w</mi></msub><mo>=</mo><msub><mi>C</mi><mi>w</mi></msub><msub><mi>L</mi><mi>wl</mi></msub><mi>B</mi></mrow></math></td><td>—</td><td class="num">0.72 △</td></tr>
 <tr><td class="sym"><math><msub><mi>A</mi><mi>F</mi></msub></math></td><td>水線上前面投影面積</td><td>風圧抵抗の基準面積</td><td>m²</td><td class="num">0.35 △</td></tr>
@@ -965,17 +968,17 @@
 <tr><td class="sym"><math><msub><mi>P</mi><mi>panel</mi></msub></math></td><td>太陽光パネル定格</td><td>G<sub>STC</sub> 時の発電量</td><td>W</td><td class="num">415 ◎</td></tr>
 <tr><td class="sym"><math><msub><mi>f</mi><mi>der</mi></msub></math></td><td>PV 総合ディレート</td><td>温度・塩汚れ・傾斜等の一括係数</td><td>—</td><td class="num">0.70 △</td></tr>
 <tr><td class="sym"><math><msub><mi>P</mi><mi>gen</mi></msub></math>, <math><msub><mi>E</mi><mi>fuel</mi></msub></math></td><td>発電機出力・燃料エネルギー</td><td>メタノール補助発電（SOC ヒステリシス起動）</td><td>W, Wh</td><td class="num">125 / 30000 ◎</td></tr>
-<tr><td class="sym"><math><msub><mi>P</mi><mi>hotel</mi></msub></math></td><td>ホテル負荷</td><td>航法計算機・通信・センサーの常時消費</td><td>W</td><td class="num">104（較正値）</td></tr>
+<tr><td class="sym"><math><msub><mi>P</mi><mi>hotel</mi></msub></math></td><td>ホテル負荷</td><td>航法計算機・通信・センサーの常時消費</td><td>W</td><td class="num">104 ○（V2 航続距離から較正）</td></tr>
 <tr><td class="sym"><math><msub><mi>P</mi><mi>prop</mi></msub></math></td><td>推進消費電力</td><td>目標速力の維持に必要な P<sub>e</sub></td><td>W</td><td class="num">—</td></tr>
 </table></div></details>
 
 <details class="sub" open><summary>耐航性</summary><div class="tbl"><table>
 <tr><th>記号</th><th>名称</th><th>役割</th><th>単位</th><th class="num">値</th></tr>
-<tr><td class="sym"><math><msub><mi>A</mi><mi>w</mi></msub></math></td><td>水線面積</td><td>ヒーブ復原力 <math><mrow><mi>ρ</mi><mi>g</mi><msub><mi>A</mi><mi>w</mi></msub></mrow></math> の源</td><td>m²</td><td class="num">2.07 ○</td></tr>
+<tr><td class="sym"><math><msub><mi>A</mi><mi>w</mi></msub></math></td><td>水線面積</td><td>ヒーブ復原力 <math><mrow><mi>ρ</mi><mi>g</mi><msub><mi>A</mi><mi>w</mi></msub></mrow></math> の源</td><td>m²</td><td class="num">2.07 ○（解析式）／1.75 ○（3D 実測）</td></tr>
 <tr><td class="sym"><math><msub><mi>ω</mi><mrow><mi>n</mi><mo>,</mo><mi>h</mi></mrow></msub></math></td><td>ヒーブ固有角周波数</td><td>共振周期 T<sub>n</sub>≈1.6 s を与える</td><td>rad/s</td><td class="num">○</td></tr>
 <tr><td class="sym"><math><msub><mi>ζ</mi><mi>h</mi></msub></math>, <math><msub><mi>ζ</mi><mi>θ</mi></msub></math></td><td>ヒーブ・ピッチ減衰比</td><td>共振ピークの高さを決める（放射＋粘性）</td><td>—</td><td class="num">0.35 △</td></tr>
 <tr><td class="sym"><math><msub><mi>μ</mi><mi>a</mi></msub></math></td><td>付加質量比（ヒーブ／ピッチ）</td><td>固有周波数の分母補正。0.8 と仮定</td><td>—</td><td class="num">0.8 △</td></tr>
-<tr><td class="sym"><math><msub><mi>k</mi><mn>44</mn></msub></math></td><td>ロール慣動半径</td><td>ロール慣性 <math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>。既定（<code>hull.massFrom='manual'</code>）は 0.35B の仮定、<code>'table'</code> なら重量表（§13.12）の <code>massProps()</code> から部品自己慣性 r44 込みで算出（S6）</td><td>m</td><td class="num">0.315（=0.35B）△／表 0.212 ○（点質量のみ 0.103）</td></tr>
+<tr><td class="sym"><math><mrow><mi>K</mi><mi>G</mi></mrow></math></td><td>重心高さ（キール基線から）</td><td>復原力 GZ を決める最大の量。<code>hull.massFrom</code>=手入力なら入力値、重量表なら部品の積み上げ（§13.12）</td><td>m</td><td class="num">0.15 △（手入力）／0.147 ○（重量表）</td></tr><tr><td class="sym"><math><mrow><mi>G</mi><mi>M</mi></mrow></math></td><td>初期復原てこ（メタセンタ高さ）</td><td>小傾斜の復原力とロール固有周期を決める。<math><mrow><mi>G</mi><mi>M</mi><mo>=</mo><mi>K</mi><mi>B</mi><mo>+</mo><mi>B</mi><mi>M</mi><mo>−</mo><mi>K</mi><mi>G</mi></mrow></math></td><td>m</td><td class="num">0.317 ○（KG=0.15 のとき）</td></tr><tr><td class="sym"><math><mrow><mi>GZ</mi><mo>(</mo><mi>φ</mi><mo>)</mo></mrow></math></td><td>復原てこ</td><td>傾斜角 φ での復原モーメント <math><mrow><mi>m</mi><mi>g</mi><mi>GZ</mi></mrow></math>。積分すると転覆・復帰に要る仕事になる（§13.3〜§13.4）</td><td>m</td><td class="num">—</td></tr><tr><td class="sym"><math><msub><mi>ζ</mi><mn>44</mn></msub></math></td><td>ロール減衰比</td><td>横揺れの減衰。<code>sea.rollDamp</code>=抗力モデルなら摩擦・船底・キールの和から求まり Hs とともに増える、一定 ζ なら固定値（§8.3）</td><td>—</td><td class="num">0.089〜0.186 ○（抗力モデル・Hs 依存）／0.08 △（一定 ζ）</td></tr><tr><td class="sym"><math><msub><mi>T</mi><mi>roll</mi></msub></math></td><td>ロール固有周期</td><td>想定波周期 5〜11 s より桁で短く、ロール共振が起きないことを示す（§13.4.4）</td><td>s</td><td class="num">≈0.9〜1.4 ○（k44・KG の与え方による）</td></tr><tr><td class="sym"><math><msub><mi>k</mi><mn>44</mn></msub></math></td><td>ロール慣動半径</td><td>ロール慣性 <math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>。既定（<code>hull.massFrom='manual'</code>）は 0.35B の仮定、<code>'table'</code> なら重量表（§13.12）の <code>massProps()</code> から部品自己慣性 r44 込みで算出（S6）</td><td>m</td><td class="num">0.315（=0.35B）△／表 0.212 ○（点質量のみ 0.103）</td></tr>
 <tr><td class="sym"><math><msub><mi>k</mi><mn>55</mn></msub></math></td><td>ピッチ慣動半径</td><td>ピッチ慣性 <math><mrow><msub><mi>I</mi><mn>55</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>55</mn><mn>2</mn></msubsup></mrow></math>。既定は <math><mrow><msub><mi>r</mi><mi>g</mi></msub><msub><mi>L</mi><mi>wl</mi></msub></mrow></math> の仮定、<code>'table'</code> なら重量表（§13.12）から部品自己慣性 r55 込みで算出（S6）</td><td>m</td><td class="num">0.8（=0.25L）△／表 0.765 ○（点質量のみ 0.590）</td></tr>
 <tr><td class="sym"><math><mrow><msub><mi>H</mi><mi>h</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math>, <math><mrow><msub><mi>H</mi><mi>θ</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math></td><td>ヒーブ・ピッチ RAO</td><td>単位波振幅あたりの応答</td><td>m/m, deg/m</td><td class="num">—</td></tr>
 <tr><td class="sym"><math><msub><mi>m</mi><mi>n</mi></msub></math></td><td>応答スペクトルの n 次モーメント</td><td>RMS = √m₀</td><td>—</td><td class="num">—</td></tr>
