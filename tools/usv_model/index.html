@@ -474,11 +474,7 @@
 <div id="tab-model" hidden>
 <div class="wrap">
 
-<h2>船体形状</h2>
-<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">主要目 L・B・m（スラスターはプロペラ径 D<sub>prop</sub>）から生成した概念形状（Seasats Lightfish 準拠。後部の羽＝通信ウィング・前部マスト・キールフィン・ポッドスラスターを含む。実測形状ではなく、計算には §5 以降の式のみを使用）。ドラッグで回転、ホイール／ピンチで拡大縮小、ダブルクリックで視点リセット。<b>設計パラメータの入力欄に触れると、対応する部位が青くハイライトされ、L・B・D_prop は寸法線も表示される。</b>「波を立てる」は環境パネルの Hs・Tp・波モデルと現在の V_eq を使い、設計書 §8 の RAO（1 自由度・線形）で船体を動かす表示で、計算には影響しない。</div>
-<div class="hv-ctrl"><button id="hv-float">浮かべる（喫水線を表示）</button><select id="hv-variant" data-local="1" style="max-width:200px" hidden></select><button id="hv-wave">波を立てる（動揺シミュレーション）</button><button id="hv-reset">視点リセット</button></div>
-<canvas id="hull3d"></canvas>
-<div class="cap" id="hull3d-info" style="font-size:12px;color:var(--muted);margin:6px 0 0"></div>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 16px">船体形状の 3D 表示は <a href="#" id="hull3d-jump" style="color:var(--acc,#2A78D6)">Ⅲ. 船体 タブ</a> に移動しました。</div>
 
 <h2>入力パラメータ</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">入力を変えると即座に再計算されます。プリセット（黒表示が選択中）を押すと該当パラメータが設定され、変わった欄が一瞬ハイライトされます。</div>
@@ -628,7 +624,7 @@
 </div>
 
 <h2>検証ケース（自動実行）</h2>
-<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">2 種類ある: <b>ユースケース検証（V1–V4）</b>は公表値・運用シナリオの再現で、上のプリセットと対応する。<b>モデル整合性検証（V5–V17）</b>は数理・実装の内部チェック（恒等式・物理極限・較正保存）で、運転シナリオではないためプリセットは無い。いずれも既定パラメータで毎回ロード時に実行される。</div>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">2 種類ある: <b>ユースケース検証（V1–V4）</b>は公表値・運用シナリオの再現で、上のプリセットと対応する。<b>モデル整合性検証（V5–V18）</b>は数理・実装の内部チェック（恒等式・物理極限・較正保存）で、運転シナリオではないためプリセットは無い。いずれも既定パラメータで毎回ロード時に実行される。</div>
 <div class="vgrid" id="vgrid"></div>
 
 <footer>
@@ -774,6 +770,46 @@
 
 <div id="tab-hull" hidden>
 <div class="wrap">
+
+<h2>船体形状</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">主要目 L・B・m（スラスターはプロペラ径 D<sub>prop</sub>）から生成した概念形状（Seasats Lightfish 準拠。後部の羽＝通信ウィング・前部マスト・キールフィン・ポッドスラスターを含む。この形状から喫水・濡れ面積・復原力・耐航性係数を計算する（sw①〜sw②）。解析式モードでは主要目からの近似式を使う）。ドラッグで回転、ホイール／ピンチで拡大縮小、ダブルクリックで視点リセット。<b>L・B・D_prop の寸法線は常時表示。</b>「波を立てる」は環境パネルの Hs・Tp・波モデルと現在の V_eq を使い、設計書 §8 の RAO（1 自由度・線形）で船体を動かす表示で、計算には影響しない。</div>
+<div class="hv-ctrl"><button id="hv-float">浮かべる（喫水線を表示）</button><select id="hv-variant" data-local="1" style="max-width:200px" hidden></select><button id="hv-wave">波を立てる（動揺シミュレーション）</button><button id="hv-reset">視点リセット</button></div>
+<canvas id="hull3d"></canvas>
+<div class="cap" id="hull3d-info" style="font-size:12px;color:var(--muted);margin:6px 0 0"></div>
+
+<h2>復原力シミュレーション（横波中の横揺れ）</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 10px">
+  横から周期的な波を受けたときの横揺れを時間の経過とともに再現する。船体の中央断面を近似形状で描く（キャノピー等の変種は名称の切替のみで、断面自体は平甲板のまま）。
+  <b>復原てこの値は上の「復原力」節と同じ 3D 形状の表から取る。浮心 B（丸印）の位置だけは断面の近似（没水部分の面積重心）なので、復原てこの値とは厳密には一致しない。</b>
+  上下動は船が局所の水面に追従するとみなし（長波近似）、横揺れだけを運動方程式で解く。（詳細は設計書 §13.15）
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px 24px">
+  <div>
+    <canvas id="rs-cross" style="width:100%;height:340px;display:block;border:1px solid var(--line);border-radius:4px;background:#fff"></canvas>
+    <div class="cap" id="rs-info" style="font-size:12px;color:var(--muted);margin:6px 0 0"></div>
+  </div>
+  <div>
+    <div class="panel"><h3>入力</h3>
+      <div class="row"><label>波高 H</label><span class="val"><input type="number" id="rs-H" value="1.0" step="0.1" min="0" max="3"><span class="unit">m</span></span></div>
+      <div class="row"><label>波周期 T</label><span class="val"><input type="number" id="rs-T" value="6" step="0.5" min="2" max="12"><span class="unit">s</span></span></div>
+      <div class="row"><label>KG</label><span class="val"><input type="number" id="rs-KG" step="0.005" min="0.10" max="0.25"><span class="unit">m</span></span></div>
+      <div class="row"><label>形状変種</label><span class="val"><select id="rs-variant"></select></span></div>
+      <div class="row"><label>初期傾斜</label><span class="val"><input type="number" id="rs-phi0" value="0" step="1" min="-90" max="90"><span class="unit">deg</span></span></div>
+    </div>
+    <div class="hv-ctrl" style="margin-top:10px;flex-wrap:wrap">
+      <button id="rs-play" type="button">再生</button><button id="rs-reset" type="button">リセット</button>
+      <select id="rs-speed" style="max-width:90px"><option value="0.5">×0.5</option><option value="1" selected>×1</option><option value="2">×2</option></select>
+    </div>
+    <div class="panel" style="margin-top:10px"><h3>砕波を当てる</h3>
+      <div class="row"><label>エネルギー E</label><span class="val"><input type="number" id="rs-E" value="100" step="10" min="0" max="400"><span class="unit">J</span></span></div>
+      <button id="rs-break" type="button">砕波を当てる</button>
+      <div id="rs-break-info" style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6"></div>
+    </div>
+  </div>
+</div>
+<h3 style="margin-top:14px">時系列 φ(t)（直近30秒）</h3>
+<svg id="rs-chart" viewBox="0 0 900 240" role="img" aria-label="横揺れ角の時系列" style="width:100%;height:auto;display:block;border:1px solid var(--line)"></svg>
+<div class="cap" id="rs-chart-info" style="font-size:12px;color:var(--muted);margin:6px 0 0"></div>
 
 <h2>形状と実測値</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 10px">
@@ -1007,7 +1043,7 @@
 <tr><td class="sym"><math><msub><mi>ω</mi><mrow><mi>n</mi><mo>,</mo><mi>h</mi></mrow></msub></math></td><td>ヒーブ固有角周波数</td><td>共振周期 T<sub>n</sub>≈1.6 s を与える</td><td>rad/s</td><td class="num">○</td></tr>
 <tr><td class="sym"><math><msub><mi>ζ</mi><mi>h</mi></msub></math>, <math><msub><mi>ζ</mi><mi>θ</mi></msub></math></td><td>ヒーブ・ピッチ減衰比</td><td>共振ピークの高さを決める（放射＋粘性）</td><td>—</td><td class="num">0.35 △</td></tr>
 <tr><td class="sym"><math><msub><mi>μ</mi><mi>a</mi></msub></math></td><td>付加質量比（ヒーブ／ピッチ）</td><td>固有周波数の分母補正。0.8 と仮定</td><td>—</td><td class="num">0.8 △</td></tr>
-<tr><td class="sym"><math><mrow><mi>K</mi><mi>G</mi></mrow></math></td><td>重心高さ（キール基線から）</td><td>復原力 GZ を決める最大の量。sw④（質量と重心の与え方）が手入力なら入力値、重量表なら部品の積み上げ（§13.12）</td><td>m</td><td class="num">0.15 △（手入力）／0.147 ○（重量表）</td></tr><tr><td class="sym"><math><mrow><mi>G</mi><mi>M</mi></mrow></math></td><td>初期復原てこ（メタセンタ高さ）</td><td>小傾斜の復原力とロール固有周期を決める。<math><mrow><mi>G</mi><mi>M</mi><mo>=</mo><mi>K</mi><mi>B</mi><mo>+</mo><mi>B</mi><mi>M</mi><mo>−</mo><mi>K</mi><mi>G</mi></mrow></math></td><td>m</td><td class="num">0.317 ○（KG=0.15 のとき）</td></tr><tr><td class="sym"><math><mrow><mi>GZ</mi><mo>(</mo><mi>φ</mi><mo>)</mo></mrow></math></td><td>復原てこ</td><td>傾斜角 φ での復原モーメント <math><mrow><mi>m</mi><mi>g</mi><mi>GZ</mi></mrow></math>。積分すると転覆・復帰に要る仕事になる（§13.3〜§13.4）</td><td>m</td><td class="num">—</td></tr><tr><td class="sym"><math><msub><mi>ζ</mi><mn>44</mn></msub></math></td><td>ロール減衰比</td><td>横揺れの減衰。sw③（横揺れ減衰の求め方）が抗力モデルなら摩擦・船底・キールの和から求まり Hs とともに増える、一定 ζ なら固定値（§8.2）</td><td>—</td><td class="num">0.089〜0.186 ○（抗力モデル・Hs 依存）／0.08 △（一定 ζ）</td></tr><tr><td class="sym"><math><msub><mi>T</mi><mi>roll</mi></msub></math></td><td>ロール固有周期</td><td>想定波周期 5〜11 s より桁で短く、ロール共振が起きないことを示す（§13.4.4）</td><td>s</td><td class="num">≈0.9〜1.4 ○（k44・KG の与え方による）</td></tr><tr><td class="sym"><math><msub><mi>k</mi><mn>44</mn></msub></math></td><td>ロール慣動半径</td><td>ロール慣性 <math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>。既定（sw④＝手入力）は 0.35B の仮定、重量表 なら重量表（§13.12）の <code>massProps()</code> から部品自己慣性 r44 込みで算出（S6）</td><td>m</td><td class="num">0.315（=0.35B）△／表 0.212 ○（点質量のみ 0.103）</td></tr>
+<tr><td class="sym"><math><mrow><mi>K</mi><mi>G</mi></mrow></math></td><td>重心高さ（キール基線から）</td><td>復原力 GZ を決める最大の量。sw④（質量と重心の与え方）が手入力なら入力値、重量表なら部品の積み上げ（§13.12）</td><td>m</td><td class="num">0.15 △（手入力）／0.147 ○（重量表）</td></tr><tr><td class="sym"><math><mrow><mi>G</mi><mi>M</mi></mrow></math></td><td>初期復原てこ（メタセンタ高さ）</td><td>小傾斜の復原力とロール固有周期を決める。<math><mrow><mi>G</mi><mi>M</mi><mo>=</mo><mi>K</mi><mi>B</mi><mo>+</mo><mi>B</mi><mi>M</mi><mo>−</mo><mi>K</mi><mi>G</mi></mrow></math></td><td>m</td><td class="num">0.317 ○（KG=0.15 のとき）</td></tr><tr><td class="sym"><math><mrow><mi>GZ</mi><mo>(</mo><mi>φ</mi><mo>)</mo></mrow></math></td><td>復原てこ</td><td>傾斜角 φ での復原モーメント <math><mrow><mi>m</mi><mi>g</mi><mi>GZ</mi></mrow></math>。積分すると転覆・復帰に要る仕事になる（§13.3〜§13.4）</td><td>m</td><td class="num">—</td></tr><tr><td class="sym"><math><msub><mi>ζ</mi><mn>44</mn></msub></math></td><td>ロール減衰比</td><td>横揺れの減衰。sw③（横揺れ減衰の求め方）が抗力モデルなら摩擦・船底・キールの和から求まり Hs とともに増える、一定 ζ なら固定値（§8.2）</td><td>—</td><td class="num">0.089〜0.186 ○（抗力モデル・Hs 依存）／0.08 △（一定 ζ）</td></tr><tr><td class="sym"><math><msub><mi>T</mi><mi>roll</mi></msub></math></td><td>ロール固有周期</td><td>想定波周期 5〜11 s より桁で短く、ロール共振が起きないことを示す（§13.4.4）</td><td>s</td><td class="num">≈0.9〜1.4 ○（k44・KG の与え方による）</td></tr><tr><td class="sym"><math><msub><mi>k</mi><mn>44</mn></msub></math></td><td>ロール慣動半径</td><td>ロール慣性 <math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>。既定（sw④＝手入力）は 0.35B の仮定、重量表 なら重量表（§13.12）の <code>massProps()</code> から部品自己慣性 r44 込みで算出（S6）</td><td>m</td><td class="num">0.315（=0.35B）△／表 0.212 ○（点質量のみ 0.103）</td></tr><tr><td class="sym"><math><msub><mi>I</mi><mn>44</mn></msub></math></td><td>ロール慣性モーメント</td><td>船体（付加物含む）が横揺れするときの回転慣性。<math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>（m は sw④ の与え方による質量）。周波数応答（§8.2）と復原力シミュレーション（§13.15）の両方で使う共通量</td><td>kg·m²</td><td class="num">24.3 ○（KG=0.15・k44=0.315 のとき）</td></tr><tr><td class="sym"><math><msub><mi>A</mi><mn>44</mn></msub></math></td><td>付加慣性モーメント（ロール）</td><td>横揺れに伴い連れ回る周囲水の見かけの慣性。周波数応答（§8.2）は BEM 表の周波数依存値を使い、復原力シミュレーション（§13.15）は BEM 較正から求めた無次元付加慣性比 <math><msub><mi>a</mi><mn>44</mn></msub></math> による一定の代表値 <math><mrow><msub><mi>A</mi><mn>44</mn></msub><mo>=</mo><msub><mi>a</mi><mn>44</mn></msub><msub><mi>I</mi><mn>44</mn></msub></mrow></math> を使う</td><td>kg·m²</td><td class="num">a44≈0.54 ○（BEM フィット）</td></tr>
 <tr><td class="sym"><math><msub><mi>k</mi><mn>55</mn></msub></math></td><td>ピッチ慣動半径</td><td>ピッチ慣性 <math><mrow><msub><mi>I</mi><mn>55</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>55</mn><mn>2</mn></msubsup></mrow></math>。既定は <math><mrow><msub><mi>r</mi><mi>g</mi></msub><msub><mi>L</mi><mi>wl</mi></msub></mrow></math> の仮定、重量表 なら重量表（§13.12）から部品自己慣性 r55 込みで算出（S6）</td><td>m</td><td class="num">0.8（=0.25L）△／表 0.765 ○（点質量のみ 0.590）</td></tr>
 <tr><td class="sym"><math><mrow><msub><mi>H</mi><mi>h</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math>, <math><mrow><msub><mi>H</mi><mi>θ</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math></td><td>ヒーブ・ピッチ RAO</td><td>単位波振幅あたりの応答</td><td>m/m, deg/m</td><td class="num">—</td></tr>
 <tr><td class="sym"><math><msub><mi>m</mi><mi>n</mi></msub></math></td><td>応答スペクトルの n 次モーメント</td><td>RMS = √m₀</td><td>—</td><td class="num">—</td></tr>
@@ -2111,6 +2147,50 @@ E_転覆・E_復帰 のどちらよりも 1 桁大きいため、<b>同じ砕波
 </ol>
 <div class="eqnote"><b>既知の限界（外部 STL 経路に固有）</b>——①船体形状の定義由来の実験式・仮定（風圧面積・付加物形状係数等・§5.2/§5.4）は外部船体でも主要目からの推定のままで、STL 形状には連動しない。②表示メッシュは頂点クラスタリングによる間引きのみ（法線・トポロジーの再計算はしない）——元 STL が既に水密でない場合、間引き後の見た目に穴が出ることがある（表示専用なので水理計算には影響しない）。③STL からの自動判別が原理的にできないのはキール形状だけ（上記 --keel-area／--keel-zc で回避）——船底4次モーメント I4（§8.2）は gz.py が没水面を直接積分して求めており、外部 STL でも最初から測れている。船体形状の定義由来の閉形式の解析式は、その形状専用のフォールバック／V14②の照合基準であり、外部 STL 経路では最初から関与しない。</div>
 <p class="std">関連: §3（本図の「外部 STL」入口）。CLI のフルリファレンスはリポジトリ内の README を参照。</p>
+</details>
+
+<!-- ═══════════ §13.15 ═══════════ -->
+<details class="sub" open><summary>13.15 復原力シミュレーション（横波中の横揺れ）</summary>
+<p>§13.3〜§13.4 の GZ 曲線は「傾けたら戻ろうとする力の大きさ」を静的に与えるが、実際の海では波が船を絶えず押し傾け続ける。本節は
+横から周期的な波を受けたときの横揺れ（ロール）を<b>時間の経過とともに</b>解いて、KG・浮心・復原てこの関係と、傾斜が時々刻々どう動くかを
+1 枚のアニメーションで示す。船体タブの 3D 表示の直下に置く。</p>
+
+<h3>13.15.1 運動方程式</h3>
+<p>ロールのみの 1 自由度で近似する。</p>
+<div class="eq"><math display="block"><mrow>
+<mo>(</mo><msub><mi>I</mi><mn>44</mn></msub><mo>+</mo><msub><mi>A</mi><mn>44</mn></msub><mo>)</mo><mover><mi>φ</mi><mo>¨</mo></mover>
+<mo>+</mo><msub><mi>M</mi><mi>damp</mi></msub><mo>(</mo><mover><mi>φ</mi><mo>˙</mo></mover><mo>)</mo>
+<mo>+</mo><mi>m</mi><mi>g</mi><mi>GZ</mi><mo>(</mo><mi>φ</mi><mo>−</mo><mi>α</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>,</mo><mi>KG</mi><mo>)</mo><mo>=</mo><mn>0</mn>
+</mrow></math></div>
+<p>ここで <math><mi>φ</mi></math> は船の傾斜角、<math><mrow><mi>α</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>=</mo><mi>k</mi><msub><mi>ζ</mi><mi>a</mi></msub><mi>sin</mi><mo>(</mo><mi>ω</mi><mi>t</mi><mo>)</mo></mrow></math>
+は船の位置における横波の水面傾斜（深水長波近似・波数 <math><mrow><mi>k</mi><mo>=</mo><mn>2</mn><mi>π</mi><mo>/</mo><mi>λ</mi></mrow></math>、
+<math><mrow><mi>λ</mi><mo>=</mo><mi>g</mi><msup><mi>T</mi><mn>2</mn></msup><mo>/</mo><mn>2</mn><mi>π</mi></mrow></math>）。
+復原モーメントは絶対傾斜 φ ではなく<b>水面に対する相対傾斜</b> φ−α(t) で GZ 表を引く——波が傾いていれば船もその分まで自然に「浮いていられる」ため。
+GZ(φ,KG) は §13.3 の係数表と同じもの（KG の違いは同じ閉形式補正で扱う）。<math><msub><mi>I</mi><mn>44</mn></msub></math>・<math><msub><mi>A</mi><mn>44</mn></msub></math> は §2 の記号表のとおり。
+減衰項 <math><msub><mi>M</mi><mi>damp</mi></msub></math> は sw③（横揺れ減衰の求め方）の抗力モデルを時間領域の形（線形項＝BEM放射分＋摩擦、2次項＝船底平板・キールフィンをそのまま2乗で）で使う。
+sw③＝一定ζのときは単純な線形粘性減衰（§8.2 と同じ式）になる。時間積分は 4 次 Runge-Kutta・固定刻み。</p>
+
+<h3>13.15.2 入力と操作</h3>
+<p>波高・波周期・KG・断面形状（GZ 表の変種と同じ選択肢）・初期傾斜を独立に設定できる（性能タブの現在値とは連動しない what-if）。
+「砕波を当てる」は §13.13 のエネルギー障壁 E_転覆・E_復帰を目盛として示しつつ、指定したエネルギー E を角速度の瞬間的な増分として傾斜と同じ向きに与える——
+実際の砕波が船を一撃で押し回す様子の簡易表現。再生・停止・リセットと再生速度の変更ができる。</p>
+
+<h3>13.15.3 見方</h3>
+<p>断面図は船体中央（船体タブの他の図と同じ代表断面）を、重心 G を中心に傾けて描く。G から下向きに重量、没水部分の面積重心（浮心 B の表示用近似）から
+上向きに浮力の矢印を出し、両者の水平距離を復原てことして寸法線で示す——ただし<b>表示する数値そのものは §13.3 の係数表 GZ(φ,KG) から取り、
+断面図の浮心位置とは独立</b>（次項参照）。傾斜が AVS（GZ 表から求まる復原力消失角）を超えると「転覆」と表示するが、計算はそのまま続ける——
+GZ 表は ±180° まであるので、裏返って安定するか揺り戻して復帰するかがアニメーションと時系列にそのまま現れる。右側の時系列には直近 30 秒の
+傾斜角と AVS の目盛線を重ねて表示する。</p>
+
+<h3>13.15.4 断面近似についての注記</h3>
+<p>断面図は表示専用の簡略化であり、計算そのものには使わない。船体中央の 1 断面だけを描くため、船首尾方向の形状変化（浮心の前後移動やトリム）は
+表現されない。上部構造（キャノピー等）の断面形状データが無い変種は、断面自体を平甲板のまま表示し、GZ 表の値だけを対応する変種に切り替える。
+浮心の位置は<b>この 1 断面の没水面積重心</b>という 2 次元近似であり、実際の復原てこ（3D の係数表 GZ(φ,KG)）とは一般に一致しない——
+本節の数値（GZ・転覆判定）はすべて 3D の係数表に基づき、断面図の浮心はあくまで「G と B の位置関係」を直感的に見せるための模式である。</p>
+
+<p class="std">回帰検証: V18（検証ケース一覧・モデル整合性検証グループ）。波高ゼロ・初期傾斜ありの自由減衰から求めた周期・減衰比が、
+ロール固有周期・等価線形化した減衰比と整合すること、波高・初期傾斜ともゼロなら傾斜が動かないこと、断面形状の変種切替が他の検証結果に
+影響しないことを確認する。</p>
 </details>
 
 </details>
@@ -3861,6 +3941,74 @@ const USV = (function(){
              etaDefault, sBreak, Hb_cap:limDefault.Hb_cap, Hb_rec:limDefault.Hb_rec, rateCap, rateRec };
   }
 
+  // ── 復原力シミュレーション（横波中の横揺れ・時間積分・S13.14） ──
+  // GZ(φ,KG) を ±180° にラップして参照（角度は既存の閉形式補正 GZ_ref(φ)−(KG−KG_ref)sinφ と同じ）。
+  function gzAngleWrap(a){ return ((a % 360) + 540) % 360 - 180; }
+  function gzKGArray(variantKey, KG){
+    const variants = hydro.gz.variants, vkey = variants[variantKey] ? variantKey : 'base';
+    const angles = hydro.gz.angles_deg, gzRef = variants[vkey].GZ_m, kgRef = hydro.gz.kg_ref_m;
+    return angles.map((a, i) => gzRef[i] - (KG - kgRef) * Math.sin(a * Math.PI / 180));
+  }
+  function gzInterp(angles, gzArr, angleDeg){
+    return npInterpLocal(gzAngleWrap(angleDeg), angles, gzArr);
+  }
+  // 運動方程式の右辺（純関数）: (I44+A44)φ̈ = −M_damp(φ̇) − mg·GZ(φ−α(t))。y=[φ_rad, φ̇_rad/s]。
+  // ctx = { I:I44+A44, m, g, angles, gzArr, Blin, Bq, alpha(t)→rad(局所水面傾斜) }。
+  function rollSimDeriv(t, y, ctx){
+    const phiDeg = y[0] * 180 / Math.PI, alphaDeg = ctx.alpha(t) * 180 / Math.PI;
+    const gz = gzInterp(ctx.angles, ctx.gzArr, phiDeg - alphaDeg);
+    const damp = ctx.Blin * y[1] + ctx.Bq * y[1] * Math.abs(y[1]);
+    return [y[1], (-damp - ctx.m * ctx.g * gz) / ctx.I];
+  }
+  // RK4 1ステップ（純関数・dt固定）。
+  function rollSimRK4(t, y, dt, ctx){
+    const f = (tt, yy) => rollSimDeriv(tt, yy, ctx);
+    const k1 = f(t, y);
+    const k2 = f(t + dt / 2, [y[0] + dt / 2 * k1[0], y[1] + dt / 2 * k1[1]]);
+    const k3 = f(t + dt / 2, [y[0] + dt / 2 * k2[0], y[1] + dt / 2 * k2[1]]);
+    const k4 = f(t + dt, [y[0] + dt * k3[0], y[1] + dt * k3[1]]);
+    return [y[0] + dt / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]),
+            y[1] + dt / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1])];
+  }
+  // シミュレーション文脈: sea.rollDamp='const' は一定ζ（B44=2ζ√(C44(I44+A44))・線形のみ）、
+  // 'drag'（既定）は BEM放射分＋摩擦(Kato・振幅は初期傾斜相当で代表)の線形項 ＋ 船底/キール2次抗力をそのまま2次で加算
+  // （既存の bFriction/bqBottom/bqKeel をそのまま流用・等価線形化はしない）。A44 = ma44×I44（usv-hydro.bem.fit）。
+  function rollSimContext(p, der, variantKey, KG, alphaFn, phi0Deg){
+    if (!hydro || !hydro.gz || !hydro.bem) return null;
+    const sea = p.sea;
+    const { I44, C44 } = rollStiffness(p.hull, der, sea);
+    const A44 = hydro.bem.fit ? hydro.bem.fit.ma44 * I44 : 0;
+    const I = I44 + A44;
+    const em = effectiveMass(p.hull, sea);
+    let Blin, Bq;
+    if (sea.rollDamp === 'const'){
+      Blin = 2 * sea.zeta44Visc * Math.sqrt(Math.max(0, C44 * I));
+      Bq = 0;
+    } else {
+      const wn = rollNaturalFreq(p.hull, der, sea);
+      const bem = _tblLerp(hydro.bem.omega, hydro.bem.B['44'], wn);
+      const phiA = Math.max(Math.abs(phi0Deg || 0) * Math.PI / 180, 0.02);
+      Blin = bem + bFriction(wn, phiA, p.hull, sea, der);
+      Bq = bqBottom(p.hull, sea) + bqKeel(p.hull, sea);
+    }
+    return { I, m: em.m, g: C.g, angles: hydro.gz.angles_deg, gzArr: gzKGArray(variantKey, KG), Blin, Bq, alpha: alphaFn };
+  }
+  // 自由減衰の周期・減衰比（ピーク間隔＝1周期・対数減衰率からζ）。V18 検証で使用。
+  function rollDecayMetrics(series){                   // series: [{t,phiDeg}, …]
+    const peaks = [];
+    for (let i = 1; i < series.length - 1; i++){
+      const a = series[i - 1].phiDeg, b = series[i].phiDeg, c = series[i + 1].phiDeg;
+      if (Math.abs(b) > Math.abs(a) && Math.abs(b) >= Math.abs(c) && Math.abs(b) > 1e-4) peaks.push(series[i]);
+    }
+    if (peaks.length < 3) return { periods: [], meanPeriod: null, zeta: null, peaks };
+    const periods = [];                                 // 同符号ピーク（2つおき）の間隔＝1周期
+    for (let i = 2; i < peaks.length; i++) periods.push(peaks[i].t - peaks[i - 2].t);
+    const meanPeriod = periods.reduce((a, b) => a + b, 0) / periods.length;
+    const delta = Math.log(Math.abs(peaks[0].phiDeg) / Math.abs(peaks[2].phiDeg));   // 対数減衰率（1周期あたり）
+    const zeta = delta / Math.sqrt(4 * Math.PI * Math.PI + delta * delta);
+    return { periods, meanPeriod, zeta, peaks };
+  }
+
   return { C, KT, defaults, derived, massProps, effectiveMass, keelDeployed, slenderness, crSlenderFactor, hullGeom, hullMesh, hullWaterline, rCalm, rCalmParts, rWind, rWave, rWaveRegular, rWaveSpectral,
            jonswapS, reflEff, rTotal, rawModelActive,
            etaMotor, pShaft, etaProp, thrust, pElecFor, solveVeq,
@@ -3872,7 +4020,8 @@ const USV = (function(){
            seaCatalogDefaults, seaClimateCatalogs, missionDefaults, simulateMission, tracePositions,
            gzLandscape, windHeelArm, breakingWaveLimits, breakingEventRate, capsizeRecoveryAssessment,
            geo, GEO_PORTS, GEO_DEST, GEO_ZONES, gcNm, coastDistNm, zoneOf, resolveRoute,
-           geoMainlandCount, slerpPoint, bearingDeg, destPoint };
+           geoMainlandCount, slerpPoint, bearingDeg, destPoint,
+           gzAngleWrap, gzKGArray, gzInterp, rollSimDeriv, rollSimRK4, rollSimContext, rollDecayMetrics };
 })();
 if (typeof module !== 'undefined') module.exports = USV;
 </script>
@@ -3916,23 +4065,25 @@ if (typeof module !== 'undefined') module.exports = USV;
   let hull=null, der=null, mesh=null;
   let Pfull=null, veqMs=0;                            // 波駆動用（現在のパラメータと達成速力）
   let waveOn=false, wm=null, wStats=null, rafId=0, tStart=0, tNow=0;
-  let hl=null, hlTimer=0;                             // 設計パラメータ⇄部位ハイライト
-  function highlight(spec){
-    hl=spec; draw(tNow);
-    clearTimeout(hlTimer); hlTimer=setTimeout(()=>{ hl=null; draw(tNow); }, 2000);
-  }
+  let hullTabVisible=true;                            // 船体タブが非表示のとき描画ループを止める
   function buildWave(){
     wm=USV.waveMotion(Pfull.env, veqMs, Pfull, der);
     wStats=USV.seakeeping(Pfull.env, veqMs, Pfull, der);
   }
   function loop(ts){
-    if(!waveOn) return;
+    if(!waveOn || !hullTabVisible){ rafId=0; return; }
     tNow=(ts-tStart)/1000; draw(tNow);
     rafId=requestAnimationFrame(loop);
   }
   function stopWave(){
-    waveOn=false; cancelAnimationFrame(rafId); btnW.classList.remove('on'); tNow=0; draw();
+    waveOn=false; cancelAnimationFrame(rafId); rafId=0; btnW.classList.remove('on'); tNow=0; draw();
   }
+  window.__hullTabListeners=window.__hullTabListeners||[];
+  window.__hullTabListeners.push(vis=>{
+    hullTabVisible=vis;
+    if(vis){ draw(tNow); if(waveOn && !rafId){ tStart=performance.now()-tNow*1000; rafId=requestAnimationFrame(loop); } }
+    else if(rafId){ cancelAnimationFrame(rafId); rafId=0; }
+  });
 
   // Lightfish 実艇に合わせた濃いこげ茶（チョコレート×ブロンズ）系
   const COL={hull:[97,74,57], deck:[148,133,114], panel:[44,47,53], transom:[84,64,50],
@@ -4002,14 +4153,7 @@ if (typeof module !== 'undefined') module.exports = USV;
       if((floating||wav) && zw<wlv && f.tag!=='panel'){    // 水面下を青灰へ
         c=[c[0]+(SUB[0]-c[0])*0.55, c[1]+(SUB[1]-c[1])*0.55, c[2]+(SUB[2]-c[2])*0.55];
       }
-      let hlF=false;                                  // パラメータに対応する部位を強調
-      if(hl){
-        if(hl.tags && hl.tags.includes(f.tag)) hlF=true;
-        else if(hl.zone==='below' && zw<d) hlF=true;
-        else if(hl.zone==='above' && zw>=d) hlF=true;
-      }
-      if(hlF) c=[c[0]+(42-c[0])*0.48, c[1]+(120-c[1])*0.48, c[2]+(214-c[2])*0.48];
-      items.push({z:zc, kind:'face', pts:r.map(px), hlF,
+      items.push({z:zc, kind:'face', pts:r.map(px), hlF:false,
         fill:`rgb(${(c[0]*sh)|0},${(c[1]*sh)|0},${(c[2]*sh)|0})`});
     }
     for(const ln of mesh.lines){
@@ -4035,7 +4179,7 @@ if (typeof module !== 'undefined') module.exports = USV;
         items.push({z:(r[0][2]+r[2][2])/2, kind:'water', pts:r.map(px)});
       }
     }
-    if((floating && !wav) || (hl && hl.zone)){
+    if(floating && !wav){
       const wl=USV.hullWaterline(hull, Math.min(d, D*0.999), {variant:currentVariant()});
       if(wl.mode==='segments'){
         for(const seg of wl.segs){
@@ -4049,19 +4193,6 @@ if (typeof module !== 'undefined') module.exports = USV;
             items.push({z:(r[0][2]+r[1][2])/2-0.004*L, kind:'stroke', pts:r.map(px), stroke:WLINE, w:1.8});
           }
         }
-      }
-    }
-    if(hl && hl.dim==='afront'){                      // 前面投影: 平面に船体の影を落とす
-      const xf=1.12*L, pw=0.62*mesh.B, zt=bb.z1+0.02*L;
-      const pr=[[xf,-pw,d],[xf,pw,d],[xf,pw,zt],[xf,-pw,zt]].map(rot);
-      items.push({z:(pr[0][2]+pr[2][2])/2+0.02*L, kind:'plane', pts:pr.map(px)});
-      for(const f of mesh.faces){
-        let above=false;
-        for(const p2 of f.p) if(p2[2]>d){ above=true; break; }
-        if(!above) continue;                          // 水線上にかかる面だけを投影
-        const r=f.p.map(p2=>rot([xf, p2[1], Math.max(p2[2],d)]));
-        let zc2=0; for(const q2 of r) zc2+=q2[2];
-        items.push({z:zc2/r.length-0.01*L, kind:'shadow', pts:r.map(px)});
       }
     }
     items.sort((p,q)=>q.z-p.z);                       // 奥から手前へ
@@ -4078,7 +4209,7 @@ if (typeof module !== 'undefined') module.exports = USV;
       else if(it.kind==='shadow'){ ctx.closePath(); ctx.fillStyle='#A9C4E8'; ctx.fill(); }
       else { ctx.strokeStyle=it.stroke; ctx.lineWidth=it.w; ctx.lineJoin='round'; ctx.stroke(); }
     }
-    if(hl && hl.dim){                               // 寸法線（最前面・実寸ラベル付き）
+    {                                                // 寸法線（船体タブでは常時表示・最前面・実寸ラベル付き）
       ctx.lineWidth=1.4; ctx.font='600 12px system-ui,sans-serif';
       const seg=(a,b,lab)=>{
         const A=px(rot(a)), B2=px(rot(b));
@@ -4088,17 +4219,10 @@ if (typeof module !== 'undefined') module.exports = USV;
         ctx.fillStyle='rgba(255,255,255,0.88)'; ctx.fillRect(mx-w2/2-4,my-22,w2+8,17);
         ctx.fillStyle='#2A78D6'; ctx.fillText(lab,mx-w2/2,my-9);
       };
-      if(hl.dim==='length') seg([0,0,-0.07*L],[L,0,-0.07*L],`L_wl = ${hull.Lwl.toFixed(2)} m`);
-      if(hl.dim==='beam'){ const B2=mesh.B/2; seg([0.45*L,-B2,D+0.06*L],[0.45*L,B2,D+0.06*L],`B = ${hull.B.toFixed(2)} m`); }
-      if(hl.dim==='dprop' && mesh.propDim){ const pd=mesh.propDim;
+      seg([0,0,-0.07*L],[L,0,-0.07*L],`L_wl = ${hull.Lwl.toFixed(2)} m`);
+      { const B2=mesh.B/2; seg([0.45*L,-B2,D+0.06*L],[0.45*L,B2,D+0.06*L],`B = ${hull.B.toFixed(2)} m`); }
+      if(mesh.propDim){ const pd=mesh.propDim;
         seg([pd.x,0,pd.z-pd.r],[pd.x,0,pd.z+pd.r],`D_prop = ${(2*pd.r).toFixed(2)} m`); }
-      if(hl.dim==='afront'){                        // ラベルのみ（影は描画パイプライン側）
-        const A=px(rot([1.12*L,0,bb.z1+0.04*L]));
-        const lab=`A_front = ${hull.Afront.toFixed(2)} m²（水線上の前面投影）`;
-        const w2=ctx.measureText(lab).width;
-        ctx.fillStyle='rgba(255,255,255,0.88)'; ctx.fillRect(A[0]-w2/2-4,A[1]-14,w2+8,17);
-        ctx.fillStyle='#2A78D6'; ctx.fillText(lab,A[0]-w2/2,A[1]-1);
-      }
     }
     const fb=D-d;
     if(wav){
@@ -4148,7 +4272,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   });
   btnR.addEventListener('click',()=>{ yaw=YAW0; pitch=PITCH0; zoom=1; draw(tNow); });
   window.addEventListener('resize',()=>draw(tNow));
-  window.__hullView={update, highlight};
+  window.__hullView={update};
 })();
 </script>
 
@@ -4925,10 +5049,58 @@ if (typeof module !== 'undefined') module.exports = USV;
          const ok = ok1 && ok2 && ok3;
          return { val:`①${val1}[${ok1?'OK':'NG'}] ②反射モデル独立再計算差 ${(rReflect-rReflectIndep).toExponential(2)}[${ok2?'OK':'NG'}] `+
            `③${val3}[${ok3?'OK':'NG'}]`, ok }; }},
+      {id:'V18',name:'復原力シミュレーション（横波中の横揺れ・時間積分）の自由減衰・不変性',
+       crit:'①波高0・初期傾斜10°・KG=0.15の自由減衰で RK4 から求めた周期がロール固有周期 T_roll(=2π/ω_n) の±5%以内、対数減衰率から求めたζが同条件の等価線形化ζ44の±20%以内　②波高0・初期傾斜0°では φ=0 のまま　③GZ表の形状変種を切り替えても V1〜V17 の代表値（喫水・V_eq・全抵抗）が不変。',
+       why:'時間領域1自由度ロール方程式を新設した際、①減衰・復原の実装が周波数領域の既存量（T_roll・ζ44相当）と整合すること、②外力ゼロなら平衡から動かないこと（数値粘性の混入が無いこと）、③新機能がグローバル状態を汚さず既存 V1〜V17 に副作用を与えないことを毎回確認する。',
+       note:'ζ44の基準値は摩擦(Kato)＋船底/キール2次項を初期傾斜相当の振幅で等価線形化した値（rollB44）——時間領域シミュレーション自体は2次項をそのまま2次で積分するため振幅依存で自由減衰中に変化し、代表振幅（初期傾斜と最初のピークの平均）における等価線形化との比較は近似の一致確認にとどまる。',
+       run(){
+         const p = USV.defaults();
+         const der = USV.derived(p.hull, p.sea);
+         const KG=0.15, variant='base', phi0Deg=10;
+         const ctx = USV.rollSimContext(p, der, variant, KG, ()=>0, phi0Deg);
+         let ok1=false, val1='usv-hydro に bem/gz が無い';
+         if (ctx){
+           let y=[phi0Deg*Math.PI/180,0], t=0; const dt=0.005; const series=[];
+           for (let i=0;i<6000;i++){ series.push({t, phiDeg:y[0]*180/Math.PI}); y=USV.rollSimRK4(t,y,dt,ctx); t+=dt; }
+           const m = USV.rollDecayMetrics(series);
+           const wn = USV.rollNaturalFreq(p.hull, der, p.sea);
+           const Troll = 2*Math.PI/wn;
+           const { C44 } = USV.rollStiffness(p.hull, der, p.sea);
+           const okPeriod = m.meanPeriod!=null && Math.abs(m.meanPeriod-Troll)/Troll < 0.05;
+           let okZeta=false, zetaRef=null;
+           if (m.peaks.length>=3){
+             const phiAref = (phi0Deg + Math.abs(m.peaks[0].phiDeg))/2 * Math.PI/180;   // 代表振幅=初期傾斜と最初のピークの平均
+             const rollState = { phiA:phiAref, sigmaPhiDot: phiAref*wn/Math.sqrt(2) };
+             const bd = USV.rollB44(wn, p.hull, p.sea, der, rollState);
+             zetaRef = bd.total/(2*Math.sqrt(C44*ctx.I));
+             okZeta = zetaRef>0 && Math.abs(m.zeta-zetaRef)/zetaRef < 0.20;
+           }
+           ok1 = okPeriod && okZeta;
+           val1 = `T_sim=${m.meanPeriod?m.meanPeriod.toFixed(3):'—'}s / T_roll=${Troll.toFixed(3)}s`+
+             `（差${m.meanPeriod?(Math.abs(m.meanPeriod-Troll)/Troll*100).toFixed(1):'—'}%）[${okPeriod?'OK':'NG'}]・`+
+             `ζ_sim=${m.zeta!=null?m.zeta.toFixed(4):'—'} / ζ_ref=${zetaRef!=null?zetaRef.toFixed(4):'—'}`+
+             `（差${(zetaRef&&m.zeta!=null)?(Math.abs(m.zeta-zetaRef)/zetaRef*100).toFixed(1):'—'}%）[${okZeta?'OK':'NG'}]`;
+         }
+         let ok2=false;
+         const ctx2 = USV.rollSimContext(p, der, 'base', 0.15, ()=>0, 0);
+         let maxAbs=0;
+         if (ctx2){
+           let y2=[0,0], t2=0;
+           for (let i=0;i<2000;i++){ y2=USV.rollSimRK4(t2,y2,0.005,ctx2); t2+=0.005; maxAbs=Math.max(maxAbs,Math.abs(y2[0])); }
+           ok2 = maxAbs < 1e-6;
+         }
+         const before = { d:der.d, veq:USV.solveVeq(p.prop.PmaxElec,p.env,p,der), r:USV.rTotal(1.0,p.env,p.hull,der).total };
+         USV.rollSimContext(p, der, 'canopy_sym', 0.18, ()=>0, 5);   // 変種切替が他の計算に副作用を与えないことを確認
+         const der2 = USV.derived(p.hull, p.sea);
+         const after = { d:der2.d, veq:USV.solveVeq(p.prop.PmaxElec,p.env,p,der2), r:USV.rTotal(1.0,p.env,p.hull,der2).total };
+         const ok3 = before.d===after.d && before.veq===after.veq && before.r===after.r;
+         const ok = ok1 && ok2 && ok3;
+         return { val:`①${val1} ②max|φ|=${maxAbs.toExponential(2)} rad[${ok2?'OK':'NG'}] `+
+           `③変種切替後も喫水・V_eq・全抵抗が不変[${ok3?'OK':'NG'}]`, ok }; }},
     ];
     const groups=[
       {t:'ユースケース検証', n:'公表値・運用シナリオの再現（プリセット V1–V4 と対応。V1・V2 は較正点）', ids:['V1','V2','V3','V4']},
-      {t:'モデル整合性検証', n:'数理・実装の内部チェック（恒等式・物理極限・較正保存）。運転シナリオではないためプリセットは無い', ids:['V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17']},
+      {t:'モデル整合性検証', n:'数理・実装の内部チェック（恒等式・物理極限・較正保存）。運転シナリオではないためプリセットは無い', ids:['V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17','V18']},
     ];
     const card=c=>{
       const r=c.run();
@@ -5010,27 +5182,6 @@ if (typeof module !== 'undefined') module.exports = USV;
       if(!applyingPreset) setActivePreset(null);   // 手動変更＝プリセットから離脱
       recalc();
     });
-  });
-
-  // ── 設計パラメータ ⇄ 3D 部位ハイライト（入力欄に触れると該当部位が光る） ──
-  const HL={
-    'p-L':   {tags:['hull','deck','transom'], dim:'length'},
-    'p-B':   {tags:['deck','hull'], dim:'beam'},
-    'p-m':   {zone:'below'},
-    'g-cb':  {zone:'below'},
-    'g-k1':  {zone:'below', tags:['keel']},
-    'g-cd':  {zone:'above'},
-    'g-af':  {dim:'afront'},
-    'g-lbwl':{zone:'below'},
-    'g-dprop':{tags:['prop','pod'], dim:'dprop'},
-    'g-vd':  {tags:['prop']},
-    'g-eta': {tags:['prop','pod']},
-  };
-  Object.entries(HL).forEach(([id,spec])=>{
-    const el=$(id); if(!el) return;
-    ['focus','input'].forEach(ev=>el.addEventListener(ev,()=>{
-      if(window.__hullView) window.__hullView.highlight(spec);
-    }));
   });
 
   // 判定が画面上方へ消えたら要約バーを出す（単一要素なので rAF スロットルの passive リスナーで十分）
@@ -5528,6 +5679,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     renderGZSection(P);
     renderSeaCoeffSection(P, der, hydro);
     renderStatusSection(P, hydro, der);
+    if(window.__rollSim) window.__rollSim.update(P, der);
   }
   window.__renderHullTab = renderHullTab;
 
@@ -5539,6 +5691,334 @@ if (typeof module !== 'undefined') module.exports = USV;
   if(window.__getParams){
     const p = window.__getParams();
     renderHullTab(p, USV.derived(p.hull, p.sea));
+  }
+})();
+</script>
+<script>
+/* ============================================================
+   復原力シミュレーション — 横波中の横揺れ（時間領域1自由度・設計書§13.15）
+   数式コア（rollSimContext/rollSimRK4 等）を呼ぶだけ・ここには物理式を書かない
+   ============================================================ */
+'use strict';
+(function(){
+  const cv=document.getElementById('rs-cross'); if(!cv) return;
+  const ctx2d=cv.getContext('2d');
+  const info=document.getElementById('rs-info');
+  const elH=document.getElementById('rs-H'), elT=document.getElementById('rs-T'),
+        elKG=document.getElementById('rs-KG'), elVariant=document.getElementById('rs-variant'),
+        elPhi0=document.getElementById('rs-phi0'), elSpeed=document.getElementById('rs-speed'),
+        btnPlay=document.getElementById('rs-play'), btnReset=document.getElementById('rs-reset'),
+        elE=document.getElementById('rs-E'), btnBreak=document.getElementById('rs-break'),
+        breakInfo=document.getElementById('rs-break-info'),
+        chartSvg=document.getElementById('rs-chart'), chartInfo=document.getElementById('rs-chart-info');
+
+  let curP=null, curDer=null, kgDefaulted=false, variantFilled=false;
+  let running=false, rafId=0, tSim=0, lastTs=0, hullTabVisible=false;
+  let y=[0,0];                        // [phi_rad, phidot_rad/s]
+  let series=[];                      // {t, phiDeg}
+  let ctxPhys=null, waveK=0, waveOmega=0, zetaA=0;
+
+  function populateVariant(){
+    if(variantFilled || !USV.hydro || !USV.hydro.gz) return;
+    const labels=USV.hydro.gz.variants;
+    elVariant.innerHTML = Object.keys(labels).map(k=>`<option value="${k}">${(labels[k]&&labels[k].label)||k}</option>`).join('');
+    variantFilled=true;
+  }
+
+  function buildCtxPhys(){
+    if(!curP || !curDer || !USV.hydro) return null;
+    const KG=parseFloat(elKG.value), variant=elVariant.value||'base';
+    const H=Math.max(0,parseFloat(elH.value)||0), T=Math.max(0.5,parseFloat(elT.value)||6);
+    zetaA=H/2;
+    const lambda=USV.C.g*T*T/(2*Math.PI);           // 深水波長（長波近似）
+    waveK=2*Math.PI/lambda; waveOmega=2*Math.PI/T;
+    const alphaFn=t=>waveK*zetaA*Math.sin(waveOmega*t);   // 横波の水面傾斜（船位置 y=0）
+    const phi0Deg=parseFloat(elPhi0.value)||0;
+    return USV.rollSimContext(curP, curDer, variant, KG, alphaFn, phi0Deg);
+  }
+
+  function resetSim(){
+    running=false; lastTs=0; btnPlay.textContent='再生';
+    if(rafId) cancelAnimationFrame(rafId); rafId=0;
+    tSim=0; series=[];
+    const phi0=(parseFloat(elPhi0.value)||0)*Math.PI/180;
+    y=[phi0,0];
+    ctxPhys=buildCtxPhys();
+    drawAll();
+  }
+
+  function stepPhys(dtReal){
+    if(!ctxPhys) return;
+    const speed=parseFloat(elSpeed.value)||1;
+    let remain=dtReal*speed;
+    const dt=0.005;
+    let guard=0;
+    while(remain>1e-9 && guard<2000){
+      const step=Math.min(dt,remain);
+      y=USV.rollSimRK4(tSim,y,step,ctxPhys);
+      tSim+=step; remain-=step; guard++;
+      series.push({t:tSim, phiDeg:y[0]*180/Math.PI});
+    }
+    const cutoff=tSim-30;
+    while(series.length && series[0].t<cutoff) series.shift();
+  }
+
+  function loop(ts){
+    if(!running || !hullTabVisible){ rafId=0; return; }
+    if(!lastTs) lastTs=ts;
+    const dtReal=Math.min(0.05,(ts-lastTs)/1000); lastTs=ts;
+    stepPhys(dtReal);
+    drawAll();
+    rafId=requestAnimationFrame(loop);
+  }
+
+  // ── 断面ジオメトリ（hullGeom の中央断面 t=0.5・キール／チャイン／デッキの折れ点） ──
+  function crossPoly(hull){
+    const g=USV.hullGeom(hull), t=0.5;
+    const z0=g.zKeel(t), zc=g.zChine(t), z1=g.zDeck(t);
+    const hc=g.sect(t,1), hd=g.deckIn*hc;
+    return [[-hd,z1],[-hc,zc],[0,z0],[hc,zc],[hd,z1]];
+  }
+  function rotAbout(p,cy,cz,phi){                    // (y,z) を (cy,cz) まわりに phi 回転（正=右舷が下がる向き）
+    const dy=p[0]-cy, dz=p[1]-cz, c=Math.cos(phi), s=Math.sin(phi);
+    return [cy+dy*c+dz*s, cz-dy*s+dz*c];
+  }
+  function clipBelow(poly, level){                   // z<=level の部分を切り出す（Sutherland-Hodgman）
+    const out=[];
+    for(let i=0;i<poly.length;i++){
+      const a=poly[i], b=poly[(i+1)%poly.length];
+      const ain=a[1]<=level, bin=b[1]<=level;
+      if(ain) out.push(a);
+      if(ain!==bin){
+        const tt=(level-a[1])/(b[1]-a[1]);
+        out.push([a[0]+(b[0]-a[0])*tt, level]);
+      }
+    }
+    return out;
+  }
+  function polyCentroid(poly){                       // 面積重心（表示用の2D近似・浮心Bの位置）
+    let A=0,cx=0,cz=0;
+    for(let i=0;i<poly.length;i++){
+      const a=poly[i], b=poly[(i+1)%poly.length];
+      const cr=a[0]*b[1]-b[0]*a[1];
+      A+=cr; cx+=(a[0]+b[0])*cr; cz+=(a[1]+b[1])*cr;
+    }
+    A/=2;
+    if(Math.abs(A)<1e-9) return null;
+    return { cy:cx/(6*A), cz:cz/(6*A) };
+  }
+
+  function draw(){
+    const dpr=window.devicePixelRatio||1, cw=cv.clientWidth, ch=cv.clientHeight;
+    if(!cw) return;
+    if(cv.width!==Math.round(cw*dpr)||cv.height!==Math.round(ch*dpr)){ cv.width=Math.round(cw*dpr); cv.height=Math.round(ch*dpr); }
+    ctx2d.setTransform(dpr,0,0,dpr,0,0); ctx2d.clearRect(0,0,cw,ch);
+    if(!curP || !USV.hydro || !USV.hydro.gz){ return; }
+    const hull=curP.hull, der=curDer, d=der.d, KG=parseFloat(elKG.value), variant=elVariant.value||'base';
+    const poly=crossPoly(hull);
+    const phi=y[0];
+    const rotPoly=poly.map(p=>rotAbout(p,0,KG,phi));
+    const eta0=zetaA*Math.cos(waveK*0-waveOmega*tSim);         // 船位置(y=0)の局所水面
+    const cutLevel=d+eta0;
+    const sub=clipBelow(rotPoly, cutLevel);
+    const bc=sub.length>=3 ? polyCentroid(sub) : null;
+
+    const halfSpanB=Math.max(...poly.map(p=>Math.abs(p[0])))*1.55;
+    const deckZ=poly.reduce((m,p)=>Math.max(m,p[1]),0);
+    const topMarginPx=64;                             // 浮力の矢印とラベル用の余白（上下動の分は別途 zetaA で確保）
+    const bottomMarginPx=110;                          // 重量の矢印とGZ寸法線・ラベル用の余白（同上）
+    const heaveSpan=2*zetaA;                          // 上下動（波に追従）の可動範囲を縦方向に確保
+    const scale=Math.min(cw*0.42/halfSpanB, (ch-bottomMarginPx-topMarginPx)/(deckZ+heaveSpan));
+    const cx0=cw*0.50, waterY=topMarginPx+(zetaA+deckZ-d)*scale;
+    const yS=v=>cx0+v*scale, zS=v=>waterY-(v-d)*scale;
+    const zSH=v=>zS(v)-eta0*scale;   // 船体側は局所水面に追従（長波近似・RAO≈1）させて描く
+
+    // 波面（画面全幅を横方向に流れる正弦波・実座標 y=(x-cx0)/scale）
+    ctx2d.beginPath();
+    const NX=48;
+    for(let i=0;i<=NX;i++){
+      const xp=cw*i/NX, yr=(xp-cx0)/scale, eta=zetaA*Math.cos(waveK*yr-waveOmega*tSim);
+      const yy=zS(d+eta);
+      i? ctx2d.lineTo(xp,yy) : ctx2d.moveTo(xp,yy);
+    }
+    ctx2d.lineTo(cw,ch); ctx2d.lineTo(0,ch); ctx2d.closePath();
+    ctx2d.fillStyle='rgba(42,120,214,0.14)'; ctx2d.fill();
+    ctx2d.strokeStyle='#2A78D6'; ctx2d.lineWidth=1.2; ctx2d.stroke();
+
+    // 船体断面
+    ctx2d.beginPath();
+    rotPoly.forEach((p,i)=>{ const q=[yS(p[0]),zSH(p[1])]; i?ctx2d.lineTo(q[0],q[1]):ctx2d.moveTo(q[0],q[1]); });
+    ctx2d.closePath();
+    ctx2d.fillStyle='rgba(97,74,57,0.92)'; ctx2d.fill();
+    ctx2d.strokeStyle='#44403A'; ctx2d.lineWidth=1.5; ctx2d.stroke();
+
+    // GZ（3D係数表の値・数値の根拠は物理コアと同一）
+    const gzArrKG=USV.gzKGArray(variant, KG);
+    const angles=USV.hydro.gz.angles_deg;
+    const alphaDeg=(waveK*zetaA*Math.sin(waveOmega*tSim))*180/Math.PI;
+    const phiDeg=phi*180/Math.PI;
+    const gzVal=USV.gzInterp(angles, gzArrKG, phiDeg-alphaDeg);
+    const land=USV.gzLandscape(angles, gzArrKG, hull.m);
+    const avsHi=land.AVS_deg, avsLo=land.AVS_port_deg;
+    const beyondAvs=(avsHi!=null && phiDeg>avsHi) || (avsLo!=null && phiDeg<avsLo);
+
+    // ── ラベル（白背景の箱つき・視認性優先） ──
+    ctx2d.font='600 12px system-ui,sans-serif'; ctx2d.textBaseline='alphabetic';
+    function labelBox(x,y,text,color){
+      const w=ctx2d.measureText(text).width;
+      ctx2d.fillStyle='rgba(255,255,255,0.92)'; ctx2d.fillRect(x-w/2-3,y-12,w+6,16);
+      ctx2d.fillStyle=color; ctx2d.fillText(text,x-w/2,y);
+    }
+    const armLen=Math.min(Math.max(28, scale*hull.B/3), topMarginPx-14, bottomMarginPx-70);   // 矢印の長さ ≈ 船幅/3（上下の余白に収まるよう上限）
+
+    // G（塗りつぶし丸）・重量の矢印（下向き・先端の外側にラベル）
+    const Gp=[yS(0),zSH(KG)];
+    ctx2d.fillStyle='#2A78D6';
+    ctx2d.beginPath(); ctx2d.arc(Gp[0],Gp[1],5,0,7); ctx2d.fill();
+    labelBox(Gp[0]-16,Gp[1]-9,'G','#2A78D6');
+    ctx2d.strokeStyle='#9F2F2D'; ctx2d.lineWidth=1.8;
+    ctx2d.beginPath(); ctx2d.moveTo(Gp[0],Gp[1]); ctx2d.lineTo(Gp[0],Gp[1]+armLen); ctx2d.stroke();
+    ctx2d.beginPath(); ctx2d.moveTo(Gp[0],Gp[1]+armLen); ctx2d.lineTo(Gp[0]-4,Gp[1]+armLen-8); ctx2d.lineTo(Gp[0]+4,Gp[1]+armLen-8); ctx2d.closePath();
+    ctx2d.fillStyle='#9F2F2D'; ctx2d.fill();
+    labelBox(Gp[0],Gp[1]+armLen+14,'mg','#9F2F2D');
+
+    // B（白抜き丸）・浮力の矢印（上向き・先端の外側にラベル）
+    let Bp=null;
+    if(bc){
+      Bp=[yS(bc.cy),zSH(bc.cz)];
+      ctx2d.fillStyle='#FFFFFF'; ctx2d.strokeStyle='#1F6C9F'; ctx2d.lineWidth=1.8;
+      ctx2d.beginPath(); ctx2d.arc(Bp[0],Bp[1],5,0,7); ctx2d.fill(); ctx2d.stroke();
+      labelBox(Bp[0]+18,Bp[1]+9,'B','#1F6C9F');
+      ctx2d.beginPath(); ctx2d.moveTo(Bp[0],Bp[1]); ctx2d.lineTo(Bp[0],Bp[1]-armLen); ctx2d.stroke();
+      ctx2d.beginPath(); ctx2d.moveTo(Bp[0],Bp[1]-armLen); ctx2d.lineTo(Bp[0]-4,Bp[1]-armLen+8); ctx2d.lineTo(Bp[0]+4,Bp[1]-armLen+8); ctx2d.closePath();
+      ctx2d.fillStyle='#1F6C9F'; ctx2d.fill();
+      labelBox(Bp[0],Bp[1]-armLen-14,'浮力','#1F6C9F');
+    }
+
+    // GZ 寸法線（船体の下・G の鉛直線とB相当の鉛直線の間に両矢印。値は3D係数表由来）
+    const hullBottomY=Math.max(...rotPoly.map(p=>zSH(p[1])));
+    const dimY=Math.max(hullBottomY, Gp[1]+armLen+14+8)+18;   // mg ラベルの下端よりさらに余白を空ける
+    const gzPx=Gp[0]+gzVal*scale;
+    ctx2d.strokeStyle='#2A78D6'; ctx2d.lineWidth=1.4;
+    ctx2d.beginPath(); ctx2d.moveTo(Gp[0],dimY-10); ctx2d.lineTo(Gp[0],dimY); ctx2d.stroke();          // G の鉛直線（短い引出し・mg矢印と重ねない）
+    ctx2d.beginPath(); ctx2d.moveTo(gzPx,hullBottomY+6); ctx2d.lineTo(gzPx,dimY); ctx2d.stroke();       // B相当の鉛直線
+    ctx2d.beginPath(); ctx2d.moveTo(Gp[0],dimY); ctx2d.lineTo(gzPx,dimY); ctx2d.stroke();
+    const dirSign=gzPx>=Gp[0]?1:-1;
+    for(const [ex,dir] of [[Gp[0],-dirSign],[gzPx,dirSign]]){
+      ctx2d.beginPath(); ctx2d.moveTo(ex,dimY); ctx2d.lineTo(ex+dir*7,dimY-4); ctx2d.lineTo(ex+dir*7,dimY+4); ctx2d.closePath();
+      ctx2d.fillStyle='#2A78D6'; ctx2d.fill();
+    }
+    labelBox((Gp[0]+gzPx)/2,dimY+18,`GZ = ${gzVal.toFixed(3)} m`,'#2A78D6');
+
+    if(beyondAvs){
+      ctx2d.fillStyle='rgba(159,47,45,0.92)'; ctx2d.font='700 15px system-ui,sans-serif';
+      ctx2d.fillText('転覆（AVS 超過）',10,22);
+    }
+
+    const modeLab = curP.sea.rollDamp==='const' ? '一定ζ' : '抗力モデル';
+    info.innerHTML = `φ = ${phiDeg.toFixed(1)}°・GZ = ${gzVal.toFixed(3)} m・AVS ${avsHi!=null?avsHi.toFixed(0):'—'}°/${avsLo!=null?avsLo.toFixed(0):'—'}°（sw③=${modeLab}）`+
+      (beyondAvs?'　<b style="color:var(--ng-ink)">転覆（AVSを超過）— 復帰するかは表を最後まで見て判断</b>':'');
+  }
+
+  function drawChart(){
+    if(!chartSvg) return;
+    const W=900,H=240,pad={l:48,r:16,t:14,b:30};
+    const land=(curP && USV.hydro && USV.hydro.gz) ? USV.gzLandscape(USV.hydro.gz.angles_deg, USV.gzKGArray(elVariant.value||'base', parseFloat(elKG.value)), curP.hull.m) : null;
+    const avsHi=land&&land.AVS_deg!=null?land.AVS_deg:null, avsLo=land&&land.AVS_port_deg!=null?land.AVS_port_deg:null;
+    let ymax=Math.max(20, Math.abs(avsHi||0), Math.abs(avsLo||0), ...series.map(s=>Math.abs(s.phiDeg)))*1.15;
+    const t1=tSim, t0=t1-30;
+    const X=t=>pad.l+(W-pad.l-pad.r)*(t-t0)/30;
+    const Y=v=>pad.t+(H-pad.t-pad.b)*(1-(v+ymax)/(2*ymax));
+    let s=`<line x1="${pad.l}" y1="${Y(0).toFixed(1)}" x2="${W-pad.r}" y2="${Y(0).toFixed(1)}" stroke="#EAEAEA"/>`;
+    s+=`<line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${H-pad.b}" stroke="#787774"/>`;
+    s+=`<line x1="${pad.l}" y1="${H-pad.b}" x2="${W-pad.r}" y2="${H-pad.b}" stroke="#787774"/>`;
+    for(const yv of [-90,-45,0,45,90]){
+      if(Math.abs(yv)>ymax) continue;
+      s+=`<line x1="${pad.l-4}" y1="${Y(yv).toFixed(1)}" x2="${pad.l}" y2="${Y(yv).toFixed(1)}" stroke="#787774"/>`;
+      s+=`<text x="${pad.l-8}" y="${(Y(yv)+3).toFixed(1)}" font-size="11" fill="#787774" text-anchor="end">${yv}</text>`;
+    }
+    for(let i=0;i<=6;i++){
+      const tt=t0+5*i, xx=X(tt);
+      s+=`<line x1="${xx.toFixed(1)}" y1="${H-pad.b}" x2="${xx.toFixed(1)}" y2="${H-pad.b+4}" stroke="#787774"/>`;
+      s+=`<text x="${xx.toFixed(1)}" y="${H-pad.b+16}" font-size="11" fill="#787774" text-anchor="middle">${Math.max(0,tt).toFixed(0)}</text>`;
+    }
+    if(avsHi!=null){
+      s+=`<line x1="${pad.l}" y1="${Y(avsHi).toFixed(1)}" x2="${W-pad.r}" y2="${Y(avsHi).toFixed(1)}" stroke="#9F2F2D" stroke-dasharray="5 4"/>`;
+      s+=`<text x="${W-pad.r-4}" y="${(Y(avsHi)-4).toFixed(1)}" font-size="11" fill="#9F2F2D" text-anchor="end">AVS +${avsHi.toFixed(0)}°</text>`;
+    }
+    if(avsLo!=null){
+      s+=`<line x1="${pad.l}" y1="${Y(avsLo).toFixed(1)}" x2="${W-pad.r}" y2="${Y(avsLo).toFixed(1)}" stroke="#9F2F2D" stroke-dasharray="5 4"/>`;
+      s+=`<text x="${W-pad.r-4}" y="${(Y(avsLo)+13).toFixed(1)}" font-size="11" fill="#9F2F2D" text-anchor="end">AVS ${avsLo.toFixed(0)}°</text>`;
+    }
+    if(series.length>1){
+      const pts=series.map(pt=>`${X(pt.t).toFixed(1)},${Y(pt.phiDeg).toFixed(1)}`).join(' ');
+      s+=`<polyline points="${pts}" fill="none" stroke="#2A78D6" stroke-width="1.8"/>`;
+    }
+    s+=`<text x="${pad.l}" y="12" font-size="11" fill="#787774">φ [deg]</text>`;
+    s+=`<text x="${W-pad.r}" y="${H-4}" font-size="11" fill="#787774" text-anchor="end">t [s]</text>`;
+    chartSvg.innerHTML=s;
+    const maxAbs=series.length? Math.max(...series.map(pt=>Math.abs(pt.phiDeg))) : 0;
+    chartInfo.textContent = `直近30秒の最大傾斜角: ${maxAbs.toFixed(1)}°（破線=AVS±）`;
+  }
+
+  function drawAll(){ draw(); drawChart(); }
+
+  function updateBreakInfo(){
+    if(!curP || !USV.hydro || !USV.hydro.gz){ breakInfo.textContent=''; return; }
+    const gzArrKG=USV.gzKGArray(elVariant.value||'base', parseFloat(elKG.value));
+    const land=USV.gzLandscape(USV.hydro.gz.angles_deg, gzArrKG, curP.hull.m);
+    breakInfo.textContent = `目安（設計書§13.13）: E_転覆 ≈ ${land.E_capsize_J!=null?land.E_capsize_J.toFixed(0):'—'} J・E_復帰 ≈ ${land.E_recover_J!=null?land.E_recover_J.toFixed(0):'—'} J`;
+  }
+
+  function onInputChanged(resetNeeded){
+    if(resetNeeded){ resetSim(); } else { ctxPhys=buildCtxPhys(); }
+    updateBreakInfo();
+    drawAll();
+  }
+
+  [elH,elT].forEach(el=>el.addEventListener('change',()=>onInputChanged(false)));
+  [elKG,elVariant].forEach(el=>el.addEventListener('change',()=>onInputChanged(true)));
+  elPhi0.addEventListener('change',()=>onInputChanged(true));
+  elSpeed.addEventListener('change',()=>{});
+
+  btnPlay.addEventListener('click',()=>{
+    running=!running;
+    btnPlay.textContent = running? '停止' : '再生';
+    if(running){ if(!ctxPhys) ctxPhys=buildCtxPhys(); lastTs=0; rafId=requestAnimationFrame(loop); }
+  });
+  btnReset.addEventListener('click',()=>{ resetSim(); drawAll(); });
+  btnBreak.addEventListener('click',()=>{
+    if(!ctxPhys) ctxPhys=buildCtxPhys();
+    if(!ctxPhys) return;
+    const E=Math.max(0,parseFloat(elE.value)||0);
+    const dphidot=Math.sqrt(2*E/ctxPhys.I);
+    const s=(Math.abs(y[0])>1e-9)?Math.sign(y[0]):(y[1]!==0?Math.sign(y[1]):1);
+    y[1]+=s*dphidot;
+    if(!running) drawAll();
+  });
+  window.addEventListener('resize',()=>drawAll());
+
+  window.__hullTabListeners=window.__hullTabListeners||[];
+  window.__hullTabListeners.push(vis=>{
+    hullTabVisible=vis;
+    if(vis){ if(running && !rafId){ lastTs=0; rafId=requestAnimationFrame(loop); } drawAll(); }
+    else if(rafId){ cancelAnimationFrame(rafId); rafId=0; }
+  });
+
+  window.__rollSim = {
+    update(P, der){
+      curP=P; curDer=der;
+      populateVariant();
+      if(!kgDefaulted && P && P.hull){ elKG.value=P.hull.KG.toFixed(3); kgDefaulted=true; }
+      ctxPhys=buildCtxPhys();
+      updateBreakInfo();
+      drawAll();
+    }
+  };
+  // 初回描画（船体タブのスクリプトが既に一度 renderHullTab を呼んだ後にこのモジュールが読み込まれるため、ここでも一度取得する）
+  if (window.__getParams){
+    const p = window.__getParams();
+    window.__rollSim.update(p, USV.derived(p.hull, p.sea));
   }
 })();
 </script>
@@ -6565,12 +7045,15 @@ if (typeof module !== 'undefined') module.exports = USV;
       if(el) el.hidden = b.dataset.tab!==name;
     });
     if(name==='mission' && window.__missionShown) window.__missionShown();
+    if(window.__hullTabListeners) window.__hullTabListeners.forEach(fn=>fn(name==='hull'));
     document.querySelectorAll('.tabs button[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
     if(name!=='model' && sbar) sbar.classList.remove('show');
     window.scrollTo(0,0);
   }
   document.querySelectorAll('.tabs button[data-tab]').forEach(b=>
     b.addEventListener('click',()=>showTab(b.dataset.tab)));
+  { const jump=document.getElementById('hull3d-jump');
+    if(jump) jump.addEventListener('click',e=>{ e.preventDefault(); showTab('hull'); }); }
   // ハッシュが設計書の章なら設計書タブを開く
   if(/^#s\d+$/.test(location.hash)){ showTab('doc'); }
   else { const initBtn=document.querySelector('.tabs button[data-tab].on'); if(initBtn) showTab(initBtn.dataset.tab); }
