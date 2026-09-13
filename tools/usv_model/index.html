@@ -474,7 +474,11 @@
 <div id="tab-model" hidden>
 <div class="wrap">
 
-<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 16px">船体形状の 3D 表示は <a href="#" id="hull3d-jump" style="color:var(--acc,#2A78D6)">Ⅲ. 船体 タブ</a> に移動しました。</div>
+<h2>船体形状</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">主要目 L・B・m（スラスターはプロペラ径 D<sub>prop</sub>）から生成した概念形状（Seasats Lightfish 準拠。後部の羽＝通信ウィング・前部マスト・キールフィン・ポッドスラスターを含む。この形状から喫水・濡れ面積・復原力・耐航性係数を計算する（sw①〜sw②）。解析式モードでは主要目からの近似式を使う）。ドラッグで回転、ホイール／ピンチで拡大縮小、ダブルクリックで視点リセット。<b>L・B・D_prop の寸法線は常時表示。</b>「波を立てる」は環境パネルの Hs・Tp・波モデルと現在の V_eq を使い、設計書 §8 の RAO（1 自由度・線形）で船体を動かす表示で、計算には影響しない。</div>
+<div class="hv-ctrl"><button id="hv-float">浮かべる（喫水線を表示）</button><select id="hv-variant" data-local="1" style="max-width:200px" hidden></select><button id="hv-wave">波を立てる（動揺シミュレーション）</button><button id="hv-reset">視点リセット</button></div>
+<canvas id="hull3d"></canvas>
+<div class="cap" id="hull3d-info" style="font-size:12px;color:var(--muted);margin:6px 0 0"></div>
 
 <h2>入力パラメータ</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">入力を変えると即座に再計算されます。プリセット（黒表示が選択中）を押すと該当パラメータが設定され、変わった欄が一瞬ハイライトされます。</div>
@@ -648,9 +652,10 @@
 <h2>テンプレート</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">
 カードをクリックすると計画（フェーズ・海象カタログ）を読み込む。成功率は現在の性能タブ入力に対して計算され、
-モデル入力が変わるとキャッシュは自動的に無効化される。夏（6月）・冬（1月）は<b>月（日射・日長）のみ</b>を変えた変種。
-海象は年間平均（季節別カタログは今後の課題）。冬が厳しく出る主因は日射で、太陽電池出力は 12月 26W に対し 6月 74W（設計書 §7）。
-季節係数（晴天モデルの月別日発電量 ÷ 12か月平均・緯度35°/雲量0.7で算出）を海象カタログの日積算日射に掛けて成功率へ反映する。</div>
+モデル入力が変わるとキャッシュは自動的に無効化される。<b>最も厳しい（1 月）</b>・<b>最頻（年平均）</b>・<b>最も楽（6 月）</b>は
+<b>月（日射・日長）のみ</b>を変えた変種。海象は年間平均（季節別カタログは今後の課題）。最も厳しいが厳しく出る主因は日射で、
+太陽電池出力は 12月 26W に対し 6月 74W（設計書 §7）。季節係数（晴天モデルの月別日発電量 ÷ 12か月平均・緯度35°/雲量0.7で算出）を
+海象カタログの日積算日射に掛けて成功率へ反映する（最頻は季節係数 1.0）。</div>
 <div style="margin:6px 0 10px"><button id="tpl-calc-all" type="button">全テンプレを計算</button>
 <span id="tpl-calc-stat" style="font-size:12px;color:var(--muted);margin-left:10px"></span></div>
 <div class="tpl-grid" id="tpl-grid"></div>
@@ -771,11 +776,7 @@
 <div id="tab-hull" hidden>
 <div class="wrap">
 
-<h2>船体形状</h2>
-<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">主要目 L・B・m（スラスターはプロペラ径 D<sub>prop</sub>）から生成した概念形状（Seasats Lightfish 準拠。後部の羽＝通信ウィング・前部マスト・キールフィン・ポッドスラスターを含む。この形状から喫水・濡れ面積・復原力・耐航性係数を計算する（sw①〜sw②）。解析式モードでは主要目からの近似式を使う）。ドラッグで回転、ホイール／ピンチで拡大縮小、ダブルクリックで視点リセット。<b>L・B・D_prop の寸法線は常時表示。</b>「波を立てる」は環境パネルの Hs・Tp・波モデルと現在の V_eq を使い、設計書 §8 の RAO（1 自由度・線形）で船体を動かす表示で、計算には影響しない。</div>
-<div class="hv-ctrl"><button id="hv-float">浮かべる（喫水線を表示）</button><select id="hv-variant" data-local="1" style="max-width:200px" hidden></select><button id="hv-wave">波を立てる（動揺シミュレーション）</button><button id="hv-reset">視点リセット</button></div>
-<canvas id="hull3d"></canvas>
-<div class="cap" id="hull3d-info" style="font-size:12px;color:var(--muted);margin:6px 0 0"></div>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 16px">船体形状の 3D 表示は <a href="#" id="hull3d-jump" style="color:var(--acc,#2A78D6)">Ⅱ. 性能 タブ</a> にあります。</div>
 
 <h2>復原力シミュレーション（横波中の横揺れ）</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 10px">
@@ -933,6 +934,7 @@
 <li><a href="#s11">発見・限界</a></li>
 <li><a href="#s12">ミッションシミュレーション（決定論シナリオ木）</a></li>
 <li><a href="#s13">船体形状・復原力・耐航性能係数</a></li>
+<li><a href="#s-core">計算コアのソース全文（参考）</a></li>
 </ol>
 <div class="tools"><button id="btn-open">すべて開く</button><button id="btn-close">すべて畳む</button></div>
 </nav>
@@ -1046,7 +1048,7 @@
 <tr><td class="sym"><math><mrow><mi>K</mi><mi>G</mi></mrow></math></td><td>重心高さ（キール基線から）</td><td>復原力 GZ を決める最大の量。sw④（質量と重心の与え方）が手入力なら入力値、重量表なら部品の積み上げ（§13.12）</td><td>m</td><td class="num">0.15 △（手入力）／0.147 ○（重量表）</td></tr><tr><td class="sym"><math><mrow><mi>G</mi><mi>M</mi></mrow></math></td><td>初期復原てこ（メタセンタ高さ）</td><td>小傾斜の復原力とロール固有周期を決める。<math><mrow><mi>G</mi><mi>M</mi><mo>=</mo><mi>K</mi><mi>B</mi><mo>+</mo><mi>B</mi><mi>M</mi><mo>−</mo><mi>K</mi><mi>G</mi></mrow></math></td><td>m</td><td class="num">0.317 ○（KG=0.15 のとき）</td></tr><tr><td class="sym"><math><mrow><mi>GZ</mi><mo>(</mo><mi>φ</mi><mo>)</mo></mrow></math></td><td>復原てこ</td><td>傾斜角 φ での復原モーメント <math><mrow><mi>m</mi><mi>g</mi><mi>GZ</mi></mrow></math>。積分すると転覆・復帰に要る仕事になる（§13.3〜§13.4）</td><td>m</td><td class="num">—</td></tr><tr><td class="sym"><math><msub><mi>ζ</mi><mn>44</mn></msub></math></td><td>ロール減衰比</td><td>横揺れの減衰。sw③（横揺れ減衰の求め方）が抗力モデルなら摩擦・船底・キールの和から求まり Hs とともに増える、一定 ζ なら固定値（§8.2）</td><td>—</td><td class="num">0.089〜0.186 ○（抗力モデル・Hs 依存）／0.08 △（一定 ζ）</td></tr><tr><td class="sym"><math><msub><mi>T</mi><mi>roll</mi></msub></math></td><td>ロール固有周期</td><td>想定波周期 5〜11 s より桁で短く、ロール共振が起きないことを示す（§13.4.4）</td><td>s</td><td class="num">≈0.9〜1.4 ○（k44・KG の与え方による）</td></tr><tr><td class="sym"><math><msub><mi>k</mi><mn>44</mn></msub></math></td><td>ロール慣動半径</td><td>ロール慣性 <math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>。既定（sw④＝手入力）は 0.35B の仮定、重量表 なら重量表（§13.12）の <code>massProps()</code> から部品自己慣性 r44 込みで算出（S6）</td><td>m</td><td class="num">0.315（=0.35B）△／表 0.212 ○（点質量のみ 0.103）</td></tr><tr><td class="sym"><math><msub><mi>I</mi><mn>44</mn></msub></math></td><td>ロール慣性モーメント</td><td>船体（付加物含む）が横揺れするときの回転慣性。<math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>（m は sw④ の与え方による質量）。周波数応答（§8.2）と復原力シミュレーション（§13.15）の両方で使う共通量</td><td>kg·m²</td><td class="num">24.3 ○（KG=0.15・k44=0.315 のとき）</td></tr><tr><td class="sym"><math><msub><mi>A</mi><mn>44</mn></msub></math></td><td>付加慣性モーメント（ロール）</td><td>横揺れに伴い連れ回る周囲水の見かけの慣性。周波数応答（§8.2）は BEM 表の周波数依存値を使い、復原力シミュレーション（§13.15）は BEM 較正から求めた無次元付加慣性比 <math><msub><mi>a</mi><mn>44</mn></msub></math> による一定の代表値 <math><mrow><msub><mi>A</mi><mn>44</mn></msub><mo>=</mo><msub><mi>a</mi><mn>44</mn></msub><msub><mi>I</mi><mn>44</mn></msub></mrow></math> を使う</td><td>kg·m²</td><td class="num">a44≈0.54 ○（BEM フィット）</td></tr>
 <tr><td class="sym"><math><msub><mi>k</mi><mn>55</mn></msub></math></td><td>ピッチ慣動半径</td><td>ピッチ慣性 <math><mrow><msub><mi>I</mi><mn>55</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>55</mn><mn>2</mn></msubsup></mrow></math>。既定は <math><mrow><msub><mi>r</mi><mi>g</mi></msub><msub><mi>L</mi><mi>wl</mi></msub></mrow></math> の仮定、重量表 なら重量表（§13.12）から部品自己慣性 r55 込みで算出（S6）</td><td>m</td><td class="num">0.8（=0.25L）△／表 0.765 ○（点質量のみ 0.590）</td></tr>
 <tr><td class="sym"><math><mrow><msub><mi>H</mi><mi>h</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math>, <math><mrow><msub><mi>H</mi><mi>θ</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math></td><td>ヒーブ・ピッチ RAO</td><td>単位波振幅あたりの応答</td><td>m/m, deg/m</td><td class="num">—</td></tr>
-<tr><td class="sym"><math><msub><mi>m</mi><mi>n</mi></msub></math></td><td>応答スペクトルの n 次モーメント</td><td>RMS = √m₀</td><td>—</td><td class="num">—</td></tr>
+<tr><td class="sym"><math><msub><mi>m</mi><mi>n</mi></msub></math></td><td>応答スペクトルの n 次モーメント（m0: 変位、m2: 速度、m4: 加速度の分散）</td><td>RMS = √m₀</td><td>—</td><td class="num">—</td></tr>
 <tr><td class="sym"><math><msub><mi>H</mi><mrow><mi>s</mi><mo>,</mo><mi>lim</mi></mrow></msub></math></td><td>運用限界有義波高</td><td>搭載機器の仮置き要件（上下加速度 0.5g・縦揺れ 10°）に達する Hs</td><td>m</td><td class="num">—</td></tr>
 </table></div></details>
 </details>
@@ -1134,6 +1136,13 @@
 <msub><mi>RMS</mi><mi>x</mi></msub><mo>=</mo><msqrt><msub><mi>m</mi><mn>0</mn></msub></msqrt>
 </mrow></math>
 <div class="eqnote">線形耐航性理論の標準形。応答 x（ヒーブ・ピッチ・加速度）の RAO <math><msub><mi>H</mi><mi>x</mi></msub></math> が実測で置き換える対象。<b>BEM や耐航性能 Sim の RAO をそのまま受け取れる形</b>。</div></div>
+<p><math><msub><mi>m</mi><mi>n</mi></msub></math> は応答スペクトル <math><mrow><mi>S</mi><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math> の n 次モーメント <math><mrow><msubsup><mo>∫</mo><mn>0</mn><mo>∞</mo></msubsup><msup><mi>ω</mi><mi>n</mi></msup><mi>S</mi><mi>d</mi><mi>ω</mi></mrow></math> であり、n によって次の量に対応する。</p>
+<table><thead><tr><th>次数</th><th>対応する量</th></tr></thead><tbody>
+<tr><td><math><msub><mi>m</mi><mn>0</mn></msub></math></td><td>変位（上下動・縦揺れ・横揺れ）の RMS ＝ <math><msqrt><msub><mi>m</mi><mn>0</mn></msub></msqrt></math></td></tr>
+<tr><td><math><msub><mi>m</mi><mn>2</mn></msub></math></td><td>速度の RMS</td></tr>
+<tr><td><math><msub><mi>m</mi><mn>4</mn></msub></math></td><td>加速度の RMS ＝ <math><msqrt><msub><mi>m</mi><mn>4</mn></msub></msqrt></math></td></tr>
+</tbody></table>
+<p>§8.1 の運用限界（加速度 0.5 g・縦揺れ 10°・横揺れ 20°）は、この RMS を閾値と比べる。波浪中抵抗増加の応答関数 <math><msub><mi>Φ</mi><mi>aw</mi></msub></math>（§5.3）とは別物で、<math><msub><mi>Φ</mi><mi>aw</mi></msub></math> は波スペクトルに掛けて積分すると R<sub>AW</sub> になる。</p>
 <div class="eqbox"><div class="eqhead"><span class="bdg gov">支配式</span><span class="eqno">(8)</span></div>
 <math display="block"><mrow>
 <msub><mi>ω</mi><mi>e</mi></msub><mo>=</mo>
@@ -1340,6 +1349,15 @@
 <tr><td>摩擦抵抗・形状影響（粘性）</td><td>—</td><td>ITTC-1957 相関線＋(1+k) 仮定</td><td>曳航試験・RANS</td></tr>
 <tr><td>定常の造波抵抗 C<sub>R</sub></td><td>速度ゼロの BEM では出ない</td><td>実験式（較正値）</td><td>前進速度つき BEM・自由表面 RANS</td></tr>
 </table></div>
+
+<h4 style="font-size:13.5px;margin:14px 0 4px">3D パネル法の現状と前進速度の課題</h4>
+<p>現状の BEM（capytaine）は既に 3D パネル法であり、船体表面のパネルに速度ゼロの自由表面グリーン関数を用いている。
+扱えないのは前進速度である。遭遇周波数の変化・定常流（二重体流）との干渉・自由表面条件の速度項が入らず、
+波浪中抵抗増加を過小評価する一因になっている（§5.3 の候補①）。</p>
+<p>対応策は次の順で進める。(1) 遭遇周波数への置換（近似・現行コードで可能）。(2) <b>Rankine パネル法</b>
+（自由表面にもパネルを張り、二重体流を基底に線形化する。放射条件は上流差分で扱う）。(2) を第 1 層の次の解析として計画する。
+検証は半球（速度ゼロ極限で既存の BEM 結果と一致することを確認）と Wigley 船型（文献値との比較）で行う。</p>
+<p>非線形（砕波・スラミング・大振幅）はどちらの手法でも扱えず、§13 の時間領域シミュレーションと実測で補う。</p>
 </details>
 </details>
 
@@ -1529,6 +1547,7 @@
 <tr><td>風圧 <math><msub><mi>C</mi><mi>d</mi></msub></math>（式16）</td><td>一定 0.8 仮定</td><td><math><mrow><msub><mi>C</mi><mi>X</mi></msub><mo>(</mo><mi>ψ</mi><mo>)</mo></mrow></math> テーブル</td><td>風洞試験 / CFD（第2級項なので優先度低め）</td><td>低</td></tr>
 <tr><td>日射 G(t)（式19）</td><td>Haurwitz＋雲量係数</td><td>海域別時系列</td><td>衛星再解析データ（ERA5 等）の統計</td><td>低</td></tr>
 <tr><td>電池（式10）</td><td>固定効率・容量一定</td><td>SOC/温度依存の等価回路＋劣化</td><td>電池特性試験（長期ミッションでは劣化が効く）</td><td>低</td></tr>
+<tr><td>前進速度つき BEM（§5.5）</td><td>速度ゼロの 3D パネル法のみ</td><td>sw②の BEM 表に速度軸を追加</td><td><b>Rankine パネル法</b>（前進速度あり）の導入</td><td>高</td></tr>
 </table></div>
 <p>「最高」の 2 行（QTF と RAO）は<b>同じ BEM 計算から同時に得られる</b>ため、最初の投資は BEM（または耐航性能 Sim の導入）が最も効率が良い。</p>
 </details>
@@ -2195,6 +2214,23 @@ GZ 表は ±180° まであるので、裏返って安定するか揺り戻し�
 
 </details>
 
+
+<details class="sec" id="s-core"><summary><span class="ttl">計算コアのソース全文（参考）</span></summary>
+<p>以下は本ページに埋め込まれている計算コア（式の実装）そのものです。ページの計算はすべてこのコードで行われています。</p>
+<pre id="core-src" style="font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.5;overflow:auto;max-height:70vh;border-top:1.2px solid var(--ink);border-bottom:1.2px solid var(--ink);padding:10px 0;white-space:pre-wrap;word-break:break-word"></pre>
+</details>
+<script>
+(function(){
+  var d=document.getElementById('s-core'); if(!d) return;
+  var filled=false;
+  d.addEventListener('toggle',function(){
+    if(!d.open || filled) return;
+    var src=document.getElementById('usv-core');
+    var pre=document.getElementById('core-src');
+    if(src && pre){ pre.textContent = src.textContent; filled=true; }
+  });
+})();
+</script>
 
 <div class="foot">
 USV 0次元モデル 技術詳細設計書 Rev.5 ／ 自動検証 16 項目すべて PASS<br>
@@ -4065,7 +4101,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   let hull=null, der=null, mesh=null;
   let Pfull=null, veqMs=0;                            // 波駆動用（現在のパラメータと達成速力）
   let waveOn=false, wm=null, wStats=null, rafId=0, tStart=0, tNow=0;
-  let hullTabVisible=true;                            // 船体タブが非表示のとき描画ループを止める
+  let hullTabVisible=false;                           // 性能タブが非表示のとき描画ループを止める
   function buildWave(){
     wm=USV.waveMotion(Pfull.env, veqMs, Pfull, der);
     wStats=USV.seakeeping(Pfull.env, veqMs, Pfull, der);
@@ -4078,8 +4114,8 @@ if (typeof module !== 'undefined') module.exports = USV;
   function stopWave(){
     waveOn=false; cancelAnimationFrame(rafId); rafId=0; btnW.classList.remove('on'); tNow=0; draw();
   }
-  window.__hullTabListeners=window.__hullTabListeners||[];
-  window.__hullTabListeners.push(vis=>{
+  window.__modelTabListeners=window.__modelTabListeners||[];
+  window.__modelTabListeners.push(vis=>{
     hullTabVisible=vis;
     if(vis){ draw(tNow); if(waveOn && !rafId){ tStart=performance.now()-tNow*1000; rafId=requestAnimationFrame(loop); } }
     else if(rafId){ cancelAnimationFrame(rafId); rafId=0; }
@@ -6091,15 +6127,17 @@ if (typeof module !== 'undefined') module.exports = USV;
     _seasonFactorCache[month] = f;
     return f;
   }
-  // 夏(6月)/冬(1月): 変えるのは月（日射・日長）のみ。海象カタログは年間平均のまま（設計書に注記）。
-  // 日積算日射には季節係数（上記）を掛けて、冬季ほど日射が少ないことをミッション成功率に反映する。
+  // 最も厳しい(1月)/最頻(年平均)/最も楽(6月): 変えるのは月（日射・日長）のみ。海象カタログは年間平均のまま（設計書に注記）。
+  // 日積算日射には季節係数（上記）を掛けて、月による日射の増減をミッション成功率に反映する。最頻は季節係数 1.0（年平均・月は既定のまま）。
   TPL_BASE_IDS.forEach(b=>{
-    TPL[b+'_summer'] = { mis: TPL[b].mis, cat: TPL[b].cat, env:{month:6, seasonFactor:seasonSolarFactor(6)} };
-    TPL[b+'_winter'] = { mis: TPL[b].mis, cat: TPL[b].cat, env:{month:1, seasonFactor:seasonSolarFactor(1)} };
-    TPL_META[b+'_summer'] = { title: TPL_META[b].title + '（夏）' };
-    TPL_META[b+'_winter'] = { title: TPL_META[b].title + '（冬）' };
+    TPL[b+'_hard']   = { mis: TPL[b].mis, cat: TPL[b].cat, env:{month:1, seasonFactor:seasonSolarFactor(1)} };
+    TPL[b+'_typical']= { mis: TPL[b].mis, cat: TPL[b].cat, env:{} };
+    TPL[b+'_easy']   = { mis: TPL[b].mis, cat: TPL[b].cat, env:{month:6, seasonFactor:seasonSolarFactor(6)} };
+    TPL_META[b+'_hard']    = { title: TPL_META[b].title + '（最も厳しい）' };
+    TPL_META[b+'_typical'] = { title: TPL_META[b].title + '（最頻）' };
+    TPL_META[b+'_easy']    = { title: TPL_META[b].title + '（最も楽）' };
   });
-  let selectedTpl = 'obs_summer';
+  let selectedTpl = 'obs_typical';
   const TPL_RATE_CACHE = {};
   function tplDestName(to){
     if(!to) return '?';
@@ -6201,10 +6239,12 @@ if (typeof module !== 'undefined') module.exports = USV;
       grid.classList.add('seasonal');
       const bases=TPL_BASE_IDS;
       grid.innerHTML =
-        '<div class="tpl-season-row">夏（6月）</div>'
-        + bases.map(b=>tplCardHtml(b+'_summer')).join('')
-        + '<div class="tpl-season-row">冬（1月）</div>'
-        + bases.map(b=>tplCardHtml(b+'_winter')).join('');
+        '<div class="tpl-season-row">最も厳しい（1 月）</div>'
+        + bases.map(b=>tplCardHtml(b+'_hard')).join('')
+        + '<div class="tpl-season-row">最頻（年平均）</div>'
+        + bases.map(b=>tplCardHtml(b+'_typical')).join('')
+        + '<div class="tpl-season-row">最も楽（6 月）</div>'
+        + bases.map(b=>tplCardHtml(b+'_easy')).join('');
     } else {
       grid.classList.remove('seasonal');
       grid.innerHTML = Object.keys(TPL).map(tplCardHtml).join('');
@@ -6227,7 +6267,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   }
   function tplVisibleIds(){
     return TPL_SEASONS_ENABLED
-      ? TPL_BASE_IDS.flatMap(b=>[b+'_summer', b+'_winter'])
+      ? TPL_BASE_IDS.flatMap(b=>[b+'_hard', b+'_typical', b+'_easy'])
       : Object.keys(TPL);
   }
   if ($('tpl-calc-all')) $('tpl-calc-all').addEventListener('click', async ()=>{
@@ -7046,6 +7086,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     });
     if(name==='mission' && window.__missionShown) window.__missionShown();
     if(window.__hullTabListeners) window.__hullTabListeners.forEach(fn=>fn(name==='hull'));
+    if(window.__modelTabListeners) window.__modelTabListeners.forEach(fn=>fn(name==='model'));
     document.querySelectorAll('.tabs button[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
     if(name!=='model' && sbar) sbar.classList.remove('show');
     window.scrollTo(0,0);
@@ -7053,7 +7094,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   document.querySelectorAll('.tabs button[data-tab]').forEach(b=>
     b.addEventListener('click',()=>showTab(b.dataset.tab)));
   { const jump=document.getElementById('hull3d-jump');
-    if(jump) jump.addEventListener('click',e=>{ e.preventDefault(); showTab('hull'); }); }
+    if(jump) jump.addEventListener('click',e=>{ e.preventDefault(); showTab('model'); }); }
   // ハッシュが設計書の章なら設計書タブを開く
   if(/^#s\d+$/.test(location.hash)){ showTab('doc'); }
   else { const initBtn=document.querySelector('.tabs button[data-tab].on'); if(initBtn) showTab(initBtn.dataset.tab); }
