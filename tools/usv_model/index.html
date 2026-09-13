@@ -158,20 +158,29 @@
   .mbar .pv{width:56px;text-align:right;font-variant-numeric:tabular-nums;}
   .mwarn{color:var(--warn-ink);font-size:12px;}
   .badge.warn{background:#FBF1DA;color:var(--warn-ink);}
-  /* ── テンプレートカード（ミッションタブ） ── */
-  .tpl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:10px 0 6px;}
-  .tpl-card{border:1px solid var(--line2);border-radius:4px;padding:12px;cursor:pointer;
-    background:var(--surface);transition:border-color .12s;}
+  /* ── テンプレートカード（ミッションタブ）: 題名1行＋アイコン行1行＋成功率 に圧縮 ── */
+  .tpl-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:10px 0 6px;}
+  .tpl-grid.seasonal{grid-template-columns:repeat(5,1fr);grid-auto-rows:auto;}
+  .tpl-season-row{grid-column:1/-1;font-size:11px;color:var(--muted);margin:2px 0 -2px;
+    letter-spacing:.04em;}
+  .tpl-season-row:first-child{margin-top:0;}
+  @media (max-width:900px){
+    .tpl-grid{grid-template-columns:repeat(2,1fr);}
+    .tpl-grid.seasonal{grid-template-columns:repeat(2,1fr);}
+  }
+  .tpl-card{box-sizing:border-box;min-width:0;border:1px solid var(--line2);padding:8px 9px;cursor:pointer;
+    background:var(--surface);}
   .tpl-card:hover{border-color:var(--ink);}
   .tpl-card:focus-visible{outline:1.5px solid var(--ink);outline-offset:1px;}
-  .tpl-card.sel{border:2px solid var(--ink);padding:11px;}
-  .tpl-title{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
-    font-size:14.5px;font-weight:700;margin-bottom:4px;line-height:1.4;}
-  .tpl-route{font-size:12px;color:var(--muted);margin-bottom:6px;line-height:1.6;}
-  .tpl-phases{font-size:13px;letter-spacing:.03em;margin-bottom:6px;}
-  .tpl-cond{font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.7;}
-  .tpl-rate{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;}
-  .tpl-rate.unset{font-size:12.5px;font-weight:400;color:var(--faint);}
+  .tpl-card.sel{border:1.5px solid var(--ink);}
+  .tpl-title{font-size:12.5px;font-weight:700;margin-bottom:4px;line-height:1.3;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tpl-icons{display:flex;flex-wrap:wrap;gap:6px 8px;font-size:10.5px;color:var(--muted);
+    margin-bottom:4px;line-height:1;font-variant-numeric:tabular-nums;}
+  .tpl-icons .ic{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;}
+  .tpl-icons svg{width:12px;height:12px;flex:none;color:var(--muted);}
+  .tpl-rate{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .tpl-rate.unset{font-size:11px;font-weight:400;color:var(--faint);}
   /* ── 航路図: 地図内オーバーレイ（設計書§12.6・状態/海象・航走を地図内へ統合） ── */
   .geo-toolbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:8px 0 12px;
     font-size:12.5px;color:var(--muted);}
@@ -179,24 +188,30 @@
   .geo-toolbar input[type=number]{width:60px;}
   .geo-zones-inline{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;}
   .geo-wrap{position:relative;width:100%;}
-  #geo-map{width:100%;height:420px;display:block;border:1px solid var(--line);border-radius:4px;}
+  #geo-map{width:100%;height:420px;display:block;border:1px solid var(--line);border-radius:4px;
+    touch-action:none;cursor:grab;}
+  #geo-map:active{cursor:grabbing;}
   @media(min-width:960px){ #geo-map{height:640px;} }
   .geo-ov{position:absolute;background:rgba(255,255,255,.88);
     background:color-mix(in srgb, var(--bg) 88%, transparent);
     border:1px solid var(--line);border-radius:3px;padding:6px 9px;font-size:11.5px;
-    line-height:1.6;max-width:47%;pointer-events:none;font-variant-numeric:tabular-nums;}
+    line-height:1.6;max-width:min(300px,47%);pointer-events:none;font-variant-numeric:tabular-nums;}
   .geo-ov b{font-weight:700;}
-  .geo-ov-tl{top:8px;left:8px;}
   .geo-ov-tr{top:8px;right:8px;text-align:right;}
-  .geo-ov-bl{bottom:8px;left:8px;}
-  .geo-ov-bl.fail{border-color:var(--ng-ink);}
-  .geo-ov-br{bottom:8px;right:8px;text-align:right;}
+  .geo-ov-tr.fail{border-color:var(--ng-ink);}
+  .geo-ov-tr .geo-ov-sep{margin-top:4px;padding-top:4px;border-top:1px solid var(--line);}
+  .geo-ov-br{bottom:8px;right:8px;text-align:right;display:flex;flex-direction:column;gap:3px;}
   .geo-soc-bar{width:90px;height:8px;border-radius:4px;background:var(--line);overflow:hidden;
     display:inline-block;vertical-align:middle;}
-  .pb-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 4px;}
-  .pb-bar input[type=range]{flex:1;min-width:120px;}
+  /* 注: .pb-bar は既存の「電力収支バー」コンポーネント（22px固定・overflow:hidden）と名前が衝突するため、
+     早回し再生の操作バーは別名 .pb-toolbar を使う（旧 .pb-bar のままだと 22px に縦方向へ切り詰められる）。 */
+  .pb-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 4px;}
+  .pb-toolbar input[type=range]{flex:1;min-width:120px;}
+  .pb-ts{margin:6px 0 10px;display:flex;flex-direction:column;gap:6px;}
   @media(max-width:640px){
-    .geo-ov-tr,.geo-ov-br{display:none;}
+    .geo-ov-br{display:none;}
+    .geo-ov-tr{max-width:70%;}
+    .geo-ov-tr>div:not(:first-child):not(:nth-child(2)){display:none;}
   }
   table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums;
     border-top:1.4px solid var(--rule);border-bottom:1.4px solid var(--rule);}
@@ -235,11 +250,16 @@
 
   /* ── タブ（下線式・エディトリアル） ── */
   .tabs{max-width:1040px;margin:0 auto;padding:0 20px;display:flex;gap:26px;
-    border-bottom:1px solid var(--line);position:relative;z-index:31;}
+    border-bottom:1px solid var(--line);position:relative;z-index:31;overflow-x:auto;}
   .tabs button{border:none;background:none;border-radius:0;padding:11px 2px;font-size:14px;
-    color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;}
+    color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;
+    white-space:nowrap;flex:none;}
   .tabs button:hover{color:var(--ink);border-color:transparent;}
   .tabs button.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:700;}
+  @media(max-width:480px){
+    .tabs{gap:14px;}
+    .tabs button{font-size:12.5px;}
+  }
 
   /* ══ 設計書タブ（#tab-doc スコープ・論文調） ══ */
   #tab-doc{--gov:#1F6C9F;--clo:#956400;--good:#346538;--bad:#9F2F2D;--s4:#B87F00;
@@ -420,10 +440,10 @@
 </div></header>
 <nav class="tabs" aria-label="表示切替">
   <button id="toc-toggle" type="button" aria-expanded="false" aria-controls="tocdrawer" title="目次"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/></svg></button>
-  <button data-tab="model" class="on">モデル</button>
-  <button data-tab="mission">ミッション</button>
-  <button data-tab="hull">船体</button>
-  <button data-tab="doc">設計書</button>
+  <button data-tab="mission" class="on">Ⅰ. ミッション</button>
+  <button data-tab="model">Ⅱ. 性能</button>
+  <button data-tab="hull">Ⅲ. 船体</button>
+  <button data-tab="doc">Ⅳ. 設計書</button>
 </nav>
 
 <div id="toc-backdrop"></div>
@@ -433,7 +453,7 @@
     <div class="toc-head-row">
       <div>
         <div class="toc-kicker">目次 — CONTENTS</div>
-        <div class="toc-title" id="toc-tabname">モデル</div>
+        <div class="toc-title" id="toc-tabname">Ⅰ. ミッション</div>
       </div>
       <button type="button" id="toc-pin" aria-pressed="false" title="留める" hidden><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="7" r="3"/><line x1="10" y1="10" x2="10" y2="17"/></svg></button>
     </div>
@@ -451,7 +471,7 @@
   </div>
 </aside>
 
-<div id="tab-model">
+<div id="tab-model" hidden>
 <div class="wrap">
 
 <h2>船体形状</h2>
@@ -620,19 +640,21 @@
 </div>
 
 </div>
-<div id="tab-mission" hidden>
+<div id="tab-mission">
 <div class="wrap">
 
 <h2>ミッションシミュレーション（決定論シナリオ木）</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 2px">
-フェーズ計画 × 海象状態カタログの<b>全組合せを乱数なしで列挙</b>し、各シナリオを 0-D モデル（モデルタブの現在パラメータ）で決定論的に実行、
+フェーズ計画 × 海象状態カタログの<b>全組合せを乱数なしで列挙</b>し、各シナリオを 0-D モデル（性能タブの現在パラメータ）で決定論的に実行、
 生起確率で重み付けして<b>ミッション成功率</b>を求める。長い滞留フェーズは分割日数ごとの区間に自動分割し、区間ごとに独立に海象を引く。
 定式化・仮定・限界は設計書 §12。</div>
 
 <h2>テンプレート</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">
-カードをクリックすると計画（フェーズ・海象カタログ）を読み込む。成功率は現在のモデルタブ入力に対して計算され、
-モデル入力が変わるとキャッシュは自動的に無効化される。</div>
+カードをクリックすると計画（フェーズ・海象カタログ）を読み込む。成功率は現在の性能タブ入力に対して計算され、
+モデル入力が変わるとキャッシュは自動的に無効化される。夏（6月）・冬（1月）は<b>月（日射・日長）のみ</b>を変えた変種。
+海象は年間平均（季節別カタログは今後の課題）。冬が厳しく出る主因は日射で、太陽電池出力は 12月 26W に対し 6月 74W（設計書 §7）。
+季節係数（晴天モデルの月別日発電量 ÷ 12か月平均・緯度35°/雲量0.7で算出）を海象カタログの日積算日射に掛けて成功率へ反映する。</div>
 <div style="margin:6px 0 10px"><button id="tpl-calc-all" type="button">全テンプレを計算</button>
 <span id="tpl-calc-stat" style="font-size:12px;color:var(--muted);margin-left:10px"></span></div>
 <div class="tpl-grid" id="tpl-grid"></div>
@@ -648,25 +670,21 @@
   <span class="geo-zones-inline" id="geo-zones-inline"></span>
 </div>
 <div class="geo-wrap">
-  <svg id="geo-map" viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid meet"
-       role="img" aria-label="航路図（母港・目的地・距離帯・フェーズ経路・早回し再生の状態オーバーレイ）"></svg>
-  <div class="geo-ov geo-ov-tl">
+  <svg id="geo-map" viewBox="0 0 1000 640" preserveAspectRatio="xMinYMid meet"
+       role="img" aria-label="航路図（母港・目的地・距離帯・フェーズ経路・早回し再生の状態オーバーレイ。ホイール／ピンチで拡大縮小、ドラッグで移動、ダブルクリックでリセット）"></svg>
+  <div class="geo-ov geo-ov-tr" id="geo-ov-hud">
     <div id="pb-date">—</div>
     <div id="pb-daynight">—</div>
-  </div>
-  <div class="geo-ov geo-ov-tr">
     <div id="pb-zone">—</div>
-  </div>
-  <div class="geo-ov geo-ov-bl" id="geo-ov-bl">
-    <div><b id="pb-phase">—</b>　<span id="pb-status">—</span></div>
+    <div class="geo-ov-sep"><b id="pb-phase">—</b>　<span id="pb-status">—</span></div>
     <div>速力 <span id="pb-vkt">—</span>　累積 <span id="pb-nm">—</span></div>
     <div><span class="geo-soc-bar"><span id="pb-soc-fill" style="display:block;height:100%;width:0%;background:var(--s1)"></span></span>
       SOC <span id="pb-soc-val">—</span></div>
+    <div class="geo-ov-sep" id="geo-ov-range">—</div>
   </div>
-  <div class="geo-ov geo-ov-br" id="geo-ov-br">—</div>
+  <div class="geo-ov geo-ov-br" id="geo-ov-br"></div>
 </div>
-<div id="geo-legend" style="font-size:11.5px;color:var(--muted);margin-top:6px;display:flex;flex-wrap:wrap;gap:14px"></div>
-<div class="pb-bar">
+<div class="pb-toolbar">
   <button id="pb-play" type="button">▶</button>
   <button id="pb-restart" type="button">⏮</button>
   <select id="pb-speed" style="padding:3px 4px;border:1px solid var(--line2);border-radius:3px;font:inherit;font-size:12.5px">
@@ -675,6 +693,10 @@
   </select>
   <input type="range" id="pb-scrub" min="0" max="1" value="0" step="1">
   <span id="pb-time" style="font-size:11.5px;color:var(--muted);min-width:96px;text-align:right;font-variant-numeric:tabular-nums">—</span>
+</div>
+<div class="pb-ts">
+  <div class="cv"><canvas id="pb-c-soc" width="1000" height="130" role="img" aria-label="再生位置に連動したSOC[%]の時系列（10分刻み）"></canvas></div>
+  <div class="cv"><canvas id="pb-c-spd" width="1000" height="130" role="img" aria-label="再生位置に連動した速力[kt]の時系列（10分刻み）"></canvas></div>
 </div>
 
 <h2>フェーズ計画</h2>
@@ -1629,7 +1651,7 @@ station 距離×海域カタログで成功率がどう下がるかを一覧す�
 </details>
 
 <details class="sub" open><summary>13.2 水理メッシュ — 表示用との違い</summary>
-<p>モデルタブの 3D ビューが使う表示用メッシュは見た目重視で、ウィング・マスト・プロペラなど<b>開いた薄板</b>を含み粗い。そのままでは体積積分も BEM も通らない。水理計算用に別途作る<b>水理メッシュ</b>は次の条件を満たす:</p>
+<p>性能タブの 3D ビューが使う表示用メッシュは見た目重視で、ウィング・マスト・プロペラなど<b>開いた薄板</b>を含み粗い。そのままでは体積積分も BEM も通らない。水理計算用に別途作る<b>水理メッシュ</b>は次の条件を満たす:</p>
 <ul>
 <li>船殻＋デッキ＋トランサムを<b>閉じた 1 ソリッド</b>にする（船首は y=0 に収束して自然に閉じる）</li>
 <li>頂点を溶接し、<b>有向辺が全体でちょうど 1 回ずつ</b>現れることを検査する（＝水密かつ法線の向きが揃う）。水密でないパーツがあるとエラーで終了する</li>
@@ -2085,7 +2107,7 @@ E_転覆・E_復帰 のどちらよりも 1 桁大きいため、<b>同じ砕波
 <li><b>係数ブロックへ格納する</b>——<pre style="white-space:pre-wrap;word-break:break-all;font:11.5px ui-monospace,monospace;background:var(--surface);border:1px solid var(--line2);border-radius:4px;padding:10px 12px;color:var(--ink);margin:8px 0">node pack_hydro.mjs --gz base=out/ext_gz.json --bem out/ext_bem.json \
   --mesh &lt;stl&gt; [--decimate &lt;cell幅 m&gt;] [--keel-area &lt;片面積 m²&gt;] [--keel-zc &lt;重心深さ m&gt;] \
   --Lwl &lt;L&gt; --B &lt;B&gt; --m &lt;m&gt; --Cb &lt;Cb&gt; --target index.html</pre>--mesh は実装済み: 指定した STL を頂点クラスタリングで間引いて（既定セル幅=L/60・上限は約2500三角形になるまで自動で粗くする。--decimate でセル幅を明示指定できる）、3D 表示・水線描画用の形状情報として埋め込む（§13.2 が読む）。水理側（draft・I4・A_lat・z_a）も同じ STL を gz.py が直接測る（STL の三角形にしか依存しない）ので「見た目」と「計算」が別物にならない。キール形状だけは STL の三角形からは自動判別できない（どれがキールかを区別する規約が無い）ため、既知なら --keel-area／--keel-zc（片面積[m²]・重心深さ[m]）で明示する——どちらも指定しなければキール項は 0（寄与なし）として扱われ、船体タブにその旨が出る。</li>
-<li><b>0-D モデル側の入力を一致させる</b>——モデルタブの L・B・m（Cb はこれらから自動計算）を、上で使った外部船体の値に一致させる。形状一致の判定がこの一致（または相似）を検出して初めて sw①＝3D 形状計算／sw②＝BEM 表 が有効になる（§13.7）。一致しなければ自動的に解析式へ退避し、船体タブ「係数表の状態と再生成」にその旨が表示される。</li>
+<li><b>0-D モデル側の入力を一致させる</b>——性能タブの L・B・m（Cb はこれらから自動計算）を、上で使った外部船体の値に一致させる。形状一致の判定がこの一致（または相似）を検出して初めて sw①＝3D 形状計算／sw②＝BEM 表 が有効になる（§13.7）。一致しなければ自動的に解析式へ退避し、船体タブ「係数表の状態と再生成」にその旨が表示される。</li>
 </ol>
 <div class="eqnote"><b>既知の限界（外部 STL 経路に固有）</b>——①船体形状の定義由来の実験式・仮定（風圧面積・付加物形状係数等・§5.2/§5.4）は外部船体でも主要目からの推定のままで、STL 形状には連動しない。②表示メッシュは頂点クラスタリングによる間引きのみ（法線・トポロジーの再計算はしない）——元 STL が既に水密でない場合、間引き後の見た目に穴が出ることがある（表示専用なので水理計算には影響しない）。③STL からの自動判別が原理的にできないのはキール形状だけ（上記 --keel-area／--keel-zc で回避）——船底4次モーメント I4（§8.2）は gz.py が没水面を直接積分して求めており、外部 STL でも最初から測れている。船体形状の定義由来の閉形式の解析式は、その形状専用のフォールバック／V14②の照合基準であり、外部 STL 経路では最初から関与しない。</div>
 <p class="std">関連: §3（本図の「外部 STL」入口）。CLI のフルリファレンスはリポジトリ内の README を参照。</p>
@@ -3112,9 +3134,10 @@ const USV = (function(){
         const carryKt = (p.geo && p.geo.carryKt) || 10;
         return { env: p.env, Vkt: carryKt, Pprop: 0, skOk: true, limitHs: Infinity };
       }
+      // p.env.seasonFactor は月指定時のみ UI 層が設定する係数（既定 undefined→1・従来経路は不変）。
       const env = Object.assign({}, p.env,
         { Hs:st.Hs, Tp:st.Tp, windU:st.windU, windDirDeg:0,
-          irrKwhDay:st.irr, solarModel:'daily' });
+          irrKwhDay:st.irr*(p.env.seasonFactor||1), solarModel:'daily' });
       let Vkt = 0, Pprop = 0;
       if (ph.targetKt > 0){
         const Vt = ph.targetKt * KT;
@@ -5021,6 +5044,7 @@ if (typeof module !== 'undefined') module.exports = USV;
 
   window.__getParams = () => JSON.parse(JSON.stringify(P));   // ミッションタブが現在値を参照
   window.__getLiveP = () => P;                                 // 船体タブの重量表編集が書き込む先（クローンではない実体）
+  window.__toUI = () => toUI();                                 // ミッションタブが季節テンプレ選択時に env.month 等を反映
   window.__recalc = () => { setActivePreset(null); recalc(); };  // 船体タブの重量表編集から再計算を呼ぶ
   toUI(); recalc(); runValidation(); setActivePreset('base');
 })();
@@ -5566,10 +5590,36 @@ if (typeof module !== 'undefined') module.exports = USV;
     obs:      { title:'長期観測' },
     cross:    { title:'海峡横断' },
     patrol:   { title:'沿岸哨戒' },
-    jisoSelf: { title:'伊豆諸島観測・自走' },
-    jisoCarry:{ title:'伊豆諸島観測・母船搬送' },
+    jisoSelf: { title:'伊豆自走' },
+    jisoCarry:{ title:'伊豆母船搬送' },
   };
-  let selectedTpl = 'obs';
+  const TPL_SEASONS_ENABLED = true;
+  const TPL_BASE_IDS = ['obs','cross','patrol','jisoSelf','jisoCarry'];
+  // 季節係数 f(月) = 晴天モデル（緯度35°・雲量0.7・USV.solarDailyWh/pSolarClearSky＝実装コアの晴天モデル）の
+  // 日発電量(月) ÷ 12か月平均。手打ちせず毎回コアから計算する。月が指定されないとき（V1〜V17・従来経路）は
+  // p.env.seasonFactor が未設定のまま＝1 倍で不変（usv-core 側の掛け算は ||1 でフォールバック）。
+  const SEASON_LAT = 35, SEASON_CLOUD = 0.70;
+  const _seasonFactorCache = {};
+  function seasonSolarFactor(month){
+    if (_seasonFactorCache[month] != null) return _seasonFactorCache[month];
+    const pwr = { panelW:1, derate:1 };
+    const envOf = m => ({ solarModel:'clearsky', latDeg:SEASON_LAT, cloud:SEASON_CLOUD, month:m });
+    let sum = 0;
+    for (let m=1; m<=12; m++) sum += USV.solarDailyWh(pwr, envOf(m));
+    const avg = sum/12;
+    const f = avg>0 ? USV.solarDailyWh(pwr, envOf(month))/avg : 1;
+    _seasonFactorCache[month] = f;
+    return f;
+  }
+  // 夏(6月)/冬(1月): 変えるのは月（日射・日長）のみ。海象カタログは年間平均のまま（設計書に注記）。
+  // 日積算日射には季節係数（上記）を掛けて、冬季ほど日射が少ないことをミッション成功率に反映する。
+  TPL_BASE_IDS.forEach(b=>{
+    TPL[b+'_summer'] = { mis: TPL[b].mis, cat: TPL[b].cat, env:{month:6, seasonFactor:seasonSolarFactor(6)} };
+    TPL[b+'_winter'] = { mis: TPL[b].mis, cat: TPL[b].cat, env:{month:1, seasonFactor:seasonSolarFactor(1)} };
+    TPL_META[b+'_summer'] = { title: TPL_META[b].title + '（夏）' };
+    TPL_META[b+'_winter'] = { title: TPL_META[b].title + '（冬）' };
+  });
+  let selectedTpl = 'obs_summer';
   const TPL_RATE_CACHE = {};
   function tplDestName(to){
     if(!to) return '?';
@@ -5600,11 +5650,47 @@ if (typeof module !== 'undefined') module.exports = USV;
     const hasCarry=moves.some(p=>p.kind==='carry');
     const hasReturn=moves.length && moves[moves.length-1].to==='port';
     const recover = !moves.length ? 'なし' : (hasReturn ? (hasCarry?'母船搬送':'自走') : 'なし');
-    return { hotelW: main?fmt(main.hotelW,0):'—', deadline:fmt(mis.deadlineDays,0), seg:fmt(mis.segDays,0), recover };
+    // 主要フェーズ（最長滞留。滞留が無ければ移動フェーズ中の最大値）のホテル負荷を代表値とする
+    const hotelSrc = main || moves.reduce((a,b)=>(!a||b.hotelW>a.hotelW)?b:a, null);
+    return { hotelW: hotelSrc?fmt(hotelSrc.hotelW,0):'—', deadline:fmt(mis.deadlineDays,0), seg:fmt(mis.segDays,0), recover };
+  }
+  // 航路上の合計距離 [nm]（地理から解決。フェーズの nm フィールドが 0/未定でも母港→目的地の実距離を返す）
+  function tplRouteTotalNm(mis){
+    let route=null; try{ route=USV.resolveRoute(mis, GEO, USV.geo); }catch(e){ route=null; }
+    let total=0;
+    mis.phases.forEach((ph,i)=>{
+      if(ph.kind==='transit' || ph.kind==='carry'){
+        const rnm = route && route[i] ? route[i].nm : null;
+        total += (rnm!=null ? rnm : (ph.nm||0));
+      }
+    });
+    return total;
+  }
+  // ── カードのアイコン行（フェーズC）: 単色インライン SVG。意味は title / aria-label で補う ──
+  const TPL_ICON_SVG = {
+    transit:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12c3-1 3-7 6-7s3 6 6 6"/><path d="M10.5 8.5l3.5 2.5-3.8 1"/></svg>',
+    carry:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 11h12l-1.6 2.6a1 1 0 01-.85.4H4.45a1 1 0 01-.85-.4L2 11z"/><path d="M8 11V3"/><path d="M8 3l3.5 3"/></svg>',
+    hotel:'<svg viewBox="0 0 16 16" fill="currentColor" stroke="none" aria-hidden="true"><path d="M9 1L3 9.5h3.6L6 15l6.4-8.6H8.8L9 1z"/></svg>',
+    deadline:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8.5" r="6"/><path d="M8 5.3v3.4l2.4 1.6"/><path d="M6 1.3h4"/></svg>',
+    recover:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h6.5a3 3 0 010 6H6"/><path d="M5.6 10.7L3 7l2.6-3.4"/></svg>',
+  };
+  function tplIconRowHtml(mis){
+    const transitNm = tplRouteTotalNm(mis);
+    const hasCarry = mis.phases.some(p=>p.kind==='carry');
+    const kc = tplKeyConditions(mis);
+    const item=(kind,label,text)=>`<span class="ic" title="${label} ${text}" aria-label="${label} ${text}">${TPL_ICON_SVG[kind]}${text}</span>`;
+    return item('transit','航走', fmt(transitNm,0)+'nm')
+      + item('carry','母船搬送', hasCarry?'あり':'なし')
+      + item('hotel','ホテル負荷', kc.hotelW+'W')
+      + item('deadline','期限', kc.deadline+'日')
+      + item('recover','回収', kc.recover);
   }
   function tplCacheKey(id,p){ return id+'|'+JSON.stringify(p); }
   function tplParamsFor(t){
-    const p=window.__getParams(); p.msn.socMin=t.mis.socMin; p.msn.soc0=t.mis.soc0; p.geo=GEO; return p;
+    const p=window.__getParams(); p.msn.socMin=t.mis.socMin; p.msn.soc0=t.mis.soc0; p.geo=GEO;
+    if(t.env && t.env.month!=null) p.env.month=t.env.month;
+    if(t.env && t.env.seasonFactor!=null) p.env.seasonFactor=t.env.seasonFactor;
+    return p;
   }
   function computeTplRate(id){
     const t=TPL[id], p=tplParamsFor(t), key=tplCacheKey(id,p);
@@ -5618,21 +5704,31 @@ if (typeof module !== 'undefined') module.exports = USV;
     const t=TPL[id], p=tplParamsFor(t), key=tplCacheKey(id,p);
     return (key in TPL_RATE_CACHE) ? TPL_RATE_CACHE[key] : undefined;
   }
+  function tplCardHtml(id){
+    const t=TPL[id], meta=TPL_META[id], rate=tplCurrentRate(id);
+    const rateHtml = (rate==null)
+      ? '<span class="tpl-rate unset">未計算</span>'
+      : `<span class="tpl-rate">成功率 ${fmt(rate*100,1)}%</span>`;
+    return `<div class="tpl-card${id===selectedTpl?' sel':''}" data-tpl="${id}" role="button" tabindex="0" title="${meta.title}">
+      <div class="tpl-title">${meta.title}</div>
+      <div class="tpl-icons">${tplIconRowHtml(t.mis)}</div>
+      ${rateHtml}
+    </div>`;
+  }
   function renderTplCards(){
     const grid=$('tpl-grid'); if(!grid) return;
-    grid.innerHTML = Object.keys(TPL).map(id=>{
-      const t=TPL[id], meta=TPL_META[id], rate=tplCurrentRate(id), kc=tplKeyConditions(t.mis);
-      const rateHtml = (rate==null)
-        ? '<span class="tpl-rate unset">未計算</span>'
-        : `<span class="tpl-rate">成功率 ${fmt(rate*100,1)}%</span>`;
-      return `<div class="tpl-card${id===selectedTpl?' sel':''}" data-tpl="${id}" role="button" tabindex="0">
-        <div class="tpl-title">${meta.title}</div>
-        <div class="tpl-route">${tplRouteSummary(t.mis)}</div>
-        <div class="tpl-phases">${tplPhaseGlyphs(t.mis)}</div>
-        <div class="tpl-cond">ホテル負荷 ${kc.hotelW} W・期限 ${kc.deadline} 日・分割 ${kc.seg} 日・回収 ${kc.recover}</div>
-        ${rateHtml}
-      </div>`;
-    }).join('');
+    if(TPL_SEASONS_ENABLED){
+      grid.classList.add('seasonal');
+      const bases=TPL_BASE_IDS;
+      grid.innerHTML =
+        '<div class="tpl-season-row">夏（6月）</div>'
+        + bases.map(b=>tplCardHtml(b+'_summer')).join('')
+        + '<div class="tpl-season-row">冬（1月）</div>'
+        + bases.map(b=>tplCardHtml(b+'_winter')).join('');
+    } else {
+      grid.classList.remove('seasonal');
+      grid.innerHTML = Object.keys(TPL).map(tplCardHtml).join('');
+    }
     grid.querySelectorAll('[data-tpl]').forEach(el=>{
       const pick=()=>selectTpl(el.dataset.tpl);
       el.addEventListener('click', pick);
@@ -5642,10 +5738,20 @@ if (typeof module !== 'undefined') module.exports = USV;
   function selectTpl(id){
     const t=TPL[id];
     MIS=JSON.parse(JSON.stringify(t.mis)); CAT=JSON.parse(JSON.stringify(t.cat));
+    if(t.env && t.env.month!=null && window.__getLiveP){
+      window.__getLiveP().env.month = t.env.month;
+      window.__getLiveP().env.seasonFactor = t.env.seasonFactor;
+      if(window.__toUI) window.__toUI();
+    }
     selectedTpl=id; renderAll(); afterChange();
   }
+  function tplVisibleIds(){
+    return TPL_SEASONS_ENABLED
+      ? TPL_BASE_IDS.flatMap(b=>[b+'_summer', b+'_winter'])
+      : Object.keys(TPL);
+  }
   if ($('tpl-calc-all')) $('tpl-calc-all').addEventListener('click', async ()=>{
-    const ids=Object.keys(TPL), t0=performance.now();
+    const ids=tplVisibleIds(), t0=performance.now();
     for(let i=0;i<ids.length;i++){
       $('tpl-calc-stat').textContent = `計算中… (${i+1}/${ids.length})`;
       await new Promise(res=>setTimeout(res,0));
@@ -5661,6 +5767,13 @@ if (typeof module !== 'undefined') module.exports = USV;
     const z=(GEO.zones||[]).find(z=>z.id===zid);
     const c=USV.seaClimateCatalogs().find(c=>c.id===cid);
     return `${z?z.name:zid}・${c?c.name:cid}`;
+  }
+  // HUD 用の短縮表示（カタログ正式名の括弧書き注記を省く。例:「日本近海（沿岸波候・年間の離散化）」→「日本近海」）
+  function zoneCatShort(zid, cid){
+    const z=(GEO.zones||[]).find(z=>z.id===zid);
+    const c=USV.seaClimateCatalogs().find(c=>c.id===cid);
+    const cname = c ? c.name.split('（')[0] : cid;
+    return `${z?z.name:zid}・${cname}`;
   }
   // sub-legs があれば「沿岸(12nm)→陸棚(48nm)」のように帯の連なりを表示する（M1）。無ければ従来通り単一帯。
   function zoneChainText(r){
@@ -5819,7 +5932,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     lastRunMs = performance.now()-t0;
     setRecalcBadge(false);
     renderPlan();                                 // フェーズ表の海象帯・自動 nm を最新の実行結果に同期
-    $('m-stat').textContent=`${r.nScen} シナリオを ${fmt(lastRunMs,0)} ms で実行（モデルタブの現在パラメータ使用）`;
+    $('m-stat').textContent=`${r.nScen} シナリオを ${fmt(lastRunMs,0)} ms で実行（性能タブの現在パラメータ使用）`;
     $('mk-rate').textContent=fmt(r.successRate*100,1)+' %';
     $('mk-raten').textContent=`確率重み付き（Σp ${fmt(r.probSumRaw,2)} を正規化）`;
     $('mk-nscen').textContent=r.nScen;
@@ -6033,6 +6146,86 @@ if (typeof module !== 'undefined') module.exports = USV;
     return 'japan';
   }
   const LAYER_LABEL={sagami:'相模湾拡大',kanto:'関東沿岸',japan:'日本近海'};
+  // ── 航路図: 拡大縮小・移動（フェーズE・viewBox操作のみ・外部ライブラリ不可） ──
+  const GEO_BASE_VB = {x:0,y:0,w:1000,h:640};
+  let GEOVIEW = Object.assign({}, GEO_BASE_VB);
+  function applyGeoViewBox(){
+    const svg=$('geo-map'); if(!svg) return;
+    svg.setAttribute('viewBox', `${GEOVIEW.x.toFixed(2)} ${GEOVIEW.y.toFixed(2)} ${GEOVIEW.w.toFixed(2)} ${GEOVIEW.h.toFixed(2)}`);
+  }
+  function geoClamp(v){
+    const minW = GEO_BASE_VB.w/12, maxW = GEO_BASE_VB.w;
+    v.w = Math.max(minW, Math.min(maxW, v.w));
+    v.h = v.w * (GEO_BASE_VB.h/GEO_BASE_VB.w);
+    v.x = Math.max(GEO_BASE_VB.x - GEO_BASE_VB.w*0.5, Math.min(GEO_BASE_VB.x+GEO_BASE_VB.w - v.w + GEO_BASE_VB.w*0.5, v.x));
+    v.y = Math.max(GEO_BASE_VB.y - GEO_BASE_VB.h*0.5, Math.min(GEO_BASE_VB.y+GEO_BASE_VB.h - v.h + GEO_BASE_VB.h*0.5, v.y));
+    return v;
+  }
+  (function setupGeoZoomPan(){
+    const svg = document.getElementById('geo-map'); if(!svg) return;
+    function toSvgPoint(clientX, clientY){
+      const r = svg.getBoundingClientRect();
+      const sx = (clientX - r.left) / r.width, sy = (clientY - r.top) / r.height;
+      return { x: GEOVIEW.x + sx*GEOVIEW.w, y: GEOVIEW.y + sy*GEOVIEW.h };
+    }
+    svg.addEventListener('wheel', ev => {
+      ev.preventDefault();
+      const p = toSvgPoint(ev.clientX, ev.clientY);
+      const factor = ev.deltaY > 0 ? 1.15 : 1/1.15;
+      const fx = (p.x - GEOVIEW.x)/GEOVIEW.w, fy = (p.y - GEOVIEW.y)/GEOVIEW.h;
+      const nv = { w: GEOVIEW.w*factor, h: GEOVIEW.h*factor };
+      nv.x = p.x - fx*nv.w; nv.y = p.y - fy*nv.h;
+      GEOVIEW = geoClamp(nv);
+      applyGeoViewBox();
+    }, { passive:false });
+    const pointers = new Map();
+    let dragStart = null;   // { view, sx, sy } 単指ドラッグ
+    let pinchStart = null;  // { view, dist, cx, cy } 二指ピンチ
+    function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+    svg.addEventListener('pointerdown', ev => {
+      svg.setPointerCapture(ev.pointerId);
+      pointers.set(ev.pointerId, { x:ev.clientX, y:ev.clientY });
+      if (pointers.size === 1){
+        dragStart = { view: Object.assign({},GEOVIEW), sx:ev.clientX, sy:ev.clientY };
+      } else if (pointers.size === 2){
+        dragStart = null;
+        const [a,b] = [...pointers.values()];
+        pinchStart = { view: Object.assign({},GEOVIEW), dist: dist(a,b), mid: toSvgPoint((a.x+b.x)/2,(a.y+b.y)/2) };
+      }
+    });
+    svg.addEventListener('pointermove', ev => {
+      if (!pointers.has(ev.pointerId)) return;
+      pointers.set(ev.pointerId, { x:ev.clientX, y:ev.clientY });
+      if (pointers.size === 2 && pinchStart){
+        const [a,b] = [...pointers.values()];
+        const scale = pinchStart.dist / Math.max(1e-3, dist(a,b));
+        const nv = { w: pinchStart.view.w*scale, h: pinchStart.view.h*scale };
+        const fx=(pinchStart.mid.x-pinchStart.view.x)/pinchStart.view.w, fy=(pinchStart.mid.y-pinchStart.view.y)/pinchStart.view.h;
+        nv.x = pinchStart.mid.x - fx*nv.w; nv.y = pinchStart.mid.y - fy*nv.h;
+        GEOVIEW = geoClamp(nv);
+        applyGeoViewBox();
+      } else if (pointers.size === 1 && dragStart){
+        const r = svg.getBoundingClientRect();
+        const dx = (ev.clientX-dragStart.sx)/r.width*dragStart.view.w;
+        const dy = (ev.clientY-dragStart.sy)/r.height*dragStart.view.h;
+        GEOVIEW = geoClamp({ x: dragStart.view.x-dx, y: dragStart.view.y-dy, w: dragStart.view.w, h: dragStart.view.h });
+        applyGeoViewBox();
+      }
+    });
+    function endPointer(ev){
+      pointers.delete(ev.pointerId);
+      if (pointers.size < 2) pinchStart = null;
+      if (pointers.size < 1) dragStart = null;
+    }
+    svg.addEventListener('pointerup', endPointer);
+    svg.addEventListener('pointercancel', endPointer);
+    svg.addEventListener('pointerleave', endPointer);
+    svg.addEventListener('dblclick', ev => {
+      ev.preventDefault();
+      GEOVIEW = Object.assign({}, GEO_BASE_VB);
+      applyGeoViewBox();
+    });
+  })();
   function drawMap(){
     const svg=$('geo-map'); if(!svg || !USV.geo) return;
     const VW=1000, VH=640, pad=40;
@@ -6089,18 +6282,17 @@ if (typeof module !== 'undefined') module.exports = USV;
     marks+=`<circle cx="${pcx.toFixed(1)}" cy="${pcy.toFixed(1)}" r="5" fill="var(--s2)" stroke="var(--bg)" stroke-width="1.4"/>`;
     marks+=`<text x="${(pcx+7).toFixed(1)}" y="${(pcy-6).toFixed(1)}" font-size="10.5" font-weight="600" fill="var(--ink)">${portDef.name}</text>`;
 
-    svg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+    applyGeoViewBox();
     svg.innerHTML = svgLand + rings + legs + marks + '<g id="geo-play-layer"></g>';
-    $('geo-legend').innerHTML = [
+    $('geo-ov-br').innerHTML = [
       '<span><svg width="18" height="10" style="vertical-align:middle"><line x1="0" y1="5" x2="18" y2="5" stroke="var(--ink)" stroke-width="1.6"/></svg> トランジット</span>',
       '<span><svg width="18" height="10" style="vertical-align:middle"><line x1="0" y1="5" x2="18" y2="5" stroke="var(--muted)" stroke-width="2" stroke-dasharray="6,4"/></svg> 母船搬送</span>',
       '<span><svg width="12" height="12" style="vertical-align:middle"><circle cx="6" cy="6" r="4.5" fill="var(--s1)"/></svg> 滞留</span>',
       '<span><svg width="12" height="12" style="vertical-align:middle"><circle cx="6" cy="6" r="5" fill="var(--s2)"/></svg> 母港</span>',
       '<span><svg width="12" height="12" style="vertical-align:middle"><circle cx="6" cy="6" r="2" fill="var(--bg)" stroke="var(--ink)" stroke-width="1"/></svg> 帯境界</span>',
-      `<span>破線円: 10/50/150 nm</span>`,
-      `<span>距離帯→カタログ: ${(GEO.zones||[]).map(z=>zoneCatText(z.id,z.catalog)).join(' ／ ')}</span>`,
     ].join('');
-    const ovBr=$('geo-ov-br'); if(ovBr) ovBr.innerHTML = `${LAYER_LABEL[layerName]}<br><span style="color:var(--muted)">破線円 10/50/150 nm</span>`;
+    const ovRange=$('geo-ov-range'); if(ovRange) ovRange.innerHTML =
+      `表示範囲: ${LAYER_LABEL[layerName]}・破線円 10/50/150nm<br><span style="color:var(--muted)">${(GEO.zones||[]).map(z=>zoneCatShort(z.id,z.catalog)).join(' ／ ')}</span>`;
 
     const summary = route
       ? '航路: ' + route.map((r,i)=>`${MIS.phases[i].name}(${zoneChainText(r)}${r.nm>0?'・計'+fmt(r.nm,1)+'nm':''})`).join(' → ')
@@ -6137,6 +6329,49 @@ if (typeof module !== 'undefined') module.exports = USV;
     const frac = d - Math.floor(d), hh = Math.floor(frac*24), mm = Math.floor((frac*24-hh)*60);
     return `${((m%12)+12)%12+1}月${Math.floor(d)+1}日 ${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
   }
+  // ── フェーズF: 再生バー直下の SOC・速力 時系列（2段・同じ時間軸・地図と同じ幅） ──
+  // データはミッション計算のトレース（Δt=600s=10分刻み・nom.trace）から取る。他キャンバス（drawNominal）と同じ描き方・配色。
+  function pbTsPanel(cv, nom, cursorDay, opts){
+    if(!cv) return;
+    const ctx=cv.getContext('2d'); const W=cv.width,H=cv.height,L=48,R=14,T=26,Bm=26;
+    const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim()||'#888';
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle=css(opts.colorVar); ctx.textAlign='left'; ctx.font='11px system-ui,sans-serif';
+    ctx.fillText(opts.label, L, 12);
+    if(!nom || !nom.trace || !nom.trace.length) return;
+    const tr=nom.trace, tmax=Math.max(nom.totalDays, tr[tr.length-1].d)||1;
+    const x=d=>L+(W-L-R)*d/tmax, y=v=>T+(H-T-Bm)*(1-v/opts.yMax);
+    let acc=0;
+    (nom.phaseLog||[]).forEach((pl,i)=>{
+      const x0=x(acc); acc+=pl.days; const x1=x(acc);
+      ctx.fillStyle = pl.kind==='carry' ? 'rgba(0,0,0,0.07)' : (i%2 ? 'rgba(0,0,0,0.03)' : 'rgba(0,0,0,0)');
+      ctx.fillRect(x0,T,x1-x0,H-T-Bm);
+      ctx.strokeStyle=css('--grid'); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x0,T); ctx.lineTo(x0,H-Bm); ctx.stroke();
+      ctx.fillStyle=css('--muted-chart'); ctx.font='10px system-ui,sans-serif'; ctx.textAlign='center';
+      if(x1-x0>30) ctx.fillText(pl.name,(x0+x1)/2,T+10);
+    });
+    ctx.strokeStyle=css('--grid'); ctx.lineWidth=1; ctx.fillStyle=css('--muted-chart'); ctx.font='10.5px system-ui,sans-serif';
+    for(let g=0; g<=opts.yMax+1e-6; g+=opts.yStep){ const yy=y(g);
+      ctx.beginPath(); ctx.moveTo(L,yy); ctx.lineTo(W-R,yy); ctx.stroke();
+      ctx.textAlign='right'; ctx.fillText(opts.tickFmt(g), L-6, yy+3);
+    }
+    ctx.strokeStyle=css('--axis'); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(L,H-Bm); ctx.lineTo(W-R,H-Bm); ctx.stroke();
+    const dStep = tmax>60?20:(tmax>20?10:5);
+    ctx.textAlign='center';
+    for(let d=0; d<=tmax; d+=dStep){ ctx.fillText(d+'日', x(d), H-Bm+14); }
+    ctx.strokeStyle=css(opts.colorVar); ctx.lineWidth=1.8; ctx.beginPath();
+    tr.forEach((q,i)=>{ const px=x(q.d), py=y(opts.valueFn(q)); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke();
+    if (cursorDay != null){
+      ctx.strokeStyle=css('--s2'); ctx.lineWidth=1.4; ctx.beginPath();
+      const cx=x(Math.min(cursorDay,tmax)); ctx.moveTo(cx,T); ctx.lineTo(cx,H-Bm); ctx.stroke();
+    }
+  }
+  function pbDrawTimeSeries(nom, cursorDay){
+    pbTsPanel($('pb-c-soc'), nom, cursorDay, { valueFn:q=>q.soc, yMax:1, yStep:0.25,
+      tickFmt:g=>Math.round(g*100)+'%', label:'SOC [%]', colorVar:'--ink-chart' });
+    pbTsPanel($('pb-c-spd'), nom, cursorDay, { valueFn:q=>q.Vkt, yMax:5, yStep:1,
+      tickFmt:g=>String(g), label:'速力 [kt]', colorVar:'--s1' });
+  }
   function pbDrawOverlay(pos){
     const g = document.getElementById('geo-play-layer'); if(!g) return;
     if(!LASTMAP || !pos || pos.lat==null){ g.innerHTML=''; return; }
@@ -6156,8 +6391,9 @@ if (typeof module !== 'undefined') module.exports = USV;
     if (!nom || !pos){
       ['pb-date','pb-daynight','pb-phase','pb-zone','pb-vkt','pb-nm','pb-status'].forEach(id=>set(id,'—'));
       set('pb-soc-val','—'); const f=$('pb-soc-fill'); if(f) f.style.width='0%';
-      const ovBl0=$('geo-ov-bl'); if(ovBl0) ovBl0.classList.remove('fail');
+      const ovBl0=$('geo-ov-hud'); if(ovBl0) ovBl0.classList.remove('fail');
       pbDrawOverlay(null);
+      pbDrawTimeSeries(nom, null);
       return;
     }
     const pl = nom.phaseLog[pos.phaseIdx] || {};
@@ -6168,7 +6404,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     set('pb-daynight', isDay ? '☀ 昼' : '☾ 夜');
     set('pb-phase', pl.name || '—');
     set('pb-zone', pl.zone
-      ? `${zoneCatText(pl.zone,pl.catalog)}・${pl.state||''}<br>Hs ${fmt(pl.Hs,1)}m Tp ${fmt(pl.Tp,1)}s U ${fmt(pl.windU,0)}m/s`
+      ? `${zoneCatShort(pl.zone,pl.catalog)}・${pl.state||''}<br>Hs ${fmt(pl.Hs,1)}m Tp ${fmt(pl.Tp,1)}s U ${fmt(pl.windU,0)}m/s`
       : '（帯なし）');
     set('pb-vkt', fmt(pos.Vkt,2)+' kt');
     set('pb-nm', fmt(pos.cumNm,1)+' nm');
@@ -6181,11 +6417,12 @@ if (typeof module !== 'undefined') module.exports = USV;
     const failed = atEnd && !nom.ok;
     set('pb-status', failed
       ? `<span style="color:var(--ng-ink)">失敗: ${REASON[nom.reason]||nom.reason}</span>` : status);
-    const ovBl=$('geo-ov-bl'); if(ovBl) ovBl.classList.toggle('fail', !!failed);
+    const ovBl=$('geo-ov-hud'); if(ovBl) ovBl.classList.toggle('fail', !!failed);
     const sc=$('pb-scrub'); if(sc) sc.value = PB.idx;
     set('pb-time', fmt(pos.d,1)+'日 / '+fmt(nom.totalDays,1)+'日');
     pbDrawOverlay(pos);
     drawNominal(nom, pos.d);
+    pbDrawTimeSeries(nom, pos.d);
   }
   function pbStep(ts){
     if(!PB.playing) return;
@@ -6336,6 +6573,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     b.addEventListener('click',()=>showTab(b.dataset.tab)));
   // ハッシュが設計書の章なら設計書タブを開く
   if(/^#s\d+$/.test(location.hash)){ showTab('doc'); }
+  else { const initBtn=document.querySelector('.tabs button[data-tab].on'); if(initBtn) showTab(initBtn.dataset.tab); }
   window.__showTab=showTab;
 })();
 /* ── 設計書: 目次ジャンプ・開閉（#tab-doc スコープ） ── */
@@ -6369,7 +6607,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   var pinBtn=document.getElementById('toc-pin');
   if(!drawer||!list||!toggleBtn) return;
   var reduceMo=window.matchMedia('(prefers-reduced-motion:reduce)');
-  var TAB_NAMES={model:'モデル',mission:'ミッション',hull:'船体',doc:'設計書'};
+  var TAB_NAMES={mission:'Ⅰ. ミッション',model:'Ⅱ. 性能',hull:'Ⅲ. 船体',doc:'Ⅳ. 設計書'};
   var io=null;
 
   function ensureIds(sel,prefix){
