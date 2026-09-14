@@ -786,8 +786,13 @@
 </div>
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px 24px">
   <div>
-    <canvas id="rs-cross" style="width:100%;height:340px;display:block;border:1px solid var(--line);border-radius:4px;background:#fff"></canvas>
+    <canvas id="rs-cross" style="width:100%;height:340px;display:block;border:1px solid var(--line);border-radius:4px;background:#fff;touch-action:none;cursor:grab"></canvas>
     <div class="cap" id="rs-info" style="font-size:12px;color:var(--muted);margin:6px 0 0"></div>
+    <div class="cap" id="rs-state" style="font-size:13px;font-weight:600;margin:4px 0 0"></div>
+    <div class="cap" style="font-size:11px;color:var(--muted);margin:6px 0 0;line-height:1.6">
+      <b>G</b> 重心（K からの高さが KG）／<b>B</b> 浮心（没水部分の中心）／<b>Z</b> 浮力の作用線と G の高さの交点／
+      <b>GZ</b> 復原てこ＝G と Z の距離。GZ が大きいほど起き上がる力が強い
+    </div>
   </div>
   <div>
     <div class="panel"><h3>入力</h3>
@@ -805,6 +810,10 @@
       <div class="row"><label>エネルギー E</label><span class="val"><input type="number" id="rs-E" value="100" step="10" min="0" max="400"><span class="unit">J</span></span></div>
       <button id="rs-break" type="button">砕波を当てる</button>
       <div id="rs-break-info" style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6"></div>
+      <div class="hv-ctrl" style="margin-top:8px;flex-wrap:wrap">
+        <button id="rs-capsize" type="button">転覆させる（E_転覆×1.2）</button>
+        <button id="rs-recover" type="button">復帰させる（E_復帰×1.2）</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1045,7 +1054,7 @@
 <tr><td class="sym"><math><msub><mi>ω</mi><mrow><mi>n</mi><mo>,</mo><mi>h</mi></mrow></msub></math></td><td>ヒーブ固有角周波数</td><td>共振周期 T<sub>n</sub>≈1.6 s を与える</td><td>rad/s</td><td class="num">○</td></tr>
 <tr><td class="sym"><math><msub><mi>ζ</mi><mi>h</mi></msub></math>, <math><msub><mi>ζ</mi><mi>θ</mi></msub></math></td><td>ヒーブ・ピッチ減衰比</td><td>共振ピークの高さを決める（放射＋粘性）</td><td>—</td><td class="num">0.35 △</td></tr>
 <tr><td class="sym"><math><msub><mi>μ</mi><mi>a</mi></msub></math></td><td>付加質量比（ヒーブ／ピッチ）</td><td>固有周波数の分母補正。0.8 と仮定</td><td>—</td><td class="num">0.8 △</td></tr>
-<tr><td class="sym"><math><mrow><mi>K</mi><mi>G</mi></mrow></math></td><td>重心高さ（キール基線から）</td><td>復原力 GZ を決める最大の量。sw④（質量と重心の与え方）が手入力なら入力値、重量表なら部品の積み上げ（§13.12）</td><td>m</td><td class="num">0.15 △（手入力）／0.147 ○（重量表）</td></tr><tr><td class="sym"><math><mrow><mi>G</mi><mi>M</mi></mrow></math></td><td>初期復原てこ（メタセンタ高さ）</td><td>小傾斜の復原力とロール固有周期を決める。<math><mrow><mi>G</mi><mi>M</mi><mo>=</mo><mi>K</mi><mi>B</mi><mo>+</mo><mi>B</mi><mi>M</mi><mo>−</mo><mi>K</mi><mi>G</mi></mrow></math></td><td>m</td><td class="num">0.317 ○（KG=0.15 のとき）</td></tr><tr><td class="sym"><math><mrow><mi>GZ</mi><mo>(</mo><mi>φ</mi><mo>)</mo></mrow></math></td><td>復原てこ</td><td>傾斜角 φ での復原モーメント <math><mrow><mi>m</mi><mi>g</mi><mi>GZ</mi></mrow></math>。積分すると転覆・復帰に要る仕事になる（§13.3〜§13.4）</td><td>m</td><td class="num">—</td></tr><tr><td class="sym"><math><msub><mi>ζ</mi><mn>44</mn></msub></math></td><td>ロール減衰比</td><td>横揺れの減衰。sw③（横揺れ減衰の求め方）が抗力モデルなら摩擦・船底・キールの和から求まり Hs とともに増える、一定 ζ なら固定値（§8.2）</td><td>—</td><td class="num">0.089〜0.186 ○（抗力モデル・Hs 依存）／0.08 △（一定 ζ）</td></tr><tr><td class="sym"><math><msub><mi>T</mi><mi>roll</mi></msub></math></td><td>ロール固有周期</td><td>想定波周期 5〜11 s より桁で短く、ロール共振が起きないことを示す（§13.4.4）</td><td>s</td><td class="num">≈0.9〜1.4 ○（k44・KG の与え方による）</td></tr><tr><td class="sym"><math><msub><mi>k</mi><mn>44</mn></msub></math></td><td>ロール慣動半径</td><td>ロール慣性 <math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>。既定（sw④＝手入力）は 0.35B の仮定、重量表 なら重量表（§13.12）の <code>massProps()</code> から部品自己慣性 r44 込みで算出（S6）</td><td>m</td><td class="num">0.315（=0.35B）△／表 0.212 ○（点質量のみ 0.103）</td></tr><tr><td class="sym"><math><msub><mi>I</mi><mn>44</mn></msub></math></td><td>ロール慣性モーメント</td><td>船体（付加物含む）が横揺れするときの回転慣性。<math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>（m は sw④ の与え方による質量）。周波数応答（§8.2）と復原力シミュレーション（§13.15）の両方で使う共通量</td><td>kg·m²</td><td class="num">24.3 ○（KG=0.15・k44=0.315 のとき）</td></tr><tr><td class="sym"><math><msub><mi>A</mi><mn>44</mn></msub></math></td><td>付加慣性モーメント（ロール）</td><td>横揺れに伴い連れ回る周囲水の見かけの慣性。周波数応答（§8.2）は BEM 表の周波数依存値を使い、復原力シミュレーション（§13.15）は BEM 較正から求めた無次元付加慣性比 <math><msub><mi>a</mi><mn>44</mn></msub></math> による一定の代表値 <math><mrow><msub><mi>A</mi><mn>44</mn></msub><mo>=</mo><msub><mi>a</mi><mn>44</mn></msub><msub><mi>I</mi><mn>44</mn></msub></mrow></math> を使う</td><td>kg·m²</td><td class="num">a44≈0.54 ○（BEM フィット）</td></tr>
+<tr><td class="sym"><math><mrow><mi>K</mi><mi>G</mi></mrow></math></td><td>重心高さ（キール基線から）</td><td>復原力 GZ を決める最大の量。sw④（質量と重心の与え方）が手入力なら入力値、重量表なら部品の積み上げ（§13.12）</td><td>m</td><td class="num">0.15 △（手入力）／0.147 ○（重量表）</td></tr><tr><td class="sym"><math><mrow><mi>G</mi><mi>M</mi></mrow></math></td><td>初期復原てこ（メタセンタ高さ）</td><td>小傾斜の復原力とロール固有周期を決める。<math><mrow><mi>G</mi><mi>M</mi><mo>=</mo><mi>K</mi><mi>B</mi><mo>+</mo><mi>B</mi><mi>M</mi><mo>−</mo><mi>K</mi><mi>G</mi></mrow></math></td><td>m</td><td class="num">0.317 ○（KG=0.15 のとき）</td></tr><tr><td class="sym"><math><mrow><mi>GZ</mi><mo>(</mo><mi>φ</mi><mo>)</mo></mrow></math></td><td>復原てこ</td><td>重心 G と浮力の作用線の水平距離。傾斜角 φ での復原モーメント <math><mrow><mi>m</mi><mi>g</mi><mi>GZ</mi></mrow></math>を作り、積分すると転覆・復帰に要る仕事になる（§13.3〜§13.4）</td><td>m</td><td class="num">—</td></tr><tr><td class="sym"><math><msub><mi>ζ</mi><mn>44</mn></msub></math></td><td>ロール減衰比</td><td>横揺れの減衰。sw③（横揺れ減衰の求め方）が抗力モデルなら摩擦・船底・キールの和から求まり Hs とともに増える、一定 ζ なら固定値（§8.2）</td><td>—</td><td class="num">0.089〜0.186 ○（抗力モデル・Hs 依存）／0.08 △（一定 ζ）</td></tr><tr><td class="sym"><math><msub><mi>T</mi><mi>roll</mi></msub></math></td><td>ロール固有周期</td><td>想定波周期 5〜11 s より桁で短く、ロール共振が起きないことを示す（§13.4.4）</td><td>s</td><td class="num">≈0.9〜1.4 ○（k44・KG の与え方による）</td></tr><tr><td class="sym"><math><msub><mi>k</mi><mn>44</mn></msub></math></td><td>ロール慣動半径</td><td>ロール慣性 <math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>。既定（sw④＝手入力）は 0.35B の仮定、重量表 なら重量表（§13.12）の <code>massProps()</code> から部品自己慣性 r44 込みで算出（S6）</td><td>m</td><td class="num">0.315（=0.35B）△／表 0.212 ○（点質量のみ 0.103）</td></tr><tr><td class="sym"><math><msub><mi>I</mi><mn>44</mn></msub></math></td><td>ロール慣性モーメント</td><td>船体（付加物含む）が横揺れするときの回転慣性。<math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>（m は sw④ の与え方による質量）。周波数応答（§8.2）と復原力シミュレーション（§13.15）の両方で使う共通量</td><td>kg·m²</td><td class="num">24.3 ○（KG=0.15・k44=0.315 のとき）</td></tr><tr><td class="sym"><math><msub><mi>A</mi><mn>44</mn></msub></math></td><td>付加慣性モーメント（ロール）</td><td>横揺れに伴い連れ回る周囲水の見かけの慣性。周波数応答（§8.2）は BEM 表の周波数依存値を使い、復原力シミュレーション（§13.15）は BEM 較正から求めた無次元付加慣性比 <math><msub><mi>a</mi><mn>44</mn></msub></math> による一定の代表値 <math><mrow><msub><mi>A</mi><mn>44</mn></msub><mo>=</mo><msub><mi>a</mi><mn>44</mn></msub><msub><mi>I</mi><mn>44</mn></msub></mrow></math> を使う</td><td>kg·m²</td><td class="num">a44≈0.54 ○（BEM フィット）</td></tr>
 <tr><td class="sym"><math><msub><mi>k</mi><mn>55</mn></msub></math></td><td>ピッチ慣動半径</td><td>ピッチ慣性 <math><mrow><msub><mi>I</mi><mn>55</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>55</mn><mn>2</mn></msubsup></mrow></math>。既定は <math><mrow><msub><mi>r</mi><mi>g</mi></msub><msub><mi>L</mi><mi>wl</mi></msub></mrow></math> の仮定、重量表 なら重量表（§13.12）から部品自己慣性 r55 込みで算出（S6）</td><td>m</td><td class="num">0.8（=0.25L）△／表 0.765 ○（点質量のみ 0.590）</td></tr>
 <tr><td class="sym"><math><mrow><msub><mi>H</mi><mi>h</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math>, <math><mrow><msub><mi>H</mi><mi>θ</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math></td><td>ヒーブ・ピッチ RAO</td><td>単位波振幅あたりの応答</td><td>m/m, deg/m</td><td class="num">—</td></tr>
 <tr><td class="sym"><math><msub><mi>m</mi><mi>n</mi></msub></math></td><td>応答スペクトルの n 次モーメント（m0: 変位、m2: 速度、m4: 加速度の分散）</td><td>RMS = √m₀</td><td>—</td><td class="num">—</td></tr>
@@ -2192,14 +2201,19 @@ sw③＝一定ζのときは単純な線形粘性減衰（§8.2 と同じ式）�
 <h3>13.15.2 入力と操作</h3>
 <p>波高・波周期・KG・断面形状（GZ 表の変種と同じ選択肢）・初期傾斜を独立に設定できる（性能タブの現在値とは連動しない what-if）。
 「砕波を当てる」は §13.13 のエネルギー障壁 E_転覆・E_復帰を目盛として示しつつ、指定したエネルギー E を角速度の瞬間的な増分として傾斜と同じ向きに与える——
-実際の砕波が船を一撃で押し回す様子の簡易表現。再生・停止・リセットと再生速度の変更ができる。</p>
+実際の砕波が船を一撃で押し回す様子の簡易表現。加えて「転覆させる」「復帰させる」の2つの定型ボタンがあり、それぞれ E_転覆・E_復帰に安全率を掛けた
+エネルギーを、単発の一撃ではなく短い間隔の衝撃列として与える（水中抵抗は速度が大きいほど急激に効くため、同じ総エネルギーでも一撃より衝撃列のほうが
+実際に障壁を越えやすい）。「復帰させる」は裏返り姿勢のとき、直立側へ最短で向かう回転方向に衝撃を与える。再生・停止・リセットと再生速度の変更ができる。</p>
 
 <h3>13.15.3 見方</h3>
-<p>断面図は船体中央（船体タブの他の図と同じ代表断面）を、重心 G を中心に傾けて描く。G から下向きに重量、没水部分の面積重心（浮心 B の表示用近似）から
-上向きに浮力の矢印を出し、両者の水平距離を復原てことして寸法線で示す——ただし<b>表示する数値そのものは §13.3 の係数表 GZ(φ,KG) から取り、
-断面図の浮心位置とは独立</b>（次項参照）。傾斜が AVS（GZ 表から求まる復原力消失角）を超えると「転覆」と表示するが、計算はそのまま続ける——
-GZ 表は ±180° まであるので、裏返って安定するか揺り戻して復帰するかがアニメーションと時系列にそのまま現れる。右側の時系列には直近 30 秒の
-傾斜角と AVS の目盛線を重ねて表示する。</p>
+<p>断面図は船体中央（船体タブの他の図と同じ代表断面）を、重心 G を中心に傾けて描く。船体の左側には、キール最下点から G までの高さ（KG）を寸法線で示す。
+毎フレーム、没水部分の面積（浮心 B の表示用近似の元になる量）が直立時と等しくなる高さに船体を置き直してから描くため、大きく傾いたり裏返ったりしても
+船体が水面から不自然に浮いたり沈み込んだりしない。B から鉛直上向きに浮力の作用線（細い破線）を延ばし、G の高さで交わる点を Z と呼ぶ——
+<b>重心 G と浮力の作用線の水平距離が復原てこ GZ</b> で、G から Z までを寸法線で示す（表示する数値そのものは §13.3 の係数表 GZ(φ,KG) から取り、
+断面図の浮心位置とは独立。次項参照）。傾斜が AVS（GZ 表から求まる復原力消失角）を超えると、直立側の安定平衡／転覆／裏返り平衡で静止／復帰の
+4つの状態を文字で示し、転覆・復帰が起きた時刻を時系列の上に印で記す——GZ 表は ±180° まであるので、裏返って安定するか揺り戻して復帰するかが
+アニメーションと時系列にそのまま現れる。右側の時系列は常に ±180° まで表示し、AVS と ±180° の目盛線を重ねて表示する。断面図はマウスホイールや
+ピンチ操作で拡大縮小・ドラッグで移動でき、ダブルクリックで初期表示に戻る。</p>
 
 <h3>13.15.4 断面近似についての注記</h3>
 <p>断面図は表示専用の簡略化であり、計算そのものには使わない。船体中央の 1 断面だけを描くため、船首尾方向の形状変化（浮心の前後移動やトリム）は
@@ -2207,9 +2221,10 @@ GZ 表は ±180° まであるので、裏返って安定するか揺り戻し�
 浮心の位置は<b>この 1 断面の没水面積重心</b>という 2 次元近似であり、実際の復原てこ（3D の係数表 GZ(φ,KG)）とは一般に一致しない——
 本節の数値（GZ・転覆判定）はすべて 3D の係数表に基づき、断面図の浮心はあくまで「G と B の位置関係」を直感的に見せるための模式である。</p>
 
-<p class="std">回帰検証: V18（検証ケース一覧・モデル整合性検証グループ）。波高ゼロ・初期傾斜ありの自由減衰から求めた周期・減衰比が、
+<p class="std">回帰検証: V18・V19（検証ケース一覧・モデル整合性検証グループ）。V18 は波高ゼロ・初期傾斜ありの自由減衰から求めた周期・減衰比が、
 ロール固有周期・等価線形化した減衰比と整合すること、波高・初期傾斜ともゼロなら傾斜が動かないこと、断面形状の変種切替が他の検証結果に
-影響しないことを確認する。</p>
+影響しないことを確認する。V19 は「転覆させる」「復帰させる」の2つの定型ボタンが、実際に AVS を越えて裏返り平衡に落ち着き、
+逆向きの衝撃で直立側へ戻ることを確認する。</p>
 </details>
 
 </details>
@@ -4029,6 +4044,30 @@ const USV = (function(){
     }
     return { I, m: em.m, g: C.g, angles: hydro.gz.angles_deg, gzArr: gzKGArray(variantKey, KG), Blin, Bq, alpha: alphaFn };
   }
+  // 「転覆させる」「復帰させる」ボタンの衝撃パラメータ（両ボタン・V19検証で共有）。
+  // 単発の速度衝撃（1回でΔv=√(2E/I)を与える）は、船底/キール2次抗力（bqBottom/bqKeel）による
+  // 減衰が速度の3乗で効くため、E自体は正しくても大半が最初の一撃で失われてしまう
+  // （実測: 単発では E_転覆×1.2 でも AVS を越えない）。同じ総エネルギーを rollImpulseN 回に分けて
+  // rollImpulseSpacing 秒間隔で小刻みに与える（＝連続する砕波を受けるのに相当）ことで、
+  // ピーク角速度を抑えながら同じ仕事を伝え、GZ表の障壁を実際に越えられるようにする。
+  const rollImpulseN = 30, rollImpulseSpacing = 0.1;   // 継続時間 (N-1)*spacing ≈ 2.9 s
+  // 1回分の衝撃を y に適用（角速度の2乗にΔE/Iを加算し、向き dir で符号を付け直す）。
+  function rollImpulseKick(y, ctx, dE, dir){
+    const v2 = y[1] * y[1] + 2 * dE / ctx.I;
+    return [y[0], dir * Math.sqrt(Math.max(0, v2))];
+  }
+  // 衝撃の向き（裏返り姿勢からの復帰用）: 現在の角度から角度距離が最も近い不安定平衡（land.eq の stable:false）へ
+  // 向かう符号を返す（±1）。GZ表に不安定平衡が無ければ、原点（直立）へ近づく向きを返す。
+  function rollImpulseDir(land, phiDeg){
+    const unstables = (land && land.eq) ? land.eq.filter(e=>!e.stable).map(e=>e.angle) : [];
+    if (!unstables.length) return -Math.sign(phiDeg || 1);
+    let best=null, bestAbs=Infinity;
+    for (const u of unstables){
+      const d = gzAngleWrap(u - phiDeg);
+      if (Math.abs(d) < bestAbs){ bestAbs=Math.abs(d); best=d; }
+    }
+    return best >= 0 ? 1 : -1;
+  }
   // 自由減衰の周期・減衰比（ピーク間隔＝1周期・対数減衰率からζ）。V18 検証で使用。
   function rollDecayMetrics(series){                   // series: [{t,phiDeg}, …]
     const peaks = [];
@@ -4057,7 +4096,8 @@ const USV = (function(){
            gzLandscape, windHeelArm, breakingWaveLimits, breakingEventRate, capsizeRecoveryAssessment,
            geo, GEO_PORTS, GEO_DEST, GEO_ZONES, gcNm, coastDistNm, zoneOf, resolveRoute,
            geoMainlandCount, slerpPoint, bearingDeg, destPoint,
-           gzAngleWrap, gzKGArray, gzInterp, rollSimDeriv, rollSimRK4, rollSimContext, rollDecayMetrics };
+           gzAngleWrap, gzKGArray, gzInterp, rollSimDeriv, rollSimRK4, rollSimContext, rollDecayMetrics,
+           rollImpulseDir, rollImpulseKick, rollImpulseN, rollImpulseSpacing };
 })();
 if (typeof module !== 'undefined') module.exports = USV;
 </script>
@@ -5133,10 +5173,47 @@ if (typeof module !== 'undefined') module.exports = USV;
          const ok = ok1 && ok2 && ok3;
          return { val:`①${val1} ②max|φ|=${maxAbs.toExponential(2)} rad[${ok2?'OK':'NG'}] `+
            `③変種切替後も喫水・V_eq・全抵抗が不変[${ok3?'OK':'NG'}]`, ok }; }},
+      {id:'V19',name:'「転覆させる」「復帰させる」ボタンの到達角（GZ表のエネルギー障壁を実際に越えるか）',
+       crit:'波高0・KG既定・形状baseで直立静止から「転覆させる」相当の衝撃（E_転覆×1.2）を与えて10秒積分すると |φ|≥150° かつ |φ̇|が小さい（裏返り平衡で静止）。続けて「復帰させる」相当の衝撃（E_復帰×1.2・最寄りの不安定平衡へ向かう向き）を与えて10秒積分すると |φ|≤20°。',
+       why:'A3で追加した2つの定型ボタンが、GZ表（gzLandscape）から求めたエネルギー障壁を実際に越えて裏返り平衡へ落ち、逆向きの衝撃で直立側へ戻ることを、ボタンが呼ぶのと同じ数式コア（rollSimContext ・ rollSimRK4 ・ gzLandscape ・ rollImpulseDir ・ rollImpulseKick）だけで確認する（DOM非依存・Node実行可）。',
+       note:'船底・キール2次抗力は速度の3乗で効くため、E_転覆×1.2を単発の速度衝撃で与えると大半が最初の一撃で失われ障壁を越えない（実測）。ボタンは同じ総エネルギーを rollImpulseN 回・rollImpulseSpacing 秒間隔の小刻みな衝撃列（連続する砕波に相当）で与える。断面図の浮上位置の2分法補正は描画専用の近似であり、この検証（φの時間発展）には関与しない。復原モーメントは3DのGZ表をそのまま使う。',
+       run(){
+         const p = USV.defaults();
+         const der = USV.derived(p.hull, p.sea);
+         const KG = p.hull.KG, variant = 'base';
+         const ctx = USV.rollSimContext(p, der, variant, KG, ()=>0, 0);
+         let ok=false, val='usv-hydro に bem/gz が無い';
+         if (ctx){
+           const land = USV.gzLandscape(USV.hydro.gz.angles_deg, USV.gzKGArray(variant, KG), p.hull.m);
+           const dt=0.005, nStep=Math.round(10/dt);
+           function integrateWithImpulse(y0, Etot, dir){
+             let y=y0.slice(), t=0, kicksLeft=USV.rollImpulseN, nextKick=0;
+             const dE=Etot/USV.rollImpulseN;
+             for (let i=0;i<nStep;i++){
+               if (kicksLeft>0 && t>=nextKick-1e-9){ y=USV.rollImpulseKick(y, ctx, dE, dir); kicksLeft--; nextKick+=USV.rollImpulseSpacing; }
+               y=USV.rollSimRK4(t,y,dt,ctx); t+=dt;
+             }
+             return y;
+           }
+           const Ecap=(land.E_capsize_J||0)*1.2;
+           let y=integrateWithImpulse([0,0], Ecap, 1);
+           const phiCapsizeDeg=y[0]*180/Math.PI, phidotCapsize=y[1];
+           const okCapsize = Math.abs(phiCapsizeDeg)>=150 && Math.abs(phidotCapsize)<0.15;
+
+           const Erec=(land.E_recover_J||0)*1.2;
+           const dir=USV.rollImpulseDir(land, phiCapsizeDeg);
+           y=integrateWithImpulse(y, Erec, dir);
+           const phiRecoverDeg=y[0]*180/Math.PI;
+           const okRecover = Math.abs(phiRecoverDeg)<=20;
+           ok = okCapsize && okRecover;
+           val=`転覆後: φ=${phiCapsizeDeg.toFixed(1)}°・φ̇=${phidotCapsize.toExponential(2)} rad/s[${okCapsize?'OK':'NG'}]　`+
+             `復帰後: φ=${phiRecoverDeg.toFixed(1)}°[${okRecover?'OK':'NG'}]`;
+         }
+         return { val, ok }; }},
     ];
     const groups=[
       {t:'ユースケース検証', n:'公表値・運用シナリオの再現（プリセット V1–V4 と対応。V1・V2 は較正点）', ids:['V1','V2','V3','V4']},
-      {t:'モデル整合性検証', n:'数理・実装の内部チェック（恒等式・物理極限・較正保存）。運転シナリオではないためプリセットは無い', ids:['V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17','V18']},
+      {t:'モデル整合性検証', n:'数理・実装の内部チェック（恒等式・物理極限・較正保存）。運転シナリオではないためプリセットは無い', ids:['V5','V6','V7','V8','V9','V10','V11','V12','V13','V14','V15','V16','V17','V18','V19']},
     ];
     const card=c=>{
       const r=c.run();
@@ -5753,6 +5830,11 @@ if (typeof module !== 'undefined') module.exports = USV;
   let y=[0,0];                        // [phi_rad, phidot_rad/s]
   let series=[];                      // {t, phiDeg}
   let ctxPhys=null, waveK=0, waveOmega=0, zetaA=0;
+  // A3: 転覆／復帰の状態表示・イベント印。beyondAvs=true の間「転覆」→角速度が小さくなったら「裏返り平衡で静止」、
+  // beyondAvs から false に戻った直後は「復帰」を数秒表示し、その後「直立側の安定平衡にいる」に戻る。
+  let wasBeyondAvs=false, capsizedAt=null, recoveredAt=null, settledInverted=false;
+  let events=[];                       // {t, type:'転覆'|'復帰'}
+  let pendingImpulse=null;             // {dir, dE, kicksLeft, nextT} — 「転覆させる」「復帰させる」ボタンの衝撃列
 
   function populateVariant(){
     if(variantFilled || !USV.hydro || !USV.hydro.gz) return;
@@ -5770,13 +5852,16 @@ if (typeof module !== 'undefined') module.exports = USV;
     waveK=2*Math.PI/lambda; waveOmega=2*Math.PI/T;
     const alphaFn=t=>waveK*zetaA*Math.sin(waveOmega*t);   // 横波の水面傾斜（船位置 y=0）
     const phi0Deg=parseFloat(elPhi0.value)||0;
-    return USV.rollSimContext(curP, curDer, variant, KG, alphaFn, phi0Deg);
+    const ctx=USV.rollSimContext(curP, curDer, variant, KG, alphaFn, phi0Deg);
+    if(ctx) ctx.land=USV.gzLandscape(ctx.angles, ctx.gzArr, ctx.m);
+    return ctx;
   }
 
   function resetSim(){
     running=false; lastTs=0; btnPlay.textContent='再生';
     if(rafId) cancelAnimationFrame(rafId); rafId=0;
-    tSim=0; series=[];
+    tSim=0; series=[]; events=[]; pendingImpulse=null;
+    wasBeyondAvs=false; capsizedAt=null; recoveredAt=null; settledInverted=false;
     const phi0=(parseFloat(elPhi0.value)||0)*Math.PI/180;
     y=[phi0,0];
     ctxPhys=buildCtxPhys();
@@ -5789,14 +5874,37 @@ if (typeof module !== 'undefined') module.exports = USV;
     let remain=dtReal*speed;
     const dt=0.005;
     let guard=0;
+    const land=ctxPhys.land;
     while(remain>1e-9 && guard<2000){
       const step=Math.min(dt,remain);
+      if(pendingImpulse && pendingImpulse.kicksLeft>0 && tSim>=pendingImpulse.nextT-1e-9){
+        y=USV.rollImpulseKick(y, ctxPhys, pendingImpulse.dE, pendingImpulse.dir);
+        pendingImpulse.kicksLeft--; pendingImpulse.nextT+=USV.rollImpulseSpacing;
+        if(pendingImpulse.kicksLeft<=0) pendingImpulse=null;
+      }
       y=USV.rollSimRK4(tSim,y,step,ctxPhys);
       tSim+=step; remain-=step; guard++;
-      series.push({t:tSim, phiDeg:y[0]*180/Math.PI});
+      const phiDegWrapped=USV.gzAngleWrap(y[0]*180/Math.PI);
+      series.push({t:tSim, phiDeg:phiDegWrapped});
+      if(land){
+        const phiDeg=phiDegWrapped;
+        const beyond=(land.AVS_deg!=null && phiDeg>land.AVS_deg) || (land.AVS_port_deg!=null && phiDeg<land.AVS_port_deg);
+        if(beyond && !wasBeyondAvs){ events.push({t:tSim,type:'転覆'}); capsizedAt=tSim; settledInverted=false; }
+        if(!beyond && wasBeyondAvs){ events.push({t:tSim,type:'復帰'}); recoveredAt=tSim; }
+        if(beyond && !settledInverted && Math.abs(y[1])<0.05 && capsizedAt!=null && (tSim-capsizedAt)>1) settledInverted=true;
+        wasBeyondAvs=beyond;
+      }
     }
     const cutoff=tSim-30;
     while(series.length && series[0].t<cutoff) series.shift();
+    while(events.length && events[0].t<cutoff) events.shift();
+  }
+
+  function stateLabel(){
+    if(!ctxPhys || !ctxPhys.land) return '';
+    if(wasBeyondAvs) return settledInverted ? '裏返り平衡で静止' : '転覆（AVS 超過）';
+    if(recoveredAt!=null && tSim-recoveredAt<3) return '復帰（AVS 内に戻った）';
+    return '直立側の安定平衡にいる';
   }
 
   function loop(ts){
@@ -5843,37 +5951,81 @@ if (typeof module !== 'undefined') module.exports = USV;
     if(Math.abs(A)<1e-9) return null;
     return { cy:cx/(6*A), cz:cz/(6*A) };
   }
+  function polyArea(poly){                            // |符号付き面積|（没水断面積の比較専用）
+    let A=0;
+    for(let i=0;i<poly.length;i++){ const a=poly[i], b=poly[(i+1)%poly.length]; A+=a[0]*b[1]-b[0]*a[1]; }
+    return Math.abs(A)/2;
+  }
+  // 浮上位置の平衡（2分法・A3）: 傾斜した船体多角形 rotPoly を level で水平に切ったときの没水面積は
+  // level の単調増加関数（多角形一般に成り立つ）なので、直立時の基準面積 targetArea に一致する level を
+  // 二分法で一意に求められる（大傾斜〜裏返りでも解が必ず存在する）。
+  function findEquilLevel(rotPoly, targetArea){
+    let lo=Math.min(...rotPoly.map(p=>p[1]))-0.01, hi=Math.max(...rotPoly.map(p=>p[1]))+0.01;
+    for(let i=0;i<40;i++){
+      const mid=(lo+hi)/2;
+      if(polyArea(clipBelow(rotPoly,mid))<targetArea) lo=mid; else hi=mid;
+    }
+    return (lo+hi)/2;
+  }
+
+  // ── 断面図の拡大縮小（A5・航路図と同じ操作。文字は同じピクセル寸法のまま、線の位置だけ拡大縮小に追従） ──
+  const rsView={zoom:1,panX:0,panY:0};
+  function rsClampZoom(z){ return Math.max(0.5,Math.min(4,z)); }
+  rsClampZoom.expFactor=d=>Math.exp(d*0.0014);   // d=-deltaY（上スクロール/ピンチアウトで正）。実マウス1刻み(≈100)で×1.15相当
 
   function draw(){
-    const dpr=window.devicePixelRatio||1, cw=cv.clientWidth, ch=cv.clientHeight;
+    const dpr=window.devicePixelRatio||1, cw=cv.clientWidth;
     if(!cw) return;
-    if(cv.width!==Math.round(cw*dpr)||cv.height!==Math.round(ch*dpr)){ cv.width=Math.round(cw*dpr); cv.height=Math.round(ch*dpr); }
-    ctx2d.setTransform(dpr,0,0,dpr,0,0); ctx2d.clearRect(0,0,cw,ch);
-    if(!curP || !USV.hydro || !USV.hydro.gz){ return; }
+    if(!curP || !USV.hydro || !USV.hydro.gz){
+      const ch0=cv.clientHeight;
+      if(cv.width!==Math.round(cw*dpr)||cv.height!==Math.round(ch0*dpr)){ cv.width=Math.round(cw*dpr); cv.height=Math.round(ch0*dpr); }
+      ctx2d.setTransform(dpr,0,0,dpr,0,0); ctx2d.clearRect(0,0,cw,ch0);
+      return;
+    }
     const hull=curP.hull, der=curDer, d=der.d, KG=parseFloat(elKG.value), variant=elVariant.value||'base';
     const poly=crossPoly(hull);
     const phi=y[0];
     const rotPoly=poly.map(p=>rotAbout(p,0,KG,phi));
     const eta0=zetaA*Math.cos(waveK*0-waveOmega*tSim);         // 船位置(y=0)の局所水面
-    const cutLevel=d+eta0;
-    const sub=clipBelow(rotPoly, cutLevel);
+    // A3: 没水断面積が直立時（喫水d）の断面積と等しくなる高さを2分法で求め、そこに船体を置いて描く
+    // （2D断面の近似・復原てこの値は従来どおり3Dの表を使う）。
+    const targetArea=polyArea(clipBelow(poly, d));
+    const eqLevel=findEquilLevel(rotPoly, targetArea);
+    const sub=clipBelow(rotPoly, eqLevel);
     const bc=sub.length>=3 ? polyCentroid(sub) : null;
 
-    const halfSpanB=Math.max(...poly.map(p=>Math.abs(p[0])))*1.55;
-    const deckZ=poly.reduce((m,p)=>Math.max(m,p[1]),0);
-    const topMarginPx=64;                             // 浮力の矢印とラベル用の余白（上下動の分は別途 zetaA で確保）
+    const hullHalfBeam=Math.max(...poly.map(p=>Math.abs(p[0])));   // 船体そのものの半幅（矢印・ラベル用の余白は含まない）
+    const deckZ=poly.reduce((m,p)=>Math.max(m,p[1]),0), keelZ=poly[2][1];
+    const topMarginPx=60;                             // 浮力の矢印とラベル用の余白（上下動の分は別途 zetaA で確保）
     const bottomMarginPx=110;                          // 重量の矢印とGZ寸法線・ラベル用の余白（同上）
     const heaveSpan=2*zetaA;                          // 上下動（波に追従）の可動範囲を縦方向に確保
-    const scale=Math.min(cw*0.42/halfSpanB, (ch-bottomMarginPx-topMarginPx)/(deckZ+heaveSpan));
+    // ズーム×1で船体の全幅がキャンバス幅の約57%を占めるようにする（幅優先で scale を決める）。
+    // 縦方向は「船体高さ＋上下動の可動範囲＋上下の余白」がちょうど収まるようにキャンバスの高さ自体を
+    // 追従させる（波高0の低い高さ〜通常の波高で十分な高さの範囲にクランプ。クランプされた場合だけ
+    // 縦方向基準に scale を落とし直し、大波高でも船体全体が見えることを優先する）。
+    const WIDTH_FRAC=0.575, CH_MIN=260, CH_MAX=620;
+    let scale=WIDTH_FRAC*cw/(2*hullHalfBeam);
+    const vSpanM=(deckZ-keelZ)+heaveSpan;
+    const neededCh=vSpanM*scale+topMarginPx+bottomMarginPx;
+    const targetCh=Math.max(CH_MIN,Math.min(CH_MAX,neededCh));
+    const heightKey=cw.toFixed(0)+'_'+targetCh.toFixed(0);
+    if(cv.dataset.hkey!==heightKey){ cv.style.height=Math.round(targetCh)+'px'; cv.dataset.hkey=heightKey; }
+    const ch=cv.clientHeight;
+    if(neededCh>CH_MAX+0.5) scale=(ch-topMarginPx-bottomMarginPx)/vSpanM;   // クランプ時は縦方向基準に縮小
+    if(cv.width!==Math.round(cw*dpr)||cv.height!==Math.round(ch*dpr)){ cv.width=Math.round(cw*dpr); cv.height=Math.round(ch*dpr); }
+    ctx2d.setTransform(dpr,0,0,dpr,0,0); ctx2d.clearRect(0,0,cw,ch);
     const cx0=cw*0.50, waterY=topMarginPx+(zetaA+deckZ-d)*scale;
-    const yS=v=>cx0+v*scale, zS=v=>waterY-(v-d)*scale;
-    const zSH=v=>zS(v)-eta0*scale;   // 船体側は局所水面に追従（長波近似・RAO≈1）させて描く
+    const zoom=rsView.zoom, panX=rsView.panX, panY=rsView.panY;
+    const yS=v=>zoom*(cx0+v*scale)+panX;
+    const zS=v=>zoom*(waterY-(v-d)*scale)+panY;
+    // 船体側は局所水面(eta0)に追従（長波近似・RAO≈1）させ、さらに A3 の浮上位置補正 (eqLevel-d) だけ上下にずらして描く
+    const zSH=v=>zoom*(waterY-(v-d)*scale-eta0*scale-(eqLevel-d)*scale)+panY;
 
     // 波面（画面全幅を横方向に流れる正弦波・実座標 y=(x-cx0)/scale）
     ctx2d.beginPath();
     const NX=48;
     for(let i=0;i<=NX;i++){
-      const xp=cw*i/NX, yr=(xp-cx0)/scale, eta=zetaA*Math.cos(waveK*yr-waveOmega*tSim);
+      const xp=cw*i/NX, yr=((xp-panX)/zoom-cx0)/scale, eta=zetaA*Math.cos(waveK*yr-waveOmega*tSim);
       const yy=zS(d+eta);
       i? ctx2d.lineTo(xp,yy) : ctx2d.moveTo(xp,yy);
     }
@@ -5892,49 +6044,61 @@ if (typeof module !== 'undefined') module.exports = USV;
     const gzArrKG=USV.gzKGArray(variant, KG);
     const angles=USV.hydro.gz.angles_deg;
     const alphaDeg=(waveK*zetaA*Math.sin(waveOmega*tSim))*180/Math.PI;
-    const phiDeg=phi*180/Math.PI;
+    const phiDeg=USV.gzAngleWrap(phi*180/Math.PI);   // ±180°に正規化（周回した後の表示・AVS判定のずれを防ぐ）
     const gzVal=USV.gzInterp(angles, gzArrKG, phiDeg-alphaDeg);
     const land=USV.gzLandscape(angles, gzArrKG, hull.m);
     const avsHi=land.AVS_deg, avsLo=land.AVS_port_deg;
     const beyondAvs=(avsHi!=null && phiDeg>avsHi) || (avsLo!=null && phiDeg<avsLo);
 
-    // ── ラベル（白背景の箱つき・視認性優先） ──
+    // ── ラベル（白背景の箱つき・視認性優先）。align='left'|'right' のときは xAnchor をテキスト箱の
+    // 左端／右端に固定する（他のラベル・矢印・寸法線と重ならない側に確実に置くため）。省略時は中央揃え。
     ctx2d.font='600 12px system-ui,sans-serif'; ctx2d.textBaseline='alphabetic';
-    function labelBox(x,y,text,color){
+    function labelBox(xAnchor,y,text,color,align){
       const w=ctx2d.measureText(text).width;
-      ctx2d.fillStyle='rgba(255,255,255,0.92)'; ctx2d.fillRect(x-w/2-3,y-12,w+6,16);
-      ctx2d.fillStyle=color; ctx2d.fillText(text,x-w/2,y);
+      let bx = align==='left' ? xAnchor : align==='right' ? xAnchor-w-6 : xAnchor-w/2-3;
+      bx=Math.max(2,Math.min(cw-w-8,bx));   // 狭い画面幅でもラベルがキャンバスの外にはみ出さないようにする
+      ctx2d.fillStyle='rgba(255,255,255,0.92)'; ctx2d.fillRect(bx,y-12,w+6,16);
+      ctx2d.fillStyle=color; ctx2d.fillText(text,bx+3,y);
     }
-    const armLen=Math.min(Math.max(28, scale*hull.B/3), topMarginPx-14, bottomMarginPx-70);   // 矢印の長さ ≈ 船幅/3（上下の余白に収まるよう上限）
+    const armLen=Math.min(Math.max(28, scale*hull.B/3), 50, topMarginPx-14, bottomMarginPx-70);   // 矢印の長さ ≈ 船幅/3（上限50px・上下の余白にも収まる範囲）
 
-    // G（塗りつぶし丸）・重量の矢印（下向き・先端の外側にラベル）
+    // G・B の点が縦方向に近いと矢印とラベルが重なるため、その場合だけ左右に5pxずつ離して描く
+    // （GZ寸法線・Z点など他の計算には使わない“見た目専用”の位置）。
     const Gp=[yS(0),zSH(KG)];
-    ctx2d.fillStyle='#2A78D6';
-    ctx2d.beginPath(); ctx2d.arc(Gp[0],Gp[1],5,0,7); ctx2d.fill();
-    labelBox(Gp[0]-16,Gp[1]-9,'G','#2A78D6');
-    ctx2d.strokeStyle='#9F2F2D'; ctx2d.lineWidth=1.8;
-    ctx2d.beginPath(); ctx2d.moveTo(Gp[0],Gp[1]); ctx2d.lineTo(Gp[0],Gp[1]+armLen); ctx2d.stroke();
-    ctx2d.beginPath(); ctx2d.moveTo(Gp[0],Gp[1]+armLen); ctx2d.lineTo(Gp[0]-4,Gp[1]+armLen-8); ctx2d.lineTo(Gp[0]+4,Gp[1]+armLen-8); ctx2d.closePath();
-    ctx2d.fillStyle='#9F2F2D'; ctx2d.fill();
-    labelBox(Gp[0],Gp[1]+armLen+14,'mg','#9F2F2D');
+    let Bp=bc?[yS(bc.cy),zSH(bc.cz)]:null;
+    const closeVert = Bp && Math.abs(Gp[1]-Bp[1])<14;
+    const GpD=[Gp[0]-(closeVert?5:0), Gp[1]];
+    const BpD=Bp?[Bp[0]+(closeVert?5:0), Bp[1]]:null;
+    const gzPx=Gp[0]+gzVal*scale*zoom;      // Z点・GZ寸法線のx（Gの見た目位置ではなく物理的なGp基準）
+    const Zp=[gzPx, Gp[1]];
 
-    // B（白抜き丸）・浮力の矢印（上向き・先端の外側にラベル）
-    let Bp=null;
-    if(bc){
-      Bp=[yS(bc.cy),zSH(bc.cz)];
+    // G（塗りつぶし丸）・重量の矢印（下向き・先端の外側にラベル）。G のラベルは G の左側に置く。
+    ctx2d.fillStyle='#2A78D6';
+    ctx2d.beginPath(); ctx2d.arc(GpD[0],GpD[1],5,0,7); ctx2d.fill();
+    labelBox(GpD[0]-12,GpD[1]+4,'G','#2A78D6','right');
+    ctx2d.strokeStyle='#9F2F2D'; ctx2d.lineWidth=1.8;
+    ctx2d.beginPath(); ctx2d.moveTo(GpD[0],GpD[1]); ctx2d.lineTo(GpD[0],GpD[1]+armLen); ctx2d.stroke();
+    ctx2d.beginPath(); ctx2d.moveTo(GpD[0],GpD[1]+armLen); ctx2d.lineTo(GpD[0]-4,GpD[1]+armLen-8); ctx2d.lineTo(GpD[0]+4,GpD[1]+armLen-8); ctx2d.closePath();
+    ctx2d.fillStyle='#9F2F2D'; ctx2d.fill();
+    labelBox(GpD[0],GpD[1]+armLen+16,'mg','#9F2F2D');
+
+    // B（白抜き丸）・浮力の矢印（上向き・先端の外側にラベル）。B のラベルは B の右側に置く。
+    if(BpD){
       ctx2d.fillStyle='#FFFFFF'; ctx2d.strokeStyle='#1F6C9F'; ctx2d.lineWidth=1.8;
-      ctx2d.beginPath(); ctx2d.arc(Bp[0],Bp[1],5,0,7); ctx2d.fill(); ctx2d.stroke();
-      labelBox(Bp[0]+18,Bp[1]+9,'B','#1F6C9F');
-      ctx2d.beginPath(); ctx2d.moveTo(Bp[0],Bp[1]); ctx2d.lineTo(Bp[0],Bp[1]-armLen); ctx2d.stroke();
-      ctx2d.beginPath(); ctx2d.moveTo(Bp[0],Bp[1]-armLen); ctx2d.lineTo(Bp[0]-4,Bp[1]-armLen+8); ctx2d.lineTo(Bp[0]+4,Bp[1]-armLen+8); ctx2d.closePath();
+      ctx2d.beginPath(); ctx2d.arc(BpD[0],BpD[1],5,0,7); ctx2d.fill(); ctx2d.stroke();
+      labelBox(BpD[0]+12,BpD[1]+4,'B','#1F6C9F','left');
+      ctx2d.beginPath(); ctx2d.moveTo(BpD[0],BpD[1]); ctx2d.lineTo(BpD[0],BpD[1]-armLen); ctx2d.stroke();
+      ctx2d.beginPath(); ctx2d.moveTo(BpD[0],BpD[1]-armLen); ctx2d.lineTo(BpD[0]-4,BpD[1]-armLen+8); ctx2d.lineTo(BpD[0]+4,BpD[1]-armLen+8); ctx2d.closePath();
       ctx2d.fillStyle='#1F6C9F'; ctx2d.fill();
-      labelBox(Bp[0],Bp[1]-armLen-14,'浮力','#1F6C9F');
+      let ukiY=BpD[1]-armLen-16;
+      if(Math.abs(ukiY-Zp[1])<18 && Math.abs(BpD[0]-Zp[0])<70) ukiY=Zp[1]-18;   // Z のラベルと重なる位置なら、さらに上へ逃がす
+      labelBox(BpD[0],ukiY,'浮力','#1F6C9F');
     }
 
-    // GZ 寸法線（船体の下・G の鉛直線とB相当の鉛直線の間に両矢印。値は3D係数表由来）
+    // GZ 寸法線（船体の下・G の鉛直線とB相当の鉛直線の間に両矢印。値は3D係数表由来）※ G の見た目位置ではなく
+    // 物理的な G（Gp）を基準にする（GZ・Z点は左右に振った表示専用オフセットの影響を受けない）。
     const hullBottomY=Math.max(...rotPoly.map(p=>zSH(p[1])));
-    const dimY=Math.max(hullBottomY, Gp[1]+armLen+14+8)+18;   // mg ラベルの下端よりさらに余白を空ける
-    const gzPx=Gp[0]+gzVal*scale;
+    const dimY=Math.max(hullBottomY, GpD[1]+armLen+16+8, BpD?BpD[1]-armLen-16-8:0)+18;
     ctx2d.strokeStyle='#2A78D6'; ctx2d.lineWidth=1.4;
     ctx2d.beginPath(); ctx2d.moveTo(Gp[0],dimY-10); ctx2d.lineTo(Gp[0],dimY); ctx2d.stroke();          // G の鉛直線（短い引出し・mg矢印と重ねない）
     ctx2d.beginPath(); ctx2d.moveTo(gzPx,hullBottomY+6); ctx2d.lineTo(gzPx,dimY); ctx2d.stroke();       // B相当の鉛直線
@@ -5946,6 +6110,28 @@ if (typeof module !== 'undefined') module.exports = USV;
     }
     labelBox((Gp[0]+gzPx)/2,dimY+18,`GZ = ${gzVal.toFixed(3)} m`,'#2A78D6');
 
+    // A4: KG 寸法線（キール最下点 K から G までの鉛直距離）。船体の輪郭の外側・左に小さな隙間を空けて描く。
+    const zKeel0=poly[2][1];   // crossPoly の中央点＝キール最下点（船体座標・非回転）
+    const leftX=Math.min(...rotPoly.map(p=>yS(p[0])))-26;
+    ctx2d.strokeStyle='#57534E'; ctx2d.lineWidth=1.2;
+    ctx2d.beginPath(); ctx2d.moveTo(leftX,zSH(zKeel0)); ctx2d.lineTo(leftX,zSH(KG)); ctx2d.stroke();
+    for(const zz of [zKeel0,KG]){ ctx2d.beginPath(); ctx2d.moveTo(leftX-4,zSH(zz)); ctx2d.lineTo(leftX+4,zSH(zz)); ctx2d.stroke(); }
+    labelBox(leftX-8,(zSH(zKeel0)+zSH(KG))/2+4,`KG=${KG.toFixed(3)}`,'#57534E','right');
+    labelBox(leftX,zSH(zKeel0)+16,'K','#57534E');
+
+    // A4: 浮力の作用線（B から鉛直上向きの細い破線）と、G の高さで交わる点 Z（GZ寸法線と同じ x）。
+    // Z のラベルは Z の右側に置き、B に近い（14px未満）ときだけ上へずらして B のラベルと重ならないようにする。
+    if(Bp){
+      ctx2d.save(); ctx2d.setLineDash([4,4]);
+      ctx2d.strokeStyle='#1F6C9F'; ctx2d.lineWidth=1.1;
+      ctx2d.beginPath(); ctx2d.moveTo(Bp[0],Bp[1]); ctx2d.lineTo(Zp[0],Zp[1]); ctx2d.stroke();
+      ctx2d.restore();
+      ctx2d.fillStyle='#1F6C9F';
+      ctx2d.beginPath(); ctx2d.arc(Zp[0],Zp[1],3,0,7); ctx2d.fill();
+      const zLabelUp = Math.abs(Zp[1]-Bp[1])<14;
+      labelBox(Zp[0]+11,Zp[1]+(zLabelUp?-14:4),'Z','#1F6C9F','left');
+    }
+
     if(beyondAvs){
       ctx2d.fillStyle='rgba(159,47,45,0.92)'; ctx2d.font='700 15px system-ui,sans-serif';
       ctx2d.fillText('転覆（AVS 超過）',10,22);
@@ -5954,6 +6140,8 @@ if (typeof module !== 'undefined') module.exports = USV;
     const modeLab = curP.sea.rollDamp==='const' ? '一定ζ' : '抗力モデル';
     info.innerHTML = `φ = ${phiDeg.toFixed(1)}°・GZ = ${gzVal.toFixed(3)} m・AVS ${avsHi!=null?avsHi.toFixed(0):'—'}°/${avsLo!=null?avsLo.toFixed(0):'—'}°（sw③=${modeLab}）`+
       (beyondAvs?'　<b style="color:var(--ng-ink)">転覆（AVSを超過）— 復帰するかは表を最後まで見て判断</b>':'');
+    const stEl=document.getElementById('rs-state');
+    if(stEl) stEl.textContent = '状態: '+stateLabel();
   }
 
   function drawChart(){
@@ -5961,15 +6149,14 @@ if (typeof module !== 'undefined') module.exports = USV;
     const W=900,H=240,pad={l:48,r:16,t:14,b:30};
     const land=(curP && USV.hydro && USV.hydro.gz) ? USV.gzLandscape(USV.hydro.gz.angles_deg, USV.gzKGArray(elVariant.value||'base', parseFloat(elKG.value)), curP.hull.m) : null;
     const avsHi=land&&land.AVS_deg!=null?land.AVS_deg:null, avsLo=land&&land.AVS_port_deg!=null?land.AVS_port_deg:null;
-    let ymax=Math.max(20, Math.abs(avsHi||0), Math.abs(avsLo||0), ...series.map(s=>Math.abs(s.phiDeg)))*1.15;
+    const ymax=180;                                     // A3: ±180° まで常に表示
     const t1=tSim, t0=t1-30;
     const X=t=>pad.l+(W-pad.l-pad.r)*(t-t0)/30;
     const Y=v=>pad.t+(H-pad.t-pad.b)*(1-(v+ymax)/(2*ymax));
     let s=`<line x1="${pad.l}" y1="${Y(0).toFixed(1)}" x2="${W-pad.r}" y2="${Y(0).toFixed(1)}" stroke="#EAEAEA"/>`;
     s+=`<line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${H-pad.b}" stroke="#787774"/>`;
     s+=`<line x1="${pad.l}" y1="${H-pad.b}" x2="${W-pad.r}" y2="${H-pad.b}" stroke="#787774"/>`;
-    for(const yv of [-90,-45,0,45,90]){
-      if(Math.abs(yv)>ymax) continue;
+    for(const yv of [-180,-90,0,90,180]){
       s+=`<line x1="${pad.l-4}" y1="${Y(yv).toFixed(1)}" x2="${pad.l}" y2="${Y(yv).toFixed(1)}" stroke="#787774"/>`;
       s+=`<text x="${pad.l-8}" y="${(Y(yv)+3).toFixed(1)}" font-size="11" fill="#787774" text-anchor="end">${yv}</text>`;
     }
@@ -5978,23 +6165,31 @@ if (typeof module !== 'undefined') module.exports = USV;
       s+=`<line x1="${xx.toFixed(1)}" y1="${H-pad.b}" x2="${xx.toFixed(1)}" y2="${H-pad.b+4}" stroke="#787774"/>`;
       s+=`<text x="${xx.toFixed(1)}" y="${H-pad.b+16}" font-size="11" fill="#787774" text-anchor="middle">${Math.max(0,tt).toFixed(0)}</text>`;
     }
-    if(avsHi!=null){
-      s+=`<line x1="${pad.l}" y1="${Y(avsHi).toFixed(1)}" x2="${W-pad.r}" y2="${Y(avsHi).toFixed(1)}" stroke="#9F2F2D" stroke-dasharray="5 4"/>`;
-      s+=`<text x="${W-pad.r-4}" y="${(Y(avsHi)-4).toFixed(1)}" font-size="11" fill="#9F2F2D" text-anchor="end">AVS +${avsHi.toFixed(0)}°</text>`;
-    }
-    if(avsLo!=null){
-      s+=`<line x1="${pad.l}" y1="${Y(avsLo).toFixed(1)}" x2="${W-pad.r}" y2="${Y(avsLo).toFixed(1)}" stroke="#9F2F2D" stroke-dasharray="5 4"/>`;
-      s+=`<text x="${W-pad.r-4}" y="${(Y(avsLo)+13).toFixed(1)}" font-size="11" fill="#9F2F2D" text-anchor="end">AVS ${avsLo.toFixed(0)}°</text>`;
+    // A3: AVS±・±180° の破線と目盛（AVSは表の値・180は姿勢反転の物理的な限界）
+    for(const [yv,label,color] of [[avsHi,avsHi!=null?`AVS +${avsHi.toFixed(0)}°`:null,'#9F2F2D'],
+                                     [avsLo,avsLo!=null?`AVS ${avsLo.toFixed(0)}°`:null,'#9F2F2D'],
+                                     [180,'+180°','#57534E'],[-180,'-180°','#57534E']]){
+      if(yv==null) continue;
+      const yy=Y(yv).toFixed(1);
+      s+=`<line x1="${pad.l}" y1="${yy}" x2="${W-pad.r}" y2="${yy}" stroke="${color}" stroke-dasharray="5 4"/>`;
+      s+=`<text x="${W-pad.r-4}" y="${(Y(yv)+(yv>=0?-4:13)).toFixed(1)}" font-size="11" fill="${color}" text-anchor="end">${label}</text>`;
     }
     if(series.length>1){
       const pts=series.map(pt=>`${X(pt.t).toFixed(1)},${Y(pt.phiDeg).toFixed(1)}`).join(' ');
       s+=`<polyline points="${pts}" fill="none" stroke="#2A78D6" stroke-width="1.8"/>`;
     }
+    // A3: 転覆・復帰が起きた時刻の印（時系列の上端に三角マーク＋ラベル）
+    for(const ev of events){
+      if(ev.t<t0-1e-9 || ev.t>t1+1e-9) continue;
+      const xx=X(ev.t), col=ev.type==='転覆'?'#9F2F2D':'#1F6C9F';
+      s+=`<path d="M${xx.toFixed(1)},${pad.t} l-5,-9 l10,0 Z" fill="${col}"/>`;
+      s+=`<text x="${xx.toFixed(1)}" y="${pad.t-11}" font-size="10" fill="${col}" text-anchor="middle">${ev.type}</text>`;
+    }
     s+=`<text x="${pad.l}" y="12" font-size="11" fill="#787774">φ [deg]</text>`;
     s+=`<text x="${W-pad.r}" y="${H-4}" font-size="11" fill="#787774" text-anchor="end">t [s]</text>`;
     chartSvg.innerHTML=s;
     const maxAbs=series.length? Math.max(...series.map(pt=>Math.abs(pt.phiDeg))) : 0;
-    chartInfo.textContent = `直近30秒の最大傾斜角: ${maxAbs.toFixed(1)}°（破線=AVS±）`;
+    chartInfo.textContent = `直近30秒の最大傾斜角: ${maxAbs.toFixed(1)}°（縦軸は±180°固定・赤破線=AVS±・灰破線=±180°）`;
   }
 
   function drawAll(){ draw(); drawChart(); }
@@ -6032,7 +6227,82 @@ if (typeof module !== 'undefined') module.exports = USV;
     y[1]+=s*dphidot;
     if(!running) drawAll();
   });
+
+  // A3: 「転覆させる」「復帰させる」定型ボタン。E_転覆・E_復帰（=GZ表由来。船体タブ上部の表と同じ値）の
+  // 1.2倍を、単発の速度衝撃ではなく rollImpulseN 回・rollImpulseSpacing 秒間隔の衝撃列として与える
+  // （理由は usv-core の rollImpulseKick 定義部を参照）。再生中でなければ自動的に再生を始めて経過を見せる。
+  const btnCapsize=document.getElementById('rs-capsize'), btnRecover=document.getElementById('rs-recover');
+  function schedulePendingImpulse(Etot, dir){
+    if(!(Etot>0)) return;
+    pendingImpulse={ dir, dE:Etot/USV.rollImpulseN, kicksLeft:USV.rollImpulseN, nextT:tSim };
+    if(!running){ running=true; btnPlay.textContent='停止'; lastTs=0; rafId=requestAnimationFrame(loop); }
+  }
+  if(btnCapsize) btnCapsize.addEventListener('click',()=>{
+    if(!ctxPhys) ctxPhys=buildCtxPhys();
+    if(!ctxPhys || !ctxPhys.land) return;
+    const Ecap=(ctxPhys.land.E_capsize_J||0)*1.2;
+    schedulePendingImpulse(Ecap, 1);
+  });
+  if(btnRecover) btnRecover.addEventListener('click',()=>{
+    if(!ctxPhys) ctxPhys=buildCtxPhys();
+    if(!ctxPhys || !ctxPhys.land) return;
+    const Erec=(ctxPhys.land.E_recover_J||0)*1.2;
+    const dir=USV.rollImpulseDir(ctxPhys.land, y[0]*180/Math.PI);
+    schedulePendingImpulse(Erec, dir);
+  });
+
   window.addEventListener('resize',()=>drawAll());
+
+  // ── A5: 断面図の拡大縮小（航路図と同じ操作。ホイール/ピンチで0.5〜4倍・ドラッグで移動・ダブルクリックで初期表示） ──
+  (function setupRsZoomPan(){
+    cv.addEventListener('wheel', ev => {
+      ev.preventDefault();                          // キャンバス上のホイールだけ止める（ページのスクロールは邪魔しない）
+      const r=cv.getBoundingClientRect();
+      const px=ev.clientX-r.left, py=ev.clientY-r.top;
+      // 実際のスクロール量に比例して拡大率を変える（一定倍率だと、実マウスのように小刻みなイベントを
+      // 多数送る環境と、まとめて大きな deltaY を1回で送る環境とで体感の拡大速度が食い違うため）。
+      const factor = rsClampZoom.expFactor(-ev.deltaY);
+      const newZoom = rsClampZoom(rsView.zoom*factor);
+      const actual = newZoom/rsView.zoom;
+      rsView.panX = px - (px-rsView.panX)*actual;
+      rsView.panY = py - (py-rsView.panY)*actual;
+      rsView.zoom = newZoom;
+      drawAll();
+    }, { passive:false });
+    const pointers=new Map();
+    let dragStart=null, pinchStart=null;
+    function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+    cv.addEventListener('pointerdown', ev=>{
+      cv.setPointerCapture(ev.pointerId);
+      pointers.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+      if(pointers.size===1){ dragStart={panX:rsView.panX, panY:rsView.panY, sx:ev.clientX, sy:ev.clientY}; cv.style.cursor='grabbing'; }
+      else if(pointers.size===2){ dragStart=null; const [a,b]=[...pointers.values()]; pinchStart={zoom:rsView.zoom, panX:rsView.panX, panY:rsView.panY, dist:dist(a,b), mid:{x:(a.x+b.x)/2,y:(a.y+b.y)/2}}; }
+    });
+    cv.addEventListener('pointermove', ev=>{
+      if(!pointers.has(ev.pointerId)) return;
+      pointers.set(ev.pointerId, {x:ev.clientX, y:ev.clientY});
+      if(pointers.size===2 && pinchStart){
+        const [a,b]=[...pointers.values()];
+        const scale=Math.max(1e-3,dist(a,b))/Math.max(1e-3,pinchStart.dist);
+        const newZoom=rsClampZoom(pinchStart.zoom*scale);
+        const actual=newZoom/pinchStart.zoom;
+        const r=cv.getBoundingClientRect();
+        const px=pinchStart.mid.x-r.left, py=pinchStart.mid.y-r.top;
+        rsView.panX=px-(px-pinchStart.panX)*actual; rsView.panY=py-(py-pinchStart.panY)*actual;
+        rsView.zoom=newZoom;
+        drawAll();
+      } else if(pointers.size===1 && dragStart){
+        rsView.panX=dragStart.panX+(ev.clientX-dragStart.sx);
+        rsView.panY=dragStart.panY+(ev.clientY-dragStart.sy);
+        drawAll();
+      }
+    });
+    function endPointer(ev){ pointers.delete(ev.pointerId); if(pointers.size<2) pinchStart=null; if(pointers.size<1){ dragStart=null; cv.style.cursor='grab'; } }
+    cv.addEventListener('pointerup', endPointer);
+    cv.addEventListener('pointercancel', endPointer);
+    cv.addEventListener('pointerleave', endPointer);
+    cv.addEventListener('dblclick', ()=>{ rsView.zoom=1; rsView.panX=0; rsView.panY=0; drawAll(); });
+  })();
 
   window.__hullTabListeners=window.__hullTabListeners||[];
   window.__hullTabListeners.push(vis=>{
