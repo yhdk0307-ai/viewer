@@ -85,6 +85,7 @@
 .de-menu-item { display: block; width: 100%; text-align: left; border: 0; background: transparent; color: var(--de-ink); font-family: var(--de-font); font-size: 12px; padding: 6px 10px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
 .de-menu-item:hover { background: var(--de-accent-soft); }
 .de-menu-sep { height: 1px; margin: 4px 6px; background: var(--de-grid); }
+.de-menu-header { padding: 6px 10px 2px; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--de-soft); }
 .de-title { font-size: 13px; font-weight: 700; letter-spacing: .02em; margin-left: auto; padding: 0 8px; color: var(--de-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46vw; }
 
 /* アイコンバー（メニューバー下段・正方形ボタン） */
@@ -303,7 +304,11 @@ function validate(raw) {
     if (!n.id) { errors.push('id のないノードがあります'); continue; }
     if (ids.has(n.id)) errors.push(`ノードID重複: ${n.id}`);
     ids.add(n.id);
-    if (typeof n.x !== 'number' || typeof n.y !== 'number') errors.push(`ノード ${n.id}: x,y は数値で必須です`);
+    if (typeof n.x !== 'number' || typeof n.y !== 'number') {
+      // G1: select/layout を持つ view は x/y を自動配置で埋めるので「欠落」は warning に留める
+      if (raw.select || raw.layout) warnings.push(`ノード ${n.id}: x,y 未指定 → layout/grid で自動配置`);
+      else errors.push(`ノード ${n.id}: x,y は数値で必須です`);
+    }
     if (n.type && !NODE_TYPES.includes(n.type)) warnings.push(`ノード ${n.id}: 未知の type '${n.type}' → block 扱い`);
     const pids = new Set();
     for (const p of n.ports || []) {
@@ -328,6 +333,28 @@ function validate(raw) {
   return { errors, warnings };
 }
 
+// エッジの見た目（arrowStart/arrowEnd/line）を既定・preset・rel から導出する。
+// 明示 preset 優先、無ければ rel から写像した preset で導出（rel 自体は意味データとして保持）。
+function applyEdgeLook(e) {
+  const p = EDGE_PRESETS[e.preset || (e.rel ? REL_PRESETS[e.rel] : undefined)];
+  if (p) {
+    if (e.arrowStart === undefined) e.arrowStart = p.arrowStart;
+    if (e.arrowEnd === undefined) e.arrowEnd = p.arrowEnd;
+    if (e.line === undefined) e.line = p.line;
+  }
+  if (e.arrowStart === undefined && e.arrowEnd === undefined) {
+    // 旧 arrow フィールド（end|start|both|none）の後方互換解釈
+    const a = e.arrow || 'end';
+    e.arrowEnd = (a === 'end' || a === 'both') ? 'arrow' : 'none';
+    e.arrowStart = (a === 'start' || a === 'both') ? 'arrow' : 'none';
+  }
+  if (e.arrowStart === undefined) e.arrowStart = 'none';
+  if (e.arrowEnd === undefined) e.arrowEnd = 'none';
+  if (e.line === undefined) e.line = 'solid';
+  delete e.arrow; // 正規化後は新語彙に一本化
+  return e;
+}
+
 // 正規化: 既定値を埋め、レイヤ/参照を解決した作業用モデルを返す（raw は変更しない）
 function normalize(raw) {
   const model = structuredClone(raw);
@@ -344,25 +371,7 @@ function normalize(raw) {
     if (!model.layers.some(l => l.id === n.layer)) n.layer = model.layers[0].id;
   }
   model.edges = (model.edges || []).map(e => Object.assign({}, DEFAULT_EDGE, e));
-  for (const e of model.edges) {
-    // 明示 preset 優先、無ければ rel から写像した preset で見た目を導出（rel 自体は意味データとして保持）
-    const p = EDGE_PRESETS[e.preset || (e.rel ? REL_PRESETS[e.rel] : undefined)];
-    if (p) {
-      if (e.arrowStart === undefined) e.arrowStart = p.arrowStart;
-      if (e.arrowEnd === undefined) e.arrowEnd = p.arrowEnd;
-      if (e.line === undefined) e.line = p.line;
-    }
-    if (e.arrowStart === undefined && e.arrowEnd === undefined) {
-      // 旧 arrow フィールド（end|start|both|none）の後方互換解釈
-      const a = e.arrow || 'end';
-      e.arrowEnd = (a === 'end' || a === 'both') ? 'arrow' : 'none';
-      e.arrowStart = (a === 'start' || a === 'both') ? 'arrow' : 'none';
-    }
-    if (e.arrowStart === undefined) e.arrowStart = 'none';
-    if (e.arrowEnd === undefined) e.arrowEnd = 'none';
-    if (e.line === undefined) e.line = 'solid';
-    delete e.arrow; // 正規化後は新語彙に一本化
-  }
+  for (const e of model.edges) applyEdgeLook(e);
   model.groups = (model.groups || []).map(g => Object.assign({ kind: 'container', members: [] }, g));
   return model;
 }
@@ -424,12 +433,208 @@ function normalizeProject(raw) {
   if (!proj.project.entry || !proj.diagrams.some(d => d.meta.id === proj.project.entry)) {
     proj.project.entry = proj.diagrams[0]?.meta.id;
   }
-  // グローバル台帳（MBSE）。台帳を持たない既存プロジェクトは空配列＝以降の処理は完全に no-op（後方互換）。
-  proj.entities = (raw?.entities || []).map(e => Object.assign({}, DEFAULT_ENTITY, structuredClone(e)));
-  proj.relations = (raw?.relations || []).map(r => structuredClone(r));
+  // ── G1: graph が単一の真実（canonical store）──
+  // 旧 entities[]/relations[] は同形の別名としてロード時に受理し graph へ畳む（保存は常に graph.*）。
+  // graph を持たない既存プロジェクトは空配列＝以降の処理は完全に no-op（後方互換）。
+  proj.graph = {
+    nodes: mergeById(raw?.graph?.nodes, raw?.entities).map(e => Object.assign({}, DEFAULT_ENTITY, structuredClone(e))),
+    edges: mergeById(raw?.graph?.edges, raw?.relations).map(r => structuredClone(r)),
+  };
+  // 非推奨エイリアス（**同一配列参照**）。既存の editor/verify は proj.entities/relations のまま動く。
+  proj.entities = proj.graph.nodes;
+  proj.relations = proj.graph.edges;
+  deriveViews(proj);            // §2-1: select → nodes/edges を合成（手置きが勝つ）
   resolveLedger(proj, rawDiagrams);
+  applyLayouts(proj);           // §2-2: x/y 未指定ノードだけ自動配置（__autoPos）
   proj.index = buildIndex(proj);
   return proj;
+}
+
+// graph.* と旧 entities/relations を id 重複なしで連結（先勝ち＝graph.* が正）
+function mergeById(primary, legacy) {
+  const out = [], seen = new Set();
+  for (const item of [...(primary || []), ...(legacy || [])]) {
+    if (item && item.id !== undefined) { if (seen.has(item.id)) continue; seen.add(item.id); }
+    out.push(item);
+  }
+  return out;
+}
+
+// ─── §2 派生（view = graph に対する select + layout の投影） ───
+
+// select.rels によるエッジ絞り込み（未指定なら全件）
+function selectEdges(gedges, sel) {
+  if (!Array.isArray(sel?.rels) || !sel.rels.length) return gedges;
+  const keep = new Set(sel.rels);
+  return gedges.filter(e => keep.has(e.rel));
+}
+
+// select → 採用する graph ノード id 集合
+// roots+depth は parent 階層を、neighborsOf+hops は（rels 絞り込み後の）エッジを無向 BFS で辿る。
+// roots も neighborsOf も無ければ graph 全ノードが母集合。types は最後に掛ける絞り込み。
+function selectNodeIds(sel, gnodes, gedges) {
+  const byId = new Map(gnodes.map(n => [n.id, n]));
+  const picked = new Set();
+  const roots = (Array.isArray(sel.roots) ? sel.roots : []).filter(id => byId.has(id));
+  const nbId = (typeof sel.neighborsOf === 'string' && byId.has(sel.neighborsOf)) ? sel.neighborsOf : null;
+  if (roots.length) {
+    const childrenOf = new Map();
+    for (const n of gnodes) if (n.parent) {
+      let a = childrenOf.get(n.parent); if (!a) { a = []; childrenOf.set(n.parent, a); } a.push(n.id);
+    }
+    const depth = (typeof sel.depth === 'number' && sel.depth >= 0) ? sel.depth : Infinity;
+    let frontier = [];
+    for (const r of roots) if (!picked.has(r)) { picked.add(r); frontier.push(r); }
+    for (let d = 0; d < depth && frontier.length; d++) {
+      const next = [];
+      for (const id of frontier) for (const c of childrenOf.get(id) || []) {
+        if (!picked.has(c)) { picked.add(c); next.push(c); }
+      }
+      frontier = next;
+    }
+  }
+  if (nbId) {
+    const adj = new Map();
+    const link = (a, b) => { let s = adj.get(a); if (!s) { s = []; adj.set(a, s); } s.push(b); };
+    for (const e of selectEdges(gedges, sel)) {
+      if (!byId.has(e.from) || !byId.has(e.to)) continue;
+      link(e.from, e.to); link(e.to, e.from);   // 無向
+    }
+    const hops = (typeof sel.hops === 'number' && sel.hops >= 0) ? sel.hops : 1;
+    const seen = new Set([nbId]);
+    let frontier = [nbId];
+    for (let h = 0; h < hops && frontier.length; h++) {
+      const next = [];
+      for (const id of frontier) for (const o of adj.get(id) || []) if (!seen.has(o)) { seen.add(o); next.push(o); }
+      frontier = next;
+    }
+    for (const id of seen) picked.add(id);
+  }
+  let ids = (roots.length || nbId) ? [...picked] : gnodes.map(n => n.id);
+  if (Array.isArray(sel.types) && sel.types.length) {
+    const keep = new Set(sel.types);
+    ids = ids.filter(id => keep.has(byId.get(id)?.type || 'block'));
+  }
+  return new Set(ids);
+}
+
+// §2-1: select を持つ図へ graph からノード/エッジを合成する（__derived）。
+// 同 id の手置きノード/エッジが既にあれば手置きが勝つ（位置・見た目の上書き）。
+// 手置き側に entityId が無いときだけ graph id で補い、保存時に剥がす（__derivedEntityId）。
+function deriveViews(proj) {
+  const gnodes = proj.graph.nodes, gedges = proj.graph.edges;
+  if (!gnodes.length && !gedges.length) return;
+  const byId = new Map(gnodes.map(n => [n.id, n]));
+  for (const d of proj.diagrams) {
+    const sel = d.select;
+    if (!sel || typeof sel !== 'object') continue;
+    const ids = selectNodeIds(sel, gnodes, gedges);
+    const have = new Map((d.nodes || []).map(n => [n.id, n]));
+    const layer0 = d.layers[0].id;
+    for (const id of ids) {
+      const hand = have.get(id);
+      if (hand) {
+        if (!hand.entityId && byId.has(id)) { hand.entityId = id; hand.__derivedEntityId = true; }
+        continue;
+      }
+      // 位置は持たせない（layout / grid フォールバックが後段で埋める）。w/h は既定値。
+      const n = Object.assign({}, DEFAULT_NODE, { ports: [], id, entityId: id, layer: layer0, __derived: true });
+      d.nodes.push(n); have.set(id, n);
+    }
+    const handEdges = new Set((d.edges || []).map(e => e.id));
+    for (const ge of selectEdges(gedges, sel)) {
+      if (!ge || handEdges.has(ge.id)) continue;
+      if (!have.has(ge.from) || !have.has(ge.to)) continue;   // 両端が図に載っているものだけ
+      const e = Object.assign({}, DEFAULT_EDGE, {
+        id: ge.id, from: ge.from, to: ge.to, relationId: ge.id, __derived: true,
+      });
+      if (ge.label !== undefined) e.label = ge.label;
+      d.edges.push(applyEdgeLook(e));
+      handEdges.add(ge.id);
+    }
+    // select.connectedOnly (GRAPH_CONTRACT.md §2): rel-only selects (no roots/neighborsOf) pull
+    // in every graph node of the matched type regardless of whether it actually carries that
+    // rel, flooding the view with isolated dots. Drop derived nodes with no edge in the view;
+    // hand-placed nodes are authored on purpose and are never dropped.
+    if (sel.connectedOnly) {
+      const connected = new Set();
+      for (const e of d.edges) { connected.add(String(e.from).split(':')[0]); connected.add(String(e.to).split(':')[0]); }
+      d.nodes = d.nodes.filter(n => !n.__derived || connected.has(n.id));
+    }
+  }
+}
+
+// ─── §3 自動レイアウトのフック（実装は src/layout_algos.js＝別納品。ここは呼び出し側のみ） ───
+// 契約: layoutGraph(nodes, edges, opts) → Map<id,{x,y}>
+//   nodes: [{id,w,h,parent?}] / edges: [{from,to,rel?}] / opts: {algorithm,direction,nodeSep,rankSep,seed,iterations,hierarchyRel}
+let layoutEngine = null;
+let layoutProbe = null;
+function setLayoutEngine(fn) { layoutEngine = (typeof fn === 'function') ? fn : null; }
+function resolveLayoutEngine() {
+  if (layoutEngine) return layoutEngine;
+  // ① 単一 HTML バンドル: build.mjs が layout_algos.js を連結すると同一スコープの関数として見える
+  let bundleOrGlobalFound = false;
+  try { if (typeof layoutGraph === 'function') { layoutEngine = layoutGraph; bundleOrGlobalFound = true; } } catch { /* TDZ/未定義 */ }
+  // ② グローバル公開
+  if (!bundleOrGlobalFound) {
+    try {
+      const g = globalThis.layoutGraph || globalThis.DiagramLayout?.layoutGraph;
+      if (typeof g === 'function') { layoutEngine = g; bundleOrGlobalFound = true; }
+    } catch { /* noop */ }
+  }
+  if (bundleOrGlobalFound) return layoutEngine;
+  // ③ ネイティブ ESM: ①②が両方とも失敗したときだけ動的 import を 1 回だけ試す（G2 が届いたら次回 normalize
+  // から効く）。単一 HTML バンドルでは①が常に成功する（layout_algos.js が同一スコープへ連結されるため）ので
+  // ここには到達しない＝バンドル済み index.html が './layout_algos.js' への相対 fetch を発行して 404 を
+  // console に出す事故を構造的に防ぐ。失敗（404 含む）は黙って握りつぶし、二度と再試行しない。
+  if (!layoutProbe) {
+    layoutProbe = (async () => {
+      try { const m = await import('./layout_algos.js'); setLayoutEngine(m?.layoutGraph); } catch { /* 未提供・404 含め無言で諦める */ }
+    })().catch(() => { /* 保険: 上の try/catch に加えて念のため rejection も握りつぶす */ });
+  }
+  return null;
+}
+
+// 依存ゼロの最終防衛: 決定的な格子詰め（layout_algos.js が無い/失敗しても NaN 座標を作らない）
+function gridPositions(nodes, opts = {}) {
+  const gapX = typeof opts.nodeSep === 'number' ? opts.nodeSep : 40;
+  const gapY = typeof opts.rankSep === 'number' ? opts.rankSep : 60;
+  const cw = Math.max(...nodes.map(n => n.w || DEFAULT_NODE.w), DEFAULT_NODE.w) + gapX;
+  const ch = Math.max(...nodes.map(n => n.h || DEFAULT_NODE.h), DEFAULT_NODE.h) + gapY;
+  const cols = Math.max(1, Math.ceil(Math.sqrt(nodes.length)));
+  const pos = new Map();
+  nodes.forEach((n, i) => pos.set(n.id, { x: 60 + (i % cols) * cw, y: 60 + Math.floor(i / cols) * ch }));
+  return pos;
+}
+
+// §2-2: x/y を持たないノードだけへ位置を入れる（手置き x/y は動かさない）。入れた位置は __autoPos。
+function applyLayouts(proj) {
+  const gById = new Map(proj.graph.nodes.map(n => [n.id, n]));
+  for (const d of proj.diagrams) {
+    const missing = (d.nodes || []).filter(n => typeof n.x !== 'number' || typeof n.y !== 'number');
+    if (!missing.length) continue;
+    const opts = Object.assign({ direction: 'TB', nodeSep: 40, rankSep: 90, seed: 1, iterations: 300, hierarchyRel: 'contains' },
+      d.layout || {});
+    let pos = null;
+    if (opts.algorithm && opts.algorithm !== 'none') {
+      const engine = resolveLayoutEngine();
+      if (engine) {
+        const lnodes = d.nodes.map(n => ({
+          id: n.id, w: n.w, h: n.h,
+          parent: gById.get(n.entityId)?.parent,
+        }));
+        const ledges = d.edges.map(e => ({ from: String(e.from).split(':')[0], to: String(e.to).split(':')[0], rel: e.rel }));
+        try { pos = engine(lnodes, ledges, opts); } catch { pos = null; }
+        if (pos && typeof pos.get !== 'function') pos = new Map(Object.entries(pos));
+      }
+    }
+    const fallback = gridPositions(missing, opts);
+    for (const n of missing) {
+      const p = (pos && pos.get(n.id)) || fallback.get(n.id);
+      if (!p || typeof p.x !== 'number' || typeof p.y !== 'number') continue;
+      n.x = p.x; n.y = p.y; n.__autoPos = true;
+    }
+  }
 }
 
 // entityId/relationId を解決し、表示フィールドを台帳から実体化する。
@@ -437,8 +642,8 @@ function normalizeProject(raw) {
 // projectToJSON/toJSON で剥がすことで保存 JSON に台帳データが二重化しない（ラウンドトリップ保持）。
 // __ 始まりの派生フィールドは非シリアライズ（シリアライズ関数が削除する）。
 function resolveLedger(proj, rawDiagrams) {
-  const entMap = new Map(proj.entities.map(e => [e.id, e]));
-  const relMap = new Map(proj.relations.map(r => [r.id, r]));
+  const entMap = new Map(proj.graph.nodes.map(e => [e.id, e]));
+  const relMap = new Map(proj.graph.edges.map(r => [r.id, r]));
   proj.diagrams.forEach((d, di) => {
     const rawNodes = new Map((rawDiagrams[di]?.nodes || []).map(n => [n.id, n]));
     for (const node of d.nodes) {
@@ -484,8 +689,8 @@ function resolveLedger(proj, rawDiagrams) {
 // 双方向トレースの派生インデックス（Map・非シリアライズ）。normalizeProject で 1 回構築。
 function buildIndex(proj) {
   const push = (map, key, val) => { let a = map.get(key); if (!a) { a = []; map.set(key, a); } a.push(val); };
-  const entities = new Map(proj.entities.map(e => [e.id, e]));
-  const relations = new Map(proj.relations.map(r => [r.id, r]));
+  const entities = new Map(proj.graph.nodes.map(e => [e.id, e]));
+  const relations = new Map(proj.graph.edges.map(r => [r.id, r]));
   const occurrences = new Map();     // entityId → [{diagramId,nodeId}]
   const edgeOccurrences = new Map(); // relationId → [{diagramId,edgeId}]
   const relByEntity = new Map();     // entityId → Set(relationId)
@@ -494,10 +699,10 @@ function buildIndex(proj) {
     for (const n of d.nodes) if (n.entityId) push(occurrences, n.entityId, { diagramId: d.meta.id, nodeId: n.id });
     for (const e of d.edges) if (e.relationId) push(edgeOccurrences, e.relationId, { diagramId: d.meta.id, edgeId: e.id });
   }
-  for (const r of proj.relations) for (const eid of [r.from, r.to]) if (eid) {
+  for (const r of proj.graph.edges) for (const eid of [r.from, r.to]) if (eid) {
     let s = relByEntity.get(eid); if (!s) { s = new Set(); relByEntity.set(eid, s); } s.add(r.id);
   }
-  for (const e of proj.entities) if (e.parent) push(childrenOf, e.parent, e.id);
+  for (const e of proj.graph.nodes) if (e.parent) push(childrenOf, e.parent, e.id);
   return { entities, relations, occurrences, edgeOccurrences, relByEntity, childrenOf };
 }
 
@@ -551,15 +756,21 @@ function validateProject(raw) {
     }
   }
   if (raw?.project?.entry && !ids.has(raw.project.entry)) warnings.push(`entry '${raw.project.entry}' の図が存在しません → 先頭の図を使用`);
-  // MBSE 台帳の検証（重複=error、参照切れ=warning：AI 編集途中もロード可能に）
+  // graph（＝旧 MBSE 台帳）の検証（重複=error、参照切れ=warning：AI 編集途中もロード可能に）
+  // 重複 id を検出するため validate 側は畳まずに連結する（normalizeProject は先勝ちで畳む）
+  const gNodes = [...(raw?.graph?.nodes || []), ...(raw?.entities || [])];
+  const gEdges = [...(raw?.graph?.edges || []), ...(raw?.relations || [])];
   const entIds = new Set();
-  for (const e of raw?.entities || []) {
+  for (const e of gNodes) {
     if (!e.id) { errors.push('id のないエンティティがあります'); continue; }
     if (entIds.has(e.id)) errors.push(`エンティティID重複: ${e.id}`);
     entIds.add(e.id);
+    // GRAPH_CONTRACT.md §1: ':' はエッジ端点の 'nodeId:portId' 構文と衝突する（resolveEndpoint が
+    // split(':') で誤分割し、参照が解決できなくなる）。致命ではないので warning に留める。
+    if (String(e.id).includes(':')) warnings.push(`エンティティ ${e.id}: id に ':' を含めない（'nodeId:portId' 端点構文と衝突します）`);
   }
   const relIds = new Set();
-  for (const r of raw?.relations || []) {
+  for (const r of gEdges) {
     if (!r.id) { errors.push('id のない関係があります'); continue; }
     if (relIds.has(r.id)) errors.push(`関係ID重複: ${r.id}`);
     relIds.add(r.id);
@@ -569,6 +780,16 @@ function validateProject(raw) {
     for (const n of d?.nodes || []) if (n.entityId && !entIds.has(n.entityId)) warnings.push(`[${d?.meta?.id}] ノード ${n.id}: entityId '${n.entityId}' が台帳にありません`);
     for (const e of d?.edges || []) {
       if (e.relationId && !relIds.has(e.relationId)) warnings.push(`[${d?.meta?.id}] エッジ ${e.id}: relationId '${e.relationId}' が台帳にありません`);
+    }
+    // select の参照切れは warning・never error（graph 編集途中でもロード可能に保つ）
+    const sel = d?.select;
+    if (sel && typeof sel === 'object') {
+      for (const r of Array.isArray(sel.roots) ? sel.roots : []) {
+        if (!entIds.has(r)) warnings.push(`[${d?.meta?.id}] select.roots '${r}' が graph にありません`);
+      }
+      if (typeof sel.neighborsOf === 'string' && !entIds.has(sel.neighborsOf)) {
+        warnings.push(`[${d?.meta?.id}] select.neighborsOf '${sel.neighborsOf}' が graph にありません`);
+      }
     }
   }
   return { errors, warnings };
@@ -592,15 +813,28 @@ function stripLedgerArtifacts(d) {
   }
 }
 
+// §2-3: 派生物（select 由来ノード/エッジ・自動配置 x/y・補填 entityId）を剥がす。
+// 派生は保存しない＝JSON に二重化しない・graph を編集すれば次回 normalize で作り直される。
+function stripDerived(d) {
+  d.nodes = (d.nodes || []).filter(n => !n.__derived);
+  d.edges = (d.edges || []).filter(e => !e.__derived);
+  for (const n of d.nodes) {
+    if (n.__autoPos) { delete n.x; delete n.y; delete n.__autoPos; }
+    if (n.__derivedEntityId) { delete n.entityId; delete n.__derivedEntityId; }
+  }
+}
+
 function projectToJSON(proj) {
   const { index, ...rest } = proj;      // 派生インデックス（Map）はクローン前に除外
-  const out = structuredClone(rest);
+  const out = structuredClone(rest);    // entities/relations は graph.* と同一参照＝clone 後も共有
   for (const d of out.diagrams) {
+    stripDerived(d);
     for (const n of d.nodes) if (n.ports && !n.ports.length) delete n.ports;
     stripLedgerArtifacts(d);
   }
-  if (out.entities && !out.entities.length) delete out.entities;   // 台帳が空なら書き出さない（後方互換）
-  if (out.relations && !out.relations.length) delete out.relations;
+  delete out.entities; delete out.relations;   // 旧キーでは書き出さない（正本は graph.*）
+  // graph が空ならキー自体を出さない（graph を持たない既存 JSON がバイト安定であるための要）
+  if (out.graph && !out.graph.nodes?.length && !out.graph.edges?.length) delete out.graph;
   return JSON.stringify(out, null, 2);
 }
 
@@ -615,9 +849,593 @@ function freshId(model, prefix) {
 // エディタ変更後、正規化モデル → 保存用の素の JSON へ戻す（既定値の刈り込みは最小限）
 function toJSON(model) {
   const out = structuredClone(model);
+  stripDerived(out); // select 由来の派生ノード/エッジ・自動配置 x/y を単図 JSON からも剥がす
   for (const n of out.nodes) if (n.ports && !n.ports.length) delete n.ports;
   stripLedgerArtifacts(out); // 台帳由来の実体化フィールドを剥がして単一図パネル JSON をクリーンに
   return JSON.stringify(out, null, 2);
+}
+
+// ═══ src/layout_algos.js ═══
+// layout_algos.js — 自動レイアウト（GRAPH_CONTRACT.md §3）: tree/layered/force/grid/radial
+// 純関数・依存ゼロ・DOM不使用・Math.random不使用（seeded PRNG）。model.js/layout.jsから独立。
+//
+// export function layoutGraph(nodes, edges, opts) // → Map<id, {x,y}>（左上座標・w/hは入力のまま）
+// nodes: [{id, w, h, parent?}]   edges: [{from, to, rel?}]
+// opts: { algorithm, direction='TB', nodeSep=40, rankSep=90, seed=1, iterations=300, hierarchyRel='contains' }
+
+// ─── 共通ユーティリティ ───
+
+// mulberry32: 決定的な軽量PRNG（seed固定で同じ乱数列を再現する）
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// 入力の nodes/edges を正規化: 重複id除去、edges は from/to が nodes に存在するもののみ残す
+function normalizeInput(nodes, edges) {
+  const list = (nodes || []).filter(n => n && n.id != null);
+  const seen = new Set();
+  const cleanNodes = [];
+  for (const n of list) {
+    const id = String(n.id);
+    if (seen.has(id)) continue;
+    seen.add(id);
+    cleanNodes.push({ id, w: n.w > 0 ? n.w : 80, h: n.h > 0 ? n.h : 40, parent: n.parent != null ? String(n.parent) : undefined });
+  }
+  const ids = new Set(cleanNodes.map(n => n.id));
+  const cleanEdges = (edges || [])
+    .filter(e => e && e.from != null && e.to != null)
+    .map(e => ({ from: String(e.from), to: String(e.to), rel: e.rel }))
+    .filter(e => ids.has(e.from) && ids.has(e.to));
+  return { nodes: cleanNodes, edges: cleanEdges };
+}
+
+// 木構造を作る: node.parent があればそれを使い、無ければ rel===hierarchyRel の edge（from=parent→to=child）から推定
+// 戻り値: { childrenOf: Map<id,id[]>, parentOf: Map<id,id>, roots: id[] }
+function buildForest(nodes, edges, hierarchyRel) {
+  const ids = new Set(nodes.map(n => n.id));
+  const parentOf = new Map();
+  const hasExplicitParent = nodes.some(n => n.parent != null && ids.has(n.parent));
+  if (hasExplicitParent) {
+    for (const n of nodes) {
+      if (n.parent != null && ids.has(n.parent) && n.parent !== n.id) parentOf.set(n.id, n.parent);
+    }
+  } else {
+    for (const e of edges) {
+      if (e.rel === hierarchyRel && e.from !== e.to && !parentOf.has(e.to)) parentOf.set(e.to, e.from);
+    }
+  }
+  // 循環防止: 親を辿って自分に戻る場合は循環を閉じる辺を切る（無限ループ回避）。
+  // 3色（未訪問/訪問中/確定）で O(n) amortized に判定する（深い chain でも O(n^2) にしない）。
+  const UNVISITED = 0, VISITING = 1, DONE = 2;
+  const state = new Map(nodes.map(n => [n.id, UNVISITED]));
+  for (const n of nodes) {
+    if (state.get(n.id) !== UNVISITED) continue;
+    const path = [];
+    let cur = n.id;
+    while (cur != null && state.get(cur) === UNVISITED) {
+      state.set(cur, VISITING);
+      path.push(cur);
+      cur = parentOf.get(cur);
+    }
+    if (cur != null && state.get(cur) === VISITING) {
+      // cur は今回の経路上（=循環）→ 経路末尾の親エッジを切って循環を断つ
+      parentOf.delete(path[path.length - 1]);
+    }
+    for (const id of path) state.set(id, DONE);
+  }
+  const childrenOf = new Map(nodes.map(n => [n.id, []]));
+  for (const n of nodes) {
+    const p = parentOf.get(n.id);
+    if (p != null && childrenOf.has(p)) childrenOf.get(p).push(n.id);
+  }
+  for (const arr of childrenOf.values()) arr.sort();
+  const roots = nodes.filter(n => !parentOf.has(n.id)).map(n => n.id).sort();
+  return { childrenOf, parentOf, roots };
+}
+
+// 全ノードを覆う bbox の右端/下端を返す（重なりチェック用ではなく配置後の並進に使用）
+function shiftToOrigin(pos, nodes) {
+  if (nodes.length === 0) return pos;
+  let minX = Infinity, minY = Infinity;
+  for (const n of nodes) {
+    const p = pos.get(n.id);
+    if (!p) continue;
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+  }
+  if (!isFinite(minX)) return pos;
+  const dx = -Math.min(0, minX), dy = -Math.min(0, minY);
+  if (dx || dy) for (const n of nodes) { const p = pos.get(n.id); if (p) { p.x += dx; p.y += dy; } }
+  return pos;
+}
+
+// 孤立ノード（座標未確定）をグリッドで末尾に配置する
+function placeIsolatedGrid(missingNodes, pos, startY, sep) {
+  const cols = Math.max(1, Math.ceil(Math.sqrt(missingNodes.length)));
+  let x = 0, y = startY, rowH = 0, col = 0;
+  for (const n of missingNodes) {
+    pos.set(n.id, { x, y });
+    rowH = Math.max(rowH, n.h);
+    x += n.w + sep;
+    col++;
+    if (col >= cols) { col = 0; x = 0; y += rowH + sep; rowH = 0; }
+  }
+  return pos;
+}
+
+// 森を BFS で辿り、親→子の順に並んだ id 列と各 id の深さを返す（反復・再帰なし）
+// bfsOrder は「親は必ず自分の子より前に出る」ため、そのまま順方向に読めば top-down、
+// 逆順に読めば bottom-up（子が親より先）の集計に使える — RTスタイルの木計算を非再帰化する土台。
+function bfsWithDepth(childrenOf, roots) {
+  const depthOf = new Map();
+  const bfsOrder = [];
+  const queue = roots.map(id => ({ id, depth: 0 }));
+  let qi = 0;
+  while (qi < queue.length) {
+    const { id, depth } = queue[qi++];
+    depthOf.set(id, depth);
+    bfsOrder.push(id);
+    for (const k of (childrenOf.get(id) || [])) queue.push({ id: k, depth: depth + 1 });
+  }
+  return { depthOf, bfsOrder };
+}
+
+// ─── tree: Reingold–Tilford 簡易版（森対応・非再帰） ───
+// 「横方向（cross軸）」= direction TBならx、LRならy。「進行方向（along軸）」= TBならy、LRならx。
+// 深い階層（数千段）でもコールスタックを使わないよう、すべて BFS 順の反復で計算する。
+function layoutTree(nodes, edges, opts) {
+  const { nodeSep, rankSep, direction, hierarchyRel } = opts;
+  const byId = new Map(nodes.map(n => [n.id, n]));
+  const { childrenOf, roots } = buildForest(nodes, edges, hierarchyRel);
+  const pos = new Map();
+  const horizontal = direction === 'LR';
+  const crossSize = id => (horizontal ? byId.get(id).h : byId.get(id).w);
+  const alongSize = id => (horizontal ? byId.get(id).w : byId.get(id).h);
+
+  const { depthOf, bfsOrder } = bfsWithDepth(childrenOf, roots);
+
+  // 深さごとの進行方向オフセット（各レベルの最大 alongSize + rankSep を積算）
+  const maxDepth = Math.max(0, ...[...depthOf.values()]);
+  const maxSizeAtDepth = new Array(maxDepth + 1).fill(0);
+  for (const n of nodes) maxSizeAtDepth[depthOf.get(n.id)] = Math.max(maxSizeAtDepth[depthOf.get(n.id)], alongSize(n.id));
+  const depthOffset = [0];
+  for (let d = 1; d <= maxDepth; d++) depthOffset[d] = depthOffset[d - 1] + maxSizeAtDepth[d - 1] + rankSep;
+
+  // 各サブツリーが cross 軸方向に占める幅（子の合計 or 自分自身の大きい方）を bottom-up 集計
+  // （bfsOrder は親が子より先に並ぶので、逆順に辿れば子が親より先に確定する）
+  const crossExtent = new Map();
+  for (let i = bfsOrder.length - 1; i >= 0; i--) {
+    const id = bfsOrder[i];
+    const kids = childrenOf.get(id) || [];
+    if (kids.length === 0) { crossExtent.set(id, crossSize(id)); continue; }
+    let sum = 0;
+    kids.forEach((k, i2) => { sum += crossExtent.get(k); if (i2 > 0) sum += nodeSep; });
+    crossExtent.set(id, Math.max(sum, crossSize(id)));
+  }
+
+  // cross 軸の開始位置を top-down（bfsOrder を順方向）に配る。子は親の extent 内へ中央寄せ。
+  // ノード自身の cross 中心は「自分に割り当てられた extent の中心」とする（子中心の平均を取る
+  // 古典RTよりシンプルだが「simple version ok」の範囲内・重なりなしは保たれる）。
+  const crossStartOf = new Map();
+  let forestOffset = 0;
+  for (const r of roots) { crossStartOf.set(r, forestOffset); forestOffset += crossExtent.get(r) + nodeSep; }
+  for (const id of bfsOrder) {
+    const kids = childrenOf.get(id) || [];
+    if (kids.length === 0) continue;
+    const myExt = crossExtent.get(id);
+    const myStart = crossStartOf.get(id);
+    let kidsTotal = 0;
+    kids.forEach((k, i) => { kidsTotal += crossExtent.get(k); if (i > 0) kidsTotal += nodeSep; });
+    let x = myStart + (myExt - kidsTotal) / 2;
+    for (const k of kids) {
+      crossStartOf.set(k, x);
+      x += crossExtent.get(k) + nodeSep;
+    }
+  }
+
+  for (const n of nodes) {
+    const along = depthOffset[depthOf.get(n.id)];
+    const cc = crossStartOf.get(n.id) + crossExtent.get(n.id) / 2;
+    if (horizontal) pos.set(n.id, { x: along, y: cc - n.h / 2 });
+    else pos.set(n.id, { x: cc - n.w / 2, y: along });
+  }
+
+  return pos;
+}
+
+// ─── layered: DAGランク（最長路）+ 重心法 + rankSep/nodeSep配置 ───
+function layoutLayered(nodes, edges, opts) {
+  const { nodeSep, rankSep, direction } = opts;
+  const horizontal = direction === 'LR';
+  const byId = new Map(nodes.map(n => [n.id, n]));
+
+  // サイクル除去: DFS で back-edge を検出し取り除く（決定的: id順に走査・非再帰＝深いグラフでも安全）
+  const adj = new Map(nodes.map(n => [n.id, []]));
+  for (const e of edges) if (e.from !== e.to) adj.get(e.from).push(e.to);
+  for (const arr of adj.values()) arr.sort();
+  const WHITE = 0, GRAY = 1, BLACK = 2;
+  const color = new Map(nodes.map(n => [n.id, WHITE]));
+  const dagAdj = new Map(nodes.map(n => [n.id, []]));
+  const sortedIds = nodes.map(n => n.id).sort();
+  for (const start of sortedIds) {
+    if (color.get(start) !== WHITE) continue;
+    color.set(start, GRAY);
+    const stack = [{ u: start, i: 0 }]; // 明示スタックで DFS を反復化（再帰スタック溢れを回避）
+    while (stack.length) {
+      const frame = stack[stack.length - 1];
+      const neighbors = adj.get(frame.u);
+      if (frame.i < neighbors.length) {
+        const v = neighbors[frame.i++];
+        const c = color.get(v);
+        if (c === WHITE) { dagAdj.get(frame.u).push(v); color.set(v, GRAY); stack.push({ u: v, i: 0 }); }
+        else if (c === GRAY) { /* back-edge → 破棄（サイクル切断） */ }
+        else { dagAdj.get(frame.u).push(v); }
+      } else {
+        color.set(frame.u, BLACK);
+        stack.pop();
+      }
+    }
+  }
+
+  // 最長路ランク付け（DAG上でトポロジカル順に緩和）
+  const indeg = new Map(nodes.map(n => [n.id, 0]));
+  for (const arr of dagAdj.values()) for (const v of arr) indeg.set(v, indeg.get(v) + 1);
+  const rank = new Map(nodes.map(n => [n.id, 0]));
+  const queue = sortedIds.filter(id => indeg.get(id) === 0);
+  const indegWork = new Map(indeg);
+  let qi = 0;
+  while (qi < queue.length) {
+    const u = queue[qi++];
+    for (const v of dagAdj.get(u).slice().sort()) {
+      rank.set(v, Math.max(rank.get(v), rank.get(u) + 1));
+      indegWork.set(v, indegWork.get(v) - 1);
+      if (indegWork.get(v) === 0) queue.push(v);
+    }
+  }
+  // 未処理（孤立サイクル残留 等）は rank 0 のまま
+
+  const maxRank = Math.max(0, ...[...rank.values()]);
+  const layers = Array.from({ length: maxRank + 1 }, () => []);
+  for (const id of sortedIds) layers[rank.get(id)].push(id);
+
+  // 重心法による交差削減（数スイープ、決定的）
+  const posInLayer = new Map();
+  layers.forEach(layer => layer.forEach((id, i) => posInLayer.set(id, i)));
+  const neighborsUp = new Map(nodes.map(n => [n.id, []]));
+  const neighborsDown = new Map(nodes.map(n => [n.id, []]));
+  for (const e of edges) {
+    if (e.from === e.to) continue;
+    const r1 = rank.get(e.from), r2 = rank.get(e.to);
+    if (r1 < r2) { neighborsDown.get(e.from).push(e.to); neighborsUp.get(e.to).push(e.from); }
+    else if (r2 < r1) { neighborsDown.get(e.to).push(e.from); neighborsUp.get(e.from).push(e.to); }
+  }
+  function barycenter(id, neighborsMap) {
+    const ns = neighborsMap.get(id);
+    if (!ns.length) return posInLayer.get(id);
+    let sum = 0;
+    for (const n of ns) sum += posInLayer.get(n);
+    return sum / ns.length;
+  }
+  const SWEEPS = 4;
+  for (let s = 0; s < SWEEPS; s++) {
+    const downward = s % 2 === 0;
+    const range = downward
+      ? Array.from({ length: layers.length }, (_, i) => i).slice(1)
+      : Array.from({ length: layers.length }, (_, i) => i).slice(0, -1).reverse();
+    for (const li of range) {
+      const neighborsMap = downward ? neighborsUp : neighborsDown;
+      const layer = layers[li];
+      const withBc = layer.map(id => ({ id, bc: barycenter(id, neighborsMap) }));
+      // 安定ソート: bc 同値は元の id 順を保持（決定性）
+      withBc.sort((a, b) => a.bc - b.bc || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+      layers[li] = withBc.map(x => x.id);
+      layers[li].forEach((id, i) => posInLayer.set(id, i));
+    }
+  }
+
+  // 座標割当: ランク方向= rankSep 積算、レイヤー内= nodeSep で並べ中央寄せ
+  const pos = new Map();
+  const rankAlong = []; // ランクごとの進行方向オフセット
+  let acc = 0;
+  for (let r = 0; r <= maxRank; r++) {
+    rankAlong[r] = acc;
+    const sizes = layers[r].map(id => (horizontal ? byId.get(id).w : byId.get(id).h));
+    const maxSize = sizes.length ? Math.max(...sizes) : 0;
+    acc += maxSize + rankSep;
+  }
+  // レイヤー内の全体幅の最大値で各レイヤーを中央寄せ（見た目の安定のため）
+  const layerCrossSize = layers.map(layer => {
+    let total = 0;
+    layer.forEach((id, i) => { total += (horizontal ? byId.get(id).h : byId.get(id).w); if (i > 0) total += nodeSep; });
+    return total;
+  });
+  const maxCross = layerCrossSize.length ? Math.max(...layerCrossSize) : 0;
+  for (let r = 0; r <= maxRank; r++) {
+    const layer = layers[r];
+    let cross = (maxCross - layerCrossSize[r]) / 2;
+    for (const id of layer) {
+      const node = byId.get(id);
+      const along = rankAlong[r];
+      if (horizontal) pos.set(id, { x: along, y: cross });
+      else pos.set(id, { x: cross, y: along });
+      cross += (horizontal ? node.h : node.w) + nodeSep;
+    }
+  }
+  return pos;
+}
+
+// ─── force: Fruchterman–Reingold（seed固定）+ de-overlap ───
+function layoutForce(nodes, edges, opts) {
+  const { seed, nodeSep } = opts;
+  const rng = mulberry32(seed);
+  const n = nodes.length;
+  if (n === 0) return new Map();
+  // 反発計算は O(n^2)/iteration。大規模グラフでも ~1s 級に収まるよう、
+  // n^2 * iterations の総演算量に上限を設けて自動的に反復回数を落とす（品質より締切厳守）。
+  const MAX_PRODUCT = 1.2e8;
+  const iterations = Math.max(20, Math.min(opts.iterations, Math.floor(MAX_PRODUCT / Math.max(1, n * n))));
+  // 理想距離 k はノードの実サイズを考慮する（点として扱うと箱の大きさ分だけ確実に重なるため、
+  // 平均ボックス面積×余白係数から広さを決め、de-overlap の後始末を軽くする）。
+  let avgW = 0, avgH = 0;
+  for (const nd of nodes) { avgW += nd.w; avgH += nd.h; }
+  avgW /= n; avgH /= n;
+  const area = Math.max(1, n) * (avgW + nodeSep) * (avgH + nodeSep) * 2.2;
+  const k = Math.sqrt(area / n);
+  const idx = new Map(nodes.map((node, i) => [node.id, i]));
+  const px = new Float64Array(n), py = new Float64Array(n);
+  // 初期配置: 決定的擬似乱数で円環状に散らす（毎回同じ結果になるよう id 順で処理）
+  const ordered = nodes.slice().sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  for (const node of ordered) {
+    const i = idx.get(node.id);
+    px[i] = (rng() - 0.5) * k * Math.sqrt(n) * 4;
+    py[i] = (rng() - 0.5) * k * Math.sqrt(n) * 4;
+  }
+  const disp = { x: new Float64Array(n), y: new Float64Array(n) };
+  const edgeIdx = edges
+    .filter(e => e.from !== e.to)
+    .map(e => [idx.get(e.from), idx.get(e.to)])
+    .filter(([a, b]) => a != null && b != null);
+
+  let temp = k * Math.sqrt(n) * 0.4;
+  const cool = temp / Math.max(1, iterations);
+  for (let it = 0; it < iterations; it++) {
+    disp.x.fill(0); disp.y.fill(0);
+    // 斥力（全ペア O(n^2)。~1000ノードでも許容範囲）
+    for (let i = 0; i < n; i++) {
+      for (let j = i + 1; j < n; j++) {
+        let dx = px[i] - px[j], dy = py[i] - py[j];
+        let dist2 = dx * dx + dy * dy;
+        if (dist2 < 1e-6) { dx = 0.01; dy = 0.01; dist2 = 0.0002; }
+        const dist = Math.sqrt(dist2);
+        const force = (k * k) / dist;
+        const ux = dx / dist, uy = dy / dist;
+        disp.x[i] += ux * force; disp.y[i] += uy * force;
+        disp.x[j] -= ux * force; disp.y[j] -= uy * force;
+      }
+    }
+    // 引力（エッジ）
+    for (const [a, b] of edgeIdx) {
+      let dx = px[a] - px[b], dy = py[a] - py[b];
+      let dist = Math.sqrt(dx * dx + dy * dy) || 0.01;
+      const force = (dist * dist) / k;
+      const ux = dx / dist, uy = dy / dist;
+      disp.x[a] -= ux * force; disp.y[a] -= uy * force;
+      disp.x[b] += ux * force; disp.y[b] += uy * force;
+    }
+    // 変位を temperature でクリップして適用
+    for (let i = 0; i < n; i++) {
+      const dlen = Math.sqrt(disp.x[i] * disp.x[i] + disp.y[i] * disp.y[i]) || 0.01;
+      const lim = Math.min(dlen, temp);
+      px[i] += (disp.x[i] / dlen) * lim;
+      py[i] += (disp.y[i] / dlen) * lim;
+    }
+    temp = Math.max(0.01, temp - cool);
+  }
+
+  const pos = new Map();
+  for (const node of nodes) {
+    const i = idx.get(node.id);
+    pos.set(node.id, { x: px[i] - node.w / 2, y: py[i] - node.h / 2 });
+  }
+  deoverlap(nodes, pos, nodeSep);
+  return pos;
+}
+
+// bbox の重なりを単純な押し出しで解消する（決定的: id順に反復）
+// パス数は O(n^2) の反復コストが大規模グラフで支配的にならないよう件数に応じて絞る
+// （呼び出し側で初期配置の重なりを極力減らしておくのが本筋。ここは最終保証の後始末）。
+// ループ内は Map lookup を避けるため配列にフラット化してから処理する（大規模グラフの実測ボトルネック対策）。
+function deoverlap(nodes, pos, sep) {
+  const ordered = nodes
+    .slice()
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+    .map(n => { const p = pos.get(n.id); return { w: n.w, h: n.h, p }; });
+  const MAX_PASSES = ordered.length > 400 ? 40 : 60;
+  for (let pass = 0; pass < MAX_PASSES; pass++) {
+    let moved = false;
+    for (let i = 0; i < ordered.length; i++) {
+      const a = ordered[i], pa = a.p;
+      for (let j = i + 1; j < ordered.length; j++) {
+        const b = ordered[j], pb = b.p;
+        const overlapX = Math.min(pa.x + a.w, pb.x + b.w) - Math.max(pa.x, pb.x);
+        const overlapY = Math.min(pa.y + a.h, pb.y + b.h) - Math.max(pa.y, pb.y);
+        if (overlapX > 0 && overlapY > 0) {
+          moved = true;
+          if (overlapX < overlapY) {
+            const push = overlapX / 2 + sep / 2 + 0.5;
+            const acx = pa.x + a.w / 2, bcx = pb.x + b.w / 2;
+            if (acx <= bcx) { pa.x -= push; pb.x += push; } else { pa.x += push; pb.x -= push; }
+          } else {
+            const push = overlapY / 2 + sep / 2 + 0.5;
+            const acy = pa.y + a.h / 2, bcy = pb.y + b.h / 2;
+            if (acy <= bcy) { pa.y -= push; pb.y += push; } else { pa.y += push; pb.y -= push; }
+          }
+        }
+      }
+    }
+    if (!moved) break;
+  }
+}
+
+// ─── grid: sqrt(n)列で id 順に詰める ───
+function layoutGrid(nodes, opts) {
+  const { nodeSep } = opts;
+  const pos = new Map();
+  placeIsolatedGrid(nodes.slice().sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)), pos, 0, nodeSep);
+  return pos;
+}
+
+// ─── radial: 深さ同心円（tree と同じ森構造・非再帰） ───
+function layoutRadial(nodes, edges, opts) {
+  const { nodeSep, hierarchyRel } = opts;
+  const byId = new Map(nodes.map(n => [n.id, n]));
+  const { childrenOf, roots } = buildForest(nodes, edges, hierarchyRel);
+  const pos = new Map();
+  const ringGap = Math.max(60, nodeSep + 40);
+  // 階層情報が無い（＝孤立ノードの森）場合、ルート全員を depth 0 の一点に置くと
+  // 大量重なりが起きて de-overlap が O(n^2) を何十パスも要する。ルートを depth 1 の
+  // リング（半径>0）へ逃がし、中心は空けておく。
+  const isForest = roots.length > 1;
+
+  const { depthOf: rawDepthOf, bfsOrder } = bfsWithDepth(childrenOf, roots);
+  const depthOf = new Map();
+  for (const [id, d] of rawDepthOf) depthOf.set(id, d + (isForest ? 1 : 0));
+  const maxDepth = Math.max(0, ...[...depthOf.values()]);
+
+  // 葉数を bottom-up（bfsOrder 逆順）に集計 — countLeaves の非再帰版
+  const leavesOf = new Map();
+  for (let i = bfsOrder.length - 1; i >= 0; i--) {
+    const id = bfsOrder[i];
+    const kids = childrenOf.get(id) || [];
+    leavesOf.set(id, kids.length ? kids.reduce((s, k) => s + leavesOf.get(k), 0) : 1);
+  }
+  const totalLeavesAll = roots.reduce((s, r) => s + leavesOf.get(r), 0) || 1;
+
+  // 角度スロット（葉数に比例）を top-down（bfsOrder 順方向）に配る — assignAngle の非再帰版
+  const angleRangeOf = new Map(); // id → [start, end]
+  const angleOf = new Map();
+  let angleCursor = 0;
+  for (const r of roots) {
+    const span = (leavesOf.get(r) / totalLeavesAll) * Math.PI * 2;
+    angleRangeOf.set(r, [angleCursor, angleCursor + span]);
+    angleCursor += span;
+  }
+  for (const id of bfsOrder) {
+    const [startAngle, endAngle] = angleRangeOf.get(id);
+    angleOf.set(id, (startAngle + endAngle) / 2);
+    const kids = childrenOf.get(id) || [];
+    if (!kids.length) continue;
+    const total = kids.reduce((s, k) => s + leavesOf.get(k), 0) || 1;
+    let cur = startAngle;
+    const span = endAngle - startAngle;
+    for (const k of kids) {
+      const w = (leavesOf.get(k) / total) * span;
+      angleRangeOf.set(k, [cur, cur + w]);
+      cur += w;
+    }
+  }
+
+  // 各リング（同深度）の半径: そのリングに乗るノードの接線方向サイズ合計が
+  // 円周に収まるだけの半径を確保する（密集ルートが中心で潰れないように）。
+  const byDepth = new Map();
+  for (const n of nodes) {
+    const d = depthOf.get(n.id) || 0;
+    if (!byDepth.has(d)) byDepth.set(d, []);
+    byDepth.get(d).push(n.id);
+  }
+  const radiusOfDepth = new Map([[0, 0]]);
+  let prevRadius = 0;
+  for (let d = 1; d <= maxDepth; d++) {
+    const idsAtD = byDepth.get(d) || [];
+    let tangentialTotal = 0;
+    for (const id of idsAtD) tangentialTotal += byId.get(id).w + nodeSep;
+    const minRadiusForCircumference = tangentialTotal / (2 * Math.PI);
+    const r = Math.max(prevRadius + ringGap, minRadiusForCircumference);
+    radiusOfDepth.set(d, r);
+    prevRadius = r;
+  }
+
+  const cx = prevRadius + 200, cy = prevRadius + 200; // 十分な中心オフセット（負座標回避）
+  for (const n of nodes) {
+    const depth = depthOf.get(n.id) || 0;
+    const angle = angleOf.get(n.id) || 0;
+    const radius = radiusOfDepth.get(depth) || 0;
+    const x = cx + radius * Math.cos(angle) - n.w / 2;
+    const y = cy + radius * Math.sin(angle) - n.h / 2;
+    pos.set(n.id, { x, y });
+  }
+  // 上のリング半径調整で大半の重なりは解消済みだが、境界ケースの保険として de-overlap を適用する
+  deoverlap(nodes, pos, nodeSep);
+  return pos;
+}
+
+// 完全に孤立したノード（辺も親子関係も無い）を判定する。
+// tree/radial は parent（無ければ hierarchyRel 辺）で親子を見るので、
+// 「辺も無く・親も無く・誰の親でもない」ノードだけを孤立とみなし、
+// 本編の階層/レイアウトから外して最後にグリッドで並べる（GRAPH_CONTRACT §3: 孤立ノードは末尾に整列）。
+function findIsolated(cleanNodes, cleanEdges, options) {
+  const touched = new Set();
+  for (const e of cleanEdges) { touched.add(e.from); touched.add(e.to); }
+  const { parentOf, childrenOf } = buildForest(cleanNodes, cleanEdges, options.hierarchyRel);
+  for (const id of parentOf.keys()) touched.add(id);
+  for (const id of parentOf.values()) touched.add(id);
+  for (const [id, kids] of childrenOf) if (kids.length) touched.add(id);
+  return new Set(cleanNodes.filter(n => !touched.has(n.id)).map(n => n.id));
+}
+
+// ─── エントリポイント ───
+function layoutGraph(nodes, edges, opts = {}) {
+  const options = {
+    algorithm: opts.algorithm || 'none',
+    direction: opts.direction || 'TB',
+    nodeSep: opts.nodeSep != null ? opts.nodeSep : 40,
+    rankSep: opts.rankSep != null ? opts.rankSep : 90,
+    seed: opts.seed != null ? opts.seed : 1,
+    iterations: opts.iterations != null ? opts.iterations : 300,
+    hierarchyRel: opts.hierarchyRel || 'contains',
+  };
+  const { nodes: cleanNodes, edges: cleanEdges } = normalizeInput(nodes, edges);
+  if (options.algorithm === 'none' || cleanNodes.length === 0) return new Map();
+
+  // grid は元からグリッドなので分離不要。他は孤立ノードを主レイアウトの外へ出す。
+  const isolatedIds = options.algorithm === 'grid' ? new Set() : findIsolated(cleanNodes, cleanEdges, options);
+  const mainNodes = cleanNodes.filter(n => !isolatedIds.has(n.id));
+  const mainIds = new Set(mainNodes.map(n => n.id));
+  const mainEdges = cleanEdges.filter(e => mainIds.has(e.from) && mainIds.has(e.to));
+
+  let pos;
+  if (mainNodes.length === 0) {
+    pos = new Map();
+  } else {
+    switch (options.algorithm) {
+      case 'tree': pos = layoutTree(mainNodes, mainEdges, options); break;
+      case 'layered': pos = layoutLayered(mainNodes, mainEdges, options); break;
+      case 'force': pos = layoutForce(mainNodes, mainEdges, options); break;
+      case 'grid': pos = layoutGrid(mainNodes, options); break;
+      case 'radial': pos = layoutRadial(mainNodes, mainEdges, options); break;
+      default: pos = new Map(); break;
+    }
+  }
+
+  // 位置未確定のノード（アルゴリズムが触れなかったもの・孤立ノード）を末尾グリッドで補完
+  const missing = cleanNodes.filter(n => !pos.has(n.id));
+  if (missing.length) {
+    let maxY = 0;
+    for (const n of mainNodes) { const p = pos.get(n.id); if (p) maxY = Math.max(maxY, p.y + n.h); }
+    placeIsolatedGrid(
+      missing.slice().sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
+      pos, maxY ? maxY + options.nodeSep : 0, options.nodeSep,
+    );
+  }
+
+  shiftToOrigin(pos, cleanNodes);
+  return pos;
 }
 
 // ═══ src/layout.js ═══
@@ -3407,6 +4225,10 @@ const NODE_PALETTE = [
 const HISTORY_MAX = 100;
 const AUTOSAVE_KEY = 'diagram-engine-autosave';
 
+// View ▸ Layout（GRAPH_CONTRACT.md §2/§3）: layoutGraph の algorithm/direction を選び直す UI 語彙。
+const LAYOUT_ALGO_ITEMS = [['tree', 'Tree'], ['layered', 'Layered'], ['force', 'Force'], ['grid', 'Grid'], ['radial', 'Radial'], ['none', 'None']];
+const LAYOUT_DIRECTION_ITEMS = [['TB', 'TB'], ['LR', 'LR']];
+
 class DiagramEditor {
   constructor(root, options = {}) {
     this.root = root;
@@ -3764,6 +4586,18 @@ class DiagramEditor {
       '---',
       ['Fit（全体表示）', () => this.renderer.fit?.()],
       ['Theme 切替', () => this.toggleTheme()],
+      '---',
+      { header: 'Layout ▸' },
+      ...LAYOUT_ALGO_ITEMS.map(([algo, label]) => () => {
+        const active = (this.model?.layout?.algorithm || 'none') === algo;
+        return [`${active ? '✓ ' : '　 '}${label}`, () => this.setLayoutAlgorithm(algo)];
+      }),
+      ...LAYOUT_DIRECTION_ITEMS.map(([dir, label]) => () => {
+        const active = (this.model?.layout?.direction || 'TB') === dir;
+        return [`${active ? '✓ ' : '　 '}Direction: ${label}`, () => this.setLayoutDirection(dir)];
+      }),
+      ['Freeze layout（座標を確定）', () => this.freezeLayout()],
+      ['Re-layout（自動配置ノードを再計算）', () => this.relayout()],
     ]));
     bar.appendChild(this.buildMenu('Help', [['Manual（操作説明）', () => this.showManual()]]));
     this.titleEl = document.createElement('span'); this.titleEl.className = 'de-title';
@@ -3771,18 +4605,40 @@ class DiagramEditor {
     return bar;
   }
 
+  // items の要素は3種:
+  //  - '---'                      区切り線
+  //  - { header: 'ラベル' }        非活性の見出し行（グループ名。例: 'Layout ▸'）
+  //  - [text, fn]                  静的な項目（従来通り）
+  //  - () => [text, fn]            動的な項目。開く直前に再評価する（チェックマーク等の現在状態表示に使う）
   buildMenu(label, items) {
     const wrap = document.createElement('div'); wrap.className = 'de-menu'; wrap.dataset.menu = label;
     const btn = document.createElement('button'); btn.className = 'de-menu-label'; btn.textContent = label;
     const dd = document.createElement('div'); dd.className = 'de-menu-dd de-collapsed';
+    const dynamic = []; // { mi, compute } — refresh() で開く直前に textContent/ハンドラを再計算
     for (const it of items) {
       if (it === '---') { const s = document.createElement('div'); s.className = 'de-menu-sep'; dd.appendChild(s); continue; }
+      if (it && typeof it === 'object' && 'header' in it) {
+        const h = document.createElement('div'); h.className = 'de-menu-header'; h.textContent = it.header; dd.appendChild(h); continue;
+      }
+      if (typeof it === 'function') {
+        const mi = document.createElement('button'); mi.className = 'de-menu-item'; dd.appendChild(mi);
+        dynamic.push({ mi, compute: it });
+        continue;
+      }
       const [t, fn] = it;
       const mi = document.createElement('button'); mi.className = 'de-menu-item'; mi.textContent = t;
       mi.addEventListener('click', () => { this.closeMenus(); fn(); });
       dd.appendChild(mi);
     }
-    btn.addEventListener('click', (e) => { e.stopPropagation(); const open = !dd.classList.contains('de-collapsed'); this.closeMenus(); if (!open) dd.classList.remove('de-collapsed'); });
+    const refresh = () => {
+      for (const { mi, compute } of dynamic) {
+        const [t, fn] = compute();
+        mi.textContent = t;
+        mi.onclick = () => { this.closeMenus(); fn(); };
+      }
+    };
+    refresh();
+    btn.addEventListener('click', (e) => { e.stopPropagation(); const open = !dd.classList.contains('de-collapsed'); this.closeMenus(); if (!open) { refresh(); dd.classList.remove('de-collapsed'); } });
     wrap.append(btn, dd);
     return wrap;
   }
@@ -4355,7 +5211,7 @@ class DiagramEditor {
       }
       return;
     }
-    if (d.mode === 'move' && d.moved) this.commit();
+    if (d.mode === 'move' && d.moved) { this.markHandPlaced(nodeById(this.model, d.id)); this.commit(); }
     if (d.mode === 'waypoint') {
       // 動かしていない場合は DOM を作り直さない（作り直すとブラウザが dblclick を合成しない）
       if (d.moved) { this.commit(); this.setStatus('経由点を更新（ダブルクリックで削除）'); }
@@ -4412,7 +5268,7 @@ class DiagramEditor {
     this.viewport.appendChild(input);
     input.focus(); input.select();
     const done = ok => {
-      if (ok) { node.label = input.value; this.commit(); }
+      if (ok) { node.label = input.value; this.markHandPlaced(node); this.commit(); }
       input.remove();
     };
     input.addEventListener('keydown', ev => {
@@ -4546,7 +5402,7 @@ class DiagramEditor {
         if (o === (value ?? '')) e.selected = true;
         i.appendChild(e);
       } else i.value = value ?? '';
-      i.addEventListener('change', () => { apply(i.value); this.commit(); this.renderInspector(); });
+      i.addEventListener('change', () => { apply(i.value); if (kind === 'node') this.markHandPlaced(obj); this.commit(); this.renderInspector(); });
       box.append(l, i);
     };
 
@@ -4652,6 +5508,74 @@ class DiagramEditor {
         if (c) this.inspSecClosed.add(g.title); else this.inspSecClosed.delete(g.title); // 再描画後も開閉状態を保持
       });
     }
+  }
+
+  // ─── View ▸ Layout（GRAPH_CONTRACT.md §2/§3: 図の select/layout を選び直す） ───
+
+  // アルゴリズムを選択。select を持つ図は次の再導出で派生ノードが x/y を持たず自動配置される
+  // （applyLayouts が「x/y の無いノードだけ」に位置を入れる仕様なので、通常は何もしなくてよい）。
+  // select の無い「純粋手置き」図は、既存の x/y を持つノードしか無い＝applyLayouts の対象が無く
+  // 何も起きないため、選んだ瞬間は簡易挙動として全ノードを自動配置対象にする（x/y を捨てて
+  // __autoPos を立てる）。個々のノードを選んで自動化する UI は別途用意せず、この単純な挙動を採る。
+  setLayoutAlgorithm(algorithm) {
+    const d = this.model;
+    if (!d) return;
+    d.layout = Object.assign({ direction: 'TB', nodeSep: 40, rankSep: 90, seed: 1, iterations: 300 }, d.layout, { algorithm });
+    if (!d.select) { for (const n of d.nodes) { delete n.x; delete n.y; n.__autoPos = true; } }
+    this.rebuildLedger();
+    this.commit();
+    this.setStatus(`レイアウト: ${algorithm}`);
+  }
+
+  setLayoutDirection(direction) {
+    const d = this.model;
+    if (!d) return;
+    d.layout = Object.assign({ algorithm: 'none', nodeSep: 40, rankSep: 90, seed: 1, iterations: 300 }, d.layout, { direction });
+    this.rebuildLedger();
+    this.commit();
+  }
+
+  // 自動配置ノードの x/y を本物にして保存へ焼き込む（__autoPos を外す）。select 由来の派生ノード
+  // (__derived) は projectToJSON が無条件で保存から落とす（GRAPH_CONTRACT §2-3）ので、Freeze の
+  // 「座標を確定して保存に残す」という目的を果たすには、ここで派生から手置きへ昇格させる必要がある
+  // （__derived を外す。entityId は正規の紐付けフィールドとして残る）。以後の再導出では、この id は
+  // 手置きノードとして扱われ、graph 側の変化で上書きされなくなる。
+  freezeLayout() {
+    const d = this.model;
+    if (!d) return;
+    let n = 0;
+    for (const node of d.nodes) {
+      if (node.__autoPos) { delete node.__autoPos; n++; }
+      if (node.__derived) delete node.__derived;
+      if (node.__derivedEntityId) delete node.__derivedEntityId;
+    }
+    d.layout = Object.assign({}, d.layout, { algorithm: 'none' });
+    this.rebuildLedger();
+    this.commit();
+    this.setStatus(`レイアウトを固定しました（${n} ノードの座標を確定）`);
+  }
+
+  // ユーザが直接触った派生/自動配置ノードを「手置き」へ昇格する（GRAPH_CONTRACT §2-1「手置きが勝つ」）。
+  // ドラッグ移動・インスペクタ編集・ラベル直編集・アイコン選択の各経路から呼ぶ。これを怠ると
+  // stripDerived が保存時に __derived ノードは行ごと／__autoPos は x/y だけ剥がし、ユーザの操作が
+  // 保存・再読込・undo/redo の往復で静かに消える（実測: ドラッグ後の保存 JSON にノードが無い）。
+  // __derivedEntityId（手置きノードへ補った entityId）は触らない＝元から手置きのノードの保存形は不変。
+  markHandPlaced(node) {
+    if (!node) return;
+    delete node.__autoPos;
+    delete node.__derived;
+  }
+
+  // 自動配置ノードだけを再計算する（手置き x/y はそのまま）。__derived ノードは再導出のたびに
+  // x/y 無しで作り直される仕様なので明示的な削除は本来不要だが、将来 stripDerived の実装が
+  // 変わっても壊れないよう、ここで明示的に x/y を落としてから rebuildLedger する。
+  relayout() {
+    const d = this.model;
+    if (!d) return;
+    for (const n of d.nodes) if (n.__derived) { delete n.x; delete n.y; }
+    this.rebuildLedger();
+    this.commit();
+    this.setStatus('レイアウトを再計算しました');
   }
 
   // ─── MBSE Promote（図ローカル要素 → グローバル台帳） ───
@@ -4958,14 +5882,14 @@ class DiagramEditor {
       const noneBtn = document.createElement('button');
       noneBtn.textContent = '×'; noneBtn.title = 'アイコンなし';
       if (!node.icon) noneBtn.classList.add('selected');
-      noneBtn.addEventListener('click', () => { delete node.icon; this.commit(); this.renderInspector(); });
+      noneBtn.addEventListener('click', () => { delete node.icon; this.markHandPlaced(node); this.commit(); this.renderInspector(); });
       grid.appendChild(noneBtn);
       for (const name of names.slice(0, shown)) {
         const b = document.createElement('button');
         b.title = name;
         b.appendChild(iconSVG(document, name, 16));
         if (name === node.icon) b.classList.add('selected');
-        b.addEventListener('click', () => { node.icon = name; l.textContent = `icon（${name}）`; this.commit(); });
+        b.addEventListener('click', () => { node.icon = name; l.textContent = `icon（${name}）`; this.markHandPlaced(node); this.commit(); });
         grid.appendChild(b);
       }
       if (names.length > shown) {
