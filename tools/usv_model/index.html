@@ -356,6 +356,36 @@
   #tab-doc .foot{margin-top:64px;border-top:2px solid var(--rule);padding-top:14px;
     font-size:12px;color:var(--muted);line-height:1.8;}
 
+  /* ══ トレードオフタブ（#tab-tradeoff スコープ） ══ */
+  #tab-tradeoff{--clo:#956400;}
+  #tab-tradeoff figure{margin:14px 0 6px;padding:0;background:none;border:none;}
+  #tab-tradeoff .figscroll{overflow-x:auto;}
+  @media(max-width:820px){#tab-tradeoff .figscroll svg{min-width:900px;}}
+  #tab-tradeoff figcaption{font-size:12.5px;color:var(--muted);padding:6px 0 0;line-height:1.75;}
+  #tab-tradeoff .to-inputtbl{margin:14px 0 22px;}
+  #tab-tradeoff .to-inputtbl table{font-size:12px;}
+  #tab-tradeoff .to-inputtbl th{text-align:left;color:var(--muted);font-weight:600;padding:4px 10px 4px 0;
+    border-bottom:1px solid var(--line2);}
+  #tab-tradeoff .to-inputtbl td{padding:4px 10px 4px 0;border-bottom:1px solid var(--line);}
+  #tab-tradeoff .to-context{font-size:12.5px;color:var(--muted);margin:6px 0 10px;}
+  #tab-tradeoff .to-sens table{font-size:11.6px;font-variant-numeric:tabular-nums;border-collapse:collapse;width:100%;}
+  #tab-tradeoff .to-sens th{text-align:right;color:var(--muted);font-weight:600;padding:5px 8px;
+    border-bottom:1px solid var(--line2);white-space:nowrap;}
+  #tab-tradeoff .to-sens th:first-child,#tab-tradeoff .to-sens td:first-child{text-align:left;}
+  #tab-tradeoff .to-sens td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;}
+  #tab-tradeoff .to-sens tr.lowimpact{opacity:.5;}
+  #tab-tradeoff .to-sens tr.lowimpact td:first-child{font-style:italic;}
+  #tab-tradeoff .to-progress{height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin:8px 0;max-width:360px;}
+  #tab-tradeoff .to-progress-bar{height:100%;background:var(--s1);width:0%;transition:width .12s linear;}
+  #tab-tradeoff .to-findings{font-size:13px;line-height:1.9;color:var(--ink);margin:14px 0 4px;}
+  #tab-tradeoff .to-findings div{margin:2px 0;}
+  #tab-tradeoff .to-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0;}
+  #tab-tradeoff .to-swtbl{margin:10px 0 22px;}
+  #tab-tradeoff .to-swtbl table{font-size:12px;}
+  #tab-tradeoff .to-swtbl th{text-align:left;color:var(--muted);font-weight:600;padding:4px 10px 4px 0;
+    border-bottom:1px solid var(--line2);}
+  #tab-tradeoff .to-swtbl td{padding:4px 10px 4px 0;border-bottom:1px solid var(--line);}
+
   /* ── 左目次ドロワー（全タブ共通・オーバーレイ / 留めるで余白配置） ── */
   h2{scroll-margin-top:56px;}
   #tab-hull h3{scroll-margin-top:56px;}
@@ -443,7 +473,8 @@
   <button data-tab="mission" class="on">Ⅰ. ミッション</button>
   <button data-tab="model">Ⅱ. 性能</button>
   <button data-tab="hull">Ⅲ. 船体</button>
-  <button data-tab="doc">Ⅳ. 設計書</button>
+  <button data-tab="tradeoff">Ⅳ. トレードオフ</button>
+  <button data-tab="doc">Ⅴ. 設計書</button>
 </nav>
 
 <div id="toc-backdrop"></div>
@@ -923,6 +954,39 @@
 </div>
 </div>
 
+<div id="tab-tradeoff" hidden>
+<div class="wrap">
+
+<h2>構成図 — 入力から評価基準まで</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 10px">設計パラメータの入力（左）が、どの計算ブロック（中央）を経て、5 つの評価基準（右）に届くかを示す。破線は判定への入力、<span style="color:var(--s1)">青線</span>は評価基準への出力、<span style="color:var(--clo)">sw①〜sw⑥</span> は §3（設計書）の計算方法の切替位置。このタブの入力は Ⅰ. ミッション／Ⅱ. 性能タブと状態を共有する（ここで変えれば他タブにも反映）。</div>
+<figure><div class="figscroll"><svg viewBox="0 0 1000 925" role="img" aria-label="トレードオフタブの詳細構成図。左列は設計パラメータの入力を群ごとに列挙し、中央列は船体形状から抵抗・推進チェーン・電力収支・揺れRAO・運用限界Hs・GZ曲線・転覆と復帰の限界波高・ミッション計算・成功率までの計算ブロックを縦一列に示し、右列は達成速力・航続距離と電力の余裕・揺れの運用限界Hs・転覆と復帰の限界波高・ミッション成功率の5つの評価基準を、それぞれの計算元ブロックと同じ高さに示す。sw1からsw6は計算方法の切替位置。" style="width:100%;height:auto;display:block"><defs><marker id="tfink" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--ink-chart)"/></marker><marker id="tfs1" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--s1)"/></marker><marker id="tfgrid" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--axis)"/></marker></defs><text x="8" y="18" text-anchor="start" style="font-size:12px;fill:var(--ink-chart);font-weight:600;letter-spacing:.03em">設計パラメータの入力</text><text x="360" y="18" text-anchor="start" style="font-size:12px;fill:var(--ink-chart);font-weight:600;letter-spacing:.03em">計算ブロック</text><text x="800" y="18" text-anchor="start" style="font-size:12px;fill:var(--ink-chart);font-weight:600;letter-spacing:.03em">5 つの評価基準</text><rect x="8" y="30.0" width="320" height="156.0" rx="3" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none"/><text x="18" y="47.0" text-anchor="start" style="font-size:12px;fill:var(--ink-chart);font-weight:700">船体</text><text x="24" y="65.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・水線長 L_wl</text><text x="24" y="80.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・船幅 B</text><text x="24" y="96.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・質量 m</text><text x="24" y="111.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・方形係数 C_b</text><text x="24" y="127.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・重心高さ KG</text><text x="24" y="142.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・引込キール（展開/格納）</text><text x="24" y="158.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・形状の与え方 sw①</text><text x="24" y="173.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・質量と重心の与え方 sw④</text><rect x="8" y="198.0" width="320" height="94.0" rx="3" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none"/><text x="18" y="215.0" text-anchor="start" style="font-size:12px;fill:var(--ink-chart);font-weight:700">空力</text><text x="24" y="233.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・空気抵抗係数 C_D</text><text x="24" y="248.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・前面投影面積 A_front</text><text x="24" y="264.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・横風投影面積 A_lat</text><text x="24" y="279.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・作用高さ z_a</text><rect x="8" y="304.0" width="320" height="109.5" rx="3" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none"/><text x="18" y="321.0" text-anchor="start" style="font-size:12px;fill:var(--ink-chart);font-weight:700">推進</text><text x="24" y="339.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・最大電気出力 P_max</text><text x="24" y="354.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・制御効率 η_ctrl</text><text x="24" y="370.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・プロペラ径 D_prop</text><text x="24" y="385.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・プロペラ効率ピーク η_peak</text><text x="24" y="401.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・設計速度 V_d</text><rect x="8" y="425.5" width="320" height="125.0" rx="3" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none"/><text x="18" y="442.5" text-anchor="start" style="font-size:12px;fill:var(--ink-chart);font-weight:700">電力</text><text x="24" y="460.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・電池容量 E_batt</text><text x="24" y="476.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・太陽電池出力 P_pv</text><text x="24" y="491.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・ディレーティング k_de</text><text x="24" y="507.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・ホテル負荷 P_hotel</text><text x="24" y="522.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・発電機（有無・出力・燃料）</text><text x="24" y="538.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・SOC 下限</text><rect x="8" y="562.5" width="320" height="171.5" rx="3" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none"/><text x="18" y="579.5" text-anchor="start" style="font-size:12px;fill:var(--ink-chart);font-weight:700">海と運用</text><text x="24" y="597.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・有義波高 Hs</text><text x="24" y="613.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・波周期 Tp</text><text x="24" y="628.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・風速 U</text><text x="24" y="644.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・月</text><text x="24" y="659.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・日射モデル</text><text x="24" y="675.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・目標速力 V_t</text><text x="24" y="690.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・期間</text><text x="24" y="706.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・母港</text><text x="24" y="721.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・母船搬送速力 V_carry</text><rect x="8" y="746.0" width="320" height="109.5" rx="3" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none"/><text x="18" y="763.0" text-anchor="start" style="font-size:12px;fill:var(--ink-chart);font-weight:700">耐航性の仮定</text><text x="24" y="781.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・加速度限界 a_lim</text><text x="24" y="796.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・縦揺れ限界 θ_lim</text><text x="24" y="812.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・横揺れ限界 φ_lim</text><text x="24" y="827.5" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・減衰比 ζ</text><text x="24" y="843.0" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">・砕波伝達効率 η_b</text><rect x="360" y="34.0" width="260" height="42" rx="3" style="stroke:var(--axis);stroke-width:1.2;fill:none"/><text x="490.0" y="59.0" text-anchor="middle" style="font-size:12px;fill:var(--ink-chart);font-weight:600">船体形状</text><text x="628" y="49.0" text-anchor="start" style="font-size:11px;fill:var(--clo);font-weight:600">sw①</text><rect x="360" y="106.0" width="260" height="42" rx="3" style="stroke:var(--axis);stroke-width:1.2;fill:none"/><text x="490.0" y="131.0" text-anchor="middle" style="font-size:12px;fill:var(--ink-chart);font-weight:600">抵抗（平水 sw①／波浪中 sw⑥／風圧）</text><rect x="360" y="178.0" width="260" height="42" rx="3" style="stroke:var(--axis);stroke-width:1.2;fill:none"/><text x="490.0" y="203.0" text-anchor="middle" style="font-size:12px;fill:var(--ink-chart);font-weight:600">推進チェーン</text><rect x="360" y="250.0" width="260" height="42" rx="3" style="stroke:var(--axis);stroke-width:1.2;fill:none"/><text x="490.0" y="275.0" text-anchor="middle" style="font-size:12px;fill:var(--ink-chart);font-weight:600">電力収支</text><rect x="360" y="322.0" width="260" height="42" rx="3" style="stroke:var(--axis);stroke-width:1.2;fill:none"/><text x="490.0" y="347.0" text-anchor="middle" style="font-size:12px;fill:var(--ink-chart);font-weight:600">揺れ RAO</text><text x="628" y="337.0" text-anchor="start" style="font-size:11px;fill:var(--clo);font-weight:600">sw②・sw③</text><rect x="360" y="394.0" width="260" height="42" rx="3" style="stroke:var(--axis);stroke-width:1.2;fill:none"/><text x="490.0" y="419.0" text-anchor="middle" style="font-size:12px;fill:var(--ink-chart);font-weight:600">運用限界 Hs</text><rect x="360" y="466.0" width="260" height="42" rx="3" style="stroke:var(--axis);stroke-width:1.2;fill:none"/><text x="490.0" y="491.0" text-anchor="middle" style="font-size:12px;fill:var(--ink-chart);font-weight:600">GZ 曲線</text><text x="628" y="481.0" text-anchor="start" style="font-size:11px;fill:var(--clo);font-weight:600">sw④・sw⑤</text><rect x="360" y="538.0" width="260" height="42" rx="3" style="stroke:var(--axis);stroke-width:1.2;fill:none"/><text x="490.0" y="563.0" text-anchor="middle" style="font-size:12px;fill:var(--ink-chart);font-weight:600">転覆・復帰の限界波高</text><rect x="360" y="610.0" width="260" height="42" rx="3" style="stroke:var(--axis);stroke-width:1.2;fill:none"/><text x="490.0" y="635.0" text-anchor="middle" style="font-size:12px;fill:var(--ink-chart);font-weight:600">ミッション計算</text><rect x="360" y="682.0" width="260" height="42" rx="3" style="stroke:var(--axis);stroke-width:1.2;fill:none"/><text x="490.0" y="707.0" text-anchor="middle" style="font-size:12px;fill:var(--ink-chart);font-weight:600">ミッション成功率</text><path d="M490.0,76.0L490.0,106.0" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none;marker-end:url(#tfink)"/><path d="M490.0,148.0L490.0,178.0" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none;marker-end:url(#tfink)"/><path d="M490.0,220.0L490.0,250.0" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none;marker-end:url(#tfink)"/><path d="M490.0,292.0L490.0,322.0" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none;marker-end:url(#tfink)"/><path d="M490.0,364.0L490.0,394.0" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none;marker-end:url(#tfink)"/><path d="M490.0,508.0L490.0,538.0" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none;marker-end:url(#tfink)"/><path d="M490.0,652.0L490.0,682.0" style="stroke:var(--ink-chart);stroke-width:1.3;fill:none;marker-end:url(#tfink)"/><path d="M620.0,55.0L692.0,55.0Q700.0,55.0 700.0,63.0L700.0,479.0Q700.0,487.0 692.0,487.0L620.0,487.0" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-dasharray:3 3;marker-end:url(#tfink)"/><path d="M620.0,271.0L722.0,271.0Q730.0,271.0 730.0,279.0L730.0,623.0Q730.0,631.0 722.0,631.0L620.0,631.0" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-dasharray:3 3;marker-end:url(#tfink)"/><path d="M620.0,415.0L752.0,415.0Q760.0,415.0 760.0,423.0L760.0,623.0Q760.0,631.0 752.0,631.0L620.0,631.0" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-dasharray:3 3;marker-end:url(#tfink)"/><rect x="832" y="178.0" width="160" height="42" rx="3" style="stroke:var(--s1);stroke-width:1.4;fill:none"/><text x="912.0" y="203.0" text-anchor="middle" style="font-size:11.5px;fill:var(--s1);font-weight:700">達成速力</text><path d="M620.0,199.0L832.0,199.0" style="stroke:var(--s1);stroke-width:1.2;fill:none;marker-end:url(#tfs1)"/><rect x="832" y="250.0" width="160" height="42" rx="3" style="stroke:var(--s1);stroke-width:1.4;fill:none"/><text x="912.0" y="275.0" text-anchor="middle" style="font-size:11.5px;fill:var(--s1);font-weight:700">航続距離と電力の余裕</text><path d="M620.0,271.0L832.0,271.0" style="stroke:var(--s1);stroke-width:1.2;fill:none;marker-end:url(#tfs1)"/><rect x="832" y="394.0" width="160" height="42" rx="3" style="stroke:var(--s1);stroke-width:1.4;fill:none"/><text x="912.0" y="419.0" text-anchor="middle" style="font-size:11.5px;fill:var(--s1);font-weight:700">揺れの運用限界 Hs</text><path d="M620.0,415.0L832.0,415.0" style="stroke:var(--s1);stroke-width:1.2;fill:none;marker-end:url(#tfs1)"/><rect x="832" y="538.0" width="160" height="42" rx="3" style="stroke:var(--s1);stroke-width:1.4;fill:none"/><text x="912.0" y="563.0" text-anchor="middle" style="font-size:11.5px;fill:var(--s1);font-weight:700">転覆・復帰の限界波高</text><path d="M620.0,559.0L832.0,559.0" style="stroke:var(--s1);stroke-width:1.2;fill:none;marker-end:url(#tfs1)"/><rect x="832" y="682.0" width="160" height="42" rx="3" style="stroke:var(--s1);stroke-width:1.4;fill:none"/><text x="912.0" y="707.0" text-anchor="middle" style="font-size:11.5px;fill:var(--s1);font-weight:700">ミッション成功率</text><path d="M620.0,703.0L832.0,703.0" style="stroke:var(--s1);stroke-width:1.2;fill:none;marker-end:url(#tfs1)"/><path d="M328.0,108.0L352.0,108.0Q360.0,108.0 360.0,100.0L360.0,55.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><path d="M328.0,108.0L352.0,108.0Q360.0,108.0 360.0,116.0L360.0,487.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><path d="M328.0,245.0L352.0,245.0Q360.0,245.0 360.0,237.0L360.0,127.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><path d="M328.0,358.8L352.0,358.8Q360.0,358.8 360.0,350.8L360.0,199.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><path d="M328.0,488.0L352.0,488.0Q360.0,488.0 360.0,480.0L360.0,271.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><path d="M328.0,648.2L352.0,648.2Q360.0,648.2 360.0,640.2L360.0,127.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><path d="M328.0,648.2L352.0,648.2Q360.0,648.2 360.0,640.2L360.0,343.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><path d="M328.0,648.2L352.0,648.2Q360.0,648.2 360.0,640.2L360.0,487.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><path d="M328.0,648.2L352.0,648.2Q360.0,648.2 360.0,640.2L360.0,271.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><path d="M328.0,648.2L352.0,648.2Q360.0,648.2 360.0,640.2L360.0,631.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><path d="M328.0,800.8L352.0,800.8Q360.0,800.8 360.0,792.8L360.0,343.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><path d="M328.0,800.8L352.0,800.8Q360.0,800.8 360.0,792.8L360.0,415.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><path d="M328.0,800.8L352.0,800.8Q360.0,800.8 360.0,792.8L360.0,559.0" style="stroke:var(--grid);stroke-width:1.1;fill:none;marker-end:url(#tfgrid)"/><line x1="8" y1="871.5" x2="992" y2="871.5" style="stroke:var(--grid);stroke-width:1"/><text x="8" y="889.5" text-anchor="start" style="font-size:11px;fill:var(--ink-chart);font-weight:400">細線（灰色）＝ 群→ブロックの依存　／　太線 ＝ 計算の直列　／　破線（黒）＝ 直列ではないが実際に使う判定への入力</text><text x="8" y="907.5" text-anchor="start" style="font-size:11px;fill:var(--ink-chart);font-weight:400"><tspan style="fill:var(--s1)">青線</tspan> ＝ 評価基準への出力　／　<tspan style="fill:var(--clo)">sw①〜sw⑥</tspan> ＝ 計算方法の切替位置（設計書 §3）</text></svg></div><figcaption>図T1 — トレードオフタブの詳細構成図。設計書 図1 をこのタブの 5 つの評価基準まで 1 段深く展開したもの。中央列は計算ブロックを縦一列に並べ、GZ 曲線・転覆と復帰の限界波高は揺れ RAO・運用限界 Hs の下に独立した行として配置。右列の各評価基準は、その値を計算するブロックと同じ高さに揃えている。</figcaption></figure>
+
+<h3>入力群の一覧（既定値は計算コアの初期値を実行時に取得）</h3>
+<div class="to-inputtbl" style="overflow-x:auto"><table id="to-input-table"></table></div>
+
+<h2>感度表 — 入力を ±10% 振ったときの 5 基準の変化率</h2>
+<div class="to-context" id="to-context"></div>
+<div class="to-toolbar">
+  <button id="to-sens-run" type="button">感度を計算</button>
+  <button id="to-sens-cancel" type="button" hidden>中断</button>
+  <span id="to-sens-stat" style="font-size:12px;color:var(--muted)"></span>
+</div>
+<div class="to-progress" id="to-progress" hidden><div class="to-progress-bar" id="to-progress-bar"></div></div>
+<div class="to-sens" style="overflow-x:auto"><table id="to-sens-table"></table></div>
+<div class="to-findings" id="to-findings"></div>
+
+<h3>切替（sw）の前後比較</h3>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">連続量ではなく状態を切り替えるもの。切替前後で 5 基準がどう変わるかを示す（船体寸法や海況が一致しない場合は既定へ自動退避し、その旨を注記する）。</div>
+<div class="to-swtbl" style="overflow-x:auto"><table id="to-sw-table"></table></div>
+
+<h2>この結果をレポートとして保存</h2>
+<div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 10px">構成図・入力表・感度表・切替表・下の自動生成文を、外部参照のない 1 枚の自己完結 HTML として書き出す。感度が未計算のときは、先に「感度を計算」を実行すること。</div>
+<button id="to-report-save" type="button">この結果を 1 枚のレポートとして保存</button>
+<span id="to-report-stat" style="font-size:12px;color:var(--muted);margin-left:10px"></span>
+
+</div>
+</div>
+
 <div id="tab-doc" hidden><div class="doc-wrap">
 <div class="doc-head">
   <div class="eyebrow">USV 0次元モデル · 技術詳細設計書 · Rev.5</div>
@@ -1080,6 +1144,7 @@
 <tr><td class="sym">sw⑥</td><td>波浪中抵抗増加の求め方</td><td>反射効率の実験式</td><td>波の力の計算（BEM）の平均漂流力の表</td><td>波浪中の抵抗増加（速力・電力へ波及）</td><td>§5.3</td></tr>
 </table></div>
 <p style="font-size:12.5px;color:var(--muted)">補足 — 第 1 層の出力は 1 つのデータブロックとしてこのページに埋め込まれており、第 2 層はそれを読む。外部で作った船体形状（STL）を第 1 層の入口に差し込めば、同じ経路で係数を作り直せる（手順は §13.14）。第 2 層の計算式はすべて画面表示に依存しない形で書いてあり、そのまま Python へ移せる。</p>
+<p style="font-size:12.5px;color:var(--muted)">この構成図をさらに 1 段深く展開し、約 30 の設計パラメータそれぞれが 5 つの評価基準（達成速力・航続距離と電力の余裕・揺れの運用限界・転覆と復帰の限界波高・ミッション成功率）にどう効くかをライブで検討できるのが「Ⅳ. トレードオフ」タブである。</p>
 </details>
 
 <!-- ═══════════ §4 ═══════════ -->
@@ -6485,12 +6550,17 @@ if (typeof module !== 'undefined') module.exports = USV;
       + item('recover','回収', kc.recover);
   }
   function tplCacheKey(id,p){ return id+'|'+JSON.stringify(p); }
-  function tplParamsFor(t){
-    const p=window.__getParams(); p.msn.socMin=t.mis.socMin; p.msn.soc0=t.mis.soc0; p.geo=GEO;
+  function tplParamsFor(t,pIn){
+    const p=pIn||window.__getParams(); p.msn.socMin=t.mis.socMin; p.msn.soc0=t.mis.soc0; p.geo=GEO;
     if(t.env && t.env.month!=null) p.env.month=t.env.month;
     if(t.env && t.env.seasonFactor!=null) p.env.seasonFactor=t.env.seasonFactor;
     return p;
   }
+  // ── トレードオフタブ（Ⅳ）が参照する現在選択中テンプレートの文脈（B1〜B3・BACKLOG.md） ──
+  window.__tradeoffTplCtx = () => ({
+    id: selectedTpl, tpl: TPL[selectedTpl], meta: TPL_META[selectedTpl],
+    paramsFor: tplParamsFor,
+  });
   function computeTplRate(id){
     const t=TPL[id], p=tplParamsFor(t), key=tplCacheKey(id,p);
     if(key in TPL_RATE_CACHE) return TPL_RATE_CACHE[key];
@@ -7078,7 +7148,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     const halfW=25, phase=(PB.wavePhase||0)%lambda;
     let lines='';
     for(let k=0;k<N_WAVE_LINES;k++){
-      const yy=-8-phase-k*lambda;
+      const yy=-8-((k+1)*lambda-phase);                                  // 位相が進むほど艇へ近づく（向かい波＝艇に向かって流れる）
       const fade=Math.max(0.15, 1-k*(0.85/(N_WAVE_LINES-1)));        // 外側ほど薄く
       lines+=`<path d="${wavePeakArcPath(0,yy,halfW)}" fill="none" stroke="var(--s1)" stroke-width="${Math.max(0.5,sw*fade).toFixed(2)}" opacity="${(opac*fade).toFixed(2)}"/>`;
     }
@@ -7555,6 +7625,369 @@ if (typeof module !== 'undefined') module.exports = USV;
 })();
 </script>
 <script>
+/* ============================================================
+   Ⅳ. トレードオフタブ — 構成図・入力一覧・感度表・レポート書き出し
+   （tools/usv_model/BACKLOG.md B1〜B3。usv-core の既存公開関数のみを呼ぶ）
+   ============================================================ */
+'use strict';
+(function(){
+  const $ = id => document.getElementById(id);
+  const fmt = (x,d=1) => (x==null || !isFinite(x)) ? '—' : Number(x).toFixed(d);
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const getPath = (o,path) => path.split('.').reduce((a,k)=>(a==null?a:a[k]), o);
+  const setPath = (o,path,v) => { const ks=path.split('.'); let a=o; for(let i=0;i<ks.length-1;i++) a=a[ks[i]]; a[ks[ks.length-1]]=v; };
+
+  // ── 入力一覧（B1 の表・全 35 項目。cont=true は感度表(B2)の対象となる連続量 ──
+  const INPUT_ROWS = [
+    ['船体','水線長 L_wl','m','hull.Lwl','船体形状 → 抵抗・GZ 曲線',true],
+    ['船体','船幅 B','m','hull.B','船体形状 → 抵抗・GZ 曲線',true],
+    ['船体','質量 m','kg','hull.m','GZ 曲線・電力収支（喫水・慣性）',true],
+    ['船体','方形係数 C_b','–','hull.Cb','船体形状（喫水・濡れ面積）',true],
+    ['船体','重心高さ KG','m','hull.KG','GZ 曲線',true],
+    ['船体','引込キール（展開/格納）sw⑤','–','hull.keelUp','付加物濡れ面積・キール抗力・重心',false],
+    ['船体','形状の与え方 sw①','–','hull.geom','喫水・濡れ面積・剰余抵抗係数の再較正',false],
+    ['船体','質量と重心の与え方 sw④','–','hull.massFrom','質量・重心高さ・慣動半径',false],
+    ['空力','空気抵抗係数 C_D','–','hull.CdAir','抵抗（風圧）',true],
+    ['空力','前面投影面積 A_front','m²','hull.Afront','抵抗（風圧）',true],
+    ['空力','横風投影面積 A_lat','m²','sea.windALat','GZ 曲線（風の傾斜てこ）',true],
+    ['空力','作用高さ z_a','m','sea.windZa','GZ 曲線（風の傾斜てこ）',true],
+    ['推進','最大電気出力 P_max','W','prop.PmaxElec','推進チェーン → 達成速力',true],
+    ['推進','制御効率 η_ctrl','–','prop.etaCtrl','推進チェーン',true],
+    ['推進','プロペラ径 D_prop','m','prop.propeller.Dprop','推進チェーン',true],
+    ['推進','プロペラ効率ピーク η_peak','–','prop.propeller.etaPeak','推進チェーン',true],
+    ['推進','設計速度 V_d','kt','prop.propeller.Vd','推進チェーン（効率曲線）',true],
+    ['電力','電池容量 E_batt','Wh','pwr.battWh','電力収支 → 電力の余裕',true],
+    ['電力','太陽電池出力 P_pv','W','pwr.panelW','電力収支',true],
+    ['電力','ディレーティング k_de','–','pwr.derate','電力収支（発電）',true],
+    ['電力','ホテル負荷 P_hotel','W','pwr.hotelW','電力収支・ミッション計算（テンプレート選択時は全フェーズのホテル負荷を同率で振って評価）',true,'hotelW'],
+    ['電力','発電機（有無・出力・燃料）','–','pwr.gen.enabled','電力収支',false],
+    ['電力','SOC 下限','–','msn.socMin','電力収支・ミッション計算（テンプレート選択時はテンプレート自身の SOC 下限を振って評価）',true,'socMin'],
+    ['海と運用','有義波高 Hs','m','env.Hs','抵抗（波浪中）・揺れ RAO・GZ 曲線',true],
+    ['海と運用','波周期 Tp','s','env.Tp','抵抗（波浪中）・揺れ RAO',true],
+    ['海と運用','風速 U','m/s','env.windU','抵抗（風圧）・GZ 曲線（風の傾斜）',true],
+    ['海と運用','月','–','env.month','電力収支（日射）',false],
+    ['海と運用','日射モデル','–','env.solarModel','電力収支',false],
+    ['海と運用','目標速力 V_t','kt','msn.targetKt','運用限界 Hs の評価速力（達成速力の上限としても働く）',true],
+    ['海と運用','期間','日','msn.days','ミッション計算（テンプレート選択時は各フェーズの日数と期限日数を同率で振って評価）',true,'days'],
+    ['海と運用','母港','–','geo.port','ミッション計算（航路）',false],
+    ['海と運用','母船搬送速力 V_carry','kt','geo.carryKt','ミッション計算（搬送フェーズ。テンプレート選択時は母船搬送速力を振って評価）',true,'carryKt'],
+    ['耐航性の仮定','加速度限界 a_lim','g','sea.accelLimG','運用限界 Hs',true],
+    ['耐航性の仮定','縦揺れ限界 θ_lim','°','sea.pitchLimDeg','運用限界 Hs',true],
+    ['耐航性の仮定','横揺れ限界 φ_lim','°','sea.rollLimDeg','運用限界 Hs（BEM 表使用時）',true],
+    ['耐航性の仮定','減衰比 ζ','–','sea.zetaHeave','揺れ RAO',true],
+    ['耐航性の仮定','砕波伝達効率 η_b','–','sea.etaBreak','転覆・復帰の限界波高',true],
+  ].map(([group,label,unit,path,targets,cont,tplKey])=>({group,label,unit,path,targets,cont,tplKey:tplKey||null}));
+
+  // 既定値が 0 の連続量（Hs・風速）は ±10% が退化するため絶対幅にフォールバックする
+  const ZERO_FALLBACK = { 'env.Hs':0.3, 'env.windU':3 };
+
+  const SWITCHES = [
+    { path:'hull.geom',      label:'船体形状の与え方 sw①', a:'analytic', b:'hydro',  an:'解析式',        bn:'3D 形状計算' },
+    { path:'sea.mode',       label:'耐航性の係数 sw②',     a:'analytic', b:'bem',    an:'簡易式',        bn:'BEM 表' },
+    { path:'sea.rollDamp',   label:'横揺れ減衰 sw③',       a:'drag',     b:'const',  an:'抗力モデル',     bn:'一定 ζ' },
+    { path:'hull.massFrom',  label:'質量と重心 sw④',       a:'manual',   b:'table',  an:'手入力',        bn:'重量表' },
+    { path:'hull.keelUp',    label:'引込キール sw⑤',       a:false,      b:true,     an:'展開',          bn:'格納' },
+    { path:'env.rawModel',   label:'波浪中抵抗増加 sw⑥',   a:'reflect',  b:'bem',    an:'反射効率式',     bn:'BEM 平均漂流力' },
+    { path:'pwr.gen.enabled',label:'発電機',               a:false,      b:true,     an:'無',            bn:'有' },
+    { path:'env.solarModel', label:'日射モデル',           a:'daily',    b:'clearsky',an:'日平均正弦半波', bn:'晴天モデル' },
+  ];
+
+  const METRICS = ['speedKt','socMargin','limitHs','HbRec','successRate'];
+  const METRIC_LABELS = { speedKt:'達成速力', socMargin:'航続距離と電力の余裕', limitHs:'揺れの運用限界 Hs',
+    HbRec:'転覆・復帰の限界波高', successRate:'ミッション成功率' };
+  const METRIC_UNITS  = { speedKt:'kt', socMargin:'pt', limitHs:'m', HbRec:'m', successRate:'%' };
+  const isPtMetric = k => (k==='socMargin' || k==='successRate');
+
+  // ── 5 基準の計算（usv-core の既存公開関数のみを呼ぶ。usv-core/usv-hydro/usv-geo は変更しない） ──
+  function metricsFromP(pClone, tplCtx, ovr){
+    const der = USV.derived(pClone.hull, pClone.sea);
+    const veq = USV.solveVeq(pClone.prop.PmaxElec, pClone.env, pClone, der);
+    const speedKt = veq / USV.KT;
+    const V = Math.min(veq, pClone.msn.targetKt * USV.KT);
+    // limitHs は Hs 線形の RMS を Hs で正規化した値（Hs 非依存）。既定の平水（Hs=0）では
+    // seakeeping() が評価不可（Infinity）を返すため、判定用に Hs=1m の基準環境で評価する。
+    let limitHs = null;
+    try{
+      const envRef = pClone.env.Hs > 0 ? pClone.env : Object.assign({}, pClone.env, { Hs: 1 });
+      const sk = USV.seakeeping(envRef, V, pClone, der);
+      if(isFinite(sk.limitHs)) limitHs = sk.limitHs;
+    }catch(e){}
+    let HbRec = null;
+    try{ const asmt = USV.capsizeRecoveryAssessment(pClone, 'base', null); if(asmt) HbRec = asmt.Hb_rec; }catch(e){}
+    let successRate = null, socMargin = null;
+    try{
+      const tpl = (ovr && ovr.tpl) ? ovr.tpl : tplCtx.tpl;
+      const p2 = tplCtx.paramsFor(tpl, pClone);
+      if(ovr && ovr.geoCarryFactor){ p2.geo = Object.assign({}, p2.geo, { carryKt: p2.geo.carryKt * ovr.geoCarryFactor }); }
+      const r = USV.simulateMission(p2, tpl.mis, tpl.cat);
+      if(!r.error){
+        successRate = r.successRate * 100;
+        if(r.nominal) socMargin = (r.nominal.minSoc - p2.msn.socMin) * 100;
+      }
+    }catch(e){}
+    return { speedKt, socMargin, limitHs, HbRec, successRate };
+  }
+
+  // ── テンプレートが自身の値で上書きする入力（ホテル負荷・SOC下限・期間・母船搬送速力）を
+  //   感度計算で振るため、テンプレート本体（mis/geo）側を直接クローンして変化させる ──
+  function buildTplOverride(tplCtx, tplKey, factor){
+    if(!tplKey) return null;
+    const tpl = JSON.parse(JSON.stringify(tplCtx.tpl));
+    if(tplKey==='hotelW'){ tpl.mis.phases.forEach(ph=>{ if(ph.hotelW!=null) ph.hotelW *= factor; }); return { tpl }; }
+    if(tplKey==='socMin'){ tpl.mis.socMin *= factor; return { tpl }; }
+    if(tplKey==='days'){ tpl.mis.phases.forEach(ph=>{ ph.days *= factor; }); if(tpl.mis.deadlineDays!=null) tpl.mis.deadlineDays *= factor; return { tpl }; }
+    if(tplKey==='carryKt'){ return { tpl, geoCarryFactor: factor }; }
+    return null;
+  }
+
+  function tplCtxOrNull(){ return window.__tradeoffTplCtx ? window.__tradeoffTplCtx() : null; }
+
+  // ── B1: 入力群の一覧 ──
+  function fmtDefault(row, d){
+    const v = getPath(d, row.path);
+    if(typeof v === 'boolean'){
+      if(row.path==='hull.keelUp') return v?'格納':'展開';
+      if(row.path==='pwr.gen.enabled') return v?'有':'無';
+      return v?'true':'false';
+    }
+    if(typeof v === 'string') return v;
+    if(v==null) return '—';
+    return Number(v).toString() + (row.unit && row.unit!=='–' ? ' '+row.unit : '');
+  }
+  function renderInputTable(){
+    const d = USV.defaults();
+    const head = '<tr><th>群</th><th>項目</th><th>単位</th><th>既定値</th><th>効く先（計算ブロック）</th></tr>';
+    const body = INPUT_ROWS.map(r=>`<tr><td>${esc(r.group)}</td><td>${esc(r.label)}</td>`+
+      `<td>${r.unit==='–'?'—':esc(r.unit)}</td><td>${esc(fmtDefault(r,d))}</td><td style="color:var(--muted)">${esc(r.targets)}</td></tr>`).join('');
+    $('to-input-table').innerHTML = head+body;
+  }
+
+  // ── 対象（テンプレート・現在の切替）の 1 行表示 ──
+  function currentSwText(p){
+    return `sw①${p.hull.geom==='hydro'?'3D形状計算':'解析式'}・sw②${p.sea.mode==='bem'?'BEM表':'解析式'}・`+
+      `sw③${p.sea.rollDamp==='const'?'一定ζ':'抗力モデル'}・sw④${p.hull.massFrom==='table'?'重量表':'手入力'}・`+
+      `sw⑤${p.hull.keelUp?'格納':'展開'}・sw⑥${p.env.rawModel==='bem'?'BEM平均漂流力':'反射効率式'}`;
+  }
+  function renderContext(){
+    const tplCtx = tplCtxOrNull(); if(!tplCtx || !window.__getParams) return;
+    const p = window.__getParams();
+    const title = tplCtx.meta ? tplCtx.meta.title : tplCtx.id;
+    $('to-context').innerHTML = `対象テンプレート: ${esc(title)} ／ 現在の切替: ${esc(currentSwText(p))}`+
+      `<br><span style="font-size:11px">（注）ホテル負荷・SOC 下限・期間・母船搬送速力は、テンプレートが自身の値を持つため、感度計算では選択中テンプレート内部の値を直接振って評価する。</span>`;
+  }
+
+  // ── B2: 感度表（OAT・±10%。成功率の決定論シナリオ木は「感度を計算」ボタンで明示実行） ──
+  const PCT = 0.10;
+  let SENS_RESULT = null;
+  let sensRunning = false, sensCancel = false;
+  const sleep = ms => new Promise(res=>setTimeout(res, ms));
+
+  function pctChange(base, val){
+    if(base==null || val==null || !isFinite(base) || !isFinite(val)) return null;
+    if(Math.abs(base) < 1e-9) return null;
+    return (val-base)/Math.abs(base)*100;
+  }
+
+  async function runSensitivity(){
+    if(sensRunning) return;
+    const tplCtx = tplCtxOrNull();
+    if(!tplCtx || !window.__getParams){ $('to-sens-stat').textContent='ミッションタブが未初期化です'; return; }
+    sensRunning = true; sensCancel = false;
+    $('to-sens-run').hidden = true; $('to-sens-cancel').hidden = false;
+    $('to-progress').hidden = false; $('to-progress-bar').style.width = '0%';
+    $('to-sens-stat').textContent = '計算中…';
+    const t0 = performance.now();
+    const baseP = window.__getParams();
+    const base = metricsFromP(baseP, tplCtx);
+    const cont = INPUT_ROWS.filter(r=>r.cont);
+    const rows = [];
+    for(let i=0;i<cont.length;i++){
+      if(sensCancel) break;
+      const prm = cont[i];
+      const changes = {};
+      for(const dir of [1,-1]){
+        const p = window.__getParams();
+        let ovr = null;
+        if(prm.tplKey){
+          ovr = buildTplOverride(tplCtx, prm.tplKey, 1+dir*PCT);
+        } else {
+          const cur = getPath(p, prm.path);
+          const fb = ZERO_FALLBACK[prm.path];
+          const nv = (Math.abs(cur) < 1e-9 && fb!=null) ? dir*fb : cur*(1+dir*PCT);
+          setPath(p, prm.path, nv);
+        }
+        const m = metricsFromP(p, tplCtx, ovr);
+        for(const key of METRICS){
+          changes[key] = changes[key] || {};
+          changes[key][dir] = isPtMetric(key) ? ((m[key]==null||base[key]==null)?null:(m[key]-base[key]))
+                                               : pctChange(base[key], m[key]);
+        }
+      }
+      rows.push(Object.assign({}, prm, { changes, usedFallback: !prm.tplKey && Math.abs(getPath(baseP,prm.path))<1e-9 && ZERO_FALLBACK[prm.path]!=null }));
+      $('to-progress-bar').style.width = (100*(i+1)/cont.length).toFixed(0)+'%';
+      await sleep(0);
+    }
+    const elapsed = performance.now()-t0;
+    sensRunning = false;
+    $('to-sens-run').hidden = false; $('to-sens-cancel').hidden = true; $('to-progress').hidden = true;
+    if(sensCancel){
+      $('to-sens-stat').textContent = `中断しました（${rows.length}/${cont.length} 件・${fmt(elapsed,0)} ms）`;
+    } else {
+      SENS_RESULT = { base, rows, elapsedMs: elapsed, tplId: tplCtx.id, pct: PCT*100 };
+      $('to-sens-stat').textContent = `${rows.length} 入力 × 2 方向（±${PCT*100}%）を ${fmt(elapsed,0)} ms で計算`;
+      renderSensTable();
+      renderFindings();
+    }
+  }
+  $('to-sens-cancel').addEventListener('click', ()=>{ sensCancel = true; });
+  $('to-sens-run').addEventListener('click', runSensitivity);
+
+  function shadeFor(mag){
+    if(mag==null || mag<1) return '';
+    if(mag<5) return 'background:rgba(42,120,214,.10)';
+    if(mag<15) return 'background:rgba(42,120,214,.20)';
+    return 'background:rgba(42,120,214,.32)';
+  }
+  function fmtCell(c, isPt){
+    if(!c || (c[1]==null && c[-1]==null)) return { html:'—', mag:0 };
+    const f = v => v==null?'—':((v>=0?'+':'−')+Math.abs(v).toFixed(1)+(isPt?' pt':' %'));
+    const mag = Math.max(Math.abs(c[1]||0), Math.abs(c[-1]||0));
+    return { html: `${f(c[1])} / ${f(c[-1])}`, mag };
+  }
+  function renderSensTable(){
+    if(!SENS_RESULT) return;
+    const head = '<tr><th>入力</th>'+METRICS.map(k=>`<th>${esc(METRIC_LABELS[k])}${isPtMetric(k)?'（pt）':'（%）'}</th>`).join('')+'</tr>';
+    const body = SENS_RESULT.rows.map(r=>{
+      let rowMax = 0;
+      const cells = METRICS.map(k=>{
+        const {html, mag} = fmtCell(r.changes[k], isPtMetric(k));
+        rowMax = Math.max(rowMax, mag);
+        return `<td style="${shadeFor(mag)}">${html}</td>`;
+      }).join('');
+      const low = rowMax < 0.5;
+      const fbNote = r.usedFallback ? ' <span style="color:var(--muted)">（既定 0 のため絶対幅 ±'+ZERO_FALLBACK[r.path]+'）</span>' : '';
+      return `<tr class="${low?'lowimpact':''}"><td>${esc(r.group)} ・ ${esc(r.label)}${fbNote}</td>${cells}</tr>`;
+    }).join('');
+    $('to-sens-table').innerHTML = head+body;
+  }
+
+  function topForMetric(key){
+    const isPt = isPtMetric(key);
+    const scored = SENS_RESULT.rows.map(r=>{
+      const c = r.changes[key], p = c[1], m = c[-1];
+      let pick = null;
+      if(p!=null && (m==null || Math.abs(p)>=Math.abs(m))) pick = {dir:1, val:p};
+      else if(m!=null) pick = {dir:-1, val:m};
+      return pick ? { label:r.label, dir:pick.dir, val:pick.val, mag:Math.abs(pick.val) } : null;
+    }).filter(Boolean).sort((a,b)=>b.mag-a.mag).slice(0,3);
+    return { scored, isPt };
+  }
+  function fmtDelta(v, isPt){ if(v==null) return '—'; return (v>=0?'+':'−')+Math.abs(v).toFixed(1)+(isPt?' pt':' %'); }
+  function renderFindings(){
+    if(!SENS_RESULT){ $('to-findings').innerHTML=''; return; }
+    const scored = METRICS.map(k=>({k, max: topForMetric(k).scored[0] ? topForMetric(k).scored[0].mag : 0}));
+    const top3 = scored.sort((a,b)=>b.max-a.max).slice(0,3).map(s=>s.k);
+    const lines = top3.map(k=>{
+      const { scored, isPt } = topForMetric(k);
+      if(!scored.length) return `<div>${esc(METRIC_LABELS[k])}に有意な感度を示す入力はありませんでした。</div>`;
+      const parts = scored.map(s=>`${esc(s.label)}（${s.dir>0?'+':'−'}10% で ${fmtDelta(s.val,isPt)}）`).join('・');
+      return `<div>${esc(METRIC_LABELS[k])}に最も効くのは ${parts}。</div>`;
+    });
+    lines.push('<div style="font-size:11px;color:var(--muted);margin-top:6px">'+
+      '※ 航続距離と電力の余裕・ミッション成功率は pt（%ポイント）表示、他は相対変化率（%）表示。単独変化（OAT）のため相互作用は含まない。'+
+      '既定値が 0 の入力（有義波高・風速）は絶対幅へフォールバックしたことを表中に注記。'+
+      'ホテル負荷・SOC 下限・期間・母船搬送速力はテンプレート内部の値を直接振っている（上の対象テンプレートの行を参照）。</div>');
+    $('to-findings').innerHTML = lines.join('');
+  }
+
+  // ── 切替（sw）の前後比較 ──
+  function renderSwitchTable(){
+    const tplCtx = tplCtxOrNull(); if(!tplCtx || !window.__getParams) return;
+    const head = '<tr><th>切替</th><th>状態</th><th>達成速力</th><th>航続距離と電力の余裕</th><th>揺れの運用限界 Hs</th><th>転覆・復帰の限界波高</th><th>ミッション成功率</th></tr>';
+    const fmtRow = (label, m) => `<td>${esc(label)}</td><td>${fmt(m.speedKt,2)} kt</td>`+
+      `<td>${m.socMargin==null?'—':fmt(m.socMargin,1)+' pt'}</td><td>${fmt(m.limitHs,2)} m</td>`+
+      `<td>${fmt(m.HbRec,2)} m</td><td>${m.successRate==null?'—':fmt(m.successRate,1)+' %'}</td>`;
+    const body = SWITCHES.map(sw=>{
+      const pa = window.__getParams(); setPath(pa, sw.path, sw.a); const ma = metricsFromP(pa, tplCtx);
+      const pb = window.__getParams(); setPath(pb, sw.path, sw.b); const mb = metricsFromP(pb, tplCtx);
+      return `<tr><td rowspan="2">${esc(sw.label)}</td>${fmtRow(sw.an, ma)}</tr><tr>${fmtRow(sw.bn, mb)}</tr>`;
+    }).join('');
+    $('to-sw-table').innerHTML = head+body;
+  }
+
+  // ── B3: 静的レポートへの切り出し ──
+  const REPORT_VARS = ['--bg','--surface','--ink','--muted','--faint','--line','--line2','--rule',
+    '--grid','--axis','--ink-chart','--muted-chart','--chart-surface','--s1','--s2','--s3','--s4','--s5','--s7','--clo'];
+  function collectVars(){
+    const cs = getComputedStyle(document.documentElement);
+    const cs2 = getComputedStyle($('tab-tradeoff'));
+    let s = '';
+    REPORT_VARS.forEach(n=>{ let v = cs.getPropertyValue(n).trim() || cs2.getPropertyValue(n).trim();
+      if(v) s += `${n}:${v};`; });
+    return s;
+  }
+  function buildReportHtml(){
+    const today = new Date().toISOString().slice(0,10);
+    const rootcss = ':root{'+collectVars()+'}';
+    const figHtml = document.querySelector('#tab-tradeoff figure').outerHTML;
+    const inputTableHtml = '<table>'+$('to-input-table').innerHTML+'</table>';
+    const hasSens = !!SENS_RESULT;
+    const sensHtml = hasSens ? ('<div class="to-sens"><table>'+$('to-sens-table').innerHTML+'</table></div>') : '<p>感度は未計算です。</p>';
+    const findingsHtml = hasSens ? $('to-findings').innerHTML : '';
+    const contextText = $('to-context').textContent;
+    const swHtml = '<table>'+$('to-sw-table').innerHTML+'</table>';
+    const css = `
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;background:var(--bg);color:var(--ink);margin:0;padding:24px;line-height:1.7;max-width:980px}
+h1{font-size:19px;margin:0 0 4px} h2{font-size:14.5px;margin-top:30px;border-bottom:1px solid var(--line2);padding-bottom:5px}
+figure{margin:14px 0} figcaption{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.7}
+.figscroll{overflow-x:auto} svg{max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums;margin:6px 0}
+th{text-align:left;color:var(--muted);font-weight:600;padding:4px 8px;border-bottom:1px solid var(--line2)}
+td{padding:4px 8px;border-bottom:1px solid var(--line)}
+.to-sens td,.to-sens th{text-align:right} .to-sens td:first-child,.to-sens th:first-child{text-align:left}
+svg .grid{stroke:var(--grid);stroke-width:1} svg .axis{stroke:var(--axis);stroke-width:1.2}
+.meta{font-size:12px;color:var(--muted);margin:4px 0 10px}
+.findings div{margin:2px 0;font-size:13px}
+.foot{margin-top:30px;font-size:11px;color:var(--faint);border-top:1px solid var(--line);padding-top:10px}
+`;
+    return '﻿<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
+      `<title>USV トレードオフ検討レポート ${today}</title>`+
+      '<style>'+rootcss+css+'</style></head><body>'+
+      '<h1>USV 0次元モデル — トレードオフ検討レポート</h1>'+
+      `<div class="meta">書き出し日: ${today}</div>`+
+      '<h2>構成図</h2>'+figHtml+
+      '<h2>入力群の一覧</h2>'+inputTableHtml+
+      '<h2>感度表 — 入力を ±10% 振ったときの 5 基準の変化率</h2>'+
+      `<div class="meta">${esc(contextText)}</div>`+sensHtml+
+      `<div class="findings">${findingsHtml}</div>`+
+      '<h2>切替（sw）の前後比較</h2>'+swHtml+
+      '<div class="foot">USV 0次元モデル「Ⅳ. トレードオフ」タブから書き出し。計算コアの既存の関数で計算（数値の再現は同タブをブラウザで開き直せば可能）。</div>'+
+      '</body></html>';
+  }
+  function saveReport(){
+    const html = buildReportHtml();
+    const blob = new Blob([html], { type:'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const today = new Date().toISOString().slice(0,10);
+    a.href = url; a.download = `usv_tradeoff_${today}.html`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    $('to-report-stat').textContent = `書き出しました: usv_tradeoff_${today}.html`;
+  }
+  $('to-report-save').addEventListener('click', saveReport);
+
+  // ── タブ表示時に再描画（Ⅰ/Ⅱタブと状態を共有するため毎回作り直す） ──
+  window.__tradeoffShown = () => {
+    renderInputTable();
+    renderContext();
+    renderSwitchTable();
+    if(SENS_RESULT){ renderSensTable(); renderFindings(); }
+  };
+})();
+</script>
+
+<script>
 
 /* ── タブ切替 ── */
 (function(){
@@ -7566,6 +7999,7 @@ if (typeof module !== 'undefined') module.exports = USV;
       if(el) el.hidden = b.dataset.tab!==name;
     });
     if(name==='mission' && window.__missionShown) window.__missionShown();
+    if(name==='tradeoff' && window.__tradeoffShown) window.__tradeoffShown();
     if(window.__hullTabListeners) window.__hullTabListeners.forEach(fn=>fn(name==='hull'));
     if(window.__modelTabListeners) window.__modelTabListeners.forEach(fn=>fn(name==='model'));
     document.querySelectorAll('.tabs button[data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
@@ -7612,7 +8046,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   var pinBtn=document.getElementById('toc-pin');
   if(!drawer||!list||!toggleBtn) return;
   var reduceMo=window.matchMedia('(prefers-reduced-motion:reduce)');
-  var TAB_NAMES={mission:'Ⅰ. ミッション',model:'Ⅱ. 性能',hull:'Ⅲ. 船体',doc:'Ⅳ. 設計書'};
+  var TAB_NAMES={mission:'Ⅰ. ミッション',model:'Ⅱ. 性能',hull:'Ⅲ. 船体',tradeoff:'Ⅳ. トレードオフ',doc:'Ⅴ. 設計書'};
   var io=null;
 
   function ensureIds(sel,prefix){
