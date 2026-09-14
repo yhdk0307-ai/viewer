@@ -694,6 +694,8 @@
   </select>
   <input type="range" id="pb-scrub" min="0" max="1" value="0" step="1">
   <span id="pb-time" style="font-size:11.5px;color:var(--muted);min-width:96px;text-align:right;font-variant-numeric:tabular-nums">—</span>
+  <label style="font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:4px;white-space:nowrap">
+    <input type="checkbox" id="pb-lookahead">先を薄く表示</label>
 </div>
 <div class="pb-ts">
   <div class="cv"><canvas id="pb-c-soc" width="1000" height="130" role="img" aria-label="再生位置に連動したSOC[%]の時系列（10分刻み）"></canvas></div>
@@ -1670,6 +1672,10 @@ station 距離×海域カタログで成功率がどう下がるかを一覧す�
 （leeway）は位置に反映されない（速力は対水速度のまま）。②避航・航路取りの意思決定は無く、表示上の大圏直線を
 なぞるだけ。③早回し再生はあくまで軌跡の可視化であり、シミュレーション自体の物理（§12 のドリフト・エネルギー
 収支）を変えない。</p>
+<p>航路図の表示には、艇の周囲へ向かい波の峰線を重ねて描く模式表現も加えている。峰線の間隔は代表周期、
+濃さと太さは有義波高に対応させ、再生中は艇へ向かって流れるように動かす（母船搬送区間では海象非依存のため描かない）。
+母船搬送フェーズの間は艇の位置に母船の記号を重ね、フェーズ終了後は母船が同じ航路を母港へ引き返す軌跡を、
+母港以外の位置で始まる搬送（回収）では母港から迎えに出る軌跡を、いずれも母船搬送速力からの機械的な時間補間で表示する。</p>
 <h4 style="font-size:13.5px;margin:14px 0 4px">成功率マトリクス: 距離×海域の成功率マトリクス</h4>
 <p>現在のフェーズ計画の構造を保ったまま、station（最初の行き先）だけを母港からの方位に沿って
 5/10/20/30/50/75/100/150nm へ動かし（測地計算による直接指定）、距離ごとに
@@ -6966,7 +6972,7 @@ if (typeof module !== 'undefined') module.exports = USV;
       const nv = { w: GEOVIEW.w*factor, h: GEOVIEW.h*factor };
       nv.x = p.x - fx*nv.w; nv.y = p.y - fy*nv.h;
       GEOVIEW = geoClamp(nv);
-      applyGeoViewBox();
+      drawMap();   // 修正版: ズーム倍率が変わるため記号・文字のサイズ（zoomScale）を再計算して引き直す
     }, { passive:false });
     const pointers = new Map();
     let dragStart = null;   // { view, sx, sy } 単指ドラッグ
@@ -6993,7 +6999,7 @@ if (typeof module !== 'undefined') module.exports = USV;
         const fx=(pinchStart.mid.x-pinchStart.view.x)/pinchStart.view.w, fy=(pinchStart.mid.y-pinchStart.view.y)/pinchStart.view.h;
         nv.x = pinchStart.mid.x - fx*nv.w; nv.y = pinchStart.mid.y - fy*nv.h;
         GEOVIEW = geoClamp(nv);
-        applyGeoViewBox();
+        drawMap();   // 修正版: ピンチもズーム倍率が変わるため引き直す
       } else if (pointers.size === 1 && dragStart){
         const r = svg.getBoundingClientRect();
         const dx = (ev.clientX-dragStart.sx)/r.width*dragStart.view.w;
@@ -7013,9 +7019,47 @@ if (typeof module !== 'undefined') module.exports = USV;
     svg.addEventListener('dblclick', ev => {
       ev.preventDefault();
       GEOVIEW = Object.assign({}, GEO_BASE_VB);
-      applyGeoViewBox();
+      drawMap();   // 修正版: 等倍に戻るため記号・文字のサイズも引き直す
     });
   })();
+  // 現在の地図ズーム倍率の逆数（1＝等倍・拡大するほど小さくなる）。記号・文字・波パッチのサイズに掛けて
+  // 画面上のピクセルサイズを一定に保つ（ズームに追従して肥大化させない・修正版）。
+  function zoomScale(){ return Math.max(0.12, Math.min(1, GEOVIEW.w/GEO_BASE_VB.w)); }
+  // 海象帯ごとの静的な波アイコン（A7）: 峰線3本・濃さ∝Hs（画面上サイズはズームに依らず一定）
+  function waveHsIcon(x,y,hs){
+    if(hs==null) return '';
+    const zs=zoomScale();
+    const opac=Math.max(0.4,Math.min(0.85,0.25+hs/7*0.55));
+    const w=13*zs, dy=3.2*zs, sw=Math.max(0.9,1*zs);
+    let s='';
+    for(let k=0;k<3;k++){
+      const yy=y+k*dy;
+      s+=`<line x1="${x.toFixed(1)}" y1="${yy.toFixed(1)}" x2="${(x+w).toFixed(1)}" y2="${yy.toFixed(1)}" stroke="var(--s1)" stroke-width="${sw.toFixed(2)}" opacity="${opac.toFixed(2)}"/>`;
+    }
+    return s;
+  }
+  // 艇の周りの波パッチ（A7・再生レイヤ）: 進行方向に直交する峰線5本を前方に描く。母船搬送中は呼ばれない。
+  // 間隔 ∝ 周期（Tp 5s→10px・13s→26px）・濃さと太さ ∝ 有義波高（下限を設けて低波高でも視認できるようにする）。
+  // 位相 PB.wavePhase は再生中のみ進む。画面上サイズはズームに依らず一定（zoomScale で相殺）。
+  // 呼び出し側（艇の <g translate…rotate…scale(zoomScale)>）が既にズーム相殺の scale を掛けているため、
+  // ここではズーム非依存の基準サイズだけを扱う（多重にスケールしない）。
+  function waveGroupSVG(pl){
+    if(!pl || pl.kind==='carry' || pl.Hs==null || pl.Tp==null) return '';
+    const lambda=Math.max(6,Math.min(40, 10+(pl.Tp-5)/8*16));
+    const opac=Math.max(0.4,Math.min(0.85, 0.32+pl.Hs/7*0.5));       // 低波高でも視認できる下限0.4
+    const sw=Math.max(0.9,Math.min(3.2, 0.9+pl.Hs/7*2.2));           // 下限0.9px
+    const halfW=25, phase=(PB.wavePhase||0)%lambda;
+    let lines='';
+    for(let k=0;k<5;k++){
+      const yy=-8-phase-k*lambda;
+      lines+=`<line x1="${-halfW}" y1="${yy.toFixed(1)}" x2="${halfW}" y2="${yy.toFixed(1)}" stroke="var(--s1)" stroke-width="${sw.toFixed(2)}" opacity="${opac.toFixed(2)}"/>`;
+    }
+    const ay0=-8-lambda*2.4, ay1=-8-lambda*0.6;
+    const arrow=`<line x1="0" y1="${ay0.toFixed(1)}" x2="0" y2="${ay1.toFixed(1)}" stroke="var(--ink)" stroke-width="1.3" opacity="0.9"/>`+
+      `<polygon points="0,${(ay1+4).toFixed(1)} -3,${(ay1-2).toFixed(1)} 3,${(ay1-2).toFixed(1)}" fill="var(--ink)" opacity="0.9"/>`+
+      `<text x="6" y="${((ay0+ay1)/2).toFixed(1)}" font-size="9.5" font-weight="600" fill="var(--ink)">波</text>`;
+    return `<g>${lines}${arrow}</g>`;
+  }
   function drawMap(){
     const svg=$('geo-map'); if(!svg || !USV.geo) return;
     const VW=1000, VH=640, pad=40;
@@ -7029,6 +7073,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     const layer=USV.geo.layers[layerName];
     const proj=makeProjector(layer.bbox, VW, VH, pad);
     const pxPerNm=proj.scale/(3440.065*Math.cos(portDef.lat*Math.PI/180));
+    const zs=zoomScale();   // 記号・文字の画面上サイズをズームに依らず一定に保つ係数（修正版）
 
     let svgLand='';
     for(const poly of layer.polys) svgLand+=`<path d="${polyPath(poly,proj)}" fill="var(--line2)" stroke="var(--line)" stroke-width="0.8" fill-rule="evenodd"/>`;
@@ -7038,7 +7083,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     [10,50,150].forEach(nm=>{
       const rr=nm*pxPerNm;
       rings+=`<circle cx="${pcx.toFixed(1)}" cy="${pcy.toFixed(1)}" r="${rr.toFixed(1)}" fill="none" stroke="var(--faint)" stroke-width="0.8" stroke-dasharray="3,3"/>`;
-      rings+=`<text x="${(pcx+4).toFixed(1)}" y="${(pcy-rr+11).toFixed(1)}" font-size="9.5" fill="var(--muted)">${nm}nm</text>`;
+      rings+=`<text x="${(pcx+4*zs).toFixed(1)}" y="${(pcy-rr+11*zs).toFixed(1)}" font-size="${(9.5*zs).toFixed(1)}" fill="var(--muted)">${nm}nm</text>`;
     });
 
     let legs='';
@@ -7053,24 +7098,29 @@ if (typeof module !== 'undefined') module.exports = USV;
           legs+=`<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" `+
             `stroke="${isCarry?'var(--muted)':'var(--ink)'}" stroke-width="${isCarry?2:1.6}"${isCarry?' stroke-dasharray="6,4"':''}/>`;
           const mx=(x0+x1)/2, my=(y0+y1)/2;
-          legs+=`<text x="${(mx+4).toFixed(1)}" y="${(my-4).toFixed(1)}" font-size="9" fill="var(--muted)">${zoneCatText(sl.zone,sl.catalog)}</text>`;
+          legs+=`<text x="${(mx+4*zs).toFixed(1)}" y="${(my-4*zs).toFixed(1)}" font-size="${(9*zs).toFixed(1)}" fill="var(--muted)">${zoneCatText(sl.zone,sl.catalog)}</text>`;
           // 帯境界の小さな目盛り（区間の始点。最初の sub-leg は母港/前フェーズ終端と重なるので省略・M1）
-          if(si>0) legs+=`<circle cx="${x0.toFixed(1)}" cy="${y0.toFixed(1)}" r="2" fill="var(--bg)" stroke="var(--ink)" stroke-width="1"/>`;
+          if(si>0) legs+=`<circle cx="${x0.toFixed(1)}" cy="${y0.toFixed(1)}" r="${(2*zs).toFixed(2)}" fill="var(--bg)" stroke="var(--ink)" stroke-width="${(1*zs).toFixed(2)}"/>`;
+          // 海象帯ごとの静的アイコン（A7）: 名目シナリオでその区間に割り当てられた Hs を峰線3本の濃さで示す
+          if(si===0 && !isCarry){
+            const plHs = PB.nom && PB.nom.phaseLog && PB.nom.phaseLog[i] ? PB.nom.phaseLog[i].Hs : null;
+            legs += waveHsIcon(mx+4*zs, my+2*zs, plHs);
+          }
         });
       } else {
         const [x1,y1]=proj(r.to.lon,r.to.lat);
         const key=Math.round(x1/4)+'_'+Math.round(y1/4);
         const n=stackAt.get(key)||0; stackAt.set(key,n+1);
-        const ty=y1+3+n*13;
-        legs+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="4.5" fill="var(--s1)" stroke="var(--bg)" stroke-width="1"/>`;
-        legs+=`<text x="${(x1+7).toFixed(1)}" y="${ty.toFixed(1)}" font-size="9.5" fill="var(--ink)">${ph.name}（${fmt(ph.days,0)}日）</text>`;
+        const ty=y1+(3+n*13)*zs;
+        legs+=`<circle cx="${x1.toFixed(1)}" cy="${y1.toFixed(1)}" r="${(4.5*zs).toFixed(2)}" fill="var(--s1)" stroke="var(--bg)" stroke-width="${(1*zs).toFixed(2)}"/>`;
+        legs+=`<text x="${(x1+7*zs).toFixed(1)}" y="${ty.toFixed(1)}" font-size="${(9.5*zs).toFixed(1)}" fill="var(--ink)">${ph.name}（${fmt(ph.days,0)}日）</text>`;
       }
     });
 
     let marks='';
-    USV.GEO_DEST.forEach(d=>{ const [x,y]=proj(d.lon,d.lat); marks+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.4" fill="var(--faint)"/>`; });
-    marks+=`<circle cx="${pcx.toFixed(1)}" cy="${pcy.toFixed(1)}" r="5" fill="var(--s2)" stroke="var(--bg)" stroke-width="1.4"/>`;
-    marks+=`<text x="${(pcx+7).toFixed(1)}" y="${(pcy-6).toFixed(1)}" font-size="10.5" font-weight="600" fill="var(--ink)">${portDef.name}</text>`;
+    USV.GEO_DEST.forEach(d=>{ const [x,y]=proj(d.lon,d.lat); marks+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(2.4*zs).toFixed(2)}" fill="var(--faint)"/>`; });
+    marks+=`<circle cx="${pcx.toFixed(1)}" cy="${pcy.toFixed(1)}" r="${(5*zs).toFixed(2)}" fill="var(--s2)" stroke="var(--bg)" stroke-width="${(1.4*zs).toFixed(2)}"/>`;
+    marks+=`<text x="${(pcx+7*zs).toFixed(1)}" y="${(pcy-6*zs).toFixed(1)}" font-size="${(10.5*zs).toFixed(1)}" font-weight="600" fill="var(--ink)">${portDef.name}</text>`;
 
     applyGeoViewBox();
     svg.innerHTML = svgLand + rings + legs + marks + '<g id="geo-play-layer"></g>';
@@ -7080,6 +7130,8 @@ if (typeof module !== 'undefined') module.exports = USV;
       '<span><svg width="12" height="12" style="vertical-align:middle"><circle cx="6" cy="6" r="4.5" fill="var(--s1)"/></svg> 滞留</span>',
       '<span><svg width="12" height="12" style="vertical-align:middle"><circle cx="6" cy="6" r="5" fill="var(--s2)"/></svg> 母港</span>',
       '<span><svg width="12" height="12" style="vertical-align:middle"><circle cx="6" cy="6" r="2" fill="var(--bg)" stroke="var(--ink)" stroke-width="1"/></svg> 帯境界</span>',
+      '<span><svg width="18" height="10" style="vertical-align:middle"><line x1="0" y1="3" x2="18" y2="3" stroke="var(--s1)" stroke-width="1.4"/><line x1="0" y1="7" x2="18" y2="7" stroke="var(--s1)" stroke-width="1.4" opacity="0.5"/></svg> 波の峰線（間隔＝周期、濃さ＝波高。向かい波）</span>',
+      '<span><svg width="12" height="12" style="vertical-align:middle"><polygon points="6,1 10,10 2,10" fill="var(--muted)" stroke="var(--ink)" stroke-width="0.8"/></svg> 母船（搬送中／帰投・迎え）</span>',
     ].join('');
     const ovRange=$('geo-ov-range'); if(ovRange) ovRange.innerHTML =
       `表示範囲: ${LAYER_LABEL[layerName]}・破線円 10/50/150nm<br><span style="color:var(--muted)">${(GEO.zones||[]).map(z=>zoneCatShort(z.id,z.catalog)).join(' ／ ')}</span>`;
@@ -7096,7 +7148,7 @@ if (typeof module !== 'undefined') module.exports = USV;
   // ── 早回し再生（M2・設計書§12.6） ──
   // PB.nom: 再生対象（{trace,phaseLog,totalDays,ok,reason}）。既定は公称シナリオ、シナリオ一覧の「再生」で差し替える。
   // PB.positions: USV.tracePositions() の結果（trace と 1:1）。速力の時間積分で作った位置列。
-  const PB = { nom:null, positions:[], idx:0, playing:false, speed:1, raf:null, lastTs:0, targetDay:0 };
+  const PB = { nom:null, positions:[], idx:0, playing:false, speed:1, raf:null, lastTs:0, targetDay:0, wavePhase:0 };
   const STATUS_TXT = { transit:'航行中', carry:'母船搬送' };
   function pbSetSource(nom){
     PB.playing=false; if(PB.raf){ cancelAnimationFrame(PB.raf); PB.raf=null; }
@@ -7149,31 +7201,113 @@ if (typeof module !== 'undefined') module.exports = USV;
     const dStep = tmax>60?20:(tmax>20?10:5);
     ctx.textAlign='center';
     for(let d=0; d<=tmax; d+=dStep){ ctx.fillText(d+'日', x(d), H-Bm+14); }
+    // A9: カーソル位置までだけ実線で描き、先は描かない（軸・目盛・帯は上ですでに全部描いてある）
+    const upTo = cursorDay==null ? Infinity : cursorDay;
     ctx.strokeStyle=css(opts.colorVar); ctx.lineWidth=1.8; ctx.beginPath();
-    tr.forEach((q,i)=>{ const px=x(q.d), py=y(opts.valueFn(q)); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke();
+    let started=false, lastPt=null;
+    tr.forEach(q=>{
+      if (q.d>upTo) return;
+      const px=x(q.d), py=y(opts.valueFn(q));
+      if (started) ctx.lineTo(px,py); else { ctx.moveTo(px,py); started=true; }
+      lastPt = q;
+    });
+    ctx.stroke();
+    // 先読み: 「先を薄く表示」時のみ、未来側を極薄で描く（境界で前の実線と連続させる）
+    if (cursorDay != null && opts.lookahead){
+      ctx.save(); ctx.globalAlpha=0.12;
+      ctx.strokeStyle=css(opts.colorVar); ctx.lineWidth=1.8; ctx.beginPath();
+      let started2=false;
+      if (lastPt){ ctx.moveTo(x(lastPt.d), y(opts.valueFn(lastPt))); started2=true; }
+      tr.forEach(q=>{
+        if (q.d<upTo) return;
+        const px=x(q.d), py=y(opts.valueFn(q));
+        if (started2) ctx.lineTo(px,py); else { ctx.moveTo(px,py); started2=true; }
+      });
+      ctx.stroke(); ctx.restore();
+    }
     if (cursorDay != null){
       ctx.strokeStyle=css('--s2'); ctx.lineWidth=1.4; ctx.beginPath();
       const cx=x(Math.min(cursorDay,tmax)); ctx.moveTo(cx,T); ctx.lineTo(cx,H-Bm); ctx.stroke();
     }
   }
   function pbDrawTimeSeries(nom, cursorDay){
+    const lookahead = !!($('pb-lookahead') && $('pb-lookahead').checked);
     pbTsPanel($('pb-c-soc'), nom, cursorDay, { valueFn:q=>q.soc, yMax:1, yStep:0.25,
-      tickFmt:g=>Math.round(g*100)+'%', label:'SOC [%]', colorVar:'--ink-chart' });
+      tickFmt:g=>Math.round(g*100)+'%', label:'SOC [%]', colorVar:'--ink-chart', lookahead });
     pbTsPanel($('pb-c-spd'), nom, cursorDay, { valueFn:q=>q.Vkt, yMax:5, yStep:1,
-      tickFmt:g=>String(g), label:'速力 [kt]', colorVar:'--s1' });
+      tickFmt:g=>String(g), label:'速力 [kt]', colorVar:'--s1', lookahead });
+  }
+  // 母船搬送フェーズ（kind=carry）を連続区間ごとにまとめる（A8）。i0/i1=phaseLog index・d0/d1=区間の日数境界
+  function carryGroups(phaseLog){
+    const groups=[]; let d=0;
+    for(let i=0;i<phaseLog.length;i++){
+      const p=phaseLog[i], d0=d; d+=p.days; const d1=d;
+      if(p.kind==='carry'){
+        const g=groups[groups.length-1];
+        if(g && g.i1===i-1){ g.i1=i; g.d1=d1; g.to=p.to; }
+        else groups.push({ i0:i, i1:i, d0, d1, from:p.from, to:p.to });
+      }
+    }
+    return groups;
+  }
+  // 母船搬送フェーズ以外の時刻で、直近の搬送区間の帰投（母港へ引き返す）・これから始まる搬送区間の
+  // 迎え（母港から出迎える）に該当すれば、母船の位置と参照点・方位を返す（A8・表示層のみの位置計算）。
+  function motherFetchOrReturn(nom, curDay){
+    if(!nom || !nom.phaseLog || !LASTMAP) return null;
+    const portDef = LASTMAP.portDef, carryKt = Math.max(1, GEO.carryKt||10);
+    for(const grp of carryGroups(nom.phaseLog)){
+      const retNm = USV.gcNm(grp.to, portDef), retDays = retNm/carryKt/24;
+      if(curDay>grp.d1 && curDay<=grp.d1+retDays){
+        const f=(curDay-grp.d1)/Math.max(retDays,1e-6);
+        const p=USV.slerpPoint(grp.to,portDef,f);
+        return { lat:p.lat, lon:p.lon, from0:grp.to, bearing:USV.bearingDeg(grp.to,portDef), mode:'return' };
+      }
+      const outNm = USV.gcNm(portDef, grp.from);
+      if(outNm>2){
+        const outDays=outNm/carryKt/24;
+        if(curDay>=grp.d0-outDays && curDay<grp.d0){
+          const f=(curDay-(grp.d0-outDays))/Math.max(outDays,1e-6);
+          const p=USV.slerpPoint(portDef,grp.from,f);
+          return { lat:p.lat, lon:p.lon, from0:portDef, bearing:USV.bearingDeg(portDef,grp.from), mode:'fetch' };
+        }
+      }
+    }
+    return null;
+  }
+  // 母船の記号（艇より大きい船形。搬送中は艇の位置に重ね、帰投／迎えは独立に位置を動かす。A8）
+  // 修正版: ズームに依らず画面上サイズが一定になるよう scale(zoomScale) を rotate の後段に掛ける
+  function shipPolygonSVG(x,y,bearing,zs){
+    return `<g transform="translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${(bearing||0).toFixed(1)}) scale(${zs.toFixed(3)})">`+
+      `<polygon points="0,-14 8,10 -8,10" fill="var(--muted)" stroke="var(--ink)" stroke-width="1"/></g>`;
+  }
+  function motherShipOverlay(nom, pos, pl, proj, zs){
+    if(pl && pl.kind==='carry'){
+      const [x,y]=proj(pos.lon,pos.lat);
+      return shipPolygonSVG(x,y,pos.bearing,zs);
+    }
+    const mo = motherFetchOrReturn(nom, pos.d);
+    if(!mo) return '';
+    const [mx,my]=proj(mo.lon,mo.lat), [ox,oy]=proj(mo.from0.lon,mo.from0.lat);
+    const trail = `<line x1="${ox.toFixed(1)}" y1="${oy.toFixed(1)}" x2="${mx.toFixed(1)}" y2="${my.toFixed(1)}" stroke="var(--faint)" stroke-width="${Math.max(0.6,1*zs).toFixed(2)}" stroke-dasharray="3,3"/>`;
+    return trail + shipPolygonSVG(mx,my,mo.bearing,zs);
   }
   function pbDrawOverlay(pos){
     const g = document.getElementById('geo-play-layer'); if(!g) return;
     if(!LASTMAP || !pos || pos.lat==null){ g.innerHTML=''; return; }
     const proj = LASTMAP.proj;
+    const zs = zoomScale();   // 修正版: 記号の画面上サイズをズームに依らず一定に保つ
     const pts=[];
     for(let i=0;i<=PB.idx;i++){ const q=PB.positions[i]; if(q && q.lat!=null) pts.push(proj(q.lon,q.lat)); }
     const trail = pts.length>1
-      ? `<polyline points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="1.2" opacity="0.65"/>` : '';
+      ? `<polyline points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="${Math.max(0.6,1.2*zs).toFixed(2)}" opacity="0.65"/>` : '';
     const [bx,by]=proj(pos.lon,pos.lat);
-    const boat = `<g transform="translate(${bx.toFixed(1)},${by.toFixed(1)}) rotate(${(pos.bearing||0).toFixed(1)})">`+
-      `<polygon points="0,-6.5 4.2,5 -4.2,5" fill="var(--s2)" stroke="var(--bg)" stroke-width="0.9"/></g>`;
-    g.innerHTML = trail + boat;
+    const nom = PB.nom;
+    const pl = nom && nom.phaseLog ? nom.phaseLog[pos.phaseIdx] : null;
+    const mother = motherShipOverlay(nom, pos, pl, proj, zs);
+    const waveHtml = waveGroupSVG(pl);
+    const boat = `<g transform="translate(${bx.toFixed(1)},${by.toFixed(1)}) rotate(${(pos.bearing||0).toFixed(1)}) scale(${zs.toFixed(3)})">`+
+      waveHtml + `<polygon points="0,-6.5 4.2,5 -4.2,5" fill="var(--s2)" stroke="var(--bg)" stroke-width="0.9"/></g>`;
+    g.innerHTML = trail + mother + boat;
   }
   function pbRenderFrame(){
     const nom = PB.nom, pos = PB.positions[PB.idx];
@@ -7219,6 +7353,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     if(!PB.lastTs) PB.lastTs = ts;
     const dtSec = Math.min(0.25,(ts-PB.lastTs)/1000); PB.lastTs = ts;
     PB.targetDay += dtSec * PB.speed;
+    PB.wavePhase = (PB.wavePhase||0) + dtSec*18*PB.speed;   // A7: 峰線が艇へ向かって流れる位相（停止中は更新しない＝静止）
     while (PB.idx < PB.positions.length-1 && PB.positions[PB.idx+1].d <= PB.targetDay) PB.idx++;
     pbRenderFrame();
     if (PB.idx >= PB.positions.length-1){
@@ -7238,6 +7373,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     $('pb-play').textContent='▶ 再生'; pbRenderFrame();
   });
   if ($('pb-speed')) $('pb-speed').addEventListener('change', ()=>{ PB.speed = +$('pb-speed').value || 1; });
+  if ($('pb-lookahead')) $('pb-lookahead').addEventListener('change', ()=>{ pbDrawTimeSeries(PB.nom, PB.positions[PB.idx] ? PB.positions[PB.idx].d : null); });
   if ($('pb-scrub')) $('pb-scrub').addEventListener('input', ()=>{
     PB.idx = +$('pb-scrub').value; PB.playing=false; if(PB.raf){ cancelAnimationFrame(PB.raf); PB.raf=null; }
     $('pb-play').textContent='▶ 再生'; pbRenderFrame();
