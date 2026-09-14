@@ -671,7 +671,7 @@
   <span class="geo-zones-inline" id="geo-zones-inline"></span>
 </div>
 <div class="geo-wrap">
-  <svg id="geo-map" viewBox="0 0 1000 640" preserveAspectRatio="xMinYMid meet"
+  <svg id="geo-map" viewBox="0 0 1000 640" preserveAspectRatio="xMidYMid slice"
        role="img" aria-label="航路図（母港・目的地・距離帯・フェーズ経路・早回し再生の状態オーバーレイ。ホイール／ピンチで拡大縮小、ドラッグで移動、ダブルクリックでリセット）"></svg>
   <div class="geo-ov geo-ov-tr" id="geo-ov-hud">
     <div id="pb-date">—</div>
@@ -3484,7 +3484,7 @@ const USV = (function(){
     if (!trace || !trace.length || !phaseLog || !phaseLog.length) return [];
     let dAcc = 0;
     const bounds = phaseLog.map(pl => { const d0 = dAcc; dAcc += pl.days; return { d0, d1: dAcc, ph: pl }; });
-    let j = 0, localNm = 0, cumNm = 0, lastD = null, lastVkt = 0;
+    let j = 0, localNm = 0, cumNm = 0, lastD = null, lastVkt = 0, lastBearing = null;
     const out = [];
     for (let i = 0; i < trace.length; i++){
       const q = trace[i];
@@ -3494,15 +3494,20 @@ const USV = (function(){
         if (dtDays > 0){ const dnm = lastVkt * dtDays * 24; localNm += dnm; cumNm += dnm; }
       }
       const pl = bounds[j].ph;
-      let lat = null, lon = null, bearing = 0;
+      let lat = null, lon = null, bearing = lastBearing;
       if ((pl.kind === 'transit' || pl.kind === 'carry') && pl.from && pl.to){
         const f = Math.max(0, Math.min(1, localNm / Math.max(pl.nm, 1e-6)));
         const pos = slerpPoint(pl.from, pl.to, f);
         lat = pos.lat; lon = pos.lon; bearing = bearingDeg(pl.from, pl.to);
+        lastBearing = bearing;
       } else if (pl.to){ lat = pl.to.lat; lon = pl.to.lon; }
       out.push({ d: q.d, soc: q.soc, Vkt: q.Vkt, lat, lon, bearing, phaseIdx: j, cumNm });
       lastD = q.d; lastVkt = q.Vkt;
     }
+    // 滞留が先頭に来る場合（直前の航走フェーズが無い）は、後続の最初の航走フェーズの方位で埋める
+    let fillBearing = 0;
+    for (let i = 0; i < out.length; i++){ if (out[i].bearing !== null){ fillBearing = out[i].bearing; break; } }
+    for (let i = 0; i < out.length; i++){ if (out[i].bearing === null) out[i].bearing = fillBearing; }
     return out;
   }
 
@@ -6942,6 +6947,15 @@ if (typeof module !== 'undefined') module.exports = USV;
     return 'japan';
   }
   const LAYER_LABEL={sagami:'相模湾拡大',kanto:'関東沿岸',japan:'日本近海'};
+  // A15-2: 母港・目的地の緯度経度から初期表示の枠（bbox）を作る。母港が枠の左上寄りに収まり、
+  // 右・下に開けた海が残るよう左・上の余白を小さく、右・下の余白を大きく取る。
+  function routeBBox(pts){
+    let lon0=Infinity,lat0=Infinity,lon1=-Infinity,lat1=-Infinity;
+    pts.forEach(p=>{ lon0=Math.min(lon0,p.lon); lon1=Math.max(lon1,p.lon); lat0=Math.min(lat0,p.lat); lat1=Math.max(lat1,p.lat); });
+    const dlon=Math.max(lon1-lon0, 0.5), dlat=Math.max(lat1-lat0, 0.5);
+    const padL=dlon*0.20, padR=dlon*1.10, padT=dlat*0.30, padB=dlat*0.30;
+    return [lon0-padL, lat0-padB, lon1+padR, lat1+padT];
+  }
   // ── 航路図: 拡大縮小・移動（フェーズE・viewBox操作のみ・外部ライブラリ不可） ──
   const GEO_BASE_VB = {x:0,y:0,w:1000,h:640};
   let GEOVIEW = Object.assign({}, GEO_BASE_VB);
@@ -6950,11 +6964,14 @@ if (typeof module !== 'undefined') module.exports = USV;
     svg.setAttribute('viewBox', `${GEOVIEW.x.toFixed(2)} ${GEOVIEW.y.toFixed(2)} ${GEOVIEW.w.toFixed(2)} ${GEOVIEW.h.toFixed(2)}`);
   }
   function geoClamp(v){
+    // 空白防止（A15-2）: viewBox は常に海矩形（GEO_BASE_VB＝0,0,1000,640）の内側に収める。
+    // ズーム・パンのどちらでも枠の外＝海矩形の外へ出ないようクランプするため、拡大側だけでなく
+    // パン側にも「陸データの範囲」ではなく「海矩形の範囲」を使う。
     const minW = GEO_BASE_VB.w/12, maxW = GEO_BASE_VB.w;
     v.w = Math.max(minW, Math.min(maxW, v.w));
     v.h = v.w * (GEO_BASE_VB.h/GEO_BASE_VB.w);
-    v.x = Math.max(GEO_BASE_VB.x - GEO_BASE_VB.w*0.5, Math.min(GEO_BASE_VB.x+GEO_BASE_VB.w - v.w + GEO_BASE_VB.w*0.5, v.x));
-    v.y = Math.max(GEO_BASE_VB.y - GEO_BASE_VB.h*0.5, Math.min(GEO_BASE_VB.y+GEO_BASE_VB.h - v.h + GEO_BASE_VB.h*0.5, v.y));
+    v.x = Math.max(GEO_BASE_VB.x, Math.min(GEO_BASE_VB.x+GEO_BASE_VB.w - v.w, v.x));
+    v.y = Math.max(GEO_BASE_VB.y, Math.min(GEO_BASE_VB.y+GEO_BASE_VB.h - v.h, v.y));
     return v;
   }
   (function setupGeoZoomPan(){
@@ -7025,24 +7042,34 @@ if (typeof module !== 'undefined') module.exports = USV;
   // 現在の地図ズーム倍率の逆数（1＝等倍・拡大するほど小さくなる）。記号・文字・波パッチのサイズに掛けて
   // 画面上のピクセルサイズを一定に保つ（ズームに追従して肥大化させない・修正版）。
   function zoomScale(){ return Math.max(0.12, Math.min(1, GEOVIEW.w/GEO_BASE_VB.w)); }
-  // 海象帯ごとの静的な波アイコン（A7）: 峰線3本・濃さ∝Hs（画面上サイズはズームに依らず一定）
+  // 波の峰線 1 本の弧パス（A15-4）: 進行方向（-y）に凸な緩い弧。半径は幅（2*halfW）の1.5倍程度。
+  // 正確な円弧でなく二次ベジエで近似（見た目の「緩さ」のみが要件のため十分）。中心 (cx,yy) を基準に置く。
+  function wavePeakArcPath(cx, yy, halfW){
+    const r = halfW*2*1.5;
+    const sagitta = r - Math.sqrt(Math.max(0, r*r - halfW*halfW));
+    const bulge = sagitta*2;             // 二次ベジエの中点変位 ≈ 制御点変位の半分
+    return `M ${(cx-halfW).toFixed(1)},${yy.toFixed(1)} Q ${cx.toFixed(1)},${(yy-bulge).toFixed(1)} ${(cx+halfW).toFixed(1)},${yy.toFixed(1)}`;
+  }
+  // 海象帯ごとの静的な波アイコン（A7・A15-4）: 弧3本・濃さ∝Hs（画面上サイズはズームに依らず一定）
   function waveHsIcon(x,y,hs){
     if(hs==null) return '';
     const zs=zoomScale();
     const opac=Math.max(0.4,Math.min(0.85,0.25+hs/7*0.55));
-    const w=13*zs, dy=3.2*zs, sw=Math.max(0.9,1*zs);
+    const halfW=6.5*zs, dy=3.2*zs, sw=Math.max(0.9,1*zs), cx=x+halfW;
     let s='';
     for(let k=0;k<3;k++){
       const yy=y+k*dy;
-      s+=`<line x1="${x.toFixed(1)}" y1="${yy.toFixed(1)}" x2="${(x+w).toFixed(1)}" y2="${yy.toFixed(1)}" stroke="var(--s1)" stroke-width="${sw.toFixed(2)}" opacity="${opac.toFixed(2)}"/>`;
+      s+=`<path d="${wavePeakArcPath(cx,yy,halfW)}" fill="none" stroke="var(--s1)" stroke-width="${sw.toFixed(2)}" opacity="${opac.toFixed(2)}"/>`;
     }
     return s;
   }
-  // 艇の周りの波パッチ（A7・再生レイヤ）: 進行方向に直交する峰線5本を前方に描く。母船搬送中は呼ばれない。
+  // 艇の周りの波パッチ（A7・再生レイヤ・A15-4で弧に刷新）: 進行方向に直交する峰線7本を前方に描く。
   // 間隔 ∝ 周期（Tp 5s→10px・13s→26px）・濃さと太さ ∝ 有義波高（下限を設けて低波高でも視認できるようにする）。
-  // 位相 PB.wavePhase は再生中のみ進む。画面上サイズはズームに依らず一定（zoomScale で相殺）。
+  // 外側（艇から遠い＝kが大きい）ほどフェードして薄くする。母船搬送中は呼ばれない。
+  // 位相 PB.wavePhase は再生中は等倍、停止中も 1/4 速度で進み続ける（「海が動いている」体感・A15-4）。
   // 呼び出し側（艇の <g translate…rotate…scale(zoomScale)>）が既にズーム相殺の scale を掛けているため、
   // ここではズーム非依存の基準サイズだけを扱う（多重にスケールしない）。
+  const N_WAVE_LINES = 7;
   function waveGroupSVG(pl){
     if(!pl || pl.kind==='carry' || pl.Hs==null || pl.Tp==null) return '';
     const lambda=Math.max(6,Math.min(40, 10+(pl.Tp-5)/8*16));
@@ -7050,14 +7077,16 @@ if (typeof module !== 'undefined') module.exports = USV;
     const sw=Math.max(0.9,Math.min(3.2, 0.9+pl.Hs/7*2.2));           // 下限0.9px
     const halfW=25, phase=(PB.wavePhase||0)%lambda;
     let lines='';
-    for(let k=0;k<5;k++){
+    for(let k=0;k<N_WAVE_LINES;k++){
       const yy=-8-phase-k*lambda;
-      lines+=`<line x1="${-halfW}" y1="${yy.toFixed(1)}" x2="${halfW}" y2="${yy.toFixed(1)}" stroke="var(--s1)" stroke-width="${sw.toFixed(2)}" opacity="${opac.toFixed(2)}"/>`;
+      const fade=Math.max(0.15, 1-k*(0.85/(N_WAVE_LINES-1)));        // 外側ほど薄く
+      lines+=`<path d="${wavePeakArcPath(0,yy,halfW)}" fill="none" stroke="var(--s1)" stroke-width="${Math.max(0.5,sw*fade).toFixed(2)}" opacity="${(opac*fade).toFixed(2)}"/>`;
     }
-    const ay0=-8-lambda*2.4, ay1=-8-lambda*0.6;
+    // 波向矢印: 峰線の外側（根元・ラベル位置）から艇へ向かう1本
+    const ay0=-8-lambda*(N_WAVE_LINES-0.6), ay1=-8-lambda*0.6;
     const arrow=`<line x1="0" y1="${ay0.toFixed(1)}" x2="0" y2="${ay1.toFixed(1)}" stroke="var(--ink)" stroke-width="1.3" opacity="0.9"/>`+
       `<polygon points="0,${(ay1+4).toFixed(1)} -3,${(ay1-2).toFixed(1)} 3,${(ay1-2).toFixed(1)}" fill="var(--ink)" opacity="0.9"/>`+
-      `<text x="6" y="${((ay0+ay1)/2).toFixed(1)}" font-size="9.5" font-weight="600" fill="var(--ink)">波</text>`;
+      `<text x="6" y="${(ay0+3).toFixed(1)}" font-size="9.5" font-weight="600" fill="var(--ink)">波</text>`;
     return `<g>${lines}${arrow}</g>`;
   }
   function drawMap(){
@@ -7071,11 +7100,16 @@ if (typeof module !== 'undefined') module.exports = USV;
     if(route) route.forEach(r=>{ pts.push(r.from); pts.push(r.to); }); else USV.GEO_DEST.forEach(d=>pts.push(d));
     const layerName=pickLayerName(pts);
     const layer=USV.geo.layers[layerName];
-    const proj=makeProjector(layer.bbox, VW, VH, pad);
+    // A15-2: 初期表示（＝ズーム下限）は「陸データ全体」ではなく「今回のミッションの航路」に合わせて
+    // 枠取りする（母港が枠の左上寄りに来て、右・下に開けた海が残る構図。陸ポリゴンは layer のまま使う）。
+    const routeBb = routeBBox(pts);
+    const proj=makeProjector(routeBb, VW, VH, pad);
     const pxPerNm=proj.scale/(3440.065*Math.cos(portDef.lat*Math.PI/180));
     const zs=zoomScale();   // 記号・文字の画面上サイズをズームに依らず一定に保つ係数（修正版）
 
-    let svgLand='';
+    // 空白防止（A15-2）: viewBox 全面（海矩形）を薄い海色で敷いてから陸ポリゴンを重ねる。
+    // geoClamp が viewBox をこの矩形の内側に固定するため、どのズーム・パン位置でも枠の内側は必ず埋まる。
+    let svgLand=`<rect x="${GEO_BASE_VB.x}" y="${GEO_BASE_VB.y}" width="${GEO_BASE_VB.w}" height="${GEO_BASE_VB.h}" fill="rgba(42,120,214,0.06)"/>`;
     for(const poly of layer.polys) svgLand+=`<path d="${polyPath(poly,proj)}" fill="var(--line2)" stroke="var(--line)" stroke-width="0.8" fill-rule="evenodd"/>`;
 
     let rings='';
@@ -7130,7 +7164,7 @@ if (typeof module !== 'undefined') module.exports = USV;
       '<span><svg width="12" height="12" style="vertical-align:middle"><circle cx="6" cy="6" r="4.5" fill="var(--s1)"/></svg> 滞留</span>',
       '<span><svg width="12" height="12" style="vertical-align:middle"><circle cx="6" cy="6" r="5" fill="var(--s2)"/></svg> 母港</span>',
       '<span><svg width="12" height="12" style="vertical-align:middle"><circle cx="6" cy="6" r="2" fill="var(--bg)" stroke="var(--ink)" stroke-width="1"/></svg> 帯境界</span>',
-      '<span><svg width="18" height="10" style="vertical-align:middle"><line x1="0" y1="3" x2="18" y2="3" stroke="var(--s1)" stroke-width="1.4"/><line x1="0" y1="7" x2="18" y2="7" stroke="var(--s1)" stroke-width="1.4" opacity="0.5"/></svg> 波の峰線（間隔＝周期、濃さ＝波高。向かい波）</span>',
+      '<span><svg width="18" height="10" style="vertical-align:middle"><path d="M1,3 Q9,0.5 17,3" fill="none" stroke="var(--s1)" stroke-width="1.4"/><path d="M1,7.5 Q9,5.5 17,7.5" fill="none" stroke="var(--s1)" stroke-width="1.4" opacity="0.5"/></svg> 波の峰線（弧の向き＝進行方向、間隔＝周期、濃さ＝波高。向かい波）</span>',
       '<span><svg width="12" height="12" style="vertical-align:middle"><polygon points="6,1 10,10 2,10" fill="var(--muted)" stroke="var(--ink)" stroke-width="0.8"/></svg> 母船（搬送中／帰投・迎え）</span>',
     ].join('');
     const ovRange=$('geo-ov-range'); if(ovRange) ovRange.innerHTML =
@@ -7274,11 +7308,34 @@ if (typeof module !== 'undefined') module.exports = USV;
     }
     return null;
   }
+  // 船らしい船体形（船首が尖り船尾が平ら。上から見た形。L=全長・W=全幅、原点は船の中心、船首方向が -y）
+  function shipHullPoints(L,W){
+    const hb=L/2, hw=W/2;
+    return [
+      [0, -hb],
+      [hw*0.82, -hb+L*0.34],
+      [hw, hb-L*0.10],
+      [hw, hb],
+      [-hw, hb],
+      [-hw, hb-L*0.10],
+      [-hw*0.82, -hb+L*0.34],
+    ].map(pt=>pt[0].toFixed(1)+','+pt[1].toFixed(1)).join(' ');
+  }
   // 母船の記号（艇より大きい船形。搬送中は艇の位置に重ね、帰投／迎えは独立に位置を動かす。A8）
   // 修正版: ズームに依らず画面上サイズが一定になるよう scale(zoomScale) を rotate の後段に掛ける
-  function shipPolygonSVG(x,y,bearing,zs){
+  // A15-3: 三角形の記号を船体形に変更（母船は全長約34px、艇は22px。呼び出し側で L/W/fill/stroke を渡す）
+  function shipPolygonSVG(x,y,bearing,zs,L,W,fill,stroke){
+    L = L || 34; W = W || 14;
     return `<g transform="translate(${x.toFixed(1)},${y.toFixed(1)}) rotate(${(bearing||0).toFixed(1)}) scale(${zs.toFixed(3)})">`+
-      `<polygon points="0,-14 8,10 -8,10" fill="var(--muted)" stroke="var(--ink)" stroke-width="1"/></g>`;
+      `<polygon points="${shipHullPoints(L,W)}" fill="${fill||'var(--muted)'}" stroke="${stroke||'var(--ink)'}" stroke-width="1"/></g>`;
+  }
+  // 現在位置のレーダー風ハイライト（A15-3）: 艇を中心に同心円が 1.6s 周期で広がって消える。
+  // SVG <animate> による常時アニメーション（再生停止中も動く。JS の再生ループとは独立）。
+  function radarPulseSVG(){
+    return `<circle r="6" fill="none" stroke="var(--s2)" stroke-width="1.6">`+
+      `<animate attributeName="r" values="6;28" dur="1.6s" repeatCount="indefinite"/>`+
+      `<animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite"/>`+
+      `</circle>`;
   }
   function motherShipOverlay(nom, pos, pl, proj, zs){
     if(pl && pl.kind==='carry'){
@@ -7298,15 +7355,17 @@ if (typeof module !== 'undefined') module.exports = USV;
     const zs = zoomScale();   // 修正版: 記号の画面上サイズをズームに依らず一定に保つ
     const pts=[];
     for(let i=0;i<=PB.idx;i++){ const q=PB.positions[i]; if(q && q.lat!=null) pts.push(proj(q.lon,q.lat)); }
+    // A15-3: 航跡は --s2 の細線で、現状の灰色（--ink）より少し目立つ太さ・不透明度にする
     const trail = pts.length>1
-      ? `<polyline points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="var(--ink)" stroke-width="${Math.max(0.6,1.2*zs).toFixed(2)}" opacity="0.65"/>` : '';
+      ? `<polyline points="${pts.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="none" stroke="var(--s2)" stroke-width="${Math.max(0.8,1.6*zs).toFixed(2)}" opacity="0.75"/>` : '';
     const [bx,by]=proj(pos.lon,pos.lat);
     const nom = PB.nom;
     const pl = nom && nom.phaseLog ? nom.phaseLog[pos.phaseIdx] : null;
     const mother = motherShipOverlay(nom, pos, pl, proj, zs);
     const waveHtml = waveGroupSVG(pl);
+    // A15-3: 艇は船体形（長さ約22px・幅9px）＋現在位置のレーダー風ハイライトを常時表示
     const boat = `<g transform="translate(${bx.toFixed(1)},${by.toFixed(1)}) rotate(${(pos.bearing||0).toFixed(1)}) scale(${zs.toFixed(3)})">`+
-      waveHtml + `<polygon points="0,-6.5 4.2,5 -4.2,5" fill="var(--s2)" stroke="var(--bg)" stroke-width="0.9"/></g>`;
+      waveHtml + radarPulseSVG() + `<polygon points="${shipHullPoints(22,9)}" fill="var(--s2)" stroke="var(--bg)" stroke-width="0.9"/></g>`;
     g.innerHTML = trail + mother + boat;
   }
   function pbRenderFrame(){
@@ -7385,6 +7444,22 @@ if (typeof module !== 'undefined') module.exports = USV;
     }
   });
   window.__playbackMapUpdated = () => pbDrawOverlay(PB.positions[PB.idx]);
+
+  // A15-4: 再生停止中も波の峰線をごく低速（再生中の1/4）で流し続け、「海が動いている」感じを出す。
+  // 再生中は pbStep 側が位相を進めるので、ここでは PB.playing=false のときだけ足す。
+  (function waveIdleFlow(){
+    let lastTs=0;
+    function tick(ts){
+      if(!PB.playing && !document.hidden){
+        if(!lastTs) lastTs=ts;
+        const dtSec=Math.min(0.25,(ts-lastTs)/1000); lastTs=ts;
+        PB.wavePhase=(PB.wavePhase||0)+dtSec*18*0.25;
+        if(LASTMAP && PB.positions.length) pbDrawOverlay(PB.positions[PB.idx]);
+      } else { lastTs=0; }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
 
   // ── 厳しさの地図（M3・距離×海域の成功率マトリクス・設計書§12.6） ──
   const MX_D = [5,10,20,30,50,75,100,150];
