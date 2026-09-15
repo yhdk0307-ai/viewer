@@ -1,8 +1,9 @@
 {
  "project": {
   "id": "DGP-LIFE",
-  "title": "life graph",
-  "entry": "dir"
+  "title": "life リポジトリ構造マップ",
+  "entry": "overview",
+  "description": "life リポジトリの全体構造。AI と人間の共通認識図。ディレクトリ構成を変更したら必ずこの図（overlay）も更新する。編集: <viewer>/tools/diagram_drawer/?src=../../data/diagrams/life_graph.json"
  },
  "graph": {
   "nodes": [
@@ -15,7 +16,9 @@
      "path": "",
      "ext": "",
      "size": 0,
-     "role": null
+     "role": null,
+     "provenance": "human",
+     "description": "GitHub + Claude Code による個人 AI 駆動ライフマネジメント"
     }
    },
    {
@@ -82,8 +85,13 @@
      "path": ".claude",
      "ext": "",
      "size": 0,
-     "role": null
+     "role": null,
+     "provenance": "doc",
+     "description": "rules/（常時ルール）・skills/・agents/（検証エージェント等）"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "icon": "folder"
    },
    {
@@ -97,6 +105,9 @@
      "size": 0,
      "role": null
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/",
     "icon": "folder"
    },
@@ -111,6 +122,9 @@
      "size": 3349,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/agents/",
     "icon": "doc"
    },
@@ -125,6 +139,9 @@
      "size": 0,
      "role": null
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/",
     "icon": "folder"
    },
@@ -139,6 +156,9 @@
      "size": 1999,
      "role": null
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/hooks/"
    },
    {
@@ -152,6 +172,9 @@
      "size": 1648,
      "role": null
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/hooks/"
    },
    {
@@ -165,6 +188,9 @@
      "size": 1931,
      "role": null
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/hooks/"
    },
    {
@@ -178,6 +204,9 @@
      "size": 1160,
      "role": "config"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/",
     "icon": "tool"
    },
@@ -192,6 +221,9 @@
      "size": 0,
      "role": "rule"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/",
     "icon": "folder"
    },
@@ -206,6 +238,9 @@
      "size": 640,
      "role": "rule"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/rules/",
     "icon": "shield-check"
    },
@@ -220,6 +255,9 @@
      "size": 867,
      "role": "rule"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/rules/",
     "icon": "shield-check"
    },
@@ -234,6 +272,9 @@
      "size": 819,
      "role": "rule"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/rules/",
     "icon": "shield-check"
    },
@@ -248,6 +289,9 @@
      "size": 1120,
      "role": "rule"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/rules/",
     "icon": "shield-check"
    },
@@ -262,6 +306,9 @@
      "size": 11702,
      "role": "rule"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/rules/",
     "icon": "shield-check"
    },
@@ -276,6 +323,9 @@
      "size": 9445,
      "role": "rule"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/rules/",
     "icon": "shield-check"
    },
@@ -290,6 +340,9 @@
      "size": 634,
      "role": "rule"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/rules/",
     "icon": "shield-check"
    },
@@ -304,6 +357,9 @@
      "size": 662,
      "role": "rule"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/rules/",
     "icon": "shield-check"
    },
@@ -318,6 +374,9 @@
      "size": 458,
      "role": "rule"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/rules/",
     "icon": "shield-check"
    },
@@ -332,6 +391,9 @@
      "size": 508,
      "role": null
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/"
    },
    {
@@ -345,6 +407,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/",
     "icon": "folder"
    },
@@ -359,6 +424,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/",
     "icon": "folder"
    },
@@ -373,6 +441,9 @@
      "size": 1961,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/dev-planner/",
     "icon": "puzzle"
    },
@@ -387,6 +458,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/",
     "icon": "folder"
    },
@@ -401,6 +475,9 @@
      "size": 4921,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/diagram-engine/",
     "icon": "puzzle"
    },
@@ -415,6 +492,9 @@
      "size": 3835,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/diagram-engine/",
     "icon": "puzzle"
    },
@@ -429,6 +509,9 @@
      "size": 2864,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/diagram-engine/",
     "icon": "puzzle"
    },
@@ -443,6 +526,9 @@
      "size": 3676,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/diagram-engine/",
     "icon": "puzzle"
    },
@@ -457,6 +543,9 @@
      "size": 1441,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/diagram-engine/",
     "icon": "puzzle"
    },
@@ -471,6 +560,9 @@
      "size": 974,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/diagram-engine/",
     "icon": "puzzle"
    },
@@ -485,6 +577,9 @@
      "size": 3555,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/diagram-engine/",
     "icon": "puzzle"
    },
@@ -499,6 +594,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/",
     "icon": "folder"
    },
@@ -513,6 +611,9 @@
      "size": 3386,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/interactive-figure/",
     "icon": "puzzle"
    },
@@ -527,6 +628,9 @@
      "size": 8089,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/interactive-figure/",
     "icon": "puzzle"
    },
@@ -541,6 +645,9 @@
      "size": 2626,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/interactive-figure/",
     "icon": "puzzle"
    },
@@ -555,6 +662,9 @@
      "size": 3222,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/interactive-figure/",
     "icon": "puzzle"
    },
@@ -569,6 +679,9 @@
      "size": 3225,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/interactive-figure/",
     "icon": "puzzle"
    },
@@ -583,6 +696,9 @@
      "size": 830,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/interactive-figure/",
     "icon": "puzzle"
    },
@@ -597,6 +713,9 @@
      "size": 6210,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/interactive-figure/",
     "icon": "puzzle"
    },
@@ -611,6 +730,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/",
     "icon": "folder"
    },
@@ -625,6 +747,9 @@
      "size": 9045,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/learning-support/",
     "icon": "puzzle"
    },
@@ -639,6 +764,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/",
     "icon": "folder"
    },
@@ -653,6 +781,9 @@
      "size": 6492,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/manga/",
     "icon": "puzzle"
    },
@@ -667,6 +798,9 @@
      "size": 9094,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/manga/",
     "icon": "puzzle"
    },
@@ -681,6 +815,9 @@
      "size": 7208,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/manga/",
     "icon": "puzzle"
    },
@@ -695,6 +832,9 @@
      "size": 10414,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/manga/",
     "icon": "puzzle"
    },
@@ -709,6 +849,9 @@
      "size": 12684,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/manga/",
     "icon": "puzzle"
    },
@@ -723,6 +866,9 @@
      "size": 7266,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/manga/",
     "icon": "puzzle"
    },
@@ -737,6 +883,9 @@
      "size": 7342,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/manga/",
     "icon": "puzzle"
    },
@@ -751,6 +900,9 @@
      "size": 7962,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/manga/",
     "icon": "puzzle"
    },
@@ -765,6 +917,9 @@
      "size": 5029,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/manga/",
     "icon": "puzzle"
    },
@@ -779,6 +934,9 @@
      "size": 5876,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/manga/",
     "icon": "puzzle"
    },
@@ -793,6 +951,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/",
     "icon": "folder"
    },
@@ -807,6 +968,9 @@
      "size": 12195,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/minimalist-ui/",
     "icon": "puzzle"
    },
@@ -821,6 +985,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/",
     "icon": "folder"
    },
@@ -835,6 +1002,9 @@
      "size": 8635,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/neta-trend-daily/",
     "icon": "puzzle"
    },
@@ -849,6 +1019,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/",
     "icon": "folder"
    },
@@ -863,6 +1036,9 @@
      "size": 32897,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/research-agent/",
     "icon": "puzzle"
    },
@@ -877,6 +1053,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/",
     "icon": "folder"
    },
@@ -891,6 +1070,9 @@
      "size": 2176,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/speech-writer/",
     "icon": "puzzle"
    },
@@ -905,6 +1087,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/",
     "icon": "folder"
    },
@@ -919,6 +1104,9 @@
      "size": 16475,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/tech-design-doc/",
     "icon": "puzzle"
    },
@@ -933,6 +1121,9 @@
      "size": 4367,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/tech-design-doc/",
     "icon": "puzzle"
    },
@@ -947,6 +1138,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/",
     "icon": "folder"
    },
@@ -961,6 +1155,9 @@
      "size": 8047,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/tech-report/",
     "icon": "puzzle"
    },
@@ -975,6 +1172,9 @@
      "size": 6100,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/tech-report/",
     "icon": "puzzle"
    },
@@ -989,6 +1189,9 @@
      "size": 0,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/",
     "icon": "folder"
    },
@@ -1003,6 +1206,9 @@
      "size": 5482,
      "role": "skill"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/skills/url-digest/",
     "icon": "puzzle"
    },
@@ -1017,6 +1223,9 @@
      "size": 0,
      "role": null
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/",
     "icon": "folder"
    },
@@ -1031,6 +1240,9 @@
      "size": 2149,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/templates/",
     "icon": "doc"
    },
@@ -1045,6 +1257,9 @@
      "size": 2224,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/templates/",
     "icon": "doc"
    },
@@ -1059,6 +1274,9 @@
      "size": 388,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/templates/",
     "icon": "doc"
    },
@@ -1073,6 +1291,9 @@
      "size": 507,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/templates/",
     "icon": "doc"
    },
@@ -1087,6 +1308,9 @@
      "size": 1313,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".claude/templates/",
     "icon": "doc"
    },
@@ -1111,8 +1335,13 @@
      "path": ".github",
      "ext": "",
      "size": 0,
-     "role": null
+     "role": null,
+     "provenance": "doc",
+     "description": "ISSUE_TEMPLATE/ と workflows/（GitHub Actions・sync-viewer 含む）"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "icon": "folder"
    },
    {
@@ -1126,6 +1355,9 @@
      "size": 0,
      "role": null
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/",
     "icon": "folder"
    },
@@ -1140,6 +1372,9 @@
      "size": 420,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/ISSUE_TEMPLATE/",
     "icon": "doc"
    },
@@ -1154,6 +1389,9 @@
      "size": 356,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/ISSUE_TEMPLATE/",
     "icon": "doc"
    },
@@ -1168,6 +1406,9 @@
      "size": 711,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/ISSUE_TEMPLATE/",
     "icon": "doc"
    },
@@ -1182,6 +1423,9 @@
      "size": 860,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/ISSUE_TEMPLATE/",
     "icon": "doc"
    },
@@ -1196,6 +1440,9 @@
      "size": 1103,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/ISSUE_TEMPLATE/",
     "icon": "doc"
    },
@@ -1210,6 +1457,9 @@
      "size": 342,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/ISSUE_TEMPLATE/",
     "icon": "doc"
    },
@@ -1224,6 +1474,9 @@
      "size": 0,
      "role": null
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/",
     "icon": "folder"
    },
@@ -1238,6 +1491,9 @@
      "size": 1433,
      "role": "ci"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/workflows/",
     "icon": "gear"
    },
@@ -1252,6 +1508,9 @@
      "size": 1886,
      "role": "ci"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/workflows/",
     "icon": "gear"
    },
@@ -1266,6 +1525,9 @@
      "size": 3546,
      "role": "ci"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/workflows/",
     "icon": "gear"
    },
@@ -1280,6 +1542,9 @@
      "size": 2675,
      "role": "ci"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/workflows/",
     "icon": "gear"
    },
@@ -1294,6 +1559,9 @@
      "size": 1629,
      "role": "ci"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/workflows/",
     "icon": "gear"
    },
@@ -1308,6 +1576,9 @@
      "size": 1318,
      "role": "ci"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/workflows/",
     "icon": "gear"
    },
@@ -1322,6 +1593,9 @@
      "size": 21099,
      "role": "ci"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "sublabel": ".github/workflows/",
     "icon": "gear"
    },
@@ -1345,9 +1619,12 @@
     "props": {
      "path": "CLAUDE.md",
      "ext": ".md",
-     "size": 13544,
+     "size": 14197,
      "role": "doc"
     },
+    "tags": [
+     "layer:GOVERNANCE"
+    ],
     "icon": "doc"
    },
    {
@@ -1359,8 +1636,13 @@
      "path": "docs",
      "ext": "",
      "size": 0,
-     "role": "doc"
+     "role": "doc",
+     "provenance": "doc",
+     "description": "参考資料。bootstraps/（ライフ管理ブートストラップ）・reference/"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "icon": "folder"
    },
    {
@@ -1374,6 +1656,9 @@
      "size": 0,
      "role": "bootstrap"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/",
     "icon": "folder"
    },
@@ -1388,6 +1673,9 @@
      "size": 15512,
      "role": "bootstrap"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/bootstraps/",
     "icon": "files"
    },
@@ -1402,6 +1690,9 @@
      "size": 6629,
      "role": "bootstrap"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/bootstraps/",
     "icon": "files"
    },
@@ -1416,6 +1707,9 @@
      "size": 17154,
      "role": "bootstrap"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/bootstraps/",
     "icon": "files"
    },
@@ -1430,6 +1724,9 @@
      "size": 20503,
      "role": "bootstrap"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/bootstraps/",
     "icon": "files"
    },
@@ -1444,6 +1741,9 @@
      "size": 22779,
      "role": "bootstrap"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/bootstraps/",
     "icon": "files"
    },
@@ -1458,6 +1758,9 @@
      "size": 18993,
      "role": "bootstrap"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/bootstraps/",
     "icon": "files"
    },
@@ -1472,6 +1775,9 @@
      "size": 13725,
      "role": "bootstrap"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/bootstraps/",
     "icon": "files"
    },
@@ -1486,6 +1792,9 @@
      "size": 0,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/",
     "icon": "folder"
    },
@@ -1500,6 +1809,9 @@
      "size": 2614,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/",
     "icon": "doc"
    },
@@ -1514,6 +1826,9 @@
      "size": 0,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/",
     "icon": "folder"
    },
@@ -1528,6 +1843,9 @@
      "size": 3495,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/project_development/",
     "icon": "doc"
    },
@@ -1542,6 +1860,9 @@
      "size": 69689,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/project_development/",
     "icon": "doc"
    },
@@ -1556,6 +1877,9 @@
      "size": 55305,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/project_development/",
     "icon": "doc"
    },
@@ -1570,6 +1894,9 @@
      "size": 49227,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/project_development/",
     "icon": "doc"
    },
@@ -1584,6 +1911,9 @@
      "size": 190245,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/project_development/",
     "icon": "doc"
    },
@@ -1598,6 +1928,9 @@
      "size": 0,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/",
     "icon": "folder"
    },
@@ -1612,6 +1945,9 @@
      "size": 38232,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/reports/",
     "icon": "doc"
    },
@@ -1626,6 +1962,9 @@
      "size": 35036,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/reports/",
     "icon": "doc"
    },
@@ -1640,6 +1979,9 @@
      "size": 15424,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/reports/",
     "icon": "doc"
    },
@@ -1654,6 +1996,9 @@
      "size": 48833,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/reports/",
     "icon": "doc"
    },
@@ -1668,6 +2013,9 @@
      "size": 25943,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/reports/",
     "icon": "doc"
    },
@@ -1682,6 +2030,9 @@
      "size": 2638,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/reports/",
     "icon": "doc"
    },
@@ -1696,6 +2047,9 @@
      "size": 0,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/",
     "icon": "folder"
    },
@@ -1710,6 +2064,9 @@
      "size": 9363,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/system_development/",
     "icon": "doc"
    },
@@ -1724,6 +2081,9 @@
      "size": 85341,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/system_development/",
     "icon": "doc"
    },
@@ -1738,6 +2098,9 @@
      "size": 8808,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/system_development/",
     "icon": "doc"
    },
@@ -1752,6 +2115,9 @@
      "size": 126828,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/system_development/",
     "icon": "doc"
    },
@@ -1766,6 +2132,9 @@
      "size": 89303,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/system_development/",
     "icon": "doc"
    },
@@ -1780,6 +2149,9 @@
      "size": 296865,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/system_development/",
     "icon": "doc"
    },
@@ -1794,6 +2166,9 @@
      "size": 78025,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/system_development/",
     "icon": "doc"
    },
@@ -1808,6 +2183,9 @@
      "size": 413349,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/system_development/",
     "icon": "doc"
    },
@@ -1822,6 +2200,9 @@
      "size": 12451,
      "role": "doc"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "docs/reference/system_development/",
     "icon": "doc"
    },
@@ -1834,8 +2215,13 @@
      "path": "ideas",
      "ext": "",
      "size": 0,
-     "role": "idea"
+     "role": "idea",
+     "provenance": "doc",
+     "description": "アイデアノート・メモ（YAML frontmatter）。daily/ に日次トレンドネタ"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "icon": "folder"
    },
    {
@@ -1849,6 +2235,9 @@
      "size": 0,
      "role": "idea"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "ideas/",
     "icon": "bulb"
    },
@@ -1863,6 +2252,9 @@
      "size": 0,
      "role": "idea"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "ideas/",
     "icon": "folder"
    },
@@ -1877,6 +2269,9 @@
      "size": 8525,
      "role": "idea"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "ideas/daily/",
     "icon": "bulb"
    },
@@ -1891,6 +2286,9 @@
      "size": 551,
      "role": "idea"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "ideas/",
     "icon": "bulb"
    },
@@ -1905,6 +2303,9 @@
      "size": 511,
      "role": "idea"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "ideas/",
     "icon": "bulb"
    },
@@ -1919,6 +2320,9 @@
      "size": 11580,
      "role": "idea"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "ideas/",
     "icon": "bulb"
    },
@@ -1931,8 +2335,13 @@
      "path": "knowledge",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "provenance": "doc",
+     "description": "ナレッジベース（KAS 管理）。domain/research/learning/profile/meta"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "icon": "folder"
    },
    {
@@ -1946,6 +2355,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/",
     "icon": "book"
    },
@@ -1960,6 +2372,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/",
     "icon": "folder"
    },
@@ -1974,6 +2389,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/",
     "icon": "book"
    },
@@ -1988,6 +2406,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/",
     "icon": "folder"
    },
@@ -2002,6 +2423,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/ai_ml/",
     "icon": "folder"
    },
@@ -2016,6 +2440,9 @@
      "size": 4972,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/ai_ml/concepts/",
     "icon": "book"
    },
@@ -2030,6 +2457,9 @@
      "size": 4862,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/",
     "icon": "book"
    },
@@ -2044,6 +2474,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/",
     "icon": "folder"
    },
@@ -2058,6 +2491,9 @@
      "size": 4810,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/gemini_image_gen/",
     "icon": "book"
    },
@@ -2072,6 +2508,9 @@
      "size": 31700,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/gemini_image_gen/",
     "icon": "book"
    },
@@ -2086,6 +2525,9 @@
      "size": 3205,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/gemini_image_gen/",
     "icon": "book"
    },
@@ -2100,6 +2542,9 @@
      "size": 14172,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/gemini_image_gen/",
     "icon": "book"
    },
@@ -2114,6 +2559,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/gemini_image_gen/",
     "icon": "folder"
    },
@@ -2128,6 +2576,9 @@
      "size": 13056,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/gemini_image_gen/web_ui_internal_prompts/",
     "icon": "book"
    },
@@ -2142,6 +2593,9 @@
      "size": 3451,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/gemini_image_gen/web_ui_internal_prompts/",
     "icon": "book"
    },
@@ -2156,6 +2610,9 @@
      "size": 2852,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/gemini_image_gen/web_ui_internal_prompts/",
     "icon": "book"
    },
@@ -2170,6 +2627,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/",
     "icon": "folder"
    },
@@ -2184,6 +2644,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/",
     "icon": "folder"
    },
@@ -2198,6 +2661,9 @@
      "size": 5490,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/comparisons/",
     "icon": "book"
    },
@@ -2212,6 +2678,9 @@
      "size": 5753,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/comparisons/",
     "icon": "book"
    },
@@ -2226,6 +2695,9 @@
      "size": 5990,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/comparisons/",
     "icon": "book"
    },
@@ -2240,6 +2712,9 @@
      "size": 9873,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/",
     "icon": "book"
    },
@@ -2254,6 +2729,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/",
     "icon": "folder"
    },
@@ -2268,6 +2746,9 @@
      "size": 4670,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2282,6 +2763,9 @@
      "size": 4309,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2296,6 +2780,9 @@
      "size": 4394,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2310,6 +2797,9 @@
      "size": 4274,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2324,6 +2814,9 @@
      "size": 4536,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2338,6 +2831,9 @@
      "size": 4477,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2352,6 +2848,9 @@
      "size": 4505,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2366,6 +2865,9 @@
      "size": 3972,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2380,6 +2882,9 @@
      "size": 5353,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2394,6 +2899,9 @@
      "size": 5261,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2408,6 +2916,9 @@
      "size": 4011,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2422,6 +2933,9 @@
      "size": 4636,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2436,6 +2950,9 @@
      "size": 5353,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2450,6 +2967,9 @@
      "size": 5567,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/concepts/",
     "icon": "book"
    },
@@ -2464,6 +2984,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/",
     "icon": "folder"
    },
@@ -2478,6 +3001,9 @@
      "size": 9028,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/timelines/",
     "icon": "book"
    },
@@ -2492,6 +3018,9 @@
      "size": 9309,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/domain/robotics/timelines/",
     "icon": "book"
    },
@@ -2506,6 +3035,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/",
     "icon": "folder"
    },
@@ -2520,6 +3052,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/",
     "icon": "folder"
    },
@@ -2534,6 +3069,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/arcs/",
     "icon": "folder"
    },
@@ -2548,6 +3086,9 @@
      "size": 1444,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/arcs/g_test_2026_05/",
     "icon": "book"
    },
@@ -2562,6 +3103,9 @@
      "size": 1584,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/arcs/g_test_2026_05/",
     "icon": "book"
    },
@@ -2576,6 +3120,9 @@
      "size": 1218,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/arcs/g_test_2026_05/",
     "icon": "book"
    },
@@ -2590,6 +3137,9 @@
      "size": 1140,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/arcs/g_test_2026_05/",
     "icon": "book"
    },
@@ -2604,6 +3154,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/",
     "icon": "folder"
    },
@@ -2618,6 +3171,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/catalogs/",
     "icon": "folder"
    },
@@ -2632,6 +3188,9 @@
      "size": 6347,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/catalogs/g_test_2026_05/",
     "icon": "book"
    },
@@ -2646,6 +3205,9 @@
      "size": 6756,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/catalogs/g_test_2026_05/",
     "icon": "book"
    },
@@ -2660,6 +3222,9 @@
      "size": 8835,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/catalogs/g_test_2026_05/",
     "icon": "book"
    },
@@ -2674,6 +3239,9 @@
      "size": 2699,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/catalogs/g_test_2026_05/",
     "icon": "book"
    },
@@ -2688,6 +3256,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/",
     "icon": "folder"
    },
@@ -2702,6 +3273,9 @@
      "size": 648,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/goals/",
     "icon": "book"
    },
@@ -2716,6 +3290,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/",
     "icon": "folder"
    },
@@ -2730,6 +3307,9 @@
      "size": 13463,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/maps/",
     "icon": "book"
    },
@@ -2744,6 +3324,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/",
     "icon": "folder"
    },
@@ -2758,6 +3341,9 @@
      "size": 1889,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/learning/robotics_ai/",
     "icon": "book"
    },
@@ -2772,6 +3358,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/",
     "icon": "folder"
    },
@@ -2786,6 +3375,9 @@
      "size": 9230,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/meta/",
     "icon": "book"
    },
@@ -2800,6 +3392,9 @@
      "size": 37662,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/meta/",
     "icon": "book"
    },
@@ -2814,6 +3409,9 @@
      "size": 10811,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/meta/",
     "icon": "book"
    },
@@ -2828,6 +3426,9 @@
      "size": 5515,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/meta/",
     "icon": "book"
    },
@@ -2842,6 +3443,9 @@
      "size": 15639,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/meta/",
     "icon": "book"
    },
@@ -2856,6 +3460,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/",
     "icon": "folder"
    },
@@ -2870,6 +3477,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/profile/",
     "icon": "book"
    },
@@ -2884,6 +3494,9 @@
      "size": 2559,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/profile/",
     "icon": "book"
    },
@@ -2898,6 +3511,9 @@
      "size": 11773,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/profile/",
     "icon": "book"
    },
@@ -2912,6 +3528,9 @@
      "size": 1421,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/profile/",
     "icon": "book"
    },
@@ -2926,6 +3545,9 @@
      "size": 6249,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/profile/",
     "icon": "book"
    },
@@ -2940,6 +3562,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/",
     "icon": "folder"
    },
@@ -2954,6 +3579,9 @@
      "size": 0,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -2968,6 +3596,9 @@
      "size": 2376,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -2982,6 +3613,9 @@
      "size": 2579,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -2996,6 +3630,9 @@
      "size": 3697,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -3010,6 +3647,9 @@
      "size": 2452,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -3024,6 +3664,9 @@
      "size": 3699,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -3038,6 +3681,9 @@
      "size": 4054,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -3052,6 +3698,9 @@
      "size": 6347,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -3066,6 +3715,9 @@
      "size": 5603,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -3080,6 +3732,9 @@
      "size": 20412,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -3094,6 +3749,9 @@
      "size": 3839,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -3108,6 +3766,9 @@
      "size": 4044,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -3122,6 +3783,9 @@
      "size": 6021,
      "role": "knowledge"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "knowledge/research/",
     "icon": "book"
    },
@@ -3134,7 +3798,9 @@
      "path": "outputs",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "provenance": "doc",
+     "description": "各サブシステムの成果物 home。learning/・diagrams/・research/ が公開スライスを持つ"
     },
     "icon": "folder"
    },
@@ -3189,8 +3855,14 @@
      "path": "outputs/diagrams",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "provenance": "human",
+     "status": "active",
+     "description": "/diagram スキル。この共通認識図（life_graph = 抽出 + overlay）の生成系。diagram_engine が実現する"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/",
     "icon": "folder"
    },
@@ -3205,20 +3877,26 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/diagrams/",
     "icon": "folder"
    },
    {
-    "id": "outputs/diagrams/interactive/life_structure.json",
+    "id": "outputs/diagrams/interactive/life_overlay.json",
     "type": "output",
-    "name": "life_structure.json",
+    "name": "life_overlay.json",
     "parent": "outputs/diagrams/interactive",
     "props": {
-     "path": "outputs/diagrams/interactive/life_structure.json",
+     "path": "outputs/diagrams/interactive/life_overlay.json",
      "ext": ".json",
-     "size": 18874,
+     "size": 14912,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/diagrams/interactive/",
     "icon": "package"
    },
@@ -3233,6 +3911,9 @@
      "size": 253,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/diagrams/",
     "icon": "package"
    },
@@ -3247,6 +3928,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/",
     "icon": "folder"
    },
@@ -3261,6 +3945,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/",
     "icon": "folder"
    },
@@ -3275,6 +3962,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/g_test_2026_05/",
     "icon": "folder"
    },
@@ -3289,6 +3979,9 @@
      "size": 10728,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/g_test_2026_05/cheatsheets/",
     "icon": "package"
    },
@@ -3303,6 +3996,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/g_test_2026_05/",
     "icon": "folder"
    },
@@ -3317,6 +4013,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/g_test_2026_05/",
     "icon": "folder"
    },
@@ -3331,6 +4030,9 @@
      "size": 742542,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/g_test_2026_05/interactive/",
     "icon": "package"
    },
@@ -3345,6 +4047,9 @@
      "size": 18793,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/g_test_2026_05/interactive/",
     "icon": "package"
    },
@@ -3359,6 +4064,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/g_test_2026_05/",
     "icon": "folder"
    },
@@ -3373,6 +4081,9 @@
      "size": 44235,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/g_test_2026_05/stories/",
     "icon": "package"
    },
@@ -3387,6 +4098,9 @@
      "size": 136845,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/g_test_2026_05/stories/",
     "icon": "package"
    },
@@ -3401,6 +4115,9 @@
      "size": 37412,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/g_test_2026_05/stories/",
     "icon": "package"
    },
@@ -3415,6 +4132,9 @@
      "size": 35288,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/g_test_2026_05/stories/",
     "icon": "package"
    },
@@ -3427,8 +4147,14 @@
      "path": "outputs/learning/manga_epoch",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "provenance": "human",
+     "status": "active",
+     "description": "/manga スキル。EPOCH 漫画制作（MulmoScript / 画像生成 / キャラ一貫性）"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/",
     "icon": "folder"
    },
@@ -3443,6 +4169,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "folder"
    },
@@ -3457,6 +4186,9 @@
      "size": 6838,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/_verify/",
     "icon": "package"
    },
@@ -3471,6 +4203,9 @@
      "size": 58942,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/_verify/",
     "icon": "package"
    },
@@ -3485,6 +4220,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "folder"
    },
@@ -3499,6 +4237,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/_wip/",
     "icon": "folder"
    },
@@ -3513,6 +4254,9 @@
      "size": 10922,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/_wip/arc3_figures/",
     "icon": "package"
    },
@@ -3527,6 +4271,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/_wip/",
     "icon": "folder"
    },
@@ -3541,6 +4288,9 @@
      "size": 5979,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/_wip/transformer_prototypes/",
     "icon": "package"
    },
@@ -3555,6 +4305,9 @@
      "size": 12651,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/_wip/transformer_prototypes/",
     "icon": "package"
    },
@@ -3569,6 +4322,9 @@
      "size": 13220,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/_wip/transformer_prototypes/",
     "icon": "package"
    },
@@ -3583,6 +4339,9 @@
      "size": 13403,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/_wip/transformer_prototypes/",
     "icon": "package"
    },
@@ -3597,6 +4356,9 @@
      "size": 52654,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -3611,6 +4373,9 @@
      "size": 21442,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -3625,6 +4390,9 @@
      "size": 45803,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -3639,6 +4407,9 @@
      "size": 11058,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -3653,6 +4424,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "folder"
    },
@@ -3667,6 +4441,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/assets/",
     "icon": "folder"
    },
@@ -3681,6 +4458,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/assets/jdla_logo/",
     "icon": "folder"
    },
@@ -3695,6 +4475,9 @@
      "size": 2430,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/assets/jdla_logo/",
     "icon": "package"
    },
@@ -3709,6 +4492,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/assets/jdla_logo/",
     "icon": "folder"
    },
@@ -3723,6 +4509,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "folder"
    },
@@ -3737,6 +4526,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "folder"
    },
@@ -3751,6 +4543,9 @@
      "size": 19868,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -3765,6 +4560,9 @@
      "size": 7557,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -3779,6 +4577,9 @@
      "size": 8033,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -3793,6 +4594,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "folder"
    },
@@ -3807,6 +4611,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/deliverables/",
     "icon": "folder"
    },
@@ -3821,6 +4628,9 @@
      "size": 971,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/deliverables/",
     "icon": "package"
    },
@@ -3835,6 +4645,9 @@
      "size": 6528,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -3849,6 +4662,9 @@
      "size": 5332,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -3863,6 +4679,9 @@
      "size": 48878,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -3877,6 +4696,9 @@
      "size": 6938,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -3891,6 +4713,9 @@
      "size": 5795,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -3905,6 +4730,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "folder"
    },
@@ -3919,6 +4747,9 @@
      "size": 5958,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/mockups/",
     "icon": "package"
    },
@@ -3933,6 +4764,9 @@
      "size": 5226,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/mockups/",
     "icon": "package"
    },
@@ -3947,6 +4781,9 @@
      "size": 6308,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/mockups/",
     "icon": "package"
    },
@@ -3961,6 +4798,9 @@
      "size": 16125,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/mockups/",
     "icon": "package"
    },
@@ -3975,6 +4815,9 @@
      "size": 6501,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -3989,6 +4832,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "folder"
    },
@@ -4003,6 +4849,9 @@
      "size": 5389,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4017,6 +4866,9 @@
      "size": 5795,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4031,6 +4883,9 @@
      "size": 3257,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4045,6 +4900,9 @@
      "size": 8160,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4059,6 +4917,9 @@
      "size": 10879,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4073,6 +4934,9 @@
      "size": 8325,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4087,6 +4951,9 @@
      "size": 8939,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4101,6 +4968,9 @@
      "size": 14788,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4115,6 +4985,9 @@
      "size": 12077,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4129,6 +5002,9 @@
      "size": 9820,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4143,6 +5019,9 @@
      "size": 5695,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4157,6 +5036,9 @@
      "size": 6611,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4171,6 +5053,9 @@
      "size": 10667,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4185,6 +5070,9 @@
      "size": 8427,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4196,9 +5084,12 @@
     "props": {
      "path": "outputs/learning/manga_epoch/business/promo/手順書_私がいなくても回す.md",
      "ext": ".md",
-     "size": 15817,
+     "size": 17488,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/promo/",
     "icon": "package"
    },
@@ -4213,6 +5104,9 @@
      "size": 6381,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -4227,6 +5121,9 @@
      "size": 5952,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -4241,6 +5138,9 @@
      "size": 12131,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -4255,6 +5155,9 @@
      "size": 12103,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -4269,6 +5172,9 @@
      "size": 14079,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -4283,6 +5189,9 @@
      "size": 14132,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/business/",
     "icon": "package"
    },
@@ -4297,6 +5206,9 @@
      "size": 29979,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4311,6 +5223,9 @@
      "size": 85998,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4325,6 +5240,9 @@
      "size": 8437,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4339,6 +5257,9 @@
      "size": 14699,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4353,6 +5274,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "folder"
    },
@@ -4367,6 +5291,9 @@
      "size": 6645401,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/editor_templates/",
     "icon": "package"
    },
@@ -4381,6 +5308,9 @@
      "size": 1587,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/editor_templates/",
     "icon": "package"
    },
@@ -4395,6 +5325,9 @@
      "size": 28431,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4409,6 +5342,9 @@
      "size": 7572,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4423,6 +5359,9 @@
      "size": 66946,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4437,6 +5376,9 @@
      "size": 21734,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4451,6 +5393,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "folder"
    },
@@ -4465,6 +5410,9 @@
      "size": 185885,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/interactive/",
     "icon": "package"
    },
@@ -4479,6 +5427,9 @@
      "size": 39250,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/interactive/",
     "icon": "package"
    },
@@ -4493,6 +5444,9 @@
      "size": 267,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/interactive/",
     "icon": "package"
    },
@@ -4507,6 +5461,9 @@
      "size": 3240,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/interactive/",
     "icon": "package"
    },
@@ -4521,6 +5478,9 @@
      "size": 51951,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/interactive/",
     "icon": "package"
    },
@@ -4535,6 +5495,9 @@
      "size": 21202,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4549,6 +5512,9 @@
      "size": 3112,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4563,6 +5529,9 @@
      "size": 14662,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4577,6 +5546,9 @@
      "size": 117674,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4591,6 +5563,9 @@
      "size": 12463,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4605,6 +5580,9 @@
      "size": 15351,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4619,6 +5597,9 @@
      "size": 114,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -4633,6 +5614,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "folder"
    },
@@ -4647,6 +5631,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/",
     "icon": "folder"
    },
@@ -4661,6 +5648,9 @@
      "size": 20938,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/",
     "icon": "package"
    },
@@ -4675,6 +5665,9 @@
      "size": 17859,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/",
     "icon": "package"
    },
@@ -4689,6 +5682,9 @@
      "size": 7937,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/",
     "icon": "package"
    },
@@ -4703,6 +5699,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/",
     "icon": "folder"
    },
@@ -4717,6 +5716,9 @@
      "size": 10218,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4731,6 +5733,9 @@
      "size": 9335,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4745,6 +5750,9 @@
      "size": 12158,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4759,6 +5767,9 @@
      "size": 13534,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4773,6 +5784,9 @@
      "size": 16839,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4787,6 +5801,9 @@
      "size": 8620,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4801,6 +5818,9 @@
      "size": 12017,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4815,6 +5835,9 @@
      "size": 10406,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4829,6 +5852,9 @@
      "size": 9828,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4843,6 +5869,9 @@
      "size": 8435,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4857,6 +5886,9 @@
      "size": 12125,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4871,6 +5903,9 @@
      "size": 12567,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4885,6 +5920,9 @@
      "size": 3134,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/prompts/",
     "icon": "package"
    },
@@ -4899,6 +5937,9 @@
      "size": 13391,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/",
     "icon": "package"
    },
@@ -4913,6 +5954,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/",
     "icon": "folder"
    },
@@ -4927,6 +5971,9 @@
      "size": 5005,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene1/reviews/",
     "icon": "package"
    },
@@ -4941,6 +5988,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/",
     "icon": "folder"
    },
@@ -4955,6 +6005,9 @@
      "size": 30840,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/",
     "icon": "package"
    },
@@ -4969,6 +6022,9 @@
      "size": 21371,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/",
     "icon": "package"
    },
@@ -4983,6 +6039,9 @@
      "size": 29957,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/",
     "icon": "package"
    },
@@ -4997,6 +6056,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/",
     "icon": "folder"
    },
@@ -5011,6 +6073,9 @@
      "size": 21834,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5025,6 +6090,9 @@
      "size": 14158,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5039,6 +6107,9 @@
      "size": 14437,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5053,6 +6124,9 @@
      "size": 12950,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5067,6 +6141,9 @@
      "size": 17730,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5081,6 +6158,9 @@
      "size": 12424,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5095,6 +6175,9 @@
      "size": 15834,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5109,6 +6192,9 @@
      "size": 15116,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5123,6 +6209,9 @@
      "size": 12218,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5137,6 +6226,9 @@
      "size": 12291,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5151,6 +6243,9 @@
      "size": 15948,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5165,6 +6260,9 @@
      "size": 15778,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5179,6 +6277,9 @@
      "size": 3304,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene2/prompts/",
     "icon": "package"
    },
@@ -5193,6 +6294,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/",
     "icon": "folder"
    },
@@ -5207,6 +6311,9 @@
      "size": 19316,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/",
     "icon": "package"
    },
@@ -5221,6 +6328,9 @@
      "size": 26158,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/",
     "icon": "package"
    },
@@ -5235,6 +6345,9 @@
      "size": 14646,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/",
     "icon": "package"
    },
@@ -5249,6 +6362,9 @@
      "size": 40662,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/",
     "icon": "package"
    },
@@ -5263,6 +6379,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/",
     "icon": "folder"
    },
@@ -5277,6 +6396,9 @@
      "size": 13463,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5291,6 +6413,9 @@
      "size": 14146,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5305,6 +6430,9 @@
      "size": 11159,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5319,6 +6447,9 @@
      "size": 12539,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5333,6 +6464,9 @@
      "size": 11442,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5347,6 +6481,9 @@
      "size": 12438,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5361,6 +6498,9 @@
      "size": 11925,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5375,6 +6515,9 @@
      "size": 12823,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5389,6 +6532,9 @@
      "size": 13506,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5403,6 +6549,9 @@
      "size": 14970,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5417,6 +6566,9 @@
      "size": 13108,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5431,6 +6583,9 @@
      "size": 13336,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5445,6 +6600,9 @@
      "size": 3569,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/prompts/",
     "icon": "package"
    },
@@ -5459,6 +6617,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/",
     "icon": "folder"
    },
@@ -5473,6 +6634,9 @@
      "size": 21918,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc1_scene3/redesign_gamma/",
     "icon": "package"
    },
@@ -5487,6 +6651,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/",
     "icon": "folder"
    },
@@ -5501,6 +6668,9 @@
      "size": 6985,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/",
     "icon": "package"
    },
@@ -5515,6 +6685,9 @@
      "size": 22272,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/",
     "icon": "package"
    },
@@ -5529,6 +6702,9 @@
      "size": 5201,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/",
     "icon": "package"
    },
@@ -5543,6 +6719,9 @@
      "size": 16374,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/",
     "icon": "package"
    },
@@ -5557,6 +6736,9 @@
      "size": 33248,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/",
     "icon": "package"
    },
@@ -5571,6 +6753,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/",
     "icon": "folder"
    },
@@ -5585,6 +6770,9 @@
      "size": 14234,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5599,6 +6787,9 @@
      "size": 11745,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5613,6 +6804,9 @@
      "size": 16283,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5627,6 +6821,9 @@
      "size": 17620,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5641,6 +6838,9 @@
      "size": 16934,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5655,6 +6855,9 @@
      "size": 12391,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5669,6 +6872,9 @@
      "size": 12498,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5683,6 +6889,9 @@
      "size": 10529,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5697,6 +6906,9 @@
      "size": 12549,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5711,6 +6923,9 @@
      "size": 14060,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5725,6 +6940,9 @@
      "size": 11511,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5739,6 +6957,9 @@
      "size": 13529,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5753,6 +6974,9 @@
      "size": 3270,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/prompts/",
     "icon": "package"
    },
@@ -5767,6 +6991,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/",
     "icon": "folder"
    },
@@ -5781,6 +7008,9 @@
      "size": 13901,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/redesign_gamma/",
     "icon": "package"
    },
@@ -5795,6 +7025,9 @@
      "size": 3998,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene1/",
     "icon": "package"
    },
@@ -5809,6 +7042,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/",
     "icon": "folder"
    },
@@ -5823,6 +7059,9 @@
      "size": 19732,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/",
     "icon": "package"
    },
@@ -5837,6 +7076,9 @@
      "size": 4154,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/",
     "icon": "package"
    },
@@ -5851,6 +7093,9 @@
      "size": 32814,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/",
     "icon": "package"
    },
@@ -5865,6 +7110,9 @@
      "size": 51085,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/",
     "icon": "package"
    },
@@ -5879,6 +7127,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/",
     "icon": "folder"
    },
@@ -5893,6 +7144,9 @@
      "size": 12442,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -5907,6 +7161,9 @@
      "size": 15895,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -5921,6 +7178,9 @@
      "size": 11068,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -5935,6 +7195,9 @@
      "size": 10170,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -5949,6 +7212,9 @@
      "size": 14365,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -5963,6 +7229,9 @@
      "size": 13388,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -5977,6 +7246,9 @@
      "size": 10467,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -5991,6 +7263,9 @@
      "size": 15360,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -6005,6 +7280,9 @@
      "size": 17191,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -6019,6 +7297,9 @@
      "size": 16172,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -6033,6 +7314,9 @@
      "size": 16255,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -6047,6 +7331,9 @@
      "size": 11780,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -6061,6 +7348,9 @@
      "size": 11428,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -6075,6 +7365,9 @@
      "size": 3999,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/prompts/",
     "icon": "package"
    },
@@ -6089,6 +7382,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/",
     "icon": "folder"
    },
@@ -6103,6 +7399,9 @@
      "size": 14246,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene2/redesign_gamma/",
     "icon": "package"
    },
@@ -6117,6 +7416,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/",
     "icon": "folder"
    },
@@ -6131,6 +7433,9 @@
      "size": 8967,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/",
     "icon": "package"
    },
@@ -6145,6 +7450,9 @@
      "size": 16891,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/",
     "icon": "package"
    },
@@ -6159,6 +7467,9 @@
      "size": 4429,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/",
     "icon": "package"
    },
@@ -6173,6 +7484,9 @@
      "size": 24278,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/",
     "icon": "package"
    },
@@ -6187,6 +7501,9 @@
      "size": 50581,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/",
     "icon": "package"
    },
@@ -6201,6 +7518,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/",
     "icon": "folder"
    },
@@ -6215,6 +7535,9 @@
      "size": 11435,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6229,6 +7552,9 @@
      "size": 14433,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6243,6 +7569,9 @@
      "size": 9611,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6257,6 +7586,9 @@
      "size": 14912,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6271,6 +7603,9 @@
      "size": 13211,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6285,6 +7620,9 @@
      "size": 17148,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6299,6 +7637,9 @@
      "size": 13384,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6313,6 +7654,9 @@
      "size": 13736,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6327,6 +7671,9 @@
      "size": 13206,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6341,6 +7688,9 @@
      "size": 9351,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6355,6 +7705,9 @@
      "size": 11378,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6369,6 +7722,9 @@
      "size": 10803,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6383,6 +7739,9 @@
      "size": 3216,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene3/prompts/",
     "icon": "package"
    },
@@ -6397,6 +7756,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/",
     "icon": "folder"
    },
@@ -6411,6 +7773,9 @@
      "size": 7084,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/",
     "icon": "package"
    },
@@ -6425,6 +7790,9 @@
      "size": 17437,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/",
     "icon": "package"
    },
@@ -6439,6 +7807,9 @@
      "size": 5301,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/",
     "icon": "package"
    },
@@ -6453,6 +7824,9 @@
      "size": 28117,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/",
     "icon": "package"
    },
@@ -6467,6 +7841,9 @@
      "size": 57380,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/",
     "icon": "package"
    },
@@ -6481,6 +7858,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/",
     "icon": "folder"
    },
@@ -6495,6 +7875,9 @@
      "size": 12216,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6509,6 +7892,9 @@
      "size": 16785,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6523,6 +7909,9 @@
      "size": 12275,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6537,6 +7926,9 @@
      "size": 12422,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6551,6 +7943,9 @@
      "size": 12927,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6565,6 +7960,9 @@
      "size": 12981,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6579,6 +7977,9 @@
      "size": 18889,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6593,6 +7994,9 @@
      "size": 18559,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6607,6 +8011,9 @@
      "size": 12311,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6621,6 +8028,9 @@
      "size": 16684,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6635,6 +8045,9 @@
      "size": 11897,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6649,6 +8062,9 @@
      "size": 10690,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6663,6 +8079,9 @@
      "size": 3529,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene4/prompts/",
     "icon": "package"
    },
@@ -6677,6 +8096,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/",
     "icon": "folder"
    },
@@ -6691,6 +8113,9 @@
      "size": 15918,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/",
     "icon": "package"
    },
@@ -6705,6 +8130,9 @@
      "size": 6437,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/",
     "icon": "package"
    },
@@ -6719,6 +8147,9 @@
      "size": 21171,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/",
     "icon": "package"
    },
@@ -6733,6 +8164,9 @@
      "size": 51609,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/",
     "icon": "package"
    },
@@ -6747,6 +8181,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/",
     "icon": "folder"
    },
@@ -6761,6 +8198,9 @@
      "size": 11337,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6775,6 +8215,9 @@
      "size": 13369,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6789,6 +8232,9 @@
      "size": 14255,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6803,6 +8249,9 @@
      "size": 10209,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6817,6 +8266,9 @@
      "size": 12887,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6831,6 +8283,9 @@
      "size": 11507,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6845,6 +8300,9 @@
      "size": 9444,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6859,6 +8317,9 @@
      "size": 14809,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6873,6 +8334,9 @@
      "size": 13214,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6887,6 +8351,9 @@
      "size": 15043,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6901,6 +8368,9 @@
      "size": 11774,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6915,6 +8385,9 @@
      "size": 10819,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6929,6 +8402,9 @@
      "size": 2897,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/prompts/",
     "icon": "package"
    },
@@ -6943,6 +8419,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/",
     "icon": "folder"
    },
@@ -6957,6 +8436,9 @@
      "size": 10661,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene5/redesign_gamma/",
     "icon": "package"
    },
@@ -6971,6 +8453,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/",
     "icon": "folder"
    },
@@ -6985,6 +8470,9 @@
      "size": 17021,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/",
     "icon": "package"
    },
@@ -6999,6 +8487,9 @@
      "size": 4704,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/",
     "icon": "package"
    },
@@ -7013,6 +8504,9 @@
      "size": 26757,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/",
     "icon": "package"
    },
@@ -7027,6 +8521,9 @@
      "size": 44841,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/",
     "icon": "package"
    },
@@ -7041,6 +8538,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/",
     "icon": "folder"
    },
@@ -7055,6 +8555,9 @@
      "size": 11738,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7069,6 +8572,9 @@
      "size": 12514,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7083,6 +8589,9 @@
      "size": 10480,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7097,6 +8606,9 @@
      "size": 12392,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7111,6 +8623,9 @@
      "size": 10386,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7125,6 +8640,9 @@
      "size": 10351,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7139,6 +8657,9 @@
      "size": 15756,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7153,6 +8674,9 @@
      "size": 16805,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7167,6 +8691,9 @@
      "size": 17526,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7181,6 +8708,9 @@
      "size": 16504,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7195,6 +8725,9 @@
      "size": 11395,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7209,6 +8742,9 @@
      "size": 11007,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7223,6 +8759,9 @@
      "size": 3015,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/prompts/",
     "icon": "package"
    },
@@ -7237,6 +8776,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/",
     "icon": "folder"
    },
@@ -7251,6 +8793,9 @@
      "size": 15523,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene6/redesign_gamma/",
     "icon": "package"
    },
@@ -7265,6 +8810,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/",
     "icon": "folder"
    },
@@ -7279,6 +8827,9 @@
      "size": 19147,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/",
     "icon": "package"
    },
@@ -7293,6 +8844,9 @@
      "size": 7427,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/",
     "icon": "package"
    },
@@ -7307,6 +8861,9 @@
      "size": 28002,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/",
     "icon": "package"
    },
@@ -7321,6 +8878,9 @@
      "size": 54479,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/",
     "icon": "package"
    },
@@ -7335,6 +8895,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/",
     "icon": "folder"
    },
@@ -7349,6 +8912,9 @@
      "size": 11421,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7363,6 +8929,9 @@
      "size": 12533,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7377,6 +8946,9 @@
      "size": 14157,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7391,6 +8963,9 @@
      "size": 16720,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7405,6 +8980,9 @@
      "size": 10746,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7419,6 +8997,9 @@
      "size": 9964,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7433,6 +9014,9 @@
      "size": 17458,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7447,6 +9031,9 @@
      "size": 19445,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7461,6 +9048,9 @@
      "size": 16616,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7475,6 +9065,9 @@
      "size": 13279,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7489,6 +9082,9 @@
      "size": 13114,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7503,6 +9099,9 @@
      "size": 10978,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7517,6 +9116,9 @@
      "size": 3319,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene7/prompts/",
     "icon": "package"
    },
@@ -7531,6 +9133,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/",
     "icon": "folder"
    },
@@ -7545,6 +9150,9 @@
      "size": 21342,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/",
     "icon": "package"
    },
@@ -7559,6 +9167,9 @@
      "size": 6733,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/",
     "icon": "package"
    },
@@ -7573,6 +9184,9 @@
      "size": 22155,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/",
     "icon": "package"
    },
@@ -7587,6 +9201,9 @@
      "size": 45042,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/",
     "icon": "package"
    },
@@ -7601,6 +9218,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/",
     "icon": "folder"
    },
@@ -7615,6 +9235,9 @@
      "size": 11710,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7629,6 +9252,9 @@
      "size": 17562,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7643,6 +9269,9 @@
      "size": 9856,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7657,6 +9286,9 @@
      "size": 12048,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7671,6 +9303,9 @@
      "size": 10348,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7685,6 +9320,9 @@
      "size": 14034,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7699,6 +9337,9 @@
      "size": 18411,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7713,6 +9354,9 @@
      "size": 16789,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7727,6 +9371,9 @@
      "size": 20639,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7741,6 +9388,9 @@
      "size": 11197,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7755,6 +9405,9 @@
      "size": 15001,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7769,6 +9422,9 @@
      "size": 12842,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7783,6 +9439,9 @@
      "size": 3329,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/prompts/",
     "icon": "package"
    },
@@ -7797,6 +9456,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/",
     "icon": "folder"
    },
@@ -7811,6 +9473,9 @@
      "size": 14884,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scenes/arc2_scene8/redesign_gamma/",
     "icon": "package"
    },
@@ -7825,6 +9490,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "folder"
    },
@@ -7839,6 +9507,9 @@
      "size": 14152,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -7853,6 +9524,9 @@
      "size": 16662,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -7867,6 +9541,9 @@
      "size": 44503,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -7881,6 +9558,9 @@
      "size": 23233,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -7895,6 +9575,9 @@
      "size": 4798,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -7909,6 +9592,9 @@
      "size": 13748,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -7923,6 +9609,9 @@
      "size": 7356,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -7937,6 +9626,9 @@
      "size": 5305,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -7951,6 +9643,9 @@
      "size": 14430,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -7965,6 +9660,9 @@
      "size": 24626,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -7979,6 +9677,9 @@
      "size": 21459,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -7993,6 +9694,9 @@
      "size": 5104,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -8007,6 +9711,9 @@
      "size": 255718,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -8021,6 +9728,9 @@
      "size": 11438,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -8035,6 +9745,9 @@
      "size": 4994,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -8049,6 +9762,9 @@
      "size": 7147,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -8063,6 +9779,9 @@
      "size": 6512,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -8077,6 +9796,9 @@
      "size": 19219,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/scripts/",
     "icon": "package"
    },
@@ -8091,6 +9813,9 @@
      "size": 5956,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -8105,6 +9830,9 @@
      "size": 9664,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -8119,6 +9847,9 @@
      "size": 31310,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -8133,6 +9864,9 @@
      "size": 12874,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -8147,6 +9881,9 @@
      "size": 14588,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/manga_epoch/",
     "icon": "package"
    },
@@ -8161,6 +9898,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/",
     "icon": "folder"
    },
@@ -8175,6 +9915,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/robotics_ai/",
     "icon": "folder"
    },
@@ -8189,6 +9932,9 @@
      "size": 220020,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/robotics_ai/interactive/",
     "icon": "package"
    },
@@ -8203,6 +9949,9 @@
      "size": 6752,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/robotics_ai/",
     "icon": "package"
    },
@@ -8217,6 +9966,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/robotics_ai/",
     "icon": "folder"
    },
@@ -8231,6 +9983,9 @@
      "size": 32849,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/robotics_ai/stories/",
     "icon": "package"
    },
@@ -8245,6 +10000,9 @@
      "size": 46706,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/robotics_ai/stories/",
     "icon": "package"
    },
@@ -8259,6 +10017,9 @@
      "size": 53651,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/robotics_ai/stories/",
     "icon": "package"
    },
@@ -8273,6 +10034,9 @@
      "size": 2182,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/learning/robotics_ai/stories/",
     "icon": "package"
    },
@@ -8301,6 +10065,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/",
     "icon": "folder"
    },
@@ -8315,6 +10082,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/",
     "icon": "folder"
    },
@@ -8329,6 +10099,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "folder"
    },
@@ -8343,6 +10116,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/",
     "icon": "folder"
    },
@@ -8357,6 +10133,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/",
     "icon": "folder"
    },
@@ -8371,6 +10150,9 @@
      "size": 1462209,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
    },
@@ -8385,6 +10167,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "folder"
    },
@@ -8399,6 +10184,9 @@
      "size": 51046,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
    },
@@ -8413,6 +10201,9 @@
      "size": 56444,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
    },
@@ -8427,6 +10218,9 @@
      "size": 56280,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
    },
@@ -8441,6 +10235,9 @@
      "size": 50552,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
    },
@@ -8455,6 +10252,9 @@
      "size": 51545,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
    },
@@ -8469,6 +10269,9 @@
      "size": 19472,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
    },
@@ -8483,6 +10286,9 @@
      "size": 41253,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
    },
@@ -8497,6 +10303,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "folder"
    },
@@ -8511,6 +10320,9 @@
      "size": 182161,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
    },
@@ -8525,6 +10337,9 @@
      "size": 14426,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
    },
@@ -8539,6 +10354,9 @@
      "size": 6447,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
    },
@@ -8553,6 +10371,9 @@
      "size": 18724,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
    },
@@ -8567,6 +10388,9 @@
      "size": 7474,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/",
     "icon": "package"
    },
@@ -8581,6 +10405,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/",
     "icon": "folder"
    },
@@ -8595,6 +10422,9 @@
      "size": 14902,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/scripts/",
     "icon": "package"
    },
@@ -8609,6 +10439,9 @@
      "size": 22147,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/scripts/",
     "icon": "package"
    },
@@ -8623,6 +10456,9 @@
      "size": 20135,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/scripts/",
     "icon": "package"
    },
@@ -8637,6 +10473,9 @@
      "size": 14582,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/scripts/",
     "icon": "package"
    },
@@ -8651,6 +10490,9 @@
      "size": 15906,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/scripts/",
     "icon": "package"
    },
@@ -8665,6 +10507,9 @@
      "size": 265550,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc1/scripts/",
     "icon": "package"
    },
@@ -8679,6 +10524,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "folder"
    },
@@ -8693,6 +10541,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/",
     "icon": "folder"
    },
@@ -8707,6 +10558,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/assets/",
     "icon": "folder"
    },
@@ -8721,6 +10575,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/assets/figures_svg/",
     "icon": "folder"
    },
@@ -8735,6 +10592,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/",
     "icon": "folder"
    },
@@ -8749,6 +10609,9 @@
      "size": 12390,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/data/",
     "icon": "package"
    },
@@ -8763,6 +10626,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/",
     "icon": "folder"
    },
@@ -8777,6 +10643,9 @@
      "size": 1947955,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8791,6 +10660,9 @@
      "size": 51979,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8805,6 +10677,9 @@
      "size": 27549,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8819,6 +10694,9 @@
      "size": 71427,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8833,6 +10711,9 @@
      "size": 31360,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8847,6 +10728,9 @@
      "size": 42243,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8861,6 +10745,9 @@
      "size": 48795,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8875,6 +10762,9 @@
      "size": 65005,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8889,6 +10779,9 @@
      "size": 42449,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8903,6 +10796,9 @@
      "size": 54210,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8917,6 +10813,9 @@
      "size": 41865,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8931,6 +10830,9 @@
      "size": 37037,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8945,6 +10847,9 @@
      "size": 102167,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8959,6 +10864,9 @@
      "size": 40470,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8973,6 +10881,9 @@
      "size": 63677,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -8987,6 +10898,9 @@
      "size": 57779,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -9001,6 +10915,9 @@
      "size": 26148,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -9015,6 +10932,9 @@
      "size": 40323,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -9029,6 +10949,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "folder"
    },
@@ -9043,6 +10966,9 @@
      "size": 266472,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -9057,6 +10983,9 @@
      "size": 14302,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -9071,6 +11000,9 @@
      "size": 6323,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -9085,6 +11017,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "folder"
    },
@@ -9099,6 +11034,9 @@
      "size": 19140,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/notebooks/",
     "icon": "package"
    },
@@ -9113,6 +11051,9 @@
      "size": 19241,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/notebooks/",
     "icon": "package"
    },
@@ -9127,6 +11068,9 @@
      "size": 22427,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/notebooks/",
     "icon": "package"
    },
@@ -9141,6 +11085,9 @@
      "size": 18595,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/interactive/",
     "icon": "package"
    },
@@ -9155,6 +11102,9 @@
      "size": 8685,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/",
     "icon": "package"
    },
@@ -9169,6 +11119,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/",
     "icon": "folder"
    },
@@ -9183,6 +11136,9 @@
      "size": 33428,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9197,6 +11153,9 @@
      "size": 41857,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9211,6 +11170,9 @@
      "size": 57012,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9225,6 +11187,9 @@
      "size": 23857,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9239,6 +11204,9 @@
      "size": 23891,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9253,6 +11221,9 @@
      "size": 33852,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9267,6 +11238,9 @@
      "size": 2394,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9281,6 +11255,9 @@
      "size": 53937,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9295,6 +11272,9 @@
      "size": 25917,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9309,6 +11289,9 @@
      "size": 18555,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9323,6 +11306,9 @@
      "size": 67917,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9337,6 +11323,9 @@
      "size": 43501,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9351,6 +11340,9 @@
      "size": 82417,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9365,6 +11357,9 @@
      "size": 60772,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9379,6 +11374,9 @@
      "size": 36161,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9393,6 +11391,9 @@
      "size": 91508,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9407,6 +11408,9 @@
      "size": 4679,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9421,6 +11425,9 @@
      "size": 4558,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9435,6 +11442,9 @@
      "size": 23012,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9449,6 +11459,9 @@
      "size": 20217,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/arc2/scripts/",
     "icon": "package"
    },
@@ -9463,6 +11476,9 @@
      "size": 8062,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9477,6 +11493,9 @@
      "size": 2826,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9491,6 +11510,9 @@
      "size": 17857,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9505,6 +11527,9 @@
      "size": 10659,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9519,6 +11544,9 @@
      "size": 10947,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9533,6 +11561,9 @@
      "size": 19239,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9547,6 +11578,9 @@
      "size": 8653,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9561,6 +11595,9 @@
      "size": 4684,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9575,6 +11612,9 @@
      "size": 20149,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9589,6 +11629,9 @@
      "size": 5977,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9603,6 +11646,9 @@
      "size": 6605,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9617,6 +11663,9 @@
      "size": 30243,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9631,6 +11680,9 @@
      "size": 18899,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9645,6 +11697,9 @@
      "size": 3636,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9659,6 +11714,9 @@
      "size": 20056,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9673,6 +11731,9 @@
      "size": 6522,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9687,6 +11748,9 @@
      "size": 7732,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9701,6 +11765,9 @@
      "size": 3706,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9715,6 +11782,9 @@
      "size": 4133,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9729,6 +11799,9 @@
      "size": 5708,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9743,6 +11816,9 @@
      "size": 1493,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9757,6 +11833,9 @@
      "size": 5646,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9771,6 +11850,9 @@
      "size": 5970,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9785,6 +11867,9 @@
      "size": 14530,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9799,6 +11884,9 @@
      "size": 15202,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9813,6 +11901,9 @@
      "size": 11927,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9827,6 +11918,9 @@
      "size": 17225,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9841,6 +11935,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "folder"
    },
@@ -9855,6 +11952,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/notebooks/",
     "icon": "folder"
    },
@@ -9869,6 +11969,9 @@
      "size": 12390,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/notebooks/data/",
     "icon": "package"
    },
@@ -9883,6 +11986,9 @@
      "size": 1723,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/notebooks/data/",
     "icon": "package"
    },
@@ -9897,6 +12003,9 @@
      "size": 1500200,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/notebooks/data/",
     "icon": "package"
    },
@@ -9911,6 +12020,9 @@
      "size": 150598,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/notebooks/data/",
     "icon": "package"
    },
@@ -9925,6 +12037,9 @@
      "size": 1500800,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/notebooks/data/",
     "icon": "package"
    },
@@ -9939,6 +12054,9 @@
      "size": 164818,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/notebooks/data/",
     "icon": "package"
    },
@@ -9953,6 +12071,9 @@
      "size": 16087,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/notebooks/",
     "icon": "package"
    },
@@ -9967,6 +12088,9 @@
      "size": 1269,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/notebooks/",
     "icon": "package"
    },
@@ -9981,6 +12105,9 @@
      "size": 15061,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -9995,6 +12122,9 @@
      "size": 9489,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -10009,6 +12139,9 @@
      "size": 5751,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -10023,6 +12156,9 @@
      "size": 6372,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -10037,6 +12173,9 @@
      "size": 9317,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -10051,6 +12190,9 @@
      "size": 1965,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -10065,6 +12207,9 @@
      "size": 2030,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -10079,6 +12224,9 @@
      "size": 4758,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -10093,6 +12241,9 @@
      "size": 4772,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -10107,6 +12258,9 @@
      "size": 10285,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -10121,6 +12275,9 @@
      "size": 6192,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -10135,6 +12292,9 @@
      "size": 4222,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -10149,6 +12309,9 @@
      "size": 12922,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/publish/epoch/",
     "icon": "package"
    },
@@ -10581,8 +12744,14 @@
      "path": "outputs/research",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "provenance": "human",
+     "status": "active",
+     "description": "/research スキル。interactive/ を公開スライスとして持つ（Oceanic Constellations 資料集・スタートアップ解説）"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/",
     "icon": "folder"
    },
@@ -10597,6 +12766,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10611,6 +12783,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "folder"
    },
@@ -10625,6 +12800,9 @@
      "size": 2921,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/interactive/",
     "icon": "package"
    },
@@ -10639,6 +12817,9 @@
      "size": 22444,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/interactive/",
     "icon": "package"
    },
@@ -10653,6 +12834,9 @@
      "size": 33152,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/interactive/",
     "icon": "package"
    },
@@ -10667,6 +12851,9 @@
      "size": 19675,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10681,6 +12868,9 @@
      "size": 16545,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10695,6 +12885,9 @@
      "size": 19540,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10709,6 +12902,9 @@
      "size": 17021,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10723,6 +12919,9 @@
      "size": 14313,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10737,6 +12936,9 @@
      "size": 18254,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10751,6 +12953,9 @@
      "size": 20610,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10765,6 +12970,9 @@
      "size": 18452,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10779,6 +12987,9 @@
      "size": 29748,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10793,6 +13004,9 @@
      "size": 8828,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10807,6 +13021,9 @@
      "size": 36317,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10821,6 +13038,9 @@
      "size": 58595,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10835,6 +13055,9 @@
      "size": 6363,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10849,6 +13072,9 @@
      "size": 15135,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10863,6 +13089,9 @@
      "size": 27206,
      "role": "output"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "outputs/research/",
     "icon": "package"
    },
@@ -10877,6 +13106,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/",
     "icon": "folder"
    },
@@ -10891,6 +13123,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/site/",
     "icon": "folder"
    },
@@ -10905,6 +13140,9 @@
      "size": 2444,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/site/interactive/",
     "icon": "package"
    },
@@ -10919,6 +13157,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/site/interactive/",
     "icon": "folder"
    },
@@ -10933,6 +13174,9 @@
      "size": 53,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/site/interactive/",
     "icon": "package"
    },
@@ -10947,6 +13191,9 @@
      "size": 33452,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/site/interactive/",
     "icon": "package"
    },
@@ -10961,6 +13208,9 @@
      "size": 10343,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/site/interactive/",
     "icon": "package"
    },
@@ -10975,6 +13225,9 @@
      "size": 0,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/site/interactive/",
     "icon": "folder"
    },
@@ -10989,6 +13242,9 @@
      "size": 8398,
      "role": "output"
     },
+    "tags": [
+     "layer:PUBLISH"
+    ],
     "sublabel": "outputs/site/interactive/",
     "icon": "package"
    },
@@ -11068,6 +13324,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "icon": "folder"
    },
    {
@@ -11079,8 +13338,14 @@
      "path": "tools/diagram_engine",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "provenance": "human",
+     "status": "active",
+     "description": "JSON 宣言 ⇄ 2D/2.5D/3D の自己完結インタラクティブ図解＋MBSE 台帳"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/",
     "icon": "folder"
    },
@@ -11095,6 +13360,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "folder"
    },
@@ -11106,9 +13374,12 @@
     "props": {
      "path": "tools/diagram_engine/bin/extract.mjs",
      "ext": ".mjs",
-     "size": 21182,
+     "size": 27089,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/bin/",
     "icon": "tool"
    },
@@ -11123,6 +13394,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/bin/",
     "icon": "folder"
    },
@@ -11137,6 +13411,9 @@
      "size": 989,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/bin/rules/",
     "icon": "tool"
    },
@@ -11148,9 +13425,12 @@
     "props": {
      "path": "tools/diagram_engine/bin/rules/life.json",
      "ext": ".json",
-     "size": 1975,
+     "size": 2620,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/bin/rules/",
     "icon": "tool"
    },
@@ -11162,9 +13442,12 @@
     "props": {
      "path": "tools/diagram_engine/BOOTSTRAP.md",
      "ext": ".md",
-     "size": 4374,
+     "size": 6741,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "tool"
    },
@@ -11176,9 +13459,12 @@
     "props": {
      "path": "tools/diagram_engine/build.mjs",
      "ext": ".mjs",
-     "size": 10429,
+     "size": 10441,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "tool"
    },
@@ -11193,6 +13479,9 @@
      "size": 1374,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "tool"
    },
@@ -11207,6 +13496,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "folder"
    },
@@ -11221,6 +13513,9 @@
      "size": 9406,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/examples/",
     "icon": "tool"
    },
@@ -11235,6 +13530,9 @@
      "size": 8186,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/examples/",
     "icon": "tool"
    },
@@ -11249,6 +13547,26 @@
      "size": 4742,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
+    "sublabel": "tools/diagram_engine/examples/",
+    "icon": "tool"
+   },
+   {
+    "id": "tools/diagram_engine/examples/life_structure.json",
+    "type": "tool",
+    "name": "life_structure.json",
+    "parent": "tools/diagram_engine/examples",
+    "props": {
+     "path": "tools/diagram_engine/examples/life_structure.json",
+     "ext": ".json",
+     "size": 18874,
+     "role": "tool"
+    },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/examples/",
     "icon": "tool"
    },
@@ -11263,6 +13581,9 @@
      "size": 6625,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/examples/",
     "icon": "tool"
    },
@@ -11274,9 +13595,12 @@
     "props": {
      "path": "tools/diagram_engine/GRAPH_CONTRACT.md",
      "ext": ".md",
-     "size": 7733,
+     "size": 11926,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "tool"
    },
@@ -11291,6 +13615,9 @@
      "size": 22149,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "tool"
    },
@@ -11305,6 +13632,9 @@
      "size": 3745,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "tool"
    },
@@ -11319,6 +13649,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "folder"
    },
@@ -11330,9 +13663,12 @@
     "props": {
      "path": "tools/diagram_engine/interactive/index.html",
      "ext": ".html",
-     "size": 1071607,
+     "size": 1107691,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/interactive/",
     "icon": "tool"
    },
@@ -11344,9 +13680,12 @@
     "props": {
      "path": "tools/diagram_engine/MIGRATION.md",
      "ext": ".md",
-     "size": 10709,
+     "size": 15330,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "tool"
    },
@@ -11358,9 +13697,12 @@
     "props": {
      "path": "tools/diagram_engine/README.md",
      "ext": ".md",
-     "size": 12966,
+     "size": 13607,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "tool"
    },
@@ -11375,6 +13717,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "folder"
    },
@@ -11386,9 +13731,12 @@
     "props": {
      "path": "tools/diagram_engine/schema/diagram.schema.json",
      "ext": ".json",
-     "size": 11420,
+     "size": 12221,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/schema/",
     "icon": "tool"
    },
@@ -11400,9 +13748,12 @@
     "props": {
      "path": "tools/diagram_engine/schema/project.schema.json",
      "ext": ".json",
-     "size": 9956,
+     "size": 12131,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/schema/",
     "icon": "tool"
    },
@@ -11417,6 +13768,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "folder"
    },
@@ -11428,9 +13782,12 @@
     "props": {
      "path": "tools/diagram_engine/src/editor.js",
      "ext": ".js",
-     "size": 88843,
+     "size": 95816,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/",
     "icon": "tool"
    },
@@ -11445,6 +13802,9 @@
      "size": 87102,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/",
     "icon": "tool"
    },
@@ -11459,6 +13819,9 @@
      "size": 7946,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/",
     "icon": "tool"
    },
@@ -11470,9 +13833,12 @@
     "props": {
      "path": "tools/diagram_engine/src/layout_algos.js",
      "ext": ".js",
-     "size": 26523,
+     "size": 33947,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/",
     "icon": "tool"
    },
@@ -11484,9 +13850,12 @@
     "props": {
      "path": "tools/diagram_engine/src/layout.js",
      "ext": ".js",
-     "size": 7510,
+     "size": 8832,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/",
     "icon": "tool"
    },
@@ -11501,6 +13870,9 @@
      "size": 2959,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/",
     "icon": "tool"
    },
@@ -11512,9 +13884,12 @@
     "props": {
      "path": "tools/diagram_engine/src/model.js",
      "ext": ".js",
-     "size": 33131,
+     "size": 49795,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/",
     "icon": "tool"
    },
@@ -11529,6 +13904,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/",
     "icon": "folder"
    },
@@ -11540,9 +13918,12 @@
     "props": {
      "path": "tools/diagram_engine/src/renderers/flat_svg.js",
      "ext": ".js",
-     "size": 24024,
+     "size": 27802,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/renderers/",
     "icon": "tool"
    },
@@ -11557,6 +13938,9 @@
      "size": 7954,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/renderers/",
     "icon": "tool"
    },
@@ -11571,6 +13955,9 @@
      "size": 15017,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/renderers/",
     "icon": "tool"
    },
@@ -11585,6 +13972,9 @@
      "size": 1553,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/renderers/",
     "icon": "tool"
    },
@@ -11599,6 +13989,9 @@
      "size": 28107,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/renderers/",
     "icon": "tool"
    },
@@ -11613,6 +14006,9 @@
      "size": 4338,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/",
     "icon": "tool"
    },
@@ -11627,6 +14023,9 @@
      "size": 11813,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/",
     "icon": "tool"
    },
@@ -11641,6 +14040,9 @@
      "size": 18516,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/src/",
     "icon": "tool"
    },
@@ -11655,6 +14057,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "folder"
    },
@@ -11669,6 +14074,9 @@
      "size": 881,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/vendor/",
     "icon": "tool"
    },
@@ -11683,6 +14091,9 @@
      "size": 682185,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/vendor/",
     "icon": "tool"
    },
@@ -11697,6 +14108,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/",
     "icon": "folder"
    },
@@ -11708,9 +14122,12 @@
     "props": {
      "path": "tools/diagram_engine/verification/extract.test.mjs",
      "ext": ".mjs",
-     "size": 10135,
+     "size": 18557,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/verification/",
     "icon": "tool"
    },
@@ -11725,6 +14142,9 @@
      "size": 11316,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/verification/",
     "icon": "tool"
    },
@@ -11736,9 +14156,12 @@
     "props": {
      "path": "tools/diagram_engine/verification/LESSONS.md",
      "ext": ".md",
-     "size": 94440,
+     "size": 108742,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/verification/",
     "icon": "tool"
    },
@@ -11750,9 +14173,12 @@
     "props": {
      "path": "tools/diagram_engine/verification/verify.mjs",
      "ext": ".mjs",
-     "size": 148782,
+     "size": 191876,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/diagram_engine/verification/",
     "icon": "tool"
    },
@@ -11767,6 +14193,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/",
     "icon": "folder"
    },
@@ -11781,6 +14210,9 @@
      "size": 28467,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_hull/",
     "icon": "tool"
    },
@@ -11795,6 +14227,9 @@
      "size": 4419,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_hull/",
     "icon": "tool"
    },
@@ -11809,6 +14244,9 @@
      "size": 25815,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_hull/",
     "icon": "tool"
    },
@@ -11823,6 +14261,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_hull/",
     "icon": "folder"
    },
@@ -11837,6 +14278,9 @@
      "size": 2001,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_hull/lib/",
     "icon": "tool"
    },
@@ -11851,6 +14295,9 @@
      "size": 20597,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_hull/lib/",
     "icon": "tool"
    },
@@ -11865,6 +14312,9 @@
      "size": 18996,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_hull/",
     "icon": "tool"
    },
@@ -11879,6 +14329,9 @@
      "size": 3796,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_hull/",
     "icon": "tool"
    },
@@ -11893,6 +14346,9 @@
      "size": 10504,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_hull/",
     "icon": "tool"
    },
@@ -11907,6 +14363,9 @@
      "size": 163,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_hull/",
     "icon": "tool"
    },
@@ -11919,8 +14378,13 @@
      "path": "tools/usv_model",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "provenance": "ai",
+     "description": "エネルギー成立性・動力性能成立性の 0D シミュレータ。設計書 DP-20260825-01"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/",
     "icon": "folder"
    },
@@ -11932,9 +14396,12 @@
     "props": {
      "path": "tools/usv_model/BACKLOG.md",
      "ext": ".md",
-     "size": 5445,
+     "size": 6664,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_model/",
     "icon": "tool"
    },
@@ -11949,6 +14416,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_model/",
     "icon": "folder"
    },
@@ -11963,6 +14433,9 @@
      "size": 2152,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_model/geo/",
     "icon": "tool"
    },
@@ -11977,6 +14450,9 @@
      "size": 59879,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_model/geo/",
     "icon": "tool"
    },
@@ -11991,6 +14467,9 @@
      "size": 2873,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_model/geo/",
     "icon": "tool"
    },
@@ -12005,6 +14484,9 @@
      "size": 1218,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_model/geo/",
     "icon": "tool"
    },
@@ -12019,6 +14501,9 @@
      "size": 0,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_model/",
     "icon": "folder"
    },
@@ -12030,9 +14515,12 @@
     "props": {
      "path": "tools/usv_model/interactive/index.html",
      "ext": ".html",
-     "size": 775060,
+     "size": 857622,
      "role": "tool"
     },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
     "sublabel": "tools/usv_model/interactive/",
     "icon": "tool"
    },
@@ -12098,6 +14586,16 @@
     "name": "pub/reports/usv_lightfish_20260912",
     "props": {
      "external": "viewer"
+    }
+   },
+   {
+    "id": "~ext/viewer",
+    "type": "pictogram",
+    "name": "viewer 公開サイト",
+    "props": {
+     "provenance": "human",
+     "external": "viewer",
+     "description": "GitHub Pages 公開先。sync-viewer.yml が各 home の公開スライスを転送"
     }
    }
   ],
@@ -13477,10 +15975,10 @@
     "to": "outputs/diagrams/interactive"
    },
    {
-    "id": "contains~outputs/diagrams/interactive~outputs/diagrams/interactive/life_structure.json",
+    "id": "contains~outputs/diagrams/interactive~outputs/diagrams/interactive/life_overlay.json",
     "rel": "contains",
     "from": "outputs/diagrams/interactive",
-    "to": "outputs/diagrams/interactive/life_structure.json"
+    "to": "outputs/diagrams/interactive/life_overlay.json"
    },
    {
     "id": "contains~outputs/diagrams~outputs/diagrams/README.md",
@@ -16927,6 +19425,12 @@
     "to": "tools/diagram_engine/examples/foundry_ontology.json"
    },
    {
+    "id": "contains~tools/diagram_engine/examples~tools/diagram_engine/examples/life_structure.json",
+    "rel": "contains",
+    "from": "tools/diagram_engine/examples",
+    "to": "tools/diagram_engine/examples/life_structure.json"
+   },
+   {
     "id": "contains~tools/diagram_engine/examples~tools/diagram_engine/examples/uml_semantics.json",
     "rel": "contains",
     "from": "tools/diagram_engine/examples",
@@ -19963,6 +22467,12 @@
     "to": "tools/diagram_engine/src/model.js"
    },
    {
+    "id": "imports~tools/diagram_engine/verification/verify.mjs~tools/diagram_engine/src/layout.js",
+    "rel": "imports",
+    "from": "tools/diagram_engine/verification/verify.mjs",
+    "to": "tools/diagram_engine/src/layout.js"
+   },
+   {
     "id": "imports~tools/usv_hull/bem.py~tools/usv_hull/gz.py",
     "rel": "imports",
     "from": "tools/usv_hull/bem.py",
@@ -20039,6 +22549,51 @@
     "rel": "publishes",
     "from": "outputs/reports/usv_lightfish_20260912/interactive",
     "to": "~ext/viewer/pub/reports/usv_lightfish_20260912"
+   },
+   {
+    "id": "realizes~tools/diagram_engine~outputs/diagrams",
+    "rel": "realizes",
+    "from": "tools/diagram_engine",
+    "to": "outputs/diagrams",
+    "props": {
+     "note": "diagram_engine が DG サブシステムを実現する"
+    }
+   },
+   {
+    "id": "flow~outputs/diagrams~~ext/viewer",
+    "rel": "flow",
+    "from": "outputs/diagrams",
+    "to": "~ext/viewer",
+    "props": {
+     "note": "diagrams/interactive/ を viewer /data/diagrams/ へ公開"
+    }
+   },
+   {
+    "id": "flow~outputs/learning/manga_epoch~~ext/viewer",
+    "rel": "flow",
+    "from": "outputs/learning/manga_epoch",
+    "to": "~ext/viewer",
+    "props": {
+     "note": "manga_epoch/interactive/ を viewer /review/epoch/ へ公開"
+    }
+   },
+   {
+    "id": "flow~outputs/research~~ext/viewer",
+    "rel": "flow",
+    "from": "outputs/research",
+    "to": "~ext/viewer",
+    "props": {
+     "note": "research/interactive/ を viewer /review/oceanic/ へ公開"
+    }
+   },
+   {
+    "id": "flow~tools/usv_model~~ext/viewer",
+    "rel": "flow",
+    "from": "tools/usv_model",
+    "to": "~ext/viewer",
+    "props": {
+     "note": "tools/usv_model/interactive → viewer /tools/usv_model/（sync-viewer MAP_DEV）"
+    }
    }
   ]
  },
@@ -20046,23 +22601,28 @@
   {
    "meta": {
     "id": "dir",
-    "title": "Directory (depth 2)",
+    "title": "Directory",
     "projection": "flat"
    },
    "select": {
     "roots": [
      "."
     ],
-    "depth": 2,
+    "depth": 1,
     "rels": [
      "contains"
-    ]
+    ],
+    "expanded": []
    },
    "layout": {
     "algorithm": "tree",
     "direction": "LR",
-    "nodeSep": 24,
-    "rankSep": 120
+    "nodeSep": 16,
+    "rankSep": 140,
+    "node": {
+     "w": 170,
+     "h": 44
+    }
    },
    "layers": [
     {
@@ -20099,7 +22659,47 @@
    },
    "layout": {
     "algorithm": "layered",
-    "direction": "LR"
+    "direction": "LR",
+    "node": {
+     "w": 170,
+     "h": 44
+    }
+   },
+   "layers": [
+    {
+     "id": "base"
+    }
+   ],
+   "nodes": [],
+   "edges": [],
+   "groups": []
+  },
+  {
+   "meta": {
+    "id": "nested",
+    "title": "Nested (drill-down)"
+   },
+   "select": {
+    "roots": [
+     "."
+    ],
+    "depth": 1,
+    "mode": "nested",
+    "rels": [
+     "contains",
+     "imports",
+     "links",
+     "publishes"
+    ]
+   },
+   "layout": {
+    "algorithm": "nested",
+    "inner": "layered",
+    "direction": "LR",
+    "node": {
+     "w": 170,
+     "h": 44
+    }
    },
    "layers": [
     {
@@ -20123,7 +22723,11 @@
    },
    "layout": {
     "algorithm": "layered",
-    "direction": "LR"
+    "direction": "LR",
+    "node": {
+     "w": 170,
+     "h": 44
+    }
    },
    "layers": [
     {
@@ -20133,6 +22737,751 @@
    "nodes": [],
    "edges": [],
    "groups": []
+  },
+  {
+   "meta": {
+    "id": "overview",
+    "title": "System Overview (3 layers)",
+    "caption": "GOVERNANCE が土台、DEVELOPMENT が本体、PUBLISH は成果スライスの公開先。クリック: outputs → 詳細 / rules・skills → サブシステム / workflows → 公開パイプライン",
+    "projection": "iso",
+    "theme": "mono-light",
+    "grid": 20,
+    "render3d": "shape"
+   },
+   "layers": [
+    {
+     "id": "gov",
+     "label": "Governance",
+     "z": 0,
+     "elevation": 0
+    },
+    {
+     "id": "dev",
+     "label": "Development (home)",
+     "z": 1,
+     "elevation": 300
+    },
+    {
+     "id": "pub",
+     "label": "Publish",
+     "z": 2,
+     "elevation": 600
+    }
+   ],
+   "groups": [
+    {
+     "id": "plate_gov",
+     "label": "Governance",
+     "kind": "platform",
+     "layer": "gov",
+     "x": 20,
+     "y": 80,
+     "w": 960,
+     "h": 340
+    },
+    {
+     "id": "plate_dev",
+     "label": "Development",
+     "kind": "platform",
+     "layer": "dev",
+     "x": 20,
+     "y": 80,
+     "w": 960,
+     "h": 420
+    },
+    {
+     "id": "plate_pub",
+     "label": "Publish",
+     "kind": "platform",
+     "layer": "pub",
+     "x": 260,
+     "y": 160,
+     "w": 480,
+     "h": 240
+    }
+   ],
+   "nodes": [
+    {
+     "id": "claude_md",
+     "type": "block",
+     "label": "CLAUDE.md",
+     "icon": "book",
+     "x": 120,
+     "y": 160,
+     "w": 160,
+     "h": 80,
+     "layer": "gov",
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "claude_dir",
+     "entityId": ".claude",
+     "type": "block",
+     "label": ".claude/ rules+skills",
+     "icon": "shield-check",
+     "x": 420,
+     "y": 160,
+     "w": 180,
+     "h": 80,
+     "layer": "gov",
+     "link": "subsystems"
+    },
+    {
+     "id": "gh_workflows",
+     "entityId": ".github",
+     "type": "block",
+     "label": ".github/ workflows",
+     "icon": "gear",
+     "x": 720,
+     "y": 160,
+     "w": 180,
+     "h": 80,
+     "layer": "gov",
+     "link": "publish_flow"
+    },
+    {
+     "id": "knowledge",
+     "entityId": "knowledge",
+     "type": "block",
+     "label": "knowledge/",
+     "icon": "book",
+     "x": 80,
+     "y": 140,
+     "w": 150,
+     "h": 80,
+     "layer": "dev"
+    },
+    {
+     "id": "ideas",
+     "entityId": "ideas",
+     "type": "block",
+     "label": "ideas/",
+     "icon": "bulb",
+     "x": 80,
+     "y": 320,
+     "w": 150,
+     "h": 80,
+     "layer": "dev"
+    },
+    {
+     "id": "outputs",
+     "entityId": "outputs",
+     "type": "block",
+     "label": "outputs/",
+     "icon": "folder",
+     "x": 330,
+     "y": 200,
+     "w": 170,
+     "h": 90,
+     "layer": "dev",
+     "link": "outputs_detail",
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "tools",
+     "entityId": "tools/diagram_engine",
+     "type": "block",
+     "label": "tools/ diagram_engine",
+     "icon": "hierarchy",
+     "x": 620,
+     "y": 140,
+     "w": 190,
+     "h": 80,
+     "layer": "dev"
+    },
+    {
+     "id": "docs",
+     "entityId": "docs",
+     "type": "block",
+     "label": "docs/ bootstraps",
+     "icon": "notebook",
+     "x": 620,
+     "y": 320,
+     "w": 190,
+     "h": 80,
+     "layer": "dev"
+    },
+    {
+     "id": "viewer",
+     "entityId": "~ext/viewer",
+     "type": "pictogram",
+     "label": "viewer (GitHub Pages)",
+     "icon": "world",
+     "x": 440,
+     "y": 230,
+     "w": 120,
+     "h": 100,
+     "layer": "pub",
+     "link": "publish_flow",
+     "style": {
+      "accent": true
+     }
+    }
+   ],
+   "edges": [
+    {
+     "id": "o1",
+     "from": "claude_md",
+     "to": "outputs",
+     "label": "governs",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "o2",
+     "from": "claude_dir",
+     "to": "tools",
+     "label": "/diagram skill",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "o3",
+     "from": "outputs",
+     "to": "viewer",
+     "label": "interactive/",
+     "kind": "orthogonal",
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "o4",
+     "from": "tools",
+     "to": "viewer",
+     "label": "interactive/",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "o5",
+     "from": "gh_workflows",
+     "to": "viewer",
+     "label": "sync-viewer.yml",
+     "kind": "orthogonal",
+     "style": {
+      "accent": true
+     }
+    }
+   ]
+  },
+  {
+   "meta": {
+    "id": "outputs_detail",
+    "title": "outputs/ Detail",
+    "caption": "各サブシステムの成果物 home。learning/ 配下の各ゴールと diagrams/ は自分の interactive/（公開スライス）を持つ。← で全体へ戻る",
+    "projection": "flat",
+    "theme": "mono-light",
+    "grid": 20,
+    "size": {
+     "w": 1120,
+     "h": 640
+    }
+   },
+   "groups": [
+    {
+     "id": "g_outputs",
+     "label": "outputs/",
+     "kind": "container",
+     "x": 40,
+     "y": 40,
+     "w": 1040,
+     "h": 644
+    },
+    {
+     "id": "g_learning",
+     "label": "learning/（LS・学習ゴール）",
+     "kind": "container",
+     "x": 320,
+     "y": 100,
+     "w": 460,
+     "h": 460,
+     "style": {
+      "fill": "var(--de-fill-alt)",
+      "opacity": 0.55
+     }
+    }
+   ],
+   "nodes": [
+    {
+     "id": "research",
+     "type": "block",
+     "label": "research/",
+     "sublabel": "RA リサーチ",
+     "icon": "search",
+     "x": 80,
+     "y": 110,
+     "w": 190,
+     "h": 74
+    },
+    {
+     "id": "speeches",
+     "type": "block",
+     "label": "speeches/",
+     "sublabel": "SW スピーチ",
+     "icon": "microphone",
+     "x": 80,
+     "y": 230,
+     "w": 190,
+     "h": 74
+    },
+    {
+     "id": "dev_plans",
+     "type": "block",
+     "label": "dev_plans/",
+     "sublabel": "DP 開発プラン",
+     "icon": "presentation",
+     "x": 80,
+     "y": 350,
+     "w": 190,
+     "h": 74
+    },
+    {
+     "id": "portfolio",
+     "type": "block",
+     "label": "portfolio/",
+     "sublabel": "KP ポートフォリオ",
+     "icon": "chart",
+     "x": 80,
+     "y": 470,
+     "w": 190,
+     "h": 74
+    },
+    {
+     "id": "reports",
+     "type": "block",
+     "label": "reports/",
+     "sublabel": "技術レポート（tech-report）→ viewer /pub/reports/",
+     "icon": "chart",
+     "x": 80,
+     "y": 590,
+     "w": 190,
+     "h": 74
+    },
+    {
+     "id": "epoch_arc1",
+     "type": "block",
+     "label": "epoch_arc1/",
+     "icon": "book",
+     "x": 360,
+     "y": 160,
+     "w": 180,
+     "h": 64
+    },
+    {
+     "id": "epoch_arc2",
+     "type": "block",
+     "label": "epoch_arc2/",
+     "icon": "book",
+     "x": 570,
+     "y": 160,
+     "w": 180,
+     "h": 64
+    },
+    {
+     "id": "manga_epoch",
+     "entityId": "outputs/learning/manga_epoch",
+     "type": "block",
+     "label": "manga_epoch/",
+     "sublabel": "MS マンガ制作",
+     "icon": "notebook",
+     "x": 360,
+     "y": 270,
+     "w": 180,
+     "h": 74,
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "g_test",
+     "type": "block",
+     "label": "g_test_2026_05/",
+     "icon": "book",
+     "x": 570,
+     "y": 270,
+     "w": 180,
+     "h": 64
+    },
+    {
+     "id": "robotics_ai",
+     "type": "block",
+     "label": "robotics_ai/",
+     "icon": "book",
+     "x": 360,
+     "y": 380,
+     "w": 180,
+     "h": 64
+    },
+    {
+     "id": "l_interactive",
+     "type": "note",
+     "label": "各ゴールの interactive/ が公開スライス → <viewer>/<goal>/",
+     "x": 360,
+     "y": 480,
+     "w": 390,
+     "h": 56
+    },
+    {
+     "id": "diagrams",
+     "entityId": "outputs/diagrams",
+     "type": "block",
+     "label": "diagrams/",
+     "sublabel": "DG ダイアグラム",
+     "icon": "hierarchy",
+     "x": 850,
+     "y": 110,
+     "w": 200,
+     "h": 80,
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "life_json",
+     "type": "block",
+     "label": "interactive/ life_graph.json",
+     "sublabel": "この図（overlay 込みの正本）",
+     "icon": "sitemap",
+     "x": 850,
+     "y": 250,
+     "w": 200,
+     "h": 90,
+     "style": {
+      "accent": true
+     }
+    }
+   ],
+   "edges": [
+    {
+     "id": "d1",
+     "from": "diagrams",
+     "to": "life_json",
+     "label": "公開スライス",
+     "kind": "orthogonal",
+     "style": {
+      "accent": true
+     }
+    }
+   ]
+  },
+  {
+   "meta": {
+    "id": "publish_flow",
+    "title": "Publish Pipeline (sync-viewer)",
+    "caption": "main へ push → sync-viewer.yml が各 home の公開スライスを viewer リポジトリへ転送 → GitHub Pages。← で全体へ戻る",
+    "projection": "flat",
+    "theme": "mono-light",
+    "grid": 20,
+    "size": {
+     "w": 1140,
+     "h": 640
+    }
+   },
+   "groups": [
+    {
+     "id": "g_home",
+     "label": "life リポジトリ（home の公開スライス）",
+     "kind": "container",
+     "x": 40,
+     "y": 60,
+     "w": 330,
+     "h": 520
+    },
+    {
+     "id": "g_site",
+     "label": "viewer サイト（GitHub Pages）",
+     "kind": "container",
+     "x": 830,
+     "y": 60,
+     "w": 280,
+     "h": 520
+    }
+   ],
+   "nodes": [
+    {
+     "id": "s_learning",
+     "type": "block",
+     "label": "outputs/learning/*/interactive/",
+     "x": 70,
+     "y": 120,
+     "w": 270,
+     "h": 64,
+     "icon": "book"
+    },
+    {
+     "id": "s_diagrams",
+     "type": "block",
+     "label": "outputs/diagrams/interactive/",
+     "x": 70,
+     "y": 220,
+     "w": 270,
+     "h": 64,
+     "icon": "sitemap",
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "s_tool",
+     "entityId": "tools/diagram_engine",
+     "type": "block",
+     "label": "tools/*/interactive/",
+     "x": 70,
+     "y": 320,
+     "w": 270,
+     "h": 64,
+     "icon": "hierarchy",
+     "sublabel": "diagram_engine ・ usv_model"
+    },
+    {
+     "id": "s_lp",
+     "type": "block",
+     "label": "outputs/site/interactive/（LP）",
+     "x": 70,
+     "y": 420,
+     "w": 270,
+     "h": 64,
+     "icon": "world"
+    },
+    {
+     "id": "sync",
+     "type": "function",
+     "label": "sync-viewer.yml",
+     "sublabel": "on: push(main)",
+     "icon": "gear",
+     "x": 460,
+     "y": 250,
+     "w": 220,
+     "h": 110,
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "u_goal",
+     "type": "block",
+     "label": "/pub/<project>/ ・ /review/<project>/",
+     "x": 870,
+     "y": 120,
+     "w": 200,
+     "h": 60
+    },
+    {
+     "id": "u_diagrams",
+     "type": "block",
+     "label": "/data/diagrams/",
+     "x": 870,
+     "y": 220,
+     "w": 200,
+     "h": 60,
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "u_drawer",
+     "type": "block",
+     "label": "/tools/<tool>/",
+     "x": 870,
+     "y": 320,
+     "w": 200,
+     "h": 60,
+     "sublabel": "diagram_drawer ・ usv_model"
+    },
+    {
+     "id": "u_root",
+     "type": "block",
+     "label": "/（サイト root）",
+     "x": 870,
+     "y": 420,
+     "w": 200,
+     "h": 60
+    }
+   ],
+   "edges": [
+    {
+     "id": "p1",
+     "from": "s_learning",
+     "to": "sync",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "p2",
+     "from": "s_diagrams",
+     "to": "sync",
+     "kind": "orthogonal",
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "p3",
+     "from": "s_tool",
+     "to": "sync",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "p4",
+     "from": "s_lp",
+     "to": "sync",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "p5",
+     "from": "sync",
+     "to": "u_goal",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "p6",
+     "from": "sync",
+     "to": "u_diagrams",
+     "kind": "orthogonal",
+     "style": {
+      "accent": true
+     }
+    },
+    {
+     "id": "p7",
+     "from": "sync",
+     "to": "u_drawer",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "p8",
+     "from": "sync",
+     "to": "u_root",
+     "kind": "orthogonal"
+    }
+   ]
+  },
+  {
+   "meta": {
+    "id": "subsystems",
+    "title": "Subsystems & Skills",
+    "caption": "CLAUDE.md 登録の 8 サブシステム。スキルは .claude/skills/。← で全体へ戻る",
+    "projection": "flat",
+    "theme": "mono-light",
+    "grid": 20,
+    "size": {
+     "w": 1120,
+     "h": 560
+    }
+   },
+   "groups": [],
+   "nodes": [
+    {
+     "id": "kas",
+     "type": "block",
+     "label": "KAS",
+     "sublabel": "ナレッジ蓄積基盤",
+     "icon": "book",
+     "x": 80,
+     "y": 100,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "ra",
+     "type": "block",
+     "label": "RA /research",
+     "sublabel": "リサーチエージェント",
+     "icon": "search",
+     "x": 380,
+     "y": 100,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "kp",
+     "type": "block",
+     "label": "KP",
+     "sublabel": "知識ポートフォリオ",
+     "icon": "chart",
+     "x": 680,
+     "y": 100,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "sw",
+     "type": "block",
+     "label": "SW /speech",
+     "sublabel": "スピーチ原稿生成",
+     "icon": "microphone",
+     "x": 80,
+     "y": 240,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "dp",
+     "type": "block",
+     "label": "DP /dev-plan",
+     "sublabel": "開発プラン生成",
+     "icon": "presentation",
+     "x": 380,
+     "y": 240,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "ls",
+     "type": "block",
+     "label": "LS /learn",
+     "sublabel": "学習サポート",
+     "icon": "bulb",
+     "x": 680,
+     "y": 240,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "ms",
+     "entityId": "outputs/learning/manga_epoch",
+     "type": "block",
+     "label": "MS /manga",
+     "sublabel": "マンガ制作支援",
+     "icon": "notebook",
+     "x": 80,
+     "y": 380,
+     "w": 220,
+     "h": 84
+    },
+    {
+     "id": "dg",
+     "entityId": "outputs/diagrams",
+     "type": "block",
+     "label": "DG /diagram",
+     "sublabel": "ダイアグラム生成（この図）",
+     "icon": "hierarchy",
+     "x": 380,
+     "y": 380,
+     "w": 220,
+     "h": 84,
+     "style": {
+      "accent": true
+     }
+    }
+   ],
+   "edges": [
+    {
+     "id": "s1",
+     "from": "ra",
+     "to": "kas",
+     "label": "蓄積",
+     "kind": "orthogonal"
+    },
+    {
+     "id": "s2",
+     "from": "kas",
+     "to": "kp",
+     "label": "可視化",
+     "kind": "orthogonal"
+    }
+   ]
   }
  ]
 }

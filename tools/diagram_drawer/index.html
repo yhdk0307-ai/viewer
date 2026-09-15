@@ -247,6 +247,10 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
 
 const NODE_TYPES = ['block', 'function', 'actor', 'db', 'server', 'device', 'note', 'pictogram'];
+// 抽出器（bin/extract.mjs + rules）が付ける type 群。描画は block と同じだが、インスペクタの type
+// select がこれらを知らないと folder ノードを選んだとき先頭の 'block' が表示され、触ると block へ
+// 上書きされてしまう（G5 で報告した既知の落とし穴）。UI 用の語彙としてここで一元管理する。
+const EXTRACTOR_NODE_TYPES = ['folder', 'file', 'doc', 'module', 'test', 'config', 'ci', 'tool', 'output', 'knowledge', 'idea', 'skill', 'rule', 'bootstrap', 'external'];
 const SIDES = ['top', 'right', 'bottom', 'left'];
 const PROJECTIONS = ['flat', 'iso', 'webgl'];
 
@@ -389,10 +393,13 @@ function resolveEndpoint(model, ref) {
 }
 
 // グループの実効矩形: x,y,w,h 明示ならそれを、なければ members のバウンディング+pad
+// group.pad があればそれが呼び出し側の既定 pad より優先する（§7.4 入れ子コンテナは、外側ほど
+// 大きい pad を持たせて内側のコンテナとの間に隙間を作る。レンダラごとに pad が違っても形が崩れない）。
 function groupRect(model, group, pad = 24) {
   if ([group.x, group.y, group.w, group.h].every(v => typeof v === 'number')) {
     return { x: group.x, y: group.y, w: group.w, h: group.h };
   }
+  if (typeof group.pad === 'number' && group.pad >= 0) pad = group.pad;
   const members = group.members.map(id => nodeById(model, id)).filter(Boolean);
   if (!members.length) return { x: 0, y: 0, w: 200, h: 120 };
   const x1 = Math.min(...members.map(n => n.x)), y1 = Math.min(...members.map(n => n.y));
@@ -469,19 +476,25 @@ function selectEdges(gedges, sel) {
   return gedges.filter(e => keep.has(e.rel));
 }
 
+// graph の parent 階層 → parentId → 子 id[]（登場順）
+function childrenIndex(gnodes) {
+  const childrenOf = new Map();
+  for (const n of gnodes) if (n.parent) {
+    let a = childrenOf.get(n.parent); if (!a) { a = []; childrenOf.set(n.parent, a); } a.push(n.id);
+  }
+  return childrenOf;
+}
+
 // select → 採用する graph ノード id 集合
 // roots+depth は parent 階層を、neighborsOf+hops は（rels 絞り込み後の）エッジを無向 BFS で辿る。
-// roots も neighborsOf も無ければ graph 全ノードが母集合。types は最後に掛ける絞り込み。
+// roots も neighborsOf も無ければ graph 全ノードが母集合。types/tags は最後に掛ける絞り込み。
 function selectNodeIds(sel, gnodes, gedges) {
   const byId = new Map(gnodes.map(n => [n.id, n]));
   const picked = new Set();
   const roots = (Array.isArray(sel.roots) ? sel.roots : []).filter(id => byId.has(id));
   const nbId = (typeof sel.neighborsOf === 'string' && byId.has(sel.neighborsOf)) ? sel.neighborsOf : null;
   if (roots.length) {
-    const childrenOf = new Map();
-    for (const n of gnodes) if (n.parent) {
-      let a = childrenOf.get(n.parent); if (!a) { a = []; childrenOf.set(n.parent, a); } a.push(n.id);
-    }
+    const childrenOf = childrenIndex(gnodes);
     const depth = (typeof sel.depth === 'number' && sel.depth >= 0) ? sel.depth : Infinity;
     let frontier = [];
     for (const r of roots) if (!picked.has(r)) { picked.add(r); frontier.push(r); }
@@ -491,6 +504,19 @@ function selectNodeIds(sel, gnodes, gedges) {
         if (!picked.has(c)) { picked.add(c); next.push(c); }
       }
       frontier = next;
+    }
+    // §7.3 段階展開: expanded[] のノードは depth を超えて「その子だけ」を追加で出す（再帰しない）。
+    // 孫を出すには孫の親（＝子）の id も expanded に足す＝1 クリック 1 段の素直な操作に対応する。
+    // expanded に親と子が同時に並ぶ（例 ["tools","tools/diagram_engine"]）ケースを満たすため、
+    // 「新しく入ったノードが expanded に居たらその子も足す」を変化が無くなるまで繰り返す。
+    const expanded = new Set((Array.isArray(sel.expanded) ? sel.expanded : []).filter(id => byId.has(id)));
+    for (let guard = 0; guard < 1000; guard++) {
+      let changed = false;
+      for (const id of expanded) {
+        if (!picked.has(id)) continue;
+        for (const c of childrenOf.get(id) || []) if (!picked.has(c)) { picked.add(c); changed = true; }
+      }
+      if (!changed) break;
     }
   }
   if (nbId) {
@@ -515,7 +541,203 @@ function selectNodeIds(sel, gnodes, gedges) {
     const keep = new Set(sel.types);
     ids = ids.filter(id => keep.has(byId.get(id)?.type || 'block'));
   }
+  // §7.5 select.tags: いずれか 1 つでも持つノードだけ（AND ではなく OR）
+  if (Array.isArray(sel.tags) && sel.tags.length) {
+    const want = new Set(sel.tags);
+    ids = ids.filter(id => (byId.get(id)?.tags || []).some(t => want.has(t)));
+  }
   return new Set(ids);
+}
+
+// §7.2 ツリーの線とポート: tree|layered の派生エッジは direction に応じた辺のポートで結ぶ。
+// LR → 親（from）の右辺 'out' → 子（to）の左辺 'in'、TB → 下辺 'out' → 上辺 'in'。
+// 合成ポートは派生物（__derived）＝保存時に剥がす。手置きで同 id のポートが既にあればそれを使う
+// （手置きが勝つ）。ポートを与えることで直交ルータが列間ギャップで曲がり、縦積みの兄弟を貫通しない。
+function ensurePort(node, id, side) {
+  node.ports = node.ports || [];
+  const hit = node.ports.find(p => p.id === id);
+  if (hit) return hit;
+  const p = { id, side, offset: 0.5, kind: id === 'in' ? 'in' : 'out', __derived: true };
+  node.ports.push(p);
+  return p;
+}
+
+function applyTreePorts(d, byNodeId) {
+  const algo = d.layout?.algorithm;
+  if (algo !== 'tree' && algo !== 'layered') return;
+  const lr = (d.layout?.direction || 'TB') === 'LR';
+  const outSide = lr ? 'right' : 'bottom';
+  const inSide = lr ? 'left' : 'top';
+  for (const e of d.edges) {
+    if (!e.__derived) continue;                       // 手置きエッジの端点は触らない
+    const fromId = String(e.from).split(':')[0], toId = String(e.to).split(':')[0];
+    if (fromId === toId) continue;                    // 自己ループにポートは付けない
+    const fn = byNodeId.get(fromId), tn = byNodeId.get(toId);
+    if (!fn || !tn) continue;
+    if (String(e.from).includes(':') || String(e.to).includes(':')) continue;  // 既に明示ポート指定
+    ensurePort(fn, 'out', outSide);
+    ensurePort(tn, 'in', inSide);
+    e.from = `${fromId}:out`; e.to = `${toId}:in`;
+    e.__derivedPorts = true;
+  }
+}
+
+// §7.5 select.layerBy: "tag:layer:" … graph ノードの `layer:XXX` タグを図の layers[]（iso/webgl の段）へ写像。
+// 初出順に z=0,1,2… を割り当て、図が同 id のレイヤを既に宣言していればそれを使う（宣言が勝つ）。
+// 合成したレイヤとノードへの割当は派生物＝保存時に剥がす。
+function applyLayerBy(d, ids, byId) {
+  const spec = d.select?.layerBy;
+  if (typeof spec !== 'string' || !spec.startsWith('tag:')) return;
+  const prefix = spec.slice(4);
+  if (!prefix) return;
+  const maxZ = Math.max(0, ...d.layers.map(l => l.z || 0));
+  let next = maxZ + 1;
+  const assign = new Map();   // layerId → z
+  for (const n of d.nodes) {
+    const gid = n.entityId || n.id;
+    if (!ids.has(gid)) continue;
+    const tag = (byId.get(gid)?.tags || []).find(t => typeof t === 'string' && t.startsWith(prefix));
+    if (!tag) continue;
+    const layerId = tag.slice(prefix.length);
+    if (!layerId) continue;
+    if (!d.layers.some(l => l.id === layerId) && !assign.has(layerId)) {
+      assign.set(layerId, next++);
+      d.layers.push({ id: layerId, label: layerId, z: assign.get(layerId), elevation: assign.get(layerId) * DEFAULT_LAYER_GAP, __derived: true });
+    }
+    if (n.layer !== layerId) { n.__layerPrev = n.layer; n.layer = layerId; }
+  }
+  if (assign.size) d.layers.sort((a, b) => a.z - b.z);
+}
+
+// ─── §7.4 入れ子（nested / FFBD・IBD）と遅延ドリルダウン・エッジのリフティング ───
+// 派生 id の名前空間（どちらも派生物＝保存 JSON には出ない）
+const NESTED_GROUP_PREFIX = 'nested~';   // container グループ id: nested~<nodeId>
+const VIRTUAL_VIEW_PREFIX = 'view~';     // 仮想ビュー id: view~<nodeId>（クリック時に生成）
+const NESTED_PAD_BASE = 20, NESTED_PAD_STEP = 22;
+
+// mode:'nested' の図を「コンテナ＋中のブロック」へ組み替える。
+//  - 表示中の子を持つ**派生**ノード → container グループ（ノードとしては描かない＝枠そのものになる）
+//  - それ以外の表示ノード → ブロック（箱）。子を graph に持つブロックには view~<id> リンク（遅延ドリルダウン）
+//  - contains 以外のエッジは「異なるブロックの子孫どうし」を 1 本へ集約（リフティング）
+function applyNested(d, sel, ids, byId, childrenOf, gedges) {
+  const byGid = new Map();                       // graph id → 図のノード（先勝ち）
+  for (const n of d.nodes) { const g = n.entityId || n.id; if (!byGid.has(g)) byGid.set(g, n); }
+  const shown = new Set(byGid.keys());
+  const kidsShown = gid => (childrenOf.get(gid) || []).filter(c => shown.has(c));
+  // コンテナになれるのは派生ノードだけ（手置きノードは「手置きが勝つ」＝箱のまま置いておく）
+  const containerGids = [...byGid.keys()].filter(g => byGid.get(g).__derived && kidsShown(g).length > 0);
+  if (!containerGids.length && !(sel.roots || []).length) return;
+  const containerSet = new Set(containerGids);
+  const nearestContainer = gid => {
+    let cur = byId.get(gid)?.parent;
+    for (let guard = 0; cur && guard < 1000; guard++) {
+      if (containerSet.has(cur)) return cur;
+      cur = byId.get(cur)?.parent;
+    }
+    return null;
+  };
+  const blockGids = [...byGid.keys()].filter(g => !containerSet.has(g));
+  const blockSet = new Set(blockGids);
+
+  // members: そのコンテナの子孫にあたる全ブロック（groupRect が矩形を members から再計算するため）
+  // direct: 最も近い祖先コンテナが自分であるブロック（内側レイアウトの直接の要素）
+  const members = new Map(containerGids.map(g => [g, []]));
+  const direct = new Map(containerGids.map(g => [g, []]));
+  for (const b of blockGids) {
+    const nodeId = byGid.get(b).id;
+    let cur = byId.get(b)?.parent, first = true;
+    for (let guard = 0; cur && guard < 1000; guard++) {
+      if (containerSet.has(cur)) {
+        members.get(cur).push(nodeId);
+        if (first) { direct.get(cur).push(nodeId); first = false; }
+      }
+      cur = byId.get(cur)?.parent;
+    }
+  }
+  // pad は「自分より下に何段コンテナがあるか」で決める（外側ほど大きく＝内側の枠と重ならない）
+  const childContainers = new Map(containerGids.map(g => [g, []]));
+  for (const g of containerGids) { const p = nearestContainer(g); if (p) childContainers.get(p).push(g); }
+  const depthBelow = new Map();
+  const depthOf = gid => {
+    if (depthBelow.has(gid)) return depthBelow.get(gid);
+    depthBelow.set(gid, 0);                                   // cycle 保険
+    let m = 0;
+    for (const c of childContainers.get(gid) || []) m = Math.max(m, depthOf(c) + 1);
+    depthBelow.set(gid, m);
+    return m;
+  };
+
+  const haveGroups = new Set((d.groups || []).map(g => g.id));
+  const layer0 = d.layers[0].id;
+  for (const gid of containerGids) {
+    const gnode = byGid.get(gid);
+    const id = NESTED_GROUP_PREFIX + gid;
+    if (haveGroups.has(id)) continue;                          // 手置きグループが勝つ
+    const group = {
+      id, kind: 'container', layer: gnode.layer || layer0,
+      label: gnode.label || byId.get(gid)?.name || gid,
+      members: members.get(gid) || [],
+      pad: NESTED_PAD_BASE + NESTED_PAD_STEP * depthOf(gid),
+      __derived: true, __nodeId: gid,
+      __containerParent: nearestContainer(gid) ? NESTED_GROUP_PREFIX + nearestContainer(gid) : null,
+      __directMembers: direct.get(gid) || [],
+    };
+    // §7.3 の ▾ トグルはコンテナ側へ移す（expanded[] に居るノードだけ＝押して意味のあるものだけ）
+    if (gnode.__expanded) { group.__childCount = gnode.__childCount; group.__expanded = true; }
+    d.groups.push(group);
+  }
+
+  // コンテナになったノードは箱としては描かない（枠が本体）。それに繋がる派生エッジも落とす。
+  const dropped = new Set(containerGids.map(g => byGid.get(g).id));
+  if (dropped.size) {
+    d.nodes = d.nodes.filter(n => !dropped.has(n.id));
+    d.edges = d.edges.filter(e => !dropped.has(String(e.from).split(':')[0]) && !dropped.has(String(e.to).split(':')[0]));
+  }
+
+  // 遅延ドリルダウン: graph に子を持つブロックへ view~<id> リンク（手置きの link が既にあればそれが勝つ）
+  for (const n of d.nodes) {
+    const gid = n.entityId || n.id;
+    if (!(childrenOf.get(gid) || []).length || n.link) continue;
+    n.link = VIRTUAL_VIEW_PREFIX + gid;
+    n.__derivedLink = true;
+  }
+
+  // エッジのリフティング（contains 以外）: 両端が「異なるブロックの子孫」なら 1 本へ集約する
+  const blockOfGid = gid => {
+    let cur = gid;
+    for (let guard = 0; cur && guard < 1000; guard++) {
+      if (blockSet.has(cur)) return cur;
+      cur = byId.get(cur)?.parent;
+    }
+    return null;
+  };
+  const cache = new Map();
+  const blockOf = gid => { if (!cache.has(gid)) cache.set(gid, blockOfGid(gid)); return cache.get(gid); };
+  const lifted = new Map();
+  for (const ge of selectEdges(gedges, sel)) {
+    if (!ge || !ge.rel || ge.rel === 'contains') continue;
+    if (!byId.has(ge.from) || !byId.has(ge.to)) continue;
+    const a = blockOf(ge.from), b = blockOf(ge.to);
+    if (!a || !b || a === b) continue;                       // ブロック内に閉じる／表示外へ出る → 描かない
+    if (a === ge.from && b === ge.to) continue;              // 両端が直接表示 → 通常の派生エッジのまま
+    const key = `${ge.rel}~${a}~${b}`;
+    let agg = lifted.get(key);
+    if (!agg) { agg = { rel: ge.rel, a, b, count: 0, samples: [] }; lifted.set(key, agg); }
+    agg.count++;
+    if (agg.samples.length < 5) agg.samples.push(ge.id);
+  }
+  const haveEdges = new Set(d.edges.map(e => e.id));
+  for (const [key, agg] of lifted) {
+    const id = `lift~${key}`;
+    if (haveEdges.has(id)) continue;
+    const e = Object.assign({}, DEFAULT_EDGE, {
+      id, rel: agg.rel, from: byGid.get(agg.a).id, to: byGid.get(agg.b).id,
+      label: `${agg.rel} ×${agg.count}`,
+      props: { count: agg.count, samples: agg.samples },
+      __lifted: true, __derived: true,
+    });
+    d.edges.push(applyEdgeLook(e));
+  }
 }
 
 // §2-1: select を持つ図へ graph からノード/エッジを合成する（__derived）。
@@ -525,21 +747,43 @@ function deriveViews(proj) {
   const gnodes = proj.graph.nodes, gedges = proj.graph.edges;
   if (!gnodes.length && !gedges.length) return;
   const byId = new Map(gnodes.map(n => [n.id, n]));
+  const childrenOf = childrenIndex(gnodes);
   for (const d of proj.diagrams) {
     const sel = d.select;
     if (!sel || typeof sel !== 'object') continue;
     const ids = selectNodeIds(sel, gnodes, gedges);
     const have = new Map((d.nodes || []).map(n => [n.id, n]));
     const layer0 = d.layers[0].id;
+    // §7.1 layout.node: 派生ノードの既定サイズ（ビュー単位。抽出器の既定ビューはコンパクト h=44）
+    const size = {
+      w: (typeof d.layout?.node?.w === 'number') ? d.layout.node.w : DEFAULT_NODE.w,
+      h: (typeof d.layout?.node?.h === 'number') ? d.layout.node.h : DEFAULT_NODE.h,
+    };
     for (const id of ids) {
       const hand = have.get(id);
       if (hand) {
         if (!hand.entityId && byId.has(id)) { hand.entityId = id; hand.__derivedEntityId = true; }
         continue;
       }
-      // 位置は持たせない（layout / grid フォールバックが後段で埋める）。w/h は既定値。
-      const n = Object.assign({}, DEFAULT_NODE, { ports: [], id, entityId: id, layer: layer0, __derived: true });
+      // 位置は持たせない（layout / grid フォールバックが後段で埋める）。w/h は layout.node か既定値。
+      const n = Object.assign({}, DEFAULT_NODE, size, { ports: [], id, entityId: id, layer: layer0, __derived: true });
       d.nodes.push(n); have.set(id, n);
+    }
+    // §7.3 段階展開のトグル描画用メタ（子の総数と展開状態）。派生フィールド＝保存時に剥がす。
+    const expandedSet = new Set(Array.isArray(sel.expanded) ? sel.expanded : []);
+    // roots/depth で階層を切り出すビューだけがトグルを持つ（rel だけで絞る図の ▸ は押しても
+    // 何も起きない＝死んだ UI になるので描かない）。
+    const hierarchical = Array.isArray(sel.roots) && sel.roots.length > 0;
+    for (const n of (hierarchical ? d.nodes : [])) {
+      const gid = n.entityId || n.id;
+      if (!ids.has(gid)) continue;
+      const kids = childrenOf.get(gid) || [];
+      if (!kids.length) continue;
+      const hidden = kids.some(c => !ids.has(c));   // まだ図に出ていない子がある＝▸ で開ける
+      const isExpanded = expandedSet.has(gid);      // expanded[] 由来＝▾ で閉じられる
+      if (!hidden && !isExpanded) continue;         // depth で全部出ている＝トグルは描かない（depth 意味論は不変）
+      n.__childCount = kids.length;
+      n.__expanded = isExpanded;
     }
     const handEdges = new Set((d.edges || []).map(e => e.id));
     for (const ge of selectEdges(gedges, sel)) {
@@ -561,6 +805,11 @@ function deriveViews(proj) {
       for (const e of d.edges) { connected.add(String(e.from).split(':')[0]); connected.add(String(e.to).split(':')[0]); }
       d.nodes = d.nodes.filter(n => !n.__derived || connected.has(n.id));
     }
+    // §7.4 入れ子（container 合成・ドリルダウンリンク・エッジのリフティング）。
+    // ノード集合を組み替えるので、ポート合成（§7.2）やレイヤ写像（§7.5）より先に行う。
+    if (sel.mode === 'nested') applyNested(d, sel, ids, byId, childrenOf, gedges);
+    applyTreePorts(d, new Map(d.nodes.map(n => [n.id, n])));   // §7.2
+    applyLayerBy(d, ids, byId);                                 // §7.5
   }
 }
 
@@ -615,6 +864,12 @@ function applyLayouts(proj) {
     if (!missing.length) continue;
     const opts = Object.assign({ direction: 'TB', nodeSep: 40, rankSep: 90, seed: 1, iterations: 300, hierarchyRel: 'contains' },
       d.layout || {});
+    // §7.4 nested: 合成済みの container グループを「入れ子の宣言」としてレイアウトへ渡す
+    // （どのブロックがどの枠の直接の中身か・枠の pad は model 側にしか無い情報）。
+    if (opts.algorithm === 'nested') {
+      opts.containers = (d.groups || []).filter(g => g.__derived && g.__nodeId)
+        .map(g => ({ id: g.id, parent: g.__containerParent || null, members: g.__directMembers || [], pad: g.pad }));
+    }
     let pos = null;
     if (opts.algorithm && opts.algorithm !== 'none') {
       const engine = resolveLayoutEngine();
@@ -722,6 +977,16 @@ function entitiesOf(proj, relationId) {
 function childEntities(proj, parentId) {
   return (proj?.index?.childrenOf.get(parentId) || []).map(id => entityById(proj, id)).filter(Boolean);
 }
+// §7.3 折りたたみ時に子孫 id を expanded[] から除くための祖先判定（parent 鎖を上へ辿る・cycle 安全）
+function isDescendantOf(proj, id, ancestorId) {
+  let cur = entityById(proj, id)?.parent;
+  for (let guard = 0; cur && guard < 1000; guard++) {
+    if (cur === ancestorId) return true;
+    cur = entityById(proj, cur)?.parent;
+  }
+  return false;
+}
+
 function rootEntities(proj) {
   return (proj?.entities || []).filter(e => !e.parent || !entityById(proj, e.parent));
 }
@@ -752,7 +1017,10 @@ function validateProject(raw) {
   }
   for (const d of diagrams) {
     for (const n of d?.nodes || []) {
-      if (n.link && !ids.has(n.link)) warnings.push(`[${d?.meta?.id}] ノード ${n.id}: link '${n.link}' の図が存在しません`);
+      // view~… は §7.4 の遅延ドリルダウン先（クリック時に生成される仮想ビュー）＝未存在で正常
+      if (n.link && !ids.has(n.link) && !String(n.link).startsWith(VIRTUAL_VIEW_PREFIX)) {
+        warnings.push(`[${d?.meta?.id}] ノード ${n.id}: link '${n.link}' の図が存在しません`);
+      }
     }
   }
   if (raw?.project?.entry && !ids.has(raw.project.entry)) warnings.push(`entry '${raw.project.entry}' の図が存在しません → 先頭の図を使用`);
@@ -818,15 +1086,30 @@ function stripLedgerArtifacts(d) {
 function stripDerived(d) {
   d.nodes = (d.nodes || []).filter(n => !n.__derived);
   d.edges = (d.edges || []).filter(e => !e.__derived);
+  // §7.4 合成した container グループも派生物（graph と select から作り直される）
+  d.groups = (d.groups || []).filter(g => !g.__derived);
   for (const n of d.nodes) {
     if (n.__autoPos) { delete n.x; delete n.y; delete n.__autoPos; }
     if (n.__derivedEntityId) { delete n.entityId; delete n.__derivedEntityId; }
+    // §7.4 遅延ドリルダウンの link（view~…）は派生物＝保存しない（仮想ビューは事前生成しない）
+    if (n.__derivedLink) { delete n.link; delete n.__derivedLink; }
+    // §7.2 合成ポート・§7.3 展開メタ・§7.5 レイヤ割当は派生物＝保存へ出さない
+    if (n.ports?.length) n.ports = n.ports.filter(p => !p.__derived);
+    if ('__layerPrev' in n) { n.layer = n.__layerPrev; delete n.__layerPrev; }
+    delete n.__childCount; delete n.__expanded;
+  }
+  // §7.5 合成レイヤ（layerBy）も剥がす。全部消えたら既定の単一レイヤへ戻す（normalize と同じ形）
+  if (d.layers?.some(l => l.__derived)) {
+    d.layers = d.layers.filter(l => !l.__derived);
+    if (!d.layers.length) d.layers = [{ id: 'base', label: '', z: 0, elevation: 0 }];
   }
 }
 
 function projectToJSON(proj) {
   const { index, ...rest } = proj;      // 派生インデックス（Map）はクローン前に除外
   const out = structuredClone(rest);    // entities/relations は graph.* と同一参照＝clone 後も共有
+  // §7.4 仮想ビュー（view~<nodeId>・ドリルダウンでその場生成）は保存しない＝事前生成しない
+  out.diagrams = out.diagrams.filter(d => !d.__virtual);
   for (const d of out.diagrams) {
     stripDerived(d);
     for (const n of d.nodes) if (n.ports && !n.ports.length) delete n.ports;
@@ -849,6 +1132,7 @@ function freshId(model, prefix) {
 // エディタ変更後、正規化モデル → 保存用の素の JSON へ戻す（既定値の刈り込みは最小限）
 function toJSON(model) {
   const out = structuredClone(model);
+  delete out.__virtual;   // §7.4 仮想ビューの印は内部状態（JSON パネルへ出さない＝編集すれば実ビューになる）
   stripDerived(out); // select 由来の派生ノード/エッジ・自動配置 x/y を単図 JSON からも剥がす
   for (const n of out.nodes) if (n.ports && !n.ports.length) delete n.ports;
   stripLedgerArtifacts(out); // 台帳由来の実体化フィールドを剥がして単一図パネル JSON をクリーンに
@@ -856,7 +1140,7 @@ function toJSON(model) {
 }
 
 // ═══ src/layout_algos.js ═══
-// layout_algos.js — 自動レイアウト（GRAPH_CONTRACT.md §3）: tree/layered/force/grid/radial
+// layout_algos.js — 自動レイアウト（GRAPH_CONTRACT.md §3/§7.4）: tree/layered/force/grid/radial/nested
 // 純関数・依存ゼロ・DOM不使用・Math.random不使用（seeded PRNG）。model.js/layout.jsから独立。
 //
 // export function layoutGraph(nodes, edges, opts) // → Map<id, {x,y}>（左上座標・w/hは入力のまま）
@@ -1283,6 +1567,149 @@ function deoverlap(nodes, pos, sep) {
   }
 }
 
+// ─── nested: コンテナ入れ子（FFBD/IBD・GRAPH_CONTRACT §7.4） ───
+// opts.containers: [{ id, parent?, members:[nodeId…], pad? }]
+//   members … そのコンテナの「直接の」ブロック（子コンテナは parent で宣言する。
+//   両方に現れたノードは「より深いコンテナ」のものと解釈する＝呼び出し側が全子孫を渡しても壊れない）
+// opts.inner: コンテナ内部の配置アルゴリズム（layered|tree|force|grid・既定 layered）
+// 戻り値はノードの絶対座標だけ（コンテナの矩形は model.groupRect が members から再計算する）。
+// コンテナの箱は「内側 bbox + 2*pad（+ ラベル高 LABEL_H を上に）」で見積もり、その箱同士を
+// 重ならないように詰める＝groupRect(pad) の結果と一致し、コンテナ同士も重ならない。
+const NESTED_LABEL_H = 14;   // model.js groupRect がラベル用に上へ足す高さと一致させること
+
+function packBoxes(boxes, direction, gap) {
+  const out = new Map();
+  const per = Math.max(1, Math.ceil(Math.sqrt(boxes.length)));
+  if (direction === 'TB') {           // 縦に流して per 個で列を折り返す
+    let x = 0, y = 0, colW = 0, row = 0;
+    for (const b of boxes) {
+      out.set(b.id, { x, y });
+      y += b.h + gap; colW = Math.max(colW, b.w);
+      if (++row >= per) { row = 0; y = 0; x += colW + gap; colW = 0; }
+    }
+  } else {                            // LR（既定）: 横に流して per 個で行を折り返す
+    let x = 0, y = 0, rowH = 0, col = 0;
+    for (const b of boxes) {
+      out.set(b.id, { x, y });
+      x += b.w + gap; rowH = Math.max(rowH, b.h);
+      if (++col >= per) { col = 0; x = 0; y += rowH + gap; rowH = 0; }
+    }
+  }
+  return out;
+}
+
+function layoutNested(nodes, edges, opts) {
+  const byId = new Map(nodes.map(n => [n.id, n]));
+  const inner = ['tree', 'layered', 'force', 'grid', 'radial'].includes(opts.inner) ? opts.inner : 'layered';
+
+  // ① コンテナ定義の正規化（重複 id・ノードと同 id・未知メンバ・未知親・循環を落とす）
+  const cs = [];
+  const seenC = new Set();
+  for (const c of opts.containers || []) {
+    if (!c || c.id == null) continue;
+    const id = String(c.id);
+    if (seenC.has(id) || byId.has(id)) continue;
+    seenC.add(id);
+    cs.push({
+      id, parent: c.parent != null ? String(c.parent) : null,
+      members: [...new Set((c.members || []).map(String))].filter(m => byId.has(m)),
+      pad: (typeof c.pad === 'number' && c.pad >= 0) ? c.pad : 24,
+      w: 0, h: 0, local: new Map(),
+    });
+  }
+  if (!cs.length) return layoutGraph(nodes, edges, { ...opts, algorithm: inner, containers: undefined });
+  const cById = new Map(cs.map(c => [c.id, c]));
+  for (const c of cs) if (c.parent != null && !cById.has(c.parent)) c.parent = null;
+  for (const c of cs) {                       // 親を辿って自分へ戻る＝循環 → その辺を切る
+    const path = new Set([c.id]);
+    let p = c.parent;
+    for (let g = 0; p != null && g < 1000; g++) {
+      if (path.has(p)) { c.parent = null; break; }
+      path.add(p); p = cById.get(p)?.parent ?? null;
+    }
+  }
+  const depthOfC = new Map();
+  for (const c of cs) {
+    let d = 0, p = c.parent;
+    for (let g = 0; p != null && g < 1000; g++) { d++; p = cById.get(p)?.parent ?? null; }
+    depthOfC.set(c.id, d);
+  }
+  // ② ノード → 所属コンテナ（同じノードが複数に居たら「より深い方」＝同深度なら宣言順）
+  const ownerOf = new Map();
+  for (const c of cs) for (const m of c.members) {
+    const cur = ownerOf.get(m);
+    if (cur == null || depthOfC.get(c.id) > depthOfC.get(cur)) ownerOf.set(m, c.id);
+  }
+  const childrenOfC = new Map(cs.map(c => [c.id, []]));
+  const topContainers = [];
+  for (const c of cs) (c.parent != null ? childrenOfC.get(c.parent) : topContainers).push(c);
+
+  // ある node が、コンテナ cid の中では「どのアイテム」に見えるか（自分自身 or 途中の子コンテナ）
+  const itemIn = (nodeId, cid) => {
+    let cur = ownerOf.get(nodeId);
+    if (cur == null) return null;
+    if (cur === cid) return nodeId;
+    for (let g = 0; cur != null && g < 1000; g++) {
+      const c = cById.get(cur);
+      if (!c) return null;
+      if (c.parent === cid) return c.id;
+      cur = c.parent;
+    }
+    return null;
+  };
+
+  // ③ 深い順に内部レイアウト（子コンテナのサイズが確定してから親を組む）
+  const order = cs.slice().sort((a, b) => (depthOfC.get(b.id) - depthOfC.get(a.id)) || (a.id < b.id ? -1 : 1));
+  for (const c of order) {
+    const items = [];
+    for (const m of c.members) if (ownerOf.get(m) === c.id) { const n = byId.get(m); items.push({ id: m, w: n.w, h: n.h }); }
+    for (const sc of childrenOfC.get(c.id)) items.push({ id: sc.id, w: sc.w, h: sc.h });
+    if (!items.length) { c.w = 200; c.h = 120; continue; }
+    const itemIds = new Set(items.map(i => i.id));
+    const itemEdges = [];
+    for (const e of edges) {
+      const a = itemIn(e.from, c.id), b = itemIn(e.to, c.id);
+      if (a && b && a !== b && itemIds.has(a) && itemIds.has(b)) itemEdges.push({ from: a, to: b, rel: e.rel });
+    }
+    const pos = layoutGraph(items, itemEdges, { ...opts, algorithm: inner, containers: undefined, inner: undefined });
+    let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+    for (const it of items) {
+      const p = pos.get(it.id) || { x: 0, y: 0 };
+      x1 = Math.min(x1, p.x); y1 = Math.min(y1, p.y);
+      x2 = Math.max(x2, p.x + it.w); y2 = Math.max(y2, p.y + it.h);
+    }
+    for (const it of items) {
+      const p = pos.get(it.id) || { x: 0, y: 0 };
+      c.local.set(it.id, { x: p.x - x1 + c.pad, y: p.y - y1 + c.pad + NESTED_LABEL_H });
+    }
+    c.w = (x2 - x1) + c.pad * 2;
+    c.h = (y2 - y1) + c.pad * 2 + NESTED_LABEL_H;
+  }
+
+  // ④ トップレベル（コンテナの箱＋どこにも属さないノード）を重ならないように詰める
+  const freeNodes = nodes.filter(n => !ownerOf.has(n.id));
+  const boxes = [...topContainers.map(c => ({ id: c.id, w: c.w, h: c.h })), ...freeNodes.map(n => ({ id: n.id, w: n.w, h: n.h }))];
+  const topPos = packBoxes(boxes, opts.direction, Math.max(opts.nodeSep, 20));
+
+  // ⑤ 絶対座標へ展開（コンテナの入れ子は明示スタックで降りる）
+  const out = new Map();
+  const stack = [];
+  for (const b of boxes) {
+    const p = topPos.get(b.id);
+    if (byId.has(b.id)) out.set(b.id, { x: p.x, y: p.y });
+    else stack.push({ c: cById.get(b.id), x: p.x, y: p.y });
+  }
+  for (let guard = 0; stack.length && guard < 100000; guard++) {
+    const { c, x, y } = stack.pop();
+    for (const [itemId, lp] of c.local) {
+      const ax = x + lp.x, ay = y + lp.y;
+      if (byId.has(itemId)) out.set(itemId, { x: ax, y: ay });
+      else { const sub = cById.get(itemId); if (sub) stack.push({ c: sub, x: ax, y: ay }); }
+    }
+  }
+  return out;
+}
+
 // ─── grid: sqrt(n)列で id 順に詰める ───
 function layoutGrid(nodes, opts) {
   const { nodeSep } = opts;
@@ -1399,12 +1826,17 @@ function layoutGraph(nodes, edges, opts = {}) {
     seed: opts.seed != null ? opts.seed : 1,
     iterations: opts.iterations != null ? opts.iterations : 300,
     hierarchyRel: opts.hierarchyRel || 'contains',
+    // §7.4 nested 専用（他のアルゴリズムでは無視される）
+    containers: Array.isArray(opts.containers) ? opts.containers : [],
+    inner: opts.inner,
   };
   const { nodes: cleanNodes, edges: cleanEdges } = normalizeInput(nodes, edges);
   if (options.algorithm === 'none' || cleanNodes.length === 0) return new Map();
 
-  // grid は元からグリッドなので分離不要。他は孤立ノードを主レイアウトの外へ出す。
-  const isolatedIds = options.algorithm === 'grid' ? new Set() : findIsolated(cleanNodes, cleanEdges, options);
+  // grid は元からグリッド、nested は自前で全ノードを配置する（孤立ノードも container の中身なので
+  // 主レイアウトから外してはならない）。他は孤立ノードを主レイアウトの外へ出す。
+  const isolatedIds = (options.algorithm === 'grid' || options.algorithm === 'nested')
+    ? new Set() : findIsolated(cleanNodes, cleanEdges, options);
   const mainNodes = cleanNodes.filter(n => !isolatedIds.has(n.id));
   const mainIds = new Set(mainNodes.map(n => n.id));
   const mainEdges = cleanEdges.filter(e => mainIds.has(e.from) && mainIds.has(e.to));
@@ -1419,6 +1851,7 @@ function layoutGraph(nodes, edges, opts = {}) {
       case 'force': pos = layoutForce(mainNodes, mainEdges, options); break;
       case 'grid': pos = layoutGrid(mainNodes, options); break;
       case 'radial': pos = layoutRadial(mainNodes, mainEdges, options); break;
+      case 'nested': pos = layoutNested(mainNodes, mainEdges, options); break;
       default: pos = new Map(); break;
     }
   }
@@ -1476,18 +1909,37 @@ function endpointGeometry(model, ref, towards) {
 
 // ─── 直交ルーティング ───
 // シンプルで予測可能な L/Z/コ字経路。waypoints 指定時はそれを優先。
+// 列（行）間のギャップで曲げる: 向かい合う辺どうし（右→左 / 下→上 …）を結ぶときは、
+// 折れ点を「出発辺と到着辺の中点」に置き、スタブがその中点を越えないよう詰める。
+// これにより折れ線の縦（横）走行はノードの列（行）と列（行）の隙間に収まり、
+// 遠い兄弟へ伸ばしても縦積みの兄弟の箱を貫通しない（GRAPH_CONTRACT §7.2）。
+// ギャップが 2*stub より狭くても経路が逆走しない（クランプ）。
+function facingMid(aPos, aDir, bPos, bDir, stub) {
+  if (aDir === 0 || bDir === 0 || aDir === bDir) return null;   // 同じ向き or 軸違い＝対象外
+  if (aDir > 0 ? bPos < aPos : bPos > aPos) return null;        // 相手が背後＝ギャップが無い
+  const mid = (aPos + bPos) / 2;
+  return {
+    mid,
+    a: aDir > 0 ? Math.min(aPos + stub, mid) : Math.max(aPos - stub, mid),
+    b: bDir > 0 ? Math.min(bPos + stub, mid) : Math.max(bPos - stub, mid),
+  };
+}
+
 function routeOrthogonal(a, b, stub = 24) {
   const pts = [{ x: a.x, y: a.y }];
   const a2 = { x: a.x + OUT[a.side].x * stub, y: a.y + OUT[a.side].y * stub };
   const b2 = { x: b.x + OUT[b.side].x * stub, y: b.y + OUT[b.side].y * stub };
-  pts.push(a2);
   const aH = a.side === 'left' || a.side === 'right';
   const bH = b.side === 'left' || b.side === 'right';
+  const gap = aH && bH ? facingMid(a.x, OUT[a.side].x, b.x, OUT[b.side].x, stub)
+    : (!aH && !bH ? facingMid(a.y, OUT[a.side].y, b.y, OUT[b.side].y, stub) : null);
+  if (gap) { if (aH) { a2.x = gap.a; b2.x = gap.b; } else { a2.y = gap.a; b2.y = gap.b; } }
+  pts.push(a2);
   if (aH && bH) {
-    const mx = (a2.x + b2.x) / 2;
+    const mx = gap ? gap.mid : (a2.x + b2.x) / 2;
     pts.push({ x: mx, y: a2.y }, { x: mx, y: b2.y });
   } else if (!aH && !bH) {
-    const my = (a2.y + b2.y) / 2;
+    const my = gap ? gap.mid : (a2.y + b2.y) / 2;
     pts.push({ x: a2.x, y: my }, { x: b2.x, y: my });
   } else if (aH && !bH) {
     pts.push({ x: b2.x, y: a2.y });
@@ -2725,7 +3177,33 @@ class FlatSVGRenderer {
       opacity: style.opacity,
     }));
     if (group.label) g.appendChild(el('text', { class: 'de-group-label', x: r.x + 10, y: r.y + 16 }, group.label));
+    this.appendGroupExpander(g, group, r);
     return g;
+  }
+
+  // §7.4 入れ子コンテナの ▾ トグル: 展開してコンテナ化したノード（select.expanded に居るノード）は
+  // 箱として描かれないため、閉じる操作の受け口を枠の右上に置く。ヒットテストは node.__childCount の
+  // ▸/▾ と同じ kind:'expander' を返し、id は「元のノード id」＝ editor.toggleExpanded がそのまま使える。
+  groupExpanderRect(group) {
+    if (!group.__expanded || !group.__childCount || !group.__nodeId) return null;
+    const r = groupRect(this.model, group);
+    const w = 13 + String(group.__childCount).length * 6;
+    return { x: r.x + r.w - w - 6, y: r.y + 4, w, h: 14 };
+  }
+
+  appendGroupExpander(g, group, _rect) {
+    const r = this.groupExpanderRect(group);
+    if (!r) return;
+    const eg = el('g', { 'data-kind': 'expander', 'data-id': group.__nodeId, cursor: 'pointer' });
+    eg.appendChild(el('rect', {
+      x: r.x, y: r.y, width: r.w, height: r.h, rx: 3,
+      fill: 'var(--de-paper)', stroke: 'var(--de-soft)', 'stroke-width': 0.8,
+    }));
+    eg.appendChild(el('text', {
+      x: r.x + r.w / 2, y: r.y + r.h - 3.5, 'text-anchor': 'middle',
+      fill: 'var(--de-soft)', 'font-size': 9, 'font-weight': 700, 'font-family': 'var(--de-font)',
+    }, `▾${group.__childCount}`));
+    g.appendChild(eg);
   }
 
   // 表示用ポリライン: 段積み時は端点にレイヤ dy を適用。
@@ -2849,7 +3327,35 @@ class FlatSVGRenderer {
     this.appendPorts(g, node);
     this.appendLinkBadge(g, node);
     this.appendProvenanceBadge(g, node, h);
+    this.appendExpander(g, node, h);
     return g;
+  }
+
+  // §7.3 段階展開トグル: 子を持つ派生ノードに ▸/▾ と子の数を描く（LR は右辺・TB は下辺）。
+  // 幾何は expanderRect() に一本化し、描画とヒットテストで必ず同じ矩形を使う。
+  expanderRect(node) {
+    if (!node.__childCount || node.collapsed) return null;
+    const h = node.collapsed ? 28 : node.h;
+    const w = 13 + String(node.__childCount).length * 6;
+    const lr = (this.model?.layout?.direction || 'TB') === 'LR';
+    return lr
+      ? { x: node.x + node.w - w - 3, y: node.y + h / 2 - 7, w, h: 14 }
+      : { x: node.x + node.w / 2 - w / 2, y: node.y + h - 16, w, h: 14 };
+  }
+
+  appendExpander(g, node, h) {
+    const r = this.expanderRect(node, h);
+    if (!r) return;
+    const eg = el('g', { 'data-kind': 'expander', 'data-id': node.id, cursor: 'pointer' });
+    eg.appendChild(el('rect', {
+      x: r.x, y: r.y, width: r.w, height: r.h, rx: 3,
+      fill: 'var(--de-paper)', stroke: 'var(--de-soft)', 'stroke-width': 0.8,
+    }));
+    eg.appendChild(el('text', {
+      x: r.x + r.w / 2, y: r.y + r.h - 3.5, 'text-anchor': 'middle',
+      fill: 'var(--de-soft)', 'font-size': 9, 'font-weight': 700, 'font-family': 'var(--de-font)',
+    }, `${node.__expanded ? '▾' : '▸'}${node.__childCount}`));
+    g.appendChild(eg);
   }
 
   // MBSE 来歴バッジ（node.props.provenance）。左下隅に小グリフ（✓=doc / ▲=ai-assign / ✎=ai-draft）
@@ -2864,11 +3370,19 @@ class FlatSVGRenderer {
     }, glyph));
   }
 
+  // ↗ バッジの幾何。描画（appendLinkBadge）とヒットテスト（hitTest の kind:'link'）で必ず同じ円を使う。
+  // G8: Alt キーの無いタッチ端末では Alt+クリックの遷移経路が使えず、§7.4 の遅延ドリルダウンに潜れなかった。
+  linkBadgePoint(node) {
+    if (!node.link) return null;
+    return { x: node.x + node.w - 11, y: node.y + 11, r: 7.5 };
+  }
+
   // ドリルダウンリンクを持つノードに ↗ バッジ
   appendLinkBadge(g, node) {
-    if (!node.link) return;
-    const bx = node.x + node.w - 11, by = node.y + 11;
-    g.appendChild(el('circle', { cx: bx, cy: by, r: 7.5, fill: 'var(--de-accent-soft)', stroke: 'var(--de-accent)', 'stroke-width': 1 }));
+    const b = this.linkBadgePoint(node);
+    if (!b) return;
+    const bx = b.x, by = b.y;
+    g.appendChild(el('circle', { cx: bx, cy: by, r: b.r, fill: 'var(--de-accent-soft)', stroke: 'var(--de-accent)', 'stroke-width': 1 }));
     g.appendChild(el('text', {
       x: bx, y: by + 3.5, 'text-anchor': 'middle',
       fill: 'var(--de-accent)', 'font-size': 10, 'font-weight': 700, 'font-family': 'var(--de-font)',
@@ -2888,7 +3402,8 @@ class FlatSVGRenderer {
 
   appendPorts(g, node) {
     if (node.collapsed) return;
-    for (const port of node.ports || []) {
+    // 合成ポート（§7.2 tree/layered の派生エッジ用）は線の付け根を決めるだけの内部表現なので描かない
+    for (const port of (node.ports || []).filter(p => !p.__derived)) {
       const p = portPoint(node, port);
       g.appendChild(el('rect', {
         class: 'de-port', 'data-kind': 'port', 'data-id': node.id, 'data-port': port.id,
@@ -2922,11 +3437,36 @@ class FlatSVGRenderer {
     const tol = 7 / this.view.k;
     // レイヤフィルタで非表示の要素は当たり判定からも除外する
     const vNodes = [...this.model.nodes].filter(n => this.nodeVisible(n));
-    // ports 最優先
+    // §7.3 展開トグル（▸/▾）を最優先（ノード本体のドラッグに吸われないように）
+    for (const n of [...vNodes].reverse()) {
+      const r = this.expanderRect(n);
+      if (!r) continue;
+      const dy = this.dyOf(n.layer);
+      if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y + dy && p.y <= r.y + r.h + dy)
+        return { kind: 'expander', id: n.id };
+    }
+    // §7.4 コンテナ枠の ▾ も同格（枠の内側に重なるノードより先に判定する）
+    for (const grp of [...this.model.groups].reverse()) {
+      if (!this.groupVisible(grp)) continue;
+      const r = this.groupExpanderRect(grp);
+      if (!r) continue;
+      const dy = this.dyOf(grp.layer);
+      if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y + dy && p.y <= r.y + r.h + dy)
+        return { kind: 'expander', id: grp.__nodeId };
+    }
+    // ↗ リンクバッジ（§7.4 遅延ドリルダウンの受け口）。バッジ上のタップ/クリックは Alt 無しでも遷移させたいので
+    // ノード本体より先に kind:'link' を返す（ノード本体はこれまで通り「選択/ドラッグ・Alt で遷移」のまま）
+    for (const n of [...vNodes].reverse()) {
+      const b = this.linkBadgePoint(n);
+      if (!b) continue;
+      const dy = this.dyOf(n.layer);
+      if (Math.hypot(p.x - b.x, p.y - (b.y + dy)) <= b.r + tol / 2) return { kind: 'link', id: n.id };
+    }
+    // ports 次点
     // 段積み時は描画 Y オフセット分を当たり判定にも反映する（p.y をレイヤ空間へ戻す）
     for (const n of [...vNodes].reverse()) {
       const dy = this.dyOf(n.layer);
-      for (const port of n.ports || []) {
+      for (const port of (n.ports || []).filter(x => !x.__derived)) {
         const pp = portPoint(n, port);
         if (Math.abs(p.x - pp.x) <= PORT_R + tol / 2 && Math.abs(p.y - (pp.y + dy)) <= PORT_R + tol / 2)
           return { kind: 'port', id: n.id, portId: port.id, point: pp };
@@ -4226,7 +4766,7 @@ const HISTORY_MAX = 100;
 const AUTOSAVE_KEY = 'diagram-engine-autosave';
 
 // View ▸ Layout（GRAPH_CONTRACT.md §2/§3）: layoutGraph の algorithm/direction を選び直す UI 語彙。
-const LAYOUT_ALGO_ITEMS = [['tree', 'Tree'], ['layered', 'Layered'], ['force', 'Force'], ['grid', 'Grid'], ['radial', 'Radial'], ['none', 'None']];
+const LAYOUT_ALGO_ITEMS = [['tree', 'Tree'], ['layered', 'Layered'], ['force', 'Force'], ['grid', 'Grid'], ['radial', 'Radial'], ['nested', 'Nested'], ['none', 'None']];
 const LAYOUT_DIRECTION_ITEMS = [['TB', 'TB'], ['LR', 'LR']];
 
 class DiagramEditor {
@@ -4242,6 +4782,7 @@ class DiagramEditor {
     this.armedType = null;      // パレットで選択中の追加タイプ
     this.drag = null;
     this.navStack = [];         // ドリルダウンの戻り先 diagram ID
+    this.virtualSpecs = new Map();  // §7.4 仮想ビュー（view~<nodeId>）の生成元 spec（保存されない）
     this.hist = []; this.histIdx = -1;
     this.pointers = new Map();  // マルチタッチ（ピンチズーム）追跡
     this.pinch = null;
@@ -4291,6 +4832,9 @@ class DiagramEditor {
       this.setStatus(`検証エラー: ${errors[0]}${errors.length > 1 ? ` (+${errors.length - 1})` : ''}`, true);
       return false;
     }
+    // §7.4 仮想ビュー: 履歴（undo/redo）からの復元では生かしたまま戻す（保存 JSON には無いため）。
+    // 新しいプロジェクトを読み込むときは捨てる（別の graph のノード id なので意味を持たない）。
+    if (fromHistory) this.injectVirtualViews(raw); else this.virtualSpecs = new Map();
     this.project = normalizeProject(raw);
     this.navStack = [];
     this.setStatus(warnings.length ? `警告: ${warnings[0]}` : '');
@@ -4351,9 +4895,55 @@ class DiagramEditor {
 
   goToDiagram(id, { push = true } = {}) {
     if (id === this.currentId) return;
-    if (!this.project.diagrams.some(d => d.meta.id === id)) { this.setStatus(`図 '${id}' がありません`, true); return; }
+    if (!this.project.diagrams.some(d => d.meta.id === id)) {
+      // §7.4 遅延ドリルダウン: view~<nodeId> はその場で仮想ビューを作って降りる（事前生成しない）
+      if (!this.createVirtualView(id)) { this.setStatus(`図 '${id}' がありません`, true); return; }
+    }
     if (push) this.navStack.push(this.currentId);
     this.openDiagram(id);
+  }
+
+  // ─── §7.4 仮想ビュー（遅延ドリルダウン） ───
+  // link='view~<nodeId>' を踏んだ瞬間に「そのノードを root にした nested ビュー」を生成して
+  // diagrams[] へ足す。rels/layout は降りてきた元のビューを引き継ぐ（＝同じ見方のまま 1 段深く潜る）。
+  // __virtual は projectToJSON が落とす＝保存 JSON には出ない。手で触れば実ビューへ昇格する。
+  createVirtualView(id) {
+    if (typeof id !== 'string' || !id.startsWith(VIRTUAL_VIEW_PREFIX)) return false;
+    const nodeId = id.slice(VIRTUAL_VIEW_PREFIX.length);
+    const ent = entityById(this.project, nodeId);
+    if (!ent) return false;
+    const origin = this.model;
+    const select = { roots: [nodeId], depth: 1, mode: 'nested' };
+    if (Array.isArray(origin?.select?.rels) && origin.select.rels.length) select.rels = [...origin.select.rels];
+    const spec = {
+      meta: { id, title: ent.name || nodeId, projection: origin?.meta?.projection || 'flat' },
+      select,
+      layout: origin?.layout ? structuredClone(origin.layout) : { algorithm: 'nested', inner: 'layered', direction: 'LR' },
+      layers: [], nodes: [], edges: [], groups: [],
+      __virtual: true,
+    };
+    if (!this.virtualSpecs) this.virtualSpecs = new Map();
+    this.virtualSpecs.set(id, spec);
+    this.rebuildProject({ history: false });
+    return this.project.diagrams.some(d => d.meta.id === id);
+  }
+
+  // 保存 JSON から落ちる仮想ビューを、再構築のたびに raw へ戻す（セッション中は生き続ける）
+  injectVirtualViews(raw) {
+    if (!this.virtualSpecs?.size || !Array.isArray(raw?.diagrams)) return raw;
+    const have = new Set(raw.diagrams.map(d => d?.meta?.id));
+    for (const [id, spec] of this.virtualSpecs) if (!have.has(id)) raw.diagrams.push(structuredClone(spec));
+    return raw;
+  }
+
+  // 仮想ビューで手置き（ドラッグ等）したら実ビューへ昇格させる＝その編集が保存に残る
+  promoteVirtualView() {
+    const d = this.model;
+    if (!d?.__virtual) return false;
+    delete d.__virtual;
+    this.virtualSpecs?.delete(d.meta.id);
+    this.setStatus(`'${d.meta.title || d.meta.id}' を実ビューへ昇格しました（編集が保存されます）`);
+    return true;
   }
 
   navBack() {
@@ -4682,20 +5272,20 @@ class DiagramEditor {
     this.mountRenderer(); // 全投影で色を作り直す
   }
 
-  // 左サイドバー: 上=Entity フォルダツリー（リサイズ可）／スプリッタ／下=タブ[Diagram|Palette]
+  // 左サイドバー: 上=MODEL（graph 全アイテムの木・リサイズ可）／スプリッタ／下=タブ[VIEWS|Palette]
   buildSidebar() {
     const sb = document.createElement('div'); sb.className = 'de-sidebar'; this.sidebar = sb;
-    // Entity（MBSE 台帳＝フォルダ）ツリー＋検索。台帳が空なら非表示。
+    // MODEL（graph.nodes ＝全アイテムの木）＋検索。graph が空なら非表示。data-role は互換のため据え置き。
     this.entSec = document.createElement('div'); this.entSec.className = 'de-section de-entsec de-collapsed';
-    this.entSec.innerHTML = '<h3>Entity</h3>';
+    this.entSec.innerHTML = '<h3>MODEL</h3>';
     this.entSearch = document.createElement('input');
-    this.entSearch.className = 'de-entsearch'; this.entSearch.placeholder = 'Entity 検索…';
+    this.entSearch.className = 'de-entsearch'; this.entSearch.placeholder = 'MODEL 検索…';
     this.entSearch.dataset.role = 'entity-search';
     this.entSearch.addEventListener('input', () => this.renderEntityTree());
     this.entTree = document.createElement('div'); this.entTree.className = 'de-navtree de-enttree'; this.entTree.dataset.role = 'entity-tree';
     this.entSec.append(this.entSearch, this.entTree);
     sb.appendChild(this.entSec);
-    // 縦スプリッタ（Entity と 下部タブ の上下比率をドラッグで変更）
+    // 縦スプリッタ（MODEL と 下部タブ の上下比率をドラッグで変更）
     const split = document.createElement('div'); split.className = 'de-vsplit'; split.dataset.role = 'vsplit';
     this.setupVSplit(split);
     sb.appendChild(split);
@@ -4703,12 +5293,12 @@ class DiagramEditor {
     this.lowArea = document.createElement('div'); this.lowArea.className = 'de-lowarea';
     const tabs = document.createElement('div'); tabs.className = 'de-tabs';
     this.lowTabBtns = {};
-    for (const [k, l] of [['diagram', 'Diagram'], ['palette', 'Palette']]) {
+    for (const [k, l] of [['diagram', 'VIEWS'], ['palette', 'Palette']]) {
       const b = document.createElement('button'); b.className = 'de-tab'; b.textContent = l; b.dataset.tab = k;
       b.addEventListener('click', () => this.setLeftTab(k));
       this.lowTabBtns[k] = b; tabs.appendChild(b);
     }
-    // Diagram ペイン（+図/★entry ヘッダ + 図ツリー）
+    // VIEWS ペイン（+図/entry ヘッダ + 図ツリー）
     this.diagramPane = document.createElement('div'); this.diagramPane.className = 'de-tabpane de-lowpane'; this.diagramPane.dataset.tab = 'diagram';
     const navHead = document.createElement('div'); navHead.className = 'de-sechead';
     const navActs = document.createElement('div'); navActs.className = 'de-sechead-acts';
@@ -4735,7 +5325,7 @@ class DiagramEditor {
   }
   showPaletteTab() { if (this.panelState?.sidebar) this.togglePanel('sidebar'); this.setLeftTab('palette'); }
 
-  // Entity と下部タブの上下比率をドラッグで変更
+  // MODEL と下部タブの上下比率をドラッグで変更
   setupVSplit(split) {
     let startY = 0, startH = 0;
     const onMove = (e) => {
@@ -4782,7 +5372,7 @@ class DiagramEditor {
     this.jsonPane?.classList.toggle('de-collapsed', which !== 'json');
   }
 
-  // 図一覧ツリー（左ナビ）。link 親子でツリー表示（Entity と同形）：ダイアグラムアイコン＋展開折りたたみ＋
+  // VIEWS ツリー（左ナビ）。link 親子でツリー表示（MODEL と同形）：ダイアグラムアイコン＋展開折りたたみ＋
   // entry はドアマーク🚪・現在図を強調。
   renderDiagramTree() {
     if (!this.navTree) return;
@@ -4884,11 +5474,13 @@ class DiagramEditor {
   }
 
   // 図の親子フォレストを構築。子 = その図のノード link 先の図。entry・非被リンク図がルート。
+  // §7.4: 仮想ビュー（view~<nodeId>）は VIEWS ツリーに出さない（transient＝ナビはパンくずが担う）
   buildDiagramForest() {
-    const byId = new Map(this.project.diagrams.map(d => [d.meta.id, d]));
+    const real = this.project.diagrams.filter(d => !d.__virtual);
+    const byId = new Map(real.map(d => [d.meta.id, d]));
     const childrenOf = new Map();
     const linked = new Set();
-    for (const d of this.project.diagrams) {
+    for (const d of real) {
       const kids = [], seen = new Set();
       for (const n of d.nodes) {
         if (n.link && byId.has(n.link) && n.link !== d.meta.id && !seen.has(n.link)) {
@@ -4898,7 +5490,7 @@ class DiagramEditor {
       childrenOf.set(d.meta.id, kids);
     }
     const entry = this.project.project.entry;
-    const roots = this.project.diagrams.filter(d => d.meta.id === entry || !linked.has(d.meta.id));
+    const roots = real.filter(d => d.meta.id === entry || !linked.has(d.meta.id));
     roots.sort((a, b) => (b.meta.id === entry ? 1 : 0) - (a.meta.id === entry ? 1 : 0)); // entry を先頭へ
     const visited = new Set();
     const build = id => {
@@ -4907,7 +5499,7 @@ class DiagramEditor {
       return { d: byId.get(id), children: (childrenOf.get(id) || []).map(build).filter(Boolean) };
     };
     const forest = roots.map(r => build(r.meta.id)).filter(Boolean);
-    for (const d of this.project.diagrams) if (!visited.has(d.meta.id)) { const n = build(d.meta.id); if (n) forest.push(n); }
+    for (const d of real) if (!visited.has(d.meta.id)) { const n = build(d.meta.id); if (n) forest.push(n); }
     return forest;
   }
 
@@ -4941,6 +5533,7 @@ class DiagramEditor {
     box.innerHTML = '<div class="de-modal-head"><b>Manual — 操作説明</b></div>'
       + '<div class="de-modal-body">'
       + '<h4>キャンバス</h4>ドラッグ: 移動 ／ ポート→ポート: 結線 ／ ダブルクリック: ラベル編集<br>'
+      + 'ノード右端（TB は下端）の <b>▸n / ▾n</b>: 子を 1 段だけ展開／折りたたみ（select.expanded に保存）<br>'
       + '<kbd>Del</kbd> 削除 ／ <kbd>Esc</kbd> 解除 ／ <kbd>Ctrl+Z</kbd> 戻す ／ <kbd>Ctrl+Shift+Z</kbd> やり直す<br>'
       + '<kbd>Alt</kbd>+クリック: リンク先の図へ ／ 空白ドラッグ: パン ／ ホイール・ピンチ: ズーム<br>'
       + '3D: 1本指=回転 ／ 2本指=ズーム&amp;パン ／ （PC: <kbd>Shift</kbd>+ドラッグ=パン）'
@@ -4949,7 +5542,7 @@ class DiagramEditor {
       + '<b>Edit</b>: Undo ／ Redo ／ Add Node（パレット）／ 図を追加 ／ entry 設定<br>'
       + '<b>View</b>: 2D ／ 2.5D iso ／ 3D ／ Fit ／ Theme<br>'
       + '<b>Help</b>: この Manual'
-      + '<h4>左パネル</h4>Entity（フォルダツリー・上下比率はスプリッタでリサイズ）／ 下部タブ Diagram・Palette'
+      + '<h4>左パネル</h4>MODEL（graph 全アイテムの木・上下比率はスプリッタでリサイズ）／ 下部タブ VIEWS・Palette'
       + '<h4>右パネル</h4>プロパティ（サブタイトルをクリックで各セクション折りたたみ）／ JSON'
       + '</div>';
     const foot = document.createElement('div'); foot.className = 'de-modal-foot';
@@ -4978,7 +5571,13 @@ class DiagramEditor {
   refreshChrome() {
     if (!this.project) return;
     const p = this.project.project;
-    this.titleEl.textContent = `${p.title} › ${this.model.meta.title || this.currentId}`;
+    // パンくず: プロジェクト › （降りてきた図…） › 現在図。§7.4 の仮想ビューは VIEWS ツリーに
+    // 出さないので、ドリルダウンの現在地はここだけが示す（戻るは ← ボタン / navBack）。
+    const byId = new Map(this.project.diagrams.map(d => [d.meta.id, d]));
+    const trail = [...this.navStack, this.currentId]
+      .map(id => byId.get(id)?.meta.title || id);
+    this.titleEl.textContent = [p.title, ...trail].join(' › ');
+    this.titleEl.title = [p.title, ...trail].join(' › ');
     this.backBtn.disabled = !this.navStack.length;
     this.renderDiagramTree();
     this.renderEntityTree();
@@ -5106,6 +5705,8 @@ class DiagramEditor {
       return;
     }
     const hit = this.renderer.hitTest(e.clientX, e.clientY);
+    if (hit?.kind === 'expander') { this.toggleExpanded(hit.id); return; }   // §7.3 ▸/▾
+    if (hit?.kind === 'link') { this.activateNode(nodeById(this.model, hit.id)); return; }   // ↗ バッジ: Alt 不要（タッチ端末の §7.4 ドリルダウン）
     if (hit?.kind === 'port') {
       this.drag = { mode: 'connect', from: `${hit.id}:${hit.portId}`, fromPoint: hit.point };
       this.ghost = el('path', { class: 'de-ghost' });
@@ -5179,7 +5780,7 @@ class DiagramEditor {
       const a = this.drag.fromPoint;
       this.ghost.setAttribute('d', `M${a.x},${a.y} L${p.x},${p.y}`);
       const hit = this.renderer.hitTest(e.clientX, e.clientY);
-      this.setStatus(hit?.kind === 'port' ? `→ ${hit.id}:${hit.portId} に接続` : hit?.kind === 'node' ? `→ ${hit.id} に接続` : '結線中… (ポートかノードへドロップ)');
+      this.setStatus(hit?.kind === 'port' ? `→ ${hit.id}:${hit.portId} に接続` : (hit?.kind === 'node' || hit?.kind === 'link') ? `→ ${hit.id} に接続` : '結線中… (ポートかノードへドロップ)');
     }
   }
 
@@ -5201,11 +5802,17 @@ class DiagramEditor {
       // クリック（ほぼ無移動）: view モード / iso でのノード遷移
       if (Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 5 && this.renderer.hitTest) {
         const hit = this.renderer.hitTest(e.clientX, e.clientY);
-        if (hit?.kind === 'node') {
+        if (hit?.kind === 'expander') {
+          this.toggleExpanded(hit.id);       // view モード/iso でも段階展開はできる（§7.3）
+        } else if (hit?.kind === 'link') {
+          this.activateNode(nodeById(this.model, hit.id));   // ↗ バッジは常に遷移
+        } else if (hit?.kind === 'node') {
           const n = nodeById(this.model, hit.id);
           if (!this.editable || e.altKey) this.activateNode(n);
-        } else if (hit?.kind === 'group' && this.renderer.enterLayer) {
+        } else if (hit?.kind === 'group' && this.renderer.enterLayer
+                   && this.model.groups.find(g => g.id === hit.id)?.kind === 'platform') {
           // flat 全レイヤ表示中: プレート（platform グループ）クリックでそのレイヤ単層ページへ
+          // （§7.4 の container グループは枠であってプレートではない＝レイヤ遷移させない）
           this.renderer.enterLayer(hit.id);
         }
       }
@@ -5220,7 +5827,7 @@ class DiagramEditor {
     if (d.mode === 'connect') {
       this.ghost?.remove(); this.ghost = null;
       const hit = this.renderer.hitTest(e.clientX, e.clientY);
-      const to = hit?.kind === 'port' ? `${hit.id}:${hit.portId}` : hit?.kind === 'node' ? hit.id : null;
+      const to = hit?.kind === 'port' ? `${hit.id}:${hit.portId}` : (hit?.kind === 'node' || hit?.kind === 'link') ? hit.id : null;   // バッジへのドロップもノードへの結線
       if (to && to.split(':')[0] !== d.from.split(':')[0]) {
         const id = freshId(this.model, 'e');
         this.model.edges.push({ id, from: d.from, to, kind: 'orthogonal', arrowStart: 'none', arrowEnd: 'arrow', line: 'solid' });
@@ -5512,27 +6119,48 @@ class DiagramEditor {
 
   // ─── View ▸ Layout（GRAPH_CONTRACT.md §2/§3: 図の select/layout を選び直す） ───
 
-  // アルゴリズムを選択。select を持つ図は次の再導出で派生ノードが x/y を持たず自動配置される
-  // （applyLayouts が「x/y の無いノードだけ」に位置を入れる仕様なので、通常は何もしなくてよい）。
-  // select の無い「純粋手置き」図は、既存の x/y を持つノードしか無い＝applyLayouts の対象が無く
-  // 何も起きないため、選んだ瞬間は簡易挙動として全ノードを自動配置対象にする（x/y を捨てて
-  // __autoPos を立てる）。個々のノードを選んで自動化する UI は別途用意せず、この単純な挙動を採る。
+  // GRAPH_CONTRACT §7.1: Layout の選択と Re-layout は「そのビューの全ノードを再配置する」。
+  // 明示操作＝上書き（undo 可）なので、手置き・Freeze 済み・過去にドラッグしたノードも含めて
+  // x/y を捨てる（`node.pinned === true` のノードだけ除外）。捨てた後 rebuildLedger →
+  // applyLayouts が「x/y の無いノード」へ新しい配置を入れる。
+  // 旧実装は `if (!d.select)` の時だけ x/y を捨てていたため、Freeze 後（＝全ノードが手置き）に
+  // アルゴリズムを選んでも 1px も動かず「壊れている」ように見えた。
+  resetLayoutPositions(d) {
+    let moved = 0;
+    for (const n of d.nodes) {
+      if (n.pinned === true) continue;                 // 個別ピン留めは再配置から除外
+      if (typeof n.x === 'number' || typeof n.y === 'number') moved++;
+      delete n.x; delete n.y; n.__autoPos = true;
+    }
+    return moved;
+  }
+
+  // x/y を捨てた図は「layout 宣言があるから座標が無い」状態で保存される。validate は
+  // select も layout も無い図の x/y 欠落を error にするので、宣言を必ず備えてから捨てる
+  // （そうしないと undo の restoreHistory→loadProject が検証エラーで読めなくなる）。
+  ensureLayout(d, patch = {}) {
+    d.layout = Object.assign({ algorithm: 'none', direction: 'TB', nodeSep: 40, rankSep: 90, seed: 1, iterations: 300 }, d.layout, patch);
+    return d.layout;
+  }
+
   setLayoutAlgorithm(algorithm) {
     const d = this.model;
     if (!d) return;
-    d.layout = Object.assign({ direction: 'TB', nodeSep: 40, rankSep: 90, seed: 1, iterations: 300 }, d.layout, { algorithm });
-    if (!d.select) { for (const n of d.nodes) { delete n.x; delete n.y; n.__autoPos = true; } }
+    this.ensureLayout(d, { algorithm });
+    const n = this.resetLayoutPositions(d);
     this.rebuildLedger();
     this.commit();
-    this.setStatus(`レイアウト: ${algorithm}`);
+    this.setStatus(`レイアウト: ${algorithm}（${n} ノードを再配置）`);
   }
 
   setLayoutDirection(direction) {
     const d = this.model;
     if (!d) return;
-    d.layout = Object.assign({ algorithm: 'none', nodeSep: 40, rankSep: 90, seed: 1, iterations: 300 }, d.layout, { direction });
+    this.ensureLayout(d, { direction });
+    this.resetLayoutPositions(d);
     this.rebuildLedger();
     this.commit();
+    this.setStatus(`レイアウト方向: ${direction}`);
   }
 
   // 自動配置ノードの x/y を本物にして保存へ焼き込む（__autoPos を外す）。select 由来の派生ノード
@@ -5564,26 +6192,53 @@ class DiagramEditor {
     if (!node) return;
     delete node.__autoPos;
     delete node.__derived;
+    // §7.4: 仮想ビューの中で手置きしたら、そのビュー自体を実ビューへ昇格させる
+    // （昇格しないと projectToJSON がビューごと落とし、ユーザの操作が保存で静かに消える）
+    this.promoteVirtualView();
   }
 
-  // 自動配置ノードだけを再計算する（手置き x/y はそのまま）。__derived ノードは再導出のたびに
-  // x/y 無しで作り直される仕様なので明示的な削除は本来不要だが、将来 stripDerived の実装が
-  // 変わっても壊れないよう、ここで明示的に x/y を落としてから rebuildLedger する。
+  // §7.1: Re-layout も「全ノード」を再配置する（pinned だけ除外）。手置き座標も捨てる＝
+  // 明示操作による上書き。undo で元の座標へ戻る。
   relayout() {
     const d = this.model;
     if (!d) return;
-    for (const n of d.nodes) if (n.__derived) { delete n.x; delete n.y; }
+    this.ensureLayout(d);
+    const n = this.resetLayoutPositions(d);
     this.rebuildLedger();
     this.commit();
-    this.setStatus('レイアウトを再計算しました');
+    this.setStatus(`レイアウトを再計算しました（${n} ノード・pinned は除外）`);
+  }
+
+  // §7.3 段階展開: ▸/▾ クリックで select.expanded を切り替え → 再派生・再レイアウト・commit（undo 可・保存される）。
+  // 閉じるときは子孫 id も expanded から除く（開き直したとき「孫まで一気に出る」のを防ぐ）。
+  toggleExpanded(nodeId) {
+    const d = this.model;
+    if (!d?.select) { this.setStatus('この図は select を持たないため展開できません'); return; }
+    const gid = nodeById(d, nodeId)?.entityId || nodeId;
+    const cur = new Set(Array.isArray(d.select.expanded) ? d.select.expanded : []);
+    if (cur.has(gid)) {
+      cur.delete(gid);
+      for (const x of [...cur]) if (isDescendantOf(this.project, x, gid)) cur.delete(x);
+    } else {
+      cur.add(gid);
+    }
+    if (cur.size) d.select.expanded = [...cur]; else delete d.select.expanded;
+    this.rebuildLedger();
+    this.commit();
+    this.setStatus(`${gid} を${cur.has(gid) ? '展開' : '折りたたみ'}しました`);
   }
 
   // ─── MBSE Promote（図ローカル要素 → グローバル台帳） ───
 
   // projectToJSON→normalizeProject でプロジェクトを再構築（index/実体化を更新）。現在図と選択を保持。
-  rebuildLedger() {
+  rebuildLedger() { this.rebuildProject(); }
+
+  // projectToJSON→normalizeProject の往復で再構築する共通経路。§7.4 の仮想ビューは保存 JSON から
+  // 落ちるので raw へ戻してから正規化する（戻さないと、ドリルダウン先で ▸ を押した瞬間に
+  // 今見ている図が消えて entry へ飛ぶ）。history:false は「編集ではない再構築」（仮想ビュー生成）用。
+  rebuildProject({ history = true } = {}) {
     const cur = this.currentId, sel = this.selection;
-    this.project = normalizeProject(JSON.parse(projectToJSON(this.project)));
+    this.project = normalizeProject(this.injectVirtualViews(JSON.parse(projectToJSON(this.project))));
     this.openDiagram(cur);
     if (sel) {
       const exists = sel.kind === 'node' ? nodeById(this.model, sel.id)
@@ -5591,7 +6246,7 @@ class DiagramEditor {
         : this.model.groups.find(g => g.id === sel.id);
       if (exists) this.select(sel);
     }
-    this.pushHistory();
+    if (history) this.pushHistory();
   }
 
   // ノードをグローバル・エンティティ台帳へ昇格（entityId を付与し、実体化されるフィールドを剥がす）
@@ -5919,7 +6574,9 @@ class DiagramEditor {
   }
 }
 
-const NODE_TYPES_LIST = NODE_PALETTE.map(p => p.type);
+// インスペクタ/台帳エディタの type select 候補。パレットの 8 種に加えて抽出器（bin/extract.mjs）が
+// 付ける型も並べる＝folder ノードを選んだとき select が先頭の 'block' を表示する誤解を防ぐ。
+const NODE_TYPES_LIST = [...NODE_PALETTE.map(p => p.type), ...EXTRACTOR_NODE_TYPES];
 
 function sep() {
   const s = document.createElement('span');
@@ -5936,7 +6593,7 @@ try {
   window.diagramEditor = editor;
 
   // 優先順: ?src=URL > 埋込みプロジェクト > 埋込み単図 > 先頭 example。自動保存は非モーダルのバナーで提案
-  // ?src= は同一オリジンの JSON を読み込む（例: /diagram_drawer/?src=/diagrams/life_structure.json）。
+  // ?src= は同一オリジンの JSON を読み込む（例: /tools/diagram_drawer/?src=../../data/diagrams/life_graph.json）。
   const SRC = new URLSearchParams(location.search).get('src');
   const embeddedProj = document.getElementById('diagram-project');
   const embedded = document.getElementById('diagram-model');
