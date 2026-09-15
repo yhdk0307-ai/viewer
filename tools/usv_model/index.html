@@ -188,10 +188,13 @@
   .geo-toolbar input[type=number]{width:60px;}
   .geo-zones-inline{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;}
   .geo-wrap{position:relative;width:100%;}
-  #geo-map{width:100%;height:420px;display:block;border:1px solid var(--line);border-radius:4px;
-    touch-action:none;cursor:grab;}
+  /* バグ修正（2026-09-15）: 幅と高さを別々に固定すると viewBox（1000x640）とコンテナの縦横比がずれ、
+     preserveAspectRatio="xMidYMid slice" が左右（または上下）を切り落として、航路の端（滞留・観測点）に
+     いる艇がコースから見切れて消える（長期観測ミッションで顕著）。aspect-ratio を viewBox と一致させ、
+     どの画面幅でも slice によるクロップが起きないようにする。*/
+  #geo-map{width:100%;aspect-ratio:1000/640;height:auto;max-height:640px;display:block;
+    border:1px solid var(--line);border-radius:4px;touch-action:none;cursor:grab;}
   #geo-map:active{cursor:grabbing;}
-  @media(min-width:960px){ #geo-map{height:640px;} }
   /* A16-3: HUD（右上）・凡例（右下）を薄い面・直角・細罫線で統一（設計書§12.6拡張） */
   .geo-ov{position:absolute;background:rgba(255,255,255,.72);
     background:color-mix(in srgb, var(--bg) 72%, transparent);
