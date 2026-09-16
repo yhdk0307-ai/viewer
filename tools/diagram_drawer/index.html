@@ -33,6 +33,17 @@
   --de-shadow: rgba(26, 26, 26, .08);
   --de-font: "Avenir Next", "Helvetica Neue", "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
   --de-mono: "SF Mono", "Cascadia Code", Consolas, "Noto Sans Mono CJK JP", monospace;
+
+  /* ─── 図の文字サイズ（G13）─────────────────────────────────────────────
+     ノードラベルの基準サイズは **ここ 1 か所**が正本。CSS の font-size と
+     model.js の幅見積り（textWidthPx）が同じ数値を見るように、エディタが
+     起動時に --de-node-font-base × --de-text-scale を setNodeFontPx() へ渡す。
+     View ▸ 文字サイズ は --de-text-scale だけを差し替える（0.85 / 1 / 1.2 / 1.45）。 */
+  --de-node-font-base: 15;     /* px の数値だけ（calc 用・単位なし） */
+  --de-text-scale: 1;
+  --de-node-font: calc(var(--de-node-font-base) * var(--de-text-scale) * 1px);
+  --de-node-subfont: calc(var(--de-node-font) * .733);   /* 15px → 11px */
+  --de-edge-font: calc(var(--de-node-font) * .70);       /* 15px → 10.5px */
 }
 
 /* 既定は常にライト（OS のダーク設定には追従しない）。ダークは Theme ボタンの明示切替のみ。
@@ -49,8 +60,8 @@
 .de-canvas { background: var(--de-paper); }
 .de-node-shape { fill: var(--de-fill); stroke: var(--de-line); stroke-width: 1.4; }
 .de-node-shape.accent { stroke: var(--de-accent); }
-.de-node-label { fill: var(--de-ink); font-family: var(--de-font); font-size: 13px; font-weight: 600; }
-.de-node-sublabel { fill: var(--de-soft); font-family: var(--de-font); font-size: 10px; letter-spacing: .04em; }
+.de-node-label { fill: var(--de-ink); font-family: var(--de-font); font-size: var(--de-node-font); font-weight: 600; }
+.de-node-sublabel { fill: var(--de-soft); font-family: var(--de-font); font-size: var(--de-node-subfont); letter-spacing: .04em; }
 .de-node-icon { stroke: var(--de-ink); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .de-port { fill: var(--de-fill); stroke: var(--de-line); stroke-width: 1.2; }
 .de-port:hover { stroke: var(--de-accent); stroke-width: 2; }
@@ -58,7 +69,7 @@
 .de-edge { fill: none; stroke: var(--de-line); stroke-width: 1.3; }
 .de-edge.accent { stroke: var(--de-accent); stroke-width: 1.6; }
 .de-edge-hit { fill: none; stroke: transparent; stroke-width: 12; cursor: pointer; }
-.de-edge-label { fill: var(--de-ink); font-family: var(--de-font); font-size: 10.5px; }
+.de-edge-label { fill: var(--de-ink); font-family: var(--de-font); font-size: var(--de-edge-font); }
 .de-edge-label-bg { fill: var(--de-paper); opacity: .92; }
 .de-group-shape { fill: var(--de-fill-alt); stroke: var(--de-soft); stroke-width: 1; }
 .de-group-label { fill: var(--de-soft); font-family: var(--de-font); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
@@ -95,7 +106,7 @@
 .de-iconbtn.active { background: var(--de-ink); color: var(--de-bg); border-color: var(--de-ink); }
 .de-iconbtn-wide { font-size: 11px; letter-spacing: .02em; }
 
-.de-sidebar { width: 230px; min-width: 200px; background: var(--de-panel); border-right: 1px solid var(--de-grid); display: flex; flex-direction: column; min-height: 0; }
+.de-sidebar { box-sizing: border-box; width: 230px; min-width: 200px; background: var(--de-panel); border-right: 1px solid var(--de-grid); display: flex; flex-direction: column; min-height: 0; }
 .de-entsec { flex: 0 0 auto; height: 38%; overflow-y: auto; }
 .de-vsplit { flex: 0 0 6px; cursor: row-resize; background: var(--de-grid); border-top: 1px solid var(--de-panel); border-bottom: 1px solid var(--de-panel); }
 .de-vsplit:hover { background: var(--de-soft); }
@@ -105,7 +116,7 @@
 .de-title-old { display: none; }
 .de-viewport { flex: 1; position: relative; overflow: hidden; background: var(--de-paper); touch-action: none; }
 .de-viewport svg, .de-viewport canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.de-jsonpanel { width: 380px; min-width: 260px; max-width: 55vw; background: var(--de-panel); border-left: 1px solid var(--de-grid); display: flex; flex-direction: column; min-height: 0; }
+.de-jsonpanel { box-sizing: border-box; width: 380px; min-width: 260px; max-width: 55vw; background: var(--de-panel); border-left: 1px solid var(--de-grid); display: flex; flex-direction: column; min-height: 0; }
 /* JSON タブの textarea 専用。`.de-jsonpanel textarea` と書くと、同じパネルに同居する
    インスペクタの textarea 全部に white-space:pre が漏れて長い説明が折り返さなくなる（G11 実測） */
 .de-jsonpanel .de-tabpane[data-tab="json"] textarea { flex: 1; border: 0; resize: none; background: var(--de-bg); color: var(--de-ink); font-family: var(--de-mono); font-size: 11px; line-height: 1.5; padding: 10px; outline: none; white-space: pre; }
@@ -261,17 +272,53 @@
 .de-modal-body { padding: 14px 16px; overflow-y: auto; font-size: 12px; line-height: 1.9; color: var(--de-ink); }
 .de-modal-body h4 { margin: 12px 0 4px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--de-soft); }
 .de-modal-body kbd { border: 1px solid var(--de-muted); border-radius: 3px; padding: 0 4px; font-family: var(--de-mono); font-size: 10px; }
+.de-modal-body code { font-family: var(--de-mono); font-size: 11px; background: var(--de-panel); border-radius: 3px; padding: 0 3px; word-break: break-all; }
+.de-modal-body pre { font-family: var(--de-mono); font-size: 10.5px; line-height: 1.55; background: var(--de-panel); border: 1px solid var(--de-grid); border-radius: 4px; padding: 8px 10px; margin: 6px 0; overflow-x: auto; white-space: pre; }
 .de-modal-foot { padding: 10px 16px; border-top: 1px solid var(--de-grid); display: flex; justify-content: flex-end; }
 
 .de-status { padding: 4px 12px; font-size: 11px; color: var(--de-soft); background: var(--de-panel); border-top: 1px solid var(--de-grid); display: flex; gap: 16px; }
 .de-status .err { color: var(--de-danger); }
-.de-inline-edit { position: absolute; border: 1px solid var(--de-accent); background: var(--de-bg); color: var(--de-ink); font-family: var(--de-font); font-size: 13px; font-weight: 600; text-align: center; outline: none; border-radius: 3px; padding: 2px 4px; z-index: 30; }
+.de-inline-edit { position: absolute; border: 1px solid var(--de-accent); background: var(--de-bg); color: var(--de-ink); font-family: var(--de-font); font-size: var(--de-node-font); font-weight: 600; text-align: center; outline: none; border-radius: 3px; padding: 2px 4px; z-index: 30; }
 .de-help { font-size: 10.5px; color: var(--de-soft); line-height: 1.7; }
 .de-help kbd { border: 1px solid var(--de-muted); border-radius: 3px; padding: 0 4px; font-family: var(--de-mono); font-size: 9.5px; }
 
 .de-toolbar-label { font-size: 10px; color: var(--de-soft); letter-spacing: .06em; margin-right: -3px; }
 .de-banner { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: var(--de-panel); border: 1px solid var(--de-soft); border-radius: 6px; box-shadow: 0 4px 16px var(--de-shadow); font-size: 12px; color: var(--de-ink); max-width: 92%; }
 .de-toolbar-sep { width: 1px; align-self: stretch; margin: 2px 3px; background: var(--de-grid); }
+
+/* 左右ペインは border-box。幅を px で保存する（de-leftw / de-rightw）以上、1px の枠線が
+   getBoundingClientRect().width に足されて「保存した値と 1px ずれる」のを避ける（G13） */
+
+/* ─── 横スプリッタ（左右ペインの幅調整）＋レール折りたたみ（G13） ───
+   .de-vsplit（サイドバー内の上下分割）の横版。内側の縁に掴み手を置き、
+   中央のシェブロンで「レール（14px）へ畳む／戻す」。幅と畳みは localStorage に残す。 */
+.de-hsplit { flex: 0 0 6px; position: relative; cursor: col-resize; background: var(--de-grid); border-left: 1px solid var(--de-panel); border-right: 1px solid var(--de-panel); }
+.de-hsplit:hover { background: var(--de-soft); }
+.de-hsplit-btn {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 16px; height: 38px; padding: 0; z-index: 6; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--de-soft); border-radius: 4px; background: var(--de-fill);
+  color: var(--de-soft); font-family: var(--de-font); font-size: 10px; line-height: 1;
+}
+.de-hsplit-btn:hover { color: var(--de-ink); border-color: var(--de-ink); }
+/* レール＝14px の細帯。中身は隠し、再展開はスプリッタ上のシェブロンで行う */
+.de-railed { overflow: hidden; }
+.de-railed > * { display: none !important; }
+
+/* ─── クリック/ドラッグでの誤テキスト選択を止める（G13） ───
+   `* { user-select: none }` は textarea のコピペまで壊すので使わない。
+   「選べてはいけないクロム」を明示列挙し、選べるべき場所は .de-selectable と
+   フォーム要素で戻す（許可リスト方式）。 */
+.de-viewport, .de-menubar, .de-menu-dd, .de-iconbar, .de-tabs, .de-sechead, .de-section h3,
+.de-navtree, .de-navrow, .de-entrow, .de-oprow, .de-prophead, .de-palette, .de-iconpicker,
+.de-vsplit, .de-hsplit, .de-hsplit-btn, .de-status, .de-inspsec-head, .de-inspsum-k,
+.de-desc-badge, .de-relations, .de-modal-head, .de-modal-foot, .de-banner {
+  -webkit-user-select: none; user-select: none;
+}
+.de-selectable, .de-selectable *, textarea, input, .de-inspsum-v {
+  -webkit-user-select: text; user-select: text;
+}
 
 /* ─── パネル折りたたみ / モバイル ─── */
 .de-collapsed { display: none !important; }
@@ -282,6 +329,13 @@
   /* 狭い画面ではパネルをオーバーレイ化（開いてもキャンバスが覗く）。top はエディタが動的に設定 */
   .de-sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 40; box-shadow: 2px 0 14px var(--de-shadow); }
   .de-jsonpanel { position: fixed; right: 0; top: 0; bottom: 0; left: 18vw; z-index: 40; max-width: none; width: auto; box-shadow: -2px 0 14px var(--de-shadow); }
+  /* 携帯ではペインがオーバーレイ（position:fixed＝フローの外）なので、掴み手だけが
+     本体フローに 6px の帯として残ってしまう。畳み/展開は ☰ と { } に任せて消す。
+     幅のインライン指定もエディタ側（applyPaneLayout）が携帯では剥がす＝横スクロールを出さない */
+  .de-hsplit { display: none; }
+  .de-modal-overlay { padding: 8px; }
+  .de-modal { max-height: 92vh; }
+  .de-modal-body { padding: 12px 12px; font-size: 12.5px; line-height: 1.85; }
 }
 
 html, body { margin: 0; height: 100%; overflow: hidden; }
@@ -358,13 +412,26 @@ const REL_PRESETS = {
 const REL_NAMES = Object.keys(REL_PRESETS);
 
 // ─── ラベル幅の見積り（G10・依存ゼロ・DOM 不使用） ───
-// 13px bold の de-node-label を前提にした粗い近似: ASCII 7.2px / CJK・全角 13px。
-// 派生ノードの自動幅（下の deriveViews）と flat レンダラの省略表示が同じ尺度を使うために
-// ここへ一本化する（別々に持つと「幅は足りているのに … が出る」ずれが起きる）。
-const ASCII_CHAR_PX = 7.2, CJK_CHAR_PX = 13;
-function textWidthPx(text) {
+// de-node-label（semibold）の粗い近似。G10 では 13px 固定で ASCII 7.2px / CJK 13px と実測したので、
+// **その比だけを保存してフォントサイズから毎回スケールする**（定数を焼き込むと View ▸ 文字サイズ で
+// 「幅は足りているのに … が出る／箱からはみ出す」ずれが出る）。
+// 派生ノードの自動幅（下の deriveViews）と flat レンダラの省略表示が同じ尺度を使うために一本化する。
+// G13: 基準は theme.css の --de-node-font-base（15px）。エディタが起動時／文字サイズ変更時に
+// setNodeFontPx(基準 × scale) を呼び、CSS と幅計算の尺度を 1 つに保つ。
+const BASE_NODE_FONT = 15;                    // theme.css の --de-node-font-base と同値
+const RE_WIDE = /[　-鿿豈-﫿＀-￯぀-ヿ]/;
+const ASCII_RATIO = 7.2 / 13, CJK_RATIO = 13 / 13;   // G10 実測（13px 基準）の比だけを残す
+let nodeFontPx = BASE_NODE_FONT;
+function setNodeFontPx(px) {
+  const v = Number(px);
+  nodeFontPx = Number.isFinite(v) && v > 0 ? v : BASE_NODE_FONT;
+}
+function getNodeFontPx() { return nodeFontPx; }
+// 基準 15px に対する現在の倍率。レンダラの行高・スプライト寸法など「px で焼いてある幾何」を揃えるのに使う
+function nodeTextScale() { return nodeFontPx / BASE_NODE_FONT; }
+function textWidthPx(text, fontPx = nodeFontPx) {
   let w = 0;
-  for (const ch of String(text == null ? '' : text)) w += /[　-鿿豈-﫿＀-￯぀-ヿ]/.test(ch) ? CJK_CHAR_PX : ASCII_CHAR_PX;
+  for (const ch of String(text == null ? '' : text)) w += fontPx * (RE_WIDE.test(ch) ? CJK_RATIO : ASCII_RATIO);
   return w;
 }
 // ラベルに使える横幅: アイコンがある派生ノードはアイコン（左 9px + 18px）の右から書き始める。
@@ -858,7 +925,10 @@ function deriveViews(proj) {
       if (autoWidth) {
         const ent = byId.get(id);
         const need = textWidthPx(ent?.name ?? id) + (ent?.icon ? LABEL_ICON_INSET : LABEL_PAD) + LABEL_PAD;
-        n.w = Math.round(Math.max(size.w, Math.min(size.w * MAX_AUTO_W, need)));
+        // G13: ここは Math.round ではなく **ceil**。必要幅が 239.4px のとき round は 239 へ切り下げ、
+        // labelBoxWidth が 0.4px 足りずレンダラが「幅は足りているはずのラベル」を … で省略する。
+        // 13px 時代は端数がたまたま上へ丸まっていただけで、フォントを変えた瞬間に露見した。
+        n.w = Math.min(Math.round(size.w * MAX_AUTO_W), Math.ceil(Math.max(size.w, need)));
       }
       d.nodes.push(n); have.set(id, n);
     }
@@ -881,7 +951,7 @@ function deriveViews(proj) {
       if (autoWidth && n.__derived && (d.layout?.direction || 'TB') === 'LR') {
         const ent = byId.get(gid);
         const need = textWidthPx(ent?.name ?? gid) + (ent?.icon ? LABEL_ICON_INSET : LABEL_PAD) + LABEL_PAD + expanderReserve(kids.length);
-        n.w = Math.round(Math.max(n.w, Math.min(size.w * MAX_AUTO_W, need)));
+        n.w = Math.min(Math.round(size.w * MAX_AUTO_W), Math.ceil(Math.max(n.w, need)));
       }
     }
     const handEdges = new Set((d.edges || []).map(e => e.id));
@@ -3415,8 +3485,13 @@ function el(tag, attrs = {}, text) {
 
 
 const PORT_R = 4.5;         // ポート正方形の半径
-const LINE_H = 16;          // ラベル行高
-const SUBLABEL_MIN_H = 40;  // これ未満の箱ではサブラベルを描かず <title> へ回す（G10）
+// G13: 行高とサブラベルの下限高は「13px 基準で 16px / 40px」という G10 の実測を比として残し、
+// 現在のラベル・フォントサイズ（View ▸ 文字サイズ）から毎回引き直す。定数のままだと
+// 文字を大きくした瞬間に行が重なり、サブラベルがラベルのアセンダへ食い込む。
+const lineH = () => getNodeFontPx() * (16 / 13);          // ラベル行高
+const sublabelMinH = () => 40 * nodeTextScale();          // これ未満の箱ではサブラベルを描かず <title> へ回す（G10）
+// wrapText は「1 行あたりの文字数」で折るので、その 1 文字あたり px も同じ尺度で伸ばす
+const wrapCharPx = () => getNodeFontPx() * (6.8 / 13);
 
 // 幅に収まるまで末尾を削って … を付ける（textWidthPx と同じ尺度で測る）
 function ellipsize(text, maxW) {
@@ -3852,10 +3927,10 @@ class FlatSVGRenderer {
       ig.setAttribute('transform', `translate(${node.x + 9},${node.y + 8}) scale(${size / 24})`);
       g.appendChild(ig);
     }
-    // §7.1 追補（G10）: 高さが 2 行に足りない箱（h < SUBLABEL_MIN_H）はサブラベル（親パス）を描かない。
+    // §7.1 追補（G10）: 高さが 2 行に足りない箱（h < sublabelMinH()）はサブラベル（親パス）を描かない。
     // 描くとラベル 1 行目のアセンダと重なって両方読めなくなる（報告された「アイコン／サブラベルに重なる」）。
     // 落としたサブラベルは <title>（ツールチップ）へ回す＝情報は失わない。
-    const showSub = !!node.sublabel && !node.collapsed && h >= SUBLABEL_MIN_H;
+    const showSub = !!node.sublabel && !node.collapsed && h >= sublabelMinH();
     // ラベル領域はアイコンの右から（中央寄せのままだと長いラベルがアイコンへ食い込む）。
     // サブラベルも同じ中心に揃える（別々の中心だとラベルとサブラベルがずれて見える）。
     const textInset = (hasIcon && !node.collapsed) ? LABEL_ICON_INSET : LABEL_PAD;
@@ -3870,7 +3945,7 @@ class FlatSVGRenderer {
     if (node.label) {
       const cy = node.collapsed ? node.y + h / 2 + 4.5 : node.y + h / 2 + (showSub ? 8 : 4.5);
       // 入る行数: サブラベルを描いたぶんを引いた高さ / 行高（最低 1 行）
-      const maxLines = Math.max(1, Math.floor((h - (showSub ? 20 : 8)) / LINE_H));
+      const maxLines = Math.max(1, Math.floor((h - (showSub ? 20 : 8)) / lineH()));
       this.appendLabel(g, node, textCx, cy, textW, maxLines);
     }
     if (!showSub && node.sublabel && !node.collapsed) this.appendTitle(g, `${node.sublabel}${node.label || ''}`);
@@ -3946,7 +4021,7 @@ class FlatSVGRenderer {
   }
 
   appendLabel(g, node, cx, cy, maxW, maxLines = 0) {
-    let lines = wrapText(node.label, Math.max(4, Math.floor(maxW / 6.8)));
+    let lines = wrapText(node.label, Math.max(4, Math.floor(maxW / wrapCharPx())));
     let truncated = false;
     if (maxLines > 0 && lines.length > maxLines) {
       // 入りきらない分は … で省略し、全文は <title> に入れる（G10: 170×44 の派生ノード）
@@ -3958,10 +4033,11 @@ class FlatSVGRenderer {
       truncated = true;
     }
     if (truncated) this.appendTitle(g, (node.sublabel || '') + node.label);
-    const y0 = cy - (lines.length - 1) * LINE_H / 2;
+    const lh = lineH();
+    const y0 = cy - (lines.length - 1) * lh / 2;
     lines.forEach((line, i) => {
       g.appendChild(el('text', {
-        class: 'de-node-label', x: cx, y: y0 + i * LINE_H, 'text-anchor': 'middle',
+        class: 'de-node-label', x: cx, y: y0 + i * lh, 'text-anchor': 'middle',
         fill: node.style?.textColor,
       }, line));
     });
@@ -4280,6 +4356,11 @@ const isoShapeHeight = shapeName => (SHAPES3D[shapeName]?.h || 0) * SHAPE_FOOT; 
 
 
 
+// G13: iso のラベルは CSS クラス .de-node-label（= var(--de-node-font)）で描くので字だけは自動で
+// 追従するが、行送りと折返し幅は px で焼いてあった。13px 基準の 14px / 18 文字を比として保つ。
+const isoLineH = () => getNodeFontPx() * (14 / 13);
+const isoWrapCols = () => Math.max(6, Math.round(18 * (13 / getNodeFontPx())));
+
 const PLATE_T = 14;   // プレート厚（画面px）
 const BOX_H = 30;     // ノード箱の高さ（標高差）
 
@@ -4493,9 +4574,9 @@ class IsoSVGRenderer {
       // ラベルはピクトグラム頭頂の少し上に正対配置
       const topPt = isoProject(cx, cy, elev + PED_H + isoShapeHeight(shapeName));
       if (node.label) {
-        const lines = wrapText(node.label, 18);
+        const lines = wrapText(node.label, isoWrapCols());
         lines.forEach((line, i) => g.appendChild(el('text', {
-          class: 'de-node-label', x: topPt.x, y: topPt.y - 10 + i * 14, 'text-anchor': 'middle',
+          class: 'de-node-label', x: topPt.x, y: topPt.y - 10 + i * isoLineH(), 'text-anchor': 'middle',
           style: 'paint-order: stroke; stroke: var(--de-paper); stroke-width: 3px;',
         }, line)));
       }
@@ -4533,10 +4614,10 @@ class IsoSVGRenderer {
       labelY = center.y + (flat ? 12 : 2);
     }
     if (node.label) {
-      const lines = wrapText(node.label, 18);
+      const lines = wrapText(node.label, isoWrapCols());
       lines.forEach((line, i) => {
         const t = el('text', {
-          class: 'de-node-label', x: center.x, y: labelY + i * 14, 'text-anchor': 'middle',
+          class: 'de-node-label', x: center.x, y: labelY + i * isoLineH(), 'text-anchor': 'middle',
           style: 'paint-order: stroke; stroke: var(--de-paper); stroke-width: 3px;',
         }, line);
         g.appendChild(t);
@@ -5036,9 +5117,12 @@ class WebGLThreeRenderer {
   }
 
   // Canvas → Sprite（常時正対ラベル）。occlude:true で depthTest 有効＝物陰に隠れる
+  // G13: webgl のラベルは CSS ではなく canvas のフォントで焼くので、View ▸ 文字サイズ の倍率を
+  // ここで掛ける（size は「標準」での px。2D/2.5D と同じ倍率で一緒に大小する）。
   textSprite(text, { size = 22, pill = false, accent = false, letterSpacing = false, occlude = false } = {}) {
     const T = THREE;
     const dpr = 2;
+    size = size * nodeTextScale();
     const font = `${letterSpacing ? '700' : '600'} ${size * dpr}px "Avenir Next","Helvetica Neue","Hiragino Sans","Noto Sans JP",sans-serif`;
     const c = document.createElement('canvas');
     const ctx = c.getContext('2d');
@@ -5074,6 +5158,7 @@ class WebGLThreeRenderer {
   surfaceText(text, { size = 30, color = '--de-ink', weight = 800 } = {}) {
     const T = THREE;
     const dpr = 4; // 高解像度でレンダリング（ボケ対策）
+    size = size * nodeTextScale();   // G13: 文字サイズ設定を 3D のプレート名／枠名にも効かせる
     const font = `${weight} ${size * dpr}px "Avenir Next","Helvetica Neue","Hiragino Sans","Noto Sans JP",sans-serif`;
     const c = document.createElement('canvas');
     const ctx = c.getContext('2d');
@@ -5429,6 +5514,16 @@ const AUTOSAVE_KEY = 'diagram-engine-autosave';
 // §11.3 判定（✓/✗・却下理由・質問への回答）のブラウザ側作業記憶。キーは「提案ファイル名 :: 提案 id」。
 const VERDICT_KEY = 'de-proposal-verdicts';
 
+// View ▸ 文字サイズ（G13）: theme.css の --de-text-scale と model.js の setNodeFontPx を同時に動かす。
+// 数値は「基準 15px に対する倍率」。localStorage（de-textscale）で端末に残り、次回ロードで復元する。
+const TEXT_SCALE_ITEMS = [[0.85, '小'], [1, '標準'], [1.2, '大'], [1.45, '特大']];
+const TEXT_SCALE_KEY = 'de-textscale';
+// G13: 左右ペインの幅と折りたたみ（レール）状態。幅は px、レールは真偽値。
+const PANE_WIDTH_KEYS = { left: 'de-leftw', right: 'de-rightw' };
+const RAIL_KEY = 'de-rails';
+const PANE_MIN_W = 180, RAIL_W = 14;
+const paneMaxW = () => Math.round(window.innerWidth * 0.46);
+
 // View ▸ Layout（GRAPH_CONTRACT.md §2/§3）: layoutGraph の algorithm/direction を選び直す UI 語彙。
 const LAYOUT_ALGO_ITEMS = [['tree', 'Tree'], ['layered', 'Layered'], ['force', 'Force'], ['grid', 'Grid'], ['radial', 'Radial'], ['nested', 'Nested'], ['none', 'None']];
 const LAYOUT_DIRECTION_ITEMS = [['TB', 'TB'], ['LR', 'LR']];
@@ -5509,10 +5604,40 @@ class DiagramEditor {
     this.proposalDoc = null; this.proposalFileName = null; this.proposalSel = null;
     this.preview = null;
     this.verdicts = this.readVerdicts();
+    // G13: 文字サイズは **最初の normalizeProject より前**に確定させる。派生ノードの自動幅
+    // （§7.1 追補）は読み込み時のフォント尺度で決まるので、後から当てると幅だけ古い図になる。
+    this.applyTextScale(this.readTextScale(), { rebuild: false, persist: false });
     this.buildUI();
     this.bindEvents();
     this.applyPanelState(this.readPanelState());
+    this.applyPaneLayout(this.readPaneLayout());
   }
+
+  // ─── 文字サイズ（G13・View ▸ 文字サイズ） ───
+  readTextScale() {
+    try {
+      const v = Number(localStorage.getItem(TEXT_SCALE_KEY));
+      if (TEXT_SCALE_ITEMS.some(([s]) => s === v)) return v;
+    } catch { /* プライベートモード等は既定へ */ }
+    return 1;
+  }
+
+  // CSS 変数（--de-text-scale）と幅見積り（setNodeFontPx）を同時に動かす。この 2 つがずれると
+  // 「箱は広いのに字が小さい／字は大きいのに … で切れる」になる＝正本は 1 つ（基準 px × 倍率）。
+  applyTextScale(scale, { rebuild = true, persist = true } = {}) {
+    this.textScale = scale;
+    document.documentElement.style.setProperty('--de-text-scale', String(scale));
+    setNodeFontPx(BASE_NODE_FONT * scale);
+    if (persist) { try { localStorage.setItem(TEXT_SCALE_KEY, String(scale)); } catch { /* noop */ } }
+    if (!rebuild || !this.project) return;
+    // 派生ノードの幅は normalize 時に決まるので、Re-layout と同じ再構築経路を通す
+    // （projectToJSON → normalizeProject）。手置き座標は保存形に残っているので保持され、
+    // 自動配置ノードだけが新しい幅で置き直される。history:false ＝設定変更は undo 履歴に積まない。
+    this.rebuildProject({ history: false });
+    this.setStatus(`文字サイズ: ${TEXT_SCALE_ITEMS.find(([s]) => s === scale)?.[1] || scale}`);
+  }
+
+  setTextScale(scale) { this.applyTextScale(scale); }
 
   // ─── パネル折りたたみ（携帯対応） ───
   readPanelState() {
@@ -5534,10 +5659,111 @@ class DiagramEditor {
       if (el) el.style.top = mobile ? `${this.header?.offsetHeight || 0}px` : '';
     }
     try { localStorage.setItem('de-panels', JSON.stringify(state)); } catch { /* noop */ }
+    // ☰ / { } で丸ごと隠したペインの掴み手も一緒に消す（残すとキャンバスの縁に 6px の帯が浮く）
+    if (this.paneLayout) this.applyPaneLayout(this.paneLayout, { persist: false });
   }
 
   togglePanel(which) {
     this.applyPanelState({ ...this.panelState, [which]: !this.panelState[which] });
+  }
+
+  // ─── 左右ペインの幅とレール折りたたみ（G13） ───
+  // 幅は端末ごとの好みなので localStorage（de-leftw / de-rightw）、レールは de-rails。
+  readPaneLayout() {
+    const num = (k, dflt) => {
+      try { const v = Number(localStorage.getItem(k)); if (Number.isFinite(v) && v >= PANE_MIN_W) return v; } catch { /* noop */ }
+      return dflt;
+    };
+    let rails = { left: false, right: false };
+    try { rails = Object.assign(rails, JSON.parse(localStorage.getItem(RAIL_KEY) || 'null') || {}); } catch { /* noop */ }
+    return { left: num(PANE_WIDTH_KEYS.left, 230), right: num(PANE_WIDTH_KEYS.right, 380), rails };
+  }
+
+  paneEl(side) { return side === 'left' ? this.sidebar : this.jsonPanel; }
+
+  // 幅は inline で当てる（CSS の min-width/max-width より強い＝180px まで詰められる）。
+  // 携帯（<=720px）はペインが position:fixed のオーバーレイなので inline 幅を**剥がす**。
+  // 当てたままにすると left:18vw + width:380px で本文が画面幅を越え、横スクロールが出る。
+  applyPaneLayout(layout, { persist = true } = {}) {
+    this.paneLayout = layout;
+    const mobile = matchMedia('(max-width: 720px)').matches;
+    for (const side of ['left', 'right']) {
+      const el2 = this.paneEl(side);
+      if (!el2) continue;
+      const railed = !!layout.rails[side];
+      el2.classList.toggle('de-railed', railed && !mobile);
+      const w = mobile ? '' : `${railed ? RAIL_W : Math.round(layout[side])}px`;
+      el2.style.width = w; el2.style.minWidth = w; el2.style.maxWidth = w;
+      const split = this.splitters?.[side];
+      if (split) {
+        split.classList.toggle('de-collapsed', !!this.panelState?.[side === 'left' ? 'sidebar' : 'json']);
+        const btn = split.querySelector('.de-hsplit-btn');
+        if (btn) {
+          const open = side === 'left' ? '‹' : '›';       // ペイン側を向く＝畳む
+          const shut = side === 'left' ? '›' : '‹';       // キャンバス側を向く＝戻す
+          btn.textContent = railed ? shut : open;
+          btn.title = `${side === 'left' ? '左' : '右'}ペインを${railed ? '開く' : '畳む'}`;
+          btn.dataset.railed = railed ? '1' : '0';
+        }
+      }
+    }
+    if (persist) {
+      try {
+        localStorage.setItem(PANE_WIDTH_KEYS.left, String(Math.round(layout.left)));
+        localStorage.setItem(PANE_WIDTH_KEYS.right, String(Math.round(layout.right)));
+        localStorage.setItem(RAIL_KEY, JSON.stringify(layout.rails));
+      } catch { /* プライベートモード等は黙ってスキップ */ }
+    }
+    this.refitCanvas();
+  }
+
+  // キャンバスの寸法追従（ResizeObserver と同じ経路を明示的に呼ぶ）。ペインの開閉・幅変更のあと、
+  // グリッドとレンダラのビューポートを描き直さないと 3D/2.5D が古い比率のまま残る。
+  refitCanvas() {
+    this.renderer?.drawGrid?.();
+    this.renderer?.resize?.();
+  }
+
+  setPaneWidth(side, w) {
+    const clamped = Math.max(PANE_MIN_W, Math.min(paneMaxW(), w));
+    this.applyPaneLayout({ ...this.paneLayout, [side]: clamped });
+  }
+
+  toggleRail(side) {
+    const rails = { ...this.paneLayout.rails, [side]: !this.paneLayout.rails[side] };
+    this.applyPaneLayout({ ...this.paneLayout, rails });
+  }
+
+  // 左右ペインの内側の縁に置く掴み手（.de-vsplit の横版）。ドラッグ＝幅、
+  // 中央のシェブロン・クリックとハンドルのダブルクリック＝レールへ畳む／戻す。
+  buildHSplit(side) {
+    const split = document.createElement('div');
+    split.className = 'de-hsplit'; split.dataset.role = `hsplit-${side}`; split.dataset.side = side;
+    const btn = document.createElement('button');
+    btn.className = 'de-hsplit-btn'; btn.dataset.role = `pane-toggle-${side}`; btn.type = 'button';
+    btn.addEventListener('click', (e) => { e.stopPropagation(); this.toggleRail(side); });
+    split.appendChild(btn);
+    let startX = 0, startW = 0;
+    const onMove = (e) => {
+      const dx = e.clientX - startX;
+      this.setPaneWidth(side, side === 'left' ? startW + dx : startW - dx);
+    };
+    const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); };
+    split.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.de-hsplit-btn')) return;       // シェブロンはクリックに譲る
+      if (this.paneLayout?.rails[side]) return;             // 畳んである間は掴めない
+      startX = e.clientX; startW = this.paneEl(side).getBoundingClientRect().width;
+      window.addEventListener('pointermove', onMove); window.addEventListener('pointerup', onUp);
+      e.preventDefault();                                    // ドラッグ中に本文が選択されるのを止める
+    });
+    // ハンドルのダブルクリックもトグル。ただしシェブロン上は click が 2 回走っているので
+    // ここで拾うと 3 回切り替わって「押しても戻る」になる（バブリング元を見て除外する）
+    split.addEventListener('dblclick', (e) => {
+      if (e.target.closest('.de-hsplit-btn')) return;
+      e.preventDefault(); this.toggleRail(side);
+    });
+    (this.splitters ||= {})[side] = split;
+    return split;
   }
 
   get editable() { return this.mode === 'edit'; }
@@ -5861,7 +6087,7 @@ class DiagramEditor {
     // 本体
     this.body = document.createElement('div'); this.body.className = 'de-body';
     this.root.appendChild(this.body);
-    if (this.editable) this.body.appendChild(this.buildSidebar());
+    if (this.editable) { this.body.appendChild(this.buildSidebar()); this.body.appendChild(this.buildHSplit('left')); }
     this.main = document.createElement('div'); this.main.className = 'de-main';
     this.viewport = document.createElement('div'); this.viewport.className = 'de-viewport';
     this.status = document.createElement('div'); this.status.className = 'de-status';
@@ -5869,6 +6095,7 @@ class DiagramEditor {
     this.main.append(this.viewport, this.status);
     this.body.appendChild(this.main);
     if (this.editable) {
+      this.body.appendChild(this.buildHSplit('right'));
       this.body.appendChild(this.buildRightPanel());
       this.setRightTab('props');
     } else {
@@ -5916,6 +6143,16 @@ class DiagramEditor {
       ['Fit（全体表示）', () => this.renderer.fit?.()],
       ['Theme 切替', () => this.toggleTheme()],
       '---',
+      { header: '文字サイズ ▸' },
+      ...TEXT_SCALE_ITEMS.map(([scale, label]) => () => {
+        const active = Math.abs((this.textScale ?? 1) - scale) < 1e-9;
+        return [`${active ? '✓ ' : '　 '}${label}`, () => this.setTextScale(scale)];
+      }),
+      '---',
+      { header: 'ペイン ▸' },
+      () => [`${this.paneLayout?.rails.left ? '　 ' : '✓ '}左ペイン（MODEL / VIEWS）`, () => this.toggleRail('left')],
+      () => [`${this.paneLayout?.rails.right ? '　 ' : '✓ '}右ペイン（プロパティ / JSON）`, () => this.toggleRail('right')],
+      '---',
       { header: 'Layout ▸' },
       ...LAYOUT_ALGO_ITEMS.map(([algo, label]) => () => {
         const active = (this.model?.layout?.algorithm || 'none') === algo;
@@ -5928,7 +6165,9 @@ class DiagramEditor {
       ['Freeze layout（座標を確定）', () => this.freezeLayout()],
       ['Re-layout（自動配置ノードを再計算）', () => this.relayout()],
     ]));
-    bar.appendChild(this.buildMenu('Help', [['Manual（操作説明）', () => this.showManual()]]));
+    bar.appendChild(this.buildMenu('Help', [
+      ['使い方（Manual）', () => this.showManual()],
+    ]));
     this.titleEl = document.createElement('span'); this.titleEl.className = 'de-title';
     bar.appendChild(this.titleEl);
     return bar;
@@ -6257,7 +6496,7 @@ class DiagramEditor {
     const p = this.selectedProposal();
     if (!p) return;
     box.dataset.proposal = p.id;
-    const meta = document.createElement('div'); meta.className = 'de-propmeta'; meta.dataset.role = 'proposal-meta';
+    const meta = document.createElement('div'); meta.className = 'de-propmeta de-selectable'; meta.dataset.role = 'proposal-meta';   // intent / rationale は人が引用してコピーする（G13 許可リスト）
     const esc = t => String(t ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
     meta.innerHTML = `<div style="font-size:13px;font-weight:700">${esc(p.title || p.id)}</div>`
       + `<div class="de-help">${esc(p.id)} · ${esc(p.author || 'ai')}${p.createdAt ? ' · ' + esc(p.createdAt) : ''}</div>`
@@ -6280,7 +6519,7 @@ class DiagramEditor {
       const qWrap = document.createElement('div'); qWrap.dataset.role = 'question-list';
       for (const q of p.questions) {
         const row = document.createElement('div'); row.className = 'de-qrow'; row.dataset.question = q.id;
-        const t = document.createElement('div'); t.className = 'de-qtext'; t.textContent = `${q.id}. ${q.text || ''}`;
+        const t = document.createElement('div'); t.className = 'de-qtext de-selectable'; t.textContent = `${q.id}. ${q.text || ''}`;
         row.appendChild(t);
         if (q.target) { const tg = document.createElement('div'); tg.className = 'de-qtarget'; tg.textContent = `target: ${q.target}`; row.appendChild(tg); }
         const ta = document.createElement('textarea'); ta.dataset.role = 'q-answer'; ta.placeholder = '回答（AI への返事になります）';
@@ -6624,26 +6863,59 @@ class DiagramEditor {
     return sec;
   }
 
-  // Help → Manual: 操作説明をモーダルボックスで表示
+  // Help → 使い方（Manual）: 操作説明＋「このツールは何か／他のプロジェクトへどう持って行くか」。
+  // BOOTSTRAP.md と同じことをアプリの中でも読めるようにする（配って渡されるのは index.html 1 枚なので、
+  // 手元にリポジトリの md が無い相手でも使い始められる必要がある）。
   showManual() {
     this.closeMenus();
     document.querySelector('.de-modal-overlay')?.remove();
     const overlay = document.createElement('div'); overlay.className = 'de-modal-overlay'; overlay.dataset.role = 'manual';
     const box = document.createElement('div'); box.className = 'de-modal';
-    box.innerHTML = '<div class="de-modal-head"><b>Manual — 操作説明</b></div>'
-      + '<div class="de-modal-body">'
+    box.innerHTML = '<div class="de-modal-head"><b>使い方 — diagram engine</b></div>'
+      + '<div class="de-modal-body de-selectable">'
+      + '<h4>このツールは何か</h4>'
+      + 'データは<b>全部グラフ</b>（<code>graph.nodes</code> / <code>graph.edges</code>）。図はそのグラフに対する'
+      + '<b>select（絞り込み）＋ layout（配置）の投影</b>で、図そのものはデータを持たない。<br>'
+      + '2D / 2.5D / 3D は<b>同じデータの見せ方違い</b>。図を増やしても真実は 1 つのまま増えない。'
+      + '<h4>他のプロジェクトに使う（3 ステップ）</h4>'
+      + '1. <code>tools/diagram_engine/</code> のフォルダを丸ごとコピー<br>'
+      + '2. <code>node bin/extract.mjs &lt;repo&gt; --rules bin/rules/default.json --out graph.json</code><br>'
+      + '3. <code>index.html?src=graph.json</code> を http で開く（<code>file://</code> は fetch できない）<br>'
+      + '<b>汎用なのはエンジン、プロジェクト固有なのは <code>bin/rules/*.json</code> だけ</b>'
+      + '（除外・役割・layer タグ・関係の抽出規則）。構造を変えたら rules を直して再抽出する。'
+      + '<h4>リポジトリ以外にも使える</h4>'
+      + '手書きの <code>graph.json</code> でも動く。新システム構成 / 組織図 / MBSE モデル / DB スキーマ / 学習ロードマップなど。最小形:<br>'
+      + '<pre>{ "project": { "id": "p", "title": "例", "entry": "v1" },\n'
+      + '  "graph": {\n'
+      + '    "nodes": [ { "id": "a", "name": "受信機" },\n'
+      + '               { "id": "b", "name": "制御" } ],\n'
+      + '    "edges": [ { "id": "r1", "rel": "flow", "from": "a", "to": "b" } ] },\n'
+      + '  "diagrams": [ { "meta": { "id": "v1", "title": "全体" },\n'
+      + '    "select": { "rels": ["flow"] },\n'
+      + '    "layout": { "algorithm": "layered", "direction": "LR" } } ] }</pre>'
+      + 'AI に書かせるときは <code>schema/project.schema.json</code> と <code>GRAPH_CONTRACT.md</code> を渡す。'
+      + '<h4>AI と往復する</h4>'
+      + 'AI はツールの外にいる。会話は<b>ファイルで往復</b>する:<br>'
+      + '<code>proposals.json</code> → File ▸ Open proposals… → 左の <b>PROPOSALS</b> タブで <b>op 単位に ✓ / ✗</b>'
+      + '（キャンバスに影響範囲がプレビューされる）→ <code>Export decisions ⬇</code> →'
+      + ' <code>node bin/apply.mjs &lt;decisions&gt; --overlay overlay.json</code> → 再抽出。<br>'
+      + '<b>却下の理由がそのまま AI への返事</b>になる。ブラウザは overlay を書かない（書くのは apply.mjs だけ）。'
+      + '<h4>操作の早見表</h4>'
+      + '<b>▸N</b>（ノードの端）: 子を 1 段だけ展開／<b>▾N</b> で折りたたみ ／ <b>↗</b>: そのノードの中へドリルダウン（← で戻る）<br>'
+      + '<b>View ▸ Layout</b>: tree / layered / force / grid / radial ＋ TB・LR ／ <b>Re-layout</b>: 全ノード再配置 ／ <b>Freeze</b>: 座標を保存へ焼く<br>'
+      + '<b>View ▸ 文字サイズ</b>: 小 / 標準 / 大 / 特大（箱の幅も一緒に追従する）<br>'
+      + '<b>View ▸ ペイン</b>（またはペイン内側の <b>‹ ›</b>）: 左右ペインの開閉。境目のドラッグで幅、ダブルクリックで開閉<br>'
+      + '<b>Fit</b>: 全体表示 ／ ホイール・ピンチ: ズーム ／ 空白ドラッグ: パン'
       + '<h4>キャンバス</h4>ドラッグ: 移動 ／ ポート→ポート: 結線 ／ ダブルクリック: ラベル編集<br>'
-      + 'ノード右端（TB は下端）の <b>▸n / ▾n</b>: 子を 1 段だけ展開／折りたたみ（select.expanded に保存）<br>'
       + '<kbd>Del</kbd> 削除 ／ <kbd>Esc</kbd> 解除 ／ <kbd>Ctrl+Z</kbd> 戻す ／ <kbd>Ctrl+Shift+Z</kbd> やり直す<br>'
-      + '<kbd>Alt</kbd>+クリック: リンク先の図へ ／ 空白ドラッグ: パン ／ ホイール・ピンチ: ズーム<br>'
-      + '3D: 1本指=回転 ／ 2本指=ズーム&amp;パン ／ （PC: <kbd>Shift</kbd>+ドラッグ=パン）'
+      + '<kbd>Alt</kbd>+クリック: リンク先の図へ ／ 3D: 1本指=回転 ／ 2本指=ズーム&amp;パン ／ （PC: <kbd>Shift</kbd>+ドラッグ=パン）'
       + '<h4>メニューバー</h4>'
-      + '<b>File</b>: Project 保存 ／ Import 読込 ／ Export（Release / 図 JSON・SVG・HTML）／ Examples<br>'
+      + '<b>File</b>: Project 保存 ／ Import 読込 ／ Open proposals… ／ Export decisions ⬇ ／ Export（Release / 図 JSON・SVG・HTML）<br>'
       + '<b>Edit</b>: Undo ／ Redo ／ Add Node（パレット）／ 図を追加 ／ entry 設定<br>'
-      + '<b>View</b>: 2D ／ 2.5D iso ／ 3D ／ Fit ／ Theme<br>'
-      + '<b>Help</b>: この Manual'
-      + '<h4>左パネル</h4>MODEL（graph 全アイテムの木・上下比率はスプリッタでリサイズ）／ 下部タブ VIEWS・Palette'
-      + '<h4>右パネル</h4>プロパティ（サブタイトルをクリックで各セクション折りたたみ）／ JSON'
+      + '<b>View</b>: 2D ／ 2.5D iso ／ 3D ／ Fit ／ Theme ／ 文字サイズ ／ ペイン ／ Layout<br>'
+      + '<b>Help</b>: この使い方'
+      + '<h4>左パネル</h4><b>MODEL</b>（graph 全アイテムの木・上下比率はスプリッタでリサイズ）／ 下部タブ <b>VIEWS</b>・Palette・PROPOSALS'
+      + '<h4>右パネル</h4>プロパティ（要約は常時表示・詳細はサブタイトルのクリックで折りたたみ）／ JSON（現在の図・編集すると即反映）'
       + '</div>';
     const foot = document.createElement('div'); foot.className = 'de-modal-foot';
     const close = this.btn('閉じる', () => overlay.remove()); close.className = 'de-btn accent';
@@ -6727,6 +6999,8 @@ class DiagramEditor {
     });
     document.addEventListener('keyup', e => { this._altDown = e.altKey; });
     new ResizeObserver(() => { this.renderer?.drawGrid?.(); this.renderer?.resize?.(); }).observe(this.viewport);
+    // G13: 720px の境界をまたぐと「inline 幅を当てる／剥がす」が変わる。max（46vw）も窓幅依存
+    window.addEventListener('resize', () => { if (this.paneLayout) this.applyPaneLayout(this.paneLayout, { persist: false }); });
   }
 
   disarm() {
@@ -6765,6 +7039,13 @@ class DiagramEditor {
 
   onPointerDown(e) {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
+    // G13: パン／ノード移動のドラッグで UI の文字が青く選択されるのを止める。CSS の user-select:none
+    // だけでは、ドラッグがキャンバス外へ抜けた瞬間にヘッダやツリーの文字を掴んでしまうことがある。
+    // ダブルクリック編集の input（viewport の子）にはフォーカスを渡す必要があるので除外する。
+    if (!(e.target instanceof Element && e.target.closest('input, textarea'))) {
+      e.preventDefault();
+      try { window.getSelection?.()?.removeAllRanges?.(); } catch { /* 選択 API 不在は無視 */ }
+    }
     this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (this.pointers.size === 2 && this.renderer.setView) {
       // ピンチズーム開始（flat/iso。webgl は自前ハンドラ側で処理）

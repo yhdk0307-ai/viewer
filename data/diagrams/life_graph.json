@@ -5961,7 +5961,7 @@
     "props": {
      "path": "outputs/learning/manga_epoch/COORDINATION.md",
      "ext": ".md",
-     "size": 85998,
+     "size": 87139,
      "role": "output",
      "description": "複数の Claude Code セッションが並列で manga_epoch を構築する際の調整用。",
      "descriptionSource": "source",
@@ -15282,7 +15282,7 @@
     "props": {
      "path": "tools/diagram_engine/bin/extract.mjs",
      "ext": ".mjs",
-     "size": 39846,
+     "size": 40244,
      "role": "tool",
      "description": "extract.mjs — G3: repository graph extractor (GRAPH_CONTRACT.md §4)",
      "descriptionSource": "source",
@@ -15376,7 +15376,7 @@
     "props": {
      "path": "tools/diagram_engine/BOOTSTRAP.md",
      "ext": ".md",
-     "size": 8952,
+     "size": 9456,
      "role": "tool",
      "description": "外部通信ゼロ・依存ゼロ。",
      "descriptionSource": "source",
@@ -15538,7 +15538,7 @@
     "props": {
      "path": "tools/diagram_engine/GRAPH_CONTRACT.md",
      "ext": ".md",
-     "size": 26786,
+     "size": 27383,
      "role": "tool",
      "description": "diagram_drawer を「データは全部グラフ／図はグラフに対する選べる投影」へ反転させ、 どのリポジトリ・どの PC にも「持って行って展開すれば使える」ツールにするための単一契約。",
      "descriptionSource": "source",
@@ -15615,7 +15615,7 @@
     "props": {
      "path": "tools/diagram_engine/interactive/index.html",
      "ext": ".html",
-     "size": 1186607,
+     "size": 1207000,
      "role": "tool"
     },
     "tags": [
@@ -15752,7 +15752,7 @@
     "props": {
      "path": "tools/diagram_engine/src/editor.js",
      "ext": ".js",
-     "size": 132789,
+     "size": 146062,
      "role": "tool",
      "description": "editor.js — フル作図エディタ / 閲覧ビューア（mode: 'edit' | 'view'）",
      "descriptionSource": "source",
@@ -15872,7 +15872,7 @@
     "props": {
      "path": "tools/diagram_engine/src/model.js",
      "ext": ".js",
-     "size": 52635,
+     "size": 54073,
      "role": "tool",
      "description": "model.js — ダイアグラムモデルのロード/検証/正規化/参照解決",
      "descriptionSource": "source",
@@ -15912,7 +15912,7 @@
     "props": {
      "path": "tools/diagram_engine/src/renderers/flat_svg.js",
      "ext": ".js",
-     "size": 37397,
+     "size": 38055,
      "role": "tool",
      "description": "flat_svg.js — 2D SVG レンダラ（SysML SAB 風ブロック図）",
      "descriptionSource": "source",
@@ -15952,7 +15952,7 @@
     "props": {
      "path": "tools/diagram_engine/src/renderers/iso_svg.js",
      "ext": ".js",
-     "size": 17762,
+     "size": 18200,
      "role": "tool",
      "description": "iso_svg.js — 2.5D アイソメトリック SVG レンダラ（Palantir Foundry 風の積層プラットフォーム）",
      "descriptionSource": "source",
@@ -15992,7 +15992,7 @@
     "props": {
      "path": "tools/diagram_engine/src/renderers/webgl_three.js",
      "ext": ".js",
-     "size": 31243,
+     "size": 31651,
      "role": "tool",
      "description": "webgl_three.js — 本格 3D レンダラ（Three.js / 自由回転）",
      "descriptionSource": "source",
@@ -16052,7 +16052,7 @@
     "props": {
      "path": "tools/diagram_engine/src/theme.css",
      "ext": ".css",
-     "size": 23776,
+     "size": 28075,
      "role": "tool"
     },
     "tags": [
@@ -16241,7 +16241,7 @@
     "props": {
      "path": "tools/diagram_engine/verification/LESSONS.md",
      "ext": ".md",
-     "size": 140587,
+     "size": 142144,
      "role": "tool",
      "description": "検証エージェント（.claude/agents/diagram-engine-verifier.md）の記憶。",
      "descriptionSource": "source",
@@ -16261,7 +16261,7 @@
     "props": {
      "path": "tools/diagram_engine/verification/verify.mjs",
      "ext": ".mjs",
-     "size": 243702,
+     "size": 257722,
      "role": "tool",
      "description": "verify.mjs — diagram_engine の恒久検証スイート（検証エージェントの実行基盤）",
      "descriptionSource": "source",
@@ -24838,7 +24838,7 @@
     "rankSep": 140,
     "node": {
      "w": 170,
-     "h": 44
+     "h": 50
     }
    },
    "layers": [
@@ -24879,7 +24879,7 @@
     "direction": "LR",
     "node": {
      "w": 170,
-     "h": 44
+     "h": 50
     }
    },
    "layers": [
@@ -24915,7 +24915,7 @@
     "direction": "LR",
     "node": {
      "w": 170,
-     "h": 44
+     "h": 50
     }
    },
    "layers": [
@@ -24943,7 +24943,7 @@
     "direction": "LR",
     "node": {
      "w": 170,
-     "h": 44
+     "h": 50
     }
    },
    "layers": [
