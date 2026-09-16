@@ -610,7 +610,7 @@
   {
    "id": "outputs/learning/manga_epoch/_wip",
    "props": {
-    "description": "本番前の実験置き場。arc3_figures/ と transformer_prototypes/ が入り、承認まで公開スライスには出さない。",
+    "description": "本番前の実験置き場。いまは arc3_figures/ だけで、承認まで公開スライス（interactive/）には出さない。",
     "descriptionSource": "ai",
     "descriptionBasis": "fabb04d9"
    }
@@ -621,14 +621,6 @@
     "description": "Arc 3 用図解の試作。build_figures_gnn.py が巻末解説から空リンクだった GNN を白 SVG で作り直す。",
     "descriptionSource": "ai",
     "descriptionBasis": "51349364"
-   }
-  },
-  {
-   "id": "outputs/learning/manga_epoch/_wip/transformer_prototypes",
-   "props": {
-    "description": "Arc 1 Scene 1 時代の暗色プロトタイプ図解 4 枚。いまの白エディトリアル版 figures_* の前身として残っている。",
-    "descriptionSource": "ai",
-    "descriptionBasis": "408a3c66"
    }
   },
   {
@@ -690,7 +682,7 @@
   {
    "id": "outputs/learning/manga_epoch/business/mockups/cover_arc1_v2.html",
    "props": {
-    "description": "Arc 1 表紙の full-bleed 案（v2）。business/README.md から辿る検討用モックで、公開ページそのものではない。",
+    "description": "Arc 1 の表紙テンプレ。business/README.md が「採用 KV / 表紙テンプレ」として参照しており、生成手順は PIPELINE.md にある。",
     "descriptionSource": "ai"
    }
   },
@@ -915,14 +907,6 @@
    }
   },
   {
-   "id": "outputs/publish/epoch/arc1/interactive/figures",
-   "props": {
-    "description": "Arc 1 の図解が読む SVG 2 枚（チューリングテストとダートマス年表）。HTML から相対参照される。",
-    "descriptionSource": "ai",
-    "descriptionBasis": "adc83b19"
-   }
-  },
-  {
    "id": "outputs/publish/epoch/arc1/interactive/img",
    "props": {
     "description": "externalize_images.py が data URI から外へ出した頁 JPEG 37 枚。焼き込みのままでは 4G で初頁 25 秒かかっていた。",
@@ -957,7 +941,7 @@
   {
    "id": "outputs/publish/epoch/arc2/assets/figures_svg/manga",
    "props": {
-    "description": "マンガのコマに差し込む図版 13 枚（w2v_scatter.svg ほか）。解説本文用の親フォルダと分け、_nc 版を併置する。",
+    "description": "マンガのコマに差し込む図版 13 枚。_nc は no caption 版で、コマ内に説明文を置かないときに使う。",
     "descriptionSource": "ai",
     "descriptionBasis": "adc83b19"
    }
@@ -1170,7 +1154,7 @@
   {
    "id": "outputs/speeches",
    "props": {
-    "description": "/speech (SW) の原稿出力先。いまは .gitkeep だけで、材料は knowledge/profile/speech_profile.yaml。",
+    "description": "/speech (SW) の出力先として枠だけ確保。原稿は未作成で、材料は knowledge/profile/ に置いてある。",
     "descriptionSource": "ai",
     "descriptionBasis": "a6374e8c"
    }

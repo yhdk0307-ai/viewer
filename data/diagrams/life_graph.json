@@ -4464,6 +4464,40 @@
     "icon": "folder"
    },
    {
+    "id": "outputs/diagrams/interactive/life_descriptions_r2.decisions.json",
+    "type": "output",
+    "name": "life_descriptions_r2.decisions.json",
+    "parent": "outputs/diagrams/interactive",
+    "props": {
+     "path": "outputs/diagrams/interactive/life_descriptions_r2.decisions.json",
+     "ext": ".json",
+     "size": 1497,
+     "role": "output"
+    },
+    "tags": [
+     "layer:PUBLISH"
+    ],
+    "sublabel": "outputs/diagrams/interactive/",
+    "icon": "package"
+   },
+   {
+    "id": "outputs/diagrams/interactive/life_descriptions_r2.proposals.json",
+    "type": "output",
+    "name": "life_descriptions_r2.proposals.json",
+    "parent": "outputs/diagrams/interactive",
+    "props": {
+     "path": "outputs/diagrams/interactive/life_descriptions_r2.proposals.json",
+     "ext": ".json",
+     "size": 2135,
+     "role": "output"
+    },
+    "tags": [
+     "layer:PUBLISH"
+    ],
+    "sublabel": "outputs/diagrams/interactive/",
+    "icon": "package"
+   },
+   {
     "id": "outputs/diagrams/interactive/life_descriptions.decisions.json",
     "type": "output",
     "name": "life_descriptions.decisions.json",
@@ -4505,7 +4539,7 @@
     "props": {
      "path": "outputs/diagrams/interactive/life_overlay.json",
      "ext": ".json",
-     "size": 61745,
+     "size": 61124,
      "role": "output"
     },
     "tags": [
@@ -4872,9 +4906,10 @@
      "ext": "",
      "size": 0,
      "role": "output",
-     "description": "本番前の実験置き場。arc3_figures/ と transformer_prototypes/ が入り、承認まで公開スライスには出さない。",
+     "description": "本番前の実験置き場。いまは arc3_figures/ だけで、承認まで公開スライス（interactive/）には出さない。",
      "descriptionSource": "ai",
-     "descriptionBasis": "fabb04d9"
+     "descriptionBasis": "fabb04d9",
+     "descriptionStale": true
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4920,94 +4955,6 @@
      "layer:DEVELOPMENT"
     ],
     "sublabel": "outputs/learning/manga_epoch/_wip/arc3_figures/",
-    "icon": "package"
-   },
-   {
-    "id": "outputs/learning/manga_epoch/_wip/transformer_prototypes",
-    "type": "output",
-    "name": "transformer_prototypes",
-    "parent": "outputs/learning/manga_epoch/_wip",
-    "props": {
-     "path": "outputs/learning/manga_epoch/_wip/transformer_prototypes",
-     "ext": "",
-     "size": 0,
-     "role": "output",
-     "description": "Arc 1 Scene 1 時代の暗色プロトタイプ図解 4 枚。いまの白エディトリアル版 figures_* の前身として残っている。",
-     "descriptionSource": "ai",
-     "descriptionBasis": "408a3c66"
-    },
-    "tags": [
-     "layer:DEVELOPMENT"
-    ],
-    "sublabel": "outputs/learning/manga_epoch/_wip/",
-    "icon": "folder"
-   },
-   {
-    "id": "outputs/learning/manga_epoch/_wip/transformer_prototypes/index.html",
-    "type": "output",
-    "name": "index.html",
-    "parent": "outputs/learning/manga_epoch/_wip/transformer_prototypes",
-    "props": {
-     "path": "outputs/learning/manga_epoch/_wip/transformer_prototypes/index.html",
-     "ext": ".html",
-     "size": 5979,
-     "role": "output"
-    },
-    "tags": [
-     "layer:DEVELOPMENT"
-    ],
-    "sublabel": "outputs/learning/manga_epoch/_wip/transformer_prototypes/",
-    "icon": "package"
-   },
-   {
-    "id": "outputs/learning/manga_epoch/_wip/transformer_prototypes/proto_multihead.html",
-    "type": "output",
-    "name": "proto_multihead.html",
-    "parent": "outputs/learning/manga_epoch/_wip/transformer_prototypes",
-    "props": {
-     "path": "outputs/learning/manga_epoch/_wip/transformer_prototypes/proto_multihead.html",
-     "ext": ".html",
-     "size": 12651,
-     "role": "output"
-    },
-    "tags": [
-     "layer:DEVELOPMENT"
-    ],
-    "sublabel": "outputs/learning/manga_epoch/_wip/transformer_prototypes/",
-    "icon": "package"
-   },
-   {
-    "id": "outputs/learning/manga_epoch/_wip/transformer_prototypes/proto_pipeline.html",
-    "type": "output",
-    "name": "proto_pipeline.html",
-    "parent": "outputs/learning/manga_epoch/_wip/transformer_prototypes",
-    "props": {
-     "path": "outputs/learning/manga_epoch/_wip/transformer_prototypes/proto_pipeline.html",
-     "ext": ".html",
-     "size": 13220,
-     "role": "output"
-    },
-    "tags": [
-     "layer:DEVELOPMENT"
-    ],
-    "sublabel": "outputs/learning/manga_epoch/_wip/transformer_prototypes/",
-    "icon": "package"
-   },
-   {
-    "id": "outputs/learning/manga_epoch/_wip/transformer_prototypes/proto_qkv_steps.html",
-    "type": "output",
-    "name": "proto_qkv_steps.html",
-    "parent": "outputs/learning/manga_epoch/_wip/transformer_prototypes",
-    "props": {
-     "path": "outputs/learning/manga_epoch/_wip/transformer_prototypes/proto_qkv_steps.html",
-     "ext": ".html",
-     "size": 13403,
-     "role": "output"
-    },
-    "tags": [
-     "layer:DEVELOPMENT"
-    ],
-    "sublabel": "outputs/learning/manga_epoch/_wip/transformer_prototypes/",
     "icon": "package"
    },
    {
@@ -5477,7 +5424,7 @@
      "ext": ".html",
      "size": 5958,
      "role": "output",
-     "description": "Arc 1 表紙の full-bleed 案（v2）。business/README.md から辿る検討用モックで、公開ページそのものではない。",
+     "description": "Arc 1 の表紙テンプレ。business/README.md が「採用 KV / 表紙テンプレ」として参照しており、生成手順は PIPELINE.md にある。",
      "descriptionSource": "ai"
     },
     "tags": [
@@ -11714,7 +11661,8 @@
      "role": "output",
      "description": "Arc 1「黎明」の公開スライス 12 枚（index / commentary / figures_* / gken）。viewer /pub/epoch/arc1/ になる。",
      "descriptionSource": "ai",
-     "descriptionBasis": "dbc3cf9b"
+     "descriptionBasis": "dbc3cf9b",
+     "descriptionStale": true
     },
     "tags": [
      "layer:PUBLISH"
@@ -11738,26 +11686,6 @@
     ],
     "sublabel": "outputs/publish/epoch/arc1/interactive/",
     "icon": "package"
-   },
-   {
-    "id": "outputs/publish/epoch/arc1/interactive/figures",
-    "type": "output",
-    "name": "figures",
-    "parent": "outputs/publish/epoch/arc1/interactive",
-    "props": {
-     "path": "outputs/publish/epoch/arc1/interactive/figures",
-     "ext": "",
-     "size": 0,
-     "role": "output",
-     "description": "Arc 1 の図解が読む SVG 2 枚（チューリングテストとダートマス年表）。HTML から相対参照される。",
-     "descriptionSource": "ai",
-     "descriptionBasis": "adc83b19"
-    },
-    "tags": [
-     "layer:PUBLISH"
-    ],
-    "sublabel": "outputs/publish/epoch/arc1/interactive/",
-    "icon": "folder"
    },
    {
     "id": "outputs/publish/epoch/arc1/interactive/figures_cyc.html",
@@ -12196,7 +12124,7 @@
      "ext": "",
      "size": 0,
      "role": "output",
-     "description": "マンガのコマに差し込む図版 13 枚（w2v_scatter.svg ほか）。解説本文用の親フォルダと分け、_nc 版を併置する。",
+     "description": "マンガのコマに差し込む図版 13 枚。_nc は no caption 版で、コマ内に説明文を置かないときに使う。",
      "descriptionSource": "ai",
      "descriptionBasis": "adc83b19"
     },
@@ -15205,7 +15133,7 @@
      "ext": "",
      "size": 0,
      "role": "output",
-     "description": "/speech (SW) の原稿出力先。いまは .gitkeep だけで、材料は knowledge/profile/speech_profile.yaml。",
+     "description": "/speech (SW) の出力先として枠だけ確保。原稿は未作成で、材料は knowledge/profile/ に置いてある。",
      "descriptionSource": "ai",
      "descriptionBasis": "a6374e8c"
     },
@@ -16726,7 +16654,7 @@
     "props": {
      "path": "tools/usv_model/interactive/index.html",
      "ext": ".html",
-     "size": 897013,
+     "size": 890902,
      "role": "tool"
     },
     "tags": [
@@ -18222,6 +18150,18 @@
     "to": "outputs/diagrams/interactive"
    },
    {
+    "id": "contains~outputs/diagrams/interactive~outputs/diagrams/interactive/life_descriptions_r2.decisions.json",
+    "rel": "contains",
+    "from": "outputs/diagrams/interactive",
+    "to": "outputs/diagrams/interactive/life_descriptions_r2.decisions.json"
+   },
+   {
+    "id": "contains~outputs/diagrams/interactive~outputs/diagrams/interactive/life_descriptions_r2.proposals.json",
+    "rel": "contains",
+    "from": "outputs/diagrams/interactive",
+    "to": "outputs/diagrams/interactive/life_descriptions_r2.proposals.json"
+   },
+   {
     "id": "contains~outputs/diagrams/interactive~outputs/diagrams/interactive/life_descriptions.decisions.json",
     "rel": "contains",
     "from": "outputs/diagrams/interactive",
@@ -18364,36 +18304,6 @@
     "rel": "contains",
     "from": "outputs/learning/manga_epoch/_wip/arc3_figures",
     "to": "outputs/learning/manga_epoch/_wip/arc3_figures/build_figures_gnn.py"
-   },
-   {
-    "id": "contains~outputs/learning/manga_epoch/_wip~outputs/learning/manga_epoch/_wip/transformer_prototypes",
-    "rel": "contains",
-    "from": "outputs/learning/manga_epoch/_wip",
-    "to": "outputs/learning/manga_epoch/_wip/transformer_prototypes"
-   },
-   {
-    "id": "contains~outputs/learning/manga_epoch/_wip/transformer_prototypes~outputs/learning/manga_epoch/_wip/transformer_prototypes/index.html",
-    "rel": "contains",
-    "from": "outputs/learning/manga_epoch/_wip/transformer_prototypes",
-    "to": "outputs/learning/manga_epoch/_wip/transformer_prototypes/index.html"
-   },
-   {
-    "id": "contains~outputs/learning/manga_epoch/_wip/transformer_prototypes~outputs/learning/manga_epoch/_wip/transformer_prototypes/proto_multihead.html",
-    "rel": "contains",
-    "from": "outputs/learning/manga_epoch/_wip/transformer_prototypes",
-    "to": "outputs/learning/manga_epoch/_wip/transformer_prototypes/proto_multihead.html"
-   },
-   {
-    "id": "contains~outputs/learning/manga_epoch/_wip/transformer_prototypes~outputs/learning/manga_epoch/_wip/transformer_prototypes/proto_pipeline.html",
-    "rel": "contains",
-    "from": "outputs/learning/manga_epoch/_wip/transformer_prototypes",
-    "to": "outputs/learning/manga_epoch/_wip/transformer_prototypes/proto_pipeline.html"
-   },
-   {
-    "id": "contains~outputs/learning/manga_epoch/_wip/transformer_prototypes~outputs/learning/manga_epoch/_wip/transformer_prototypes/proto_qkv_steps.html",
-    "rel": "contains",
-    "from": "outputs/learning/manga_epoch/_wip/transformer_prototypes",
-    "to": "outputs/learning/manga_epoch/_wip/transformer_prototypes/proto_qkv_steps.html"
    },
    {
     "id": "contains~outputs/learning/manga_epoch~outputs/learning/manga_epoch/a2_story_outline.md",
@@ -20446,12 +20356,6 @@
     "rel": "contains",
     "from": "outputs/publish/epoch/arc1/interactive",
     "to": "outputs/publish/epoch/arc1/interactive/commentary.html"
-   },
-   {
-    "id": "contains~outputs/publish/epoch/arc1/interactive~outputs/publish/epoch/arc1/interactive/figures",
-    "rel": "contains",
-    "from": "outputs/publish/epoch/arc1/interactive",
-    "to": "outputs/publish/epoch/arc1/interactive/figures"
    },
    {
     "id": "contains~outputs/publish/epoch/arc1/interactive~outputs/publish/epoch/arc1/interactive/figures_cyc.html",
