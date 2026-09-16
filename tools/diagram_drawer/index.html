@@ -106,7 +106,9 @@
 .de-viewport { flex: 1; position: relative; overflow: hidden; background: var(--de-paper); touch-action: none; }
 .de-viewport svg, .de-viewport canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .de-jsonpanel { width: 380px; min-width: 260px; max-width: 55vw; background: var(--de-panel); border-left: 1px solid var(--de-grid); display: flex; flex-direction: column; min-height: 0; }
-.de-jsonpanel textarea { flex: 1; border: 0; resize: none; background: var(--de-bg); color: var(--de-ink); font-family: var(--de-mono); font-size: 11px; line-height: 1.5; padding: 10px; outline: none; white-space: pre; }
+/* JSON タブの textarea 専用。`.de-jsonpanel textarea` と書くと、同じパネルに同居する
+   インスペクタの textarea 全部に white-space:pre が漏れて長い説明が折り返さなくなる（G11 実測） */
+.de-jsonpanel .de-tabpane[data-tab="json"] textarea { flex: 1; border: 0; resize: none; background: var(--de-bg); color: var(--de-ink); font-family: var(--de-mono); font-size: 11px; line-height: 1.5; padding: 10px; outline: none; white-space: pre; }
 .de-jsonpanel textarea.invalid { background: color-mix(in srgb, var(--de-danger) 8%, var(--de-bg)); }
 
 .de-btn { appearance: none; border: 1px solid var(--de-soft); background: var(--de-fill); color: var(--de-ink); border-radius: 4px; padding: 5px 11px; font-size: 12px; font-family: var(--de-font); cursor: pointer; transition: border-color .12s, background .12s; }
@@ -186,6 +188,33 @@
 .de-inspector input, .de-inspector select, .de-inspector textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--de-grid); border-radius: 3px; background: var(--de-bg); color: var(--de-ink); font-size: 12px; padding: 4px 6px; font-family: var(--de-font); }
 .de-inspector textarea { resize: vertical; min-height: 40px; line-height: 1.45; }
 .de-inspector input:focus, .de-inspector select:focus, .de-inspector textarea:focus { outline: none; border-color: var(--de-accent); }
+
+/* Summary（G10-B・GRAPH_CONTRACT §8）: 種類/階層/種別/説明を常時表示する 2 列の定義リスト。
+   ラベル列=小さい大文字グレー・値列=可変幅・折返し。説明はフォーカスまで枠なし。 */
+.de-inspsummary { display: flex; flex-direction: column; gap: 7px; padding-bottom: 10px; margin-bottom: 6px; border-bottom: 1px solid var(--de-grid); }
+.de-inspsum-row { display: grid; grid-template-columns: 62px 1fr; gap: 8px; align-items: start; }
+.de-inspsum-k { font-size: 9.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--de-soft); padding-top: 3px; margin: 0; }
+.de-inspsum-v { font-size: 12px; color: var(--de-ink); line-height: 1.5; padding-top: 2px; word-break: break-word; overflow-wrap: anywhere; }
+.de-inspsum-desc { align-items: start; }
+.de-desc-input {
+  white-space: pre-wrap; overflow-wrap: anywhere;   /* 長い説明は折り返す（右へ流れて切れない） */
+  width: 100%; box-sizing: border-box; resize: none; overflow: hidden; min-height: 22px;
+  border: 1px solid transparent; border-radius: 3px; background: transparent; color: var(--de-ink);
+  font-family: var(--de-font); font-size: 12px; line-height: 1.5; padding: 2px 4px; margin: 0;
+}
+.de-desc-input:hover { background: var(--de-grid); }
+.de-desc-input:focus { outline: none; border-color: var(--de-accent); background: var(--de-bg); }
+.de-desc-input::placeholder { color: var(--de-muted); }
+/* §9 説明の来歴バッジ（✓ 抽出 / ▲ AI / ⚠ AI・要再確認 / ✎ 人）。値の列（2 列目）へ回り込ませる */
+.de-desc-badge {
+  grid-column: 2; justify-self: start; margin: 1px 0 0 4px; padding: 1px 6px; border-radius: 9px;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .04em; line-height: 1.6; cursor: help;
+  border: 1px solid var(--de-grid); background: var(--de-panel); color: var(--de-soft); white-space: nowrap;
+}
+.de-desc-badge-source { color: var(--de-soft); }
+.de-desc-badge-ai { color: var(--de-ink); border-color: var(--de-muted); }
+.de-desc-badge-stale { color: var(--de-accent); border-color: var(--de-accent); background: var(--de-accent-soft); }
+.de-desc-badge-human { color: var(--de-ink); border-color: var(--de-soft); }
 
 /* インスペクタ折りたたみセクション（サブタイトルごとにトグル） */
 .de-inspsec { border-bottom: 1px solid var(--de-grid); }
@@ -296,6 +325,29 @@ const REL_PRESETS = {
   itemFlow:    'item-flow',
 };
 const REL_NAMES = Object.keys(REL_PRESETS);
+
+// ─── ラベル幅の見積り（G10・依存ゼロ・DOM 不使用） ───
+// 13px bold の de-node-label を前提にした粗い近似: ASCII 7.2px / CJK・全角 13px。
+// 派生ノードの自動幅（下の deriveViews）と flat レンダラの省略表示が同じ尺度を使うために
+// ここへ一本化する（別々に持つと「幅は足りているのに … が出る」ずれが起きる）。
+const ASCII_CHAR_PX = 7.2, CJK_CHAR_PX = 13;
+function textWidthPx(text) {
+  let w = 0;
+  for (const ch of String(text == null ? '' : text)) w += /[　-鿿豈-﫿＀-￯぀-ヿ]/.test(ch) ? CJK_CHAR_PX : ASCII_CHAR_PX;
+  return w;
+}
+// ラベルに使える横幅: アイコンがある派生ノードはアイコン（左 9px + 18px）の右から書き始める。
+// 中央寄せのままアイコンへ食い込むのが G10 で報告された「長いラベルがアイコンに重なる」バグ。
+const LABEL_ICON_INSET = 32;   // アイコンありのときの左インセット（9 + 18 + 5）
+const LABEL_PAD = 8;           // 左右の余白
+// §7.3 の ▸N トグルは LR ではノードの右辺・ラベルと同じ高さに出る。その幅ぶんラベル領域から引く
+// （引かないと「diagram_engine」がバッジの下に潜る）。幾何は flat_svg.expanderRect と 1:1。
+function expanderReserve(childCount) {
+  return childCount ? 13 + String(childCount).length * 6 + 7 : 0;
+}
+function labelBoxWidth(w, hasIcon, expanderW = 0) {
+  return Math.max(24, w - (hasIcon ? LABEL_ICON_INSET : LABEL_PAD) - LABEL_PAD - expanderW);
+}
 
 // 軽量バリデーション（外部ライブラリなし）。致命的な問題のみ errors、軽微は warnings。
 function validate(raw) {
@@ -759,6 +811,11 @@ function deriveViews(proj) {
       w: (typeof d.layout?.node?.w === 'number') ? d.layout.node.w : DEFAULT_NODE.w,
       h: (typeof d.layout?.node?.h === 'number') ? d.layout.node.h : DEFAULT_NODE.h,
     };
+    // §7.1 追補（G10）: layout.node を宣言したビューでは、ラベルが入る幅まで派生ノードを自動で広げる
+    // （170×44 の箱に `icon_pack_selection.json` が入らずアイコン／サブラベルへ食い込んでいた）。
+    // 上限は 2.2×w（それ以上は箱が図を壊すのでレンダラ側が … で省略し title に全文を入れる）。
+    const autoWidth = typeof d.layout?.node?.w === 'number';
+    const MAX_AUTO_W = 2.2;
     for (const id of ids) {
       const hand = have.get(id);
       if (hand) {
@@ -767,6 +824,11 @@ function deriveViews(proj) {
       }
       // 位置は持たせない（layout / grid フォールバックが後段で埋める）。w/h は layout.node か既定値。
       const n = Object.assign({}, DEFAULT_NODE, size, { ports: [], id, entityId: id, layer: layer0, __derived: true });
+      if (autoWidth) {
+        const ent = byId.get(id);
+        const need = textWidthPx(ent?.name ?? id) + (ent?.icon ? LABEL_ICON_INSET : LABEL_PAD) + LABEL_PAD;
+        n.w = Math.round(Math.max(size.w, Math.min(size.w * MAX_AUTO_W, need)));
+      }
       d.nodes.push(n); have.set(id, n);
     }
     // §7.3 段階展開のトグル描画用メタ（子の総数と展開状態）。派生フィールド＝保存時に剥がす。
@@ -784,6 +846,12 @@ function deriveViews(proj) {
       if (!hidden && !isExpanded) continue;         // depth で全部出ている＝トグルは描かない（depth 意味論は不変）
       n.__childCount = kids.length;
       n.__expanded = isExpanded;
+      // LR では ▸N バッジがラベルと同じ行に出るので、その幅ぶん余分に広げておく（G10）
+      if (autoWidth && n.__derived && (d.layout?.direction || 'TB') === 'LR') {
+        const ent = byId.get(gid);
+        const need = textWidthPx(ent?.name ?? gid) + (ent?.icon ? LABEL_ICON_INSET : LABEL_PAD) + LABEL_PAD + expanderReserve(kids.length);
+        n.w = Math.round(Math.max(n.w, Math.min(size.w * MAX_AUTO_W, need)));
+      }
     }
     const handEdges = new Set((d.edges || []).map(e => e.id));
     for (const ge of selectEdges(gedges, sel)) {
@@ -1334,8 +1402,11 @@ function layoutTree(nodes, edges, opts) {
 }
 
 // ─── layered: DAGランク（最長路）+ 重心法 + rankSep/nodeSep配置 ───
+// opts.maxRankWidth: 1 ランクの cross 方向の長さの上限（省略＝無制限＝従来通り）。
+//   超えるランクは複数行（列）へ折り返す＝87 ノードの Imports が縦 3,000px の帯に伸びるのを防ぐ。
 function layoutLayered(nodes, edges, opts) {
   const { nodeSep, rankSep, direction } = opts;
+  const maxRankWidth = (typeof opts.maxRankWidth === 'number' && opts.maxRankWidth > 0) ? opts.maxRankWidth : 0;
   const horizontal = direction === 'LR';
   const byId = new Map(nodes.map(n => [n.id, n]));
 
@@ -1424,32 +1495,63 @@ function layoutLayered(nodes, edges, opts) {
   }
 
   // 座標割当: ランク方向= rankSep 積算、レイヤー内= nodeSep で並べ中央寄せ
-  const pos = new Map();
-  const rankAlong = []; // ランクごとの進行方向オフセット
-  let acc = 0;
-  for (let r = 0; r <= maxRank; r++) {
-    rankAlong[r] = acc;
-    const sizes = layers[r].map(id => (horizontal ? byId.get(id).w : byId.get(id).h));
-    const maxSize = sizes.length ? Math.max(...sizes) : 0;
-    acc += maxSize + rankSep;
-  }
-  // レイヤー内の全体幅の最大値で各レイヤーを中央寄せ（見た目の安定のため）
-  const layerCrossSize = layers.map(layer => {
-    let total = 0;
-    layer.forEach((id, i) => { total += (horizontal ? byId.get(id).h : byId.get(id).w); if (i > 0) total += nodeSep; });
-    return total;
-  });
-  const maxCross = layerCrossSize.length ? Math.max(...layerCrossSize) : 0;
-  for (let r = 0; r <= maxRank; r++) {
-    const layer = layers[r];
-    let cross = (maxCross - layerCrossSize[r]) / 2;
+  const crossOf = id => (horizontal ? byId.get(id).h : byId.get(id).w);
+  const alongOf = id => (horizontal ? byId.get(id).w : byId.get(id).h);
+  const crossTotal = row => { let t = 0; row.forEach((id, i) => { t += crossOf(id); if (i > 0) t += nodeSep; }); return t; };
+  // maxRankWidth を超えるランクは複数行（列）へ折り返す（未指定なら 1 行のまま＝従来と同一）
+  const rowsOfRank = layers.map(layer => {
+    if (!maxRankWidth || !layer.length) return [layer];
+    const rows = [];
+    let cur = [], t = 0;
     for (const id of layer) {
-      const node = byId.get(id);
-      const along = rankAlong[r];
-      if (horizontal) pos.set(id, { x: along, y: cross });
-      else pos.set(id, { x: cross, y: along });
-      cross += (horizontal ? node.h : node.w) + nodeSep;
+      const c = crossOf(id);
+      if (cur.length && t + nodeSep + c > maxRankWidth) { rows.push(cur); cur = []; t = 0; }
+      t += (cur.length ? nodeSep : 0) + c;
+      cur.push(id);
     }
+    if (cur.length) rows.push(cur);
+    return rows;
+  });
+
+  // ランクの厚み（折返した行数ぶん）と cross 方向の占有長
+  const rankThick = [], rankCross = [];
+  for (let r = 0; r <= maxRank; r++) {
+    const rowMaxAlong = Math.max(0, ...layers[r].map(alongOf));
+    const rowCount = rowsOfRank[r].length;
+    rankThick[r] = rowMaxAlong * rowCount + nodeSep * (rowCount - 1);
+    rankCross[r] = Math.max(0, ...rowsOfRank[r].map(crossTotal));
+  }
+  // maxBandLength: ランク軸（進行方向）の帯を折り返す上限。長い鎖が一直線に伸びて
+  // bbox が極端に横長（LR）になるのを防ぐ。未指定なら 1 帯＝従来と同一。
+  const maxBandLength = (typeof opts.maxBandLength === 'number' && opts.maxBandLength > 0) ? opts.maxBandLength : 0;
+  const bands = [];                       // [{ ranks:[r…], along:[オフセット], cross, crossSize }]
+  let cur = { ranks: [], along: [], len: 0, crossSize: 0 };
+  for (let r = 0; r <= maxRank; r++) {
+    if (maxBandLength && cur.ranks.length && cur.len + rankThick[r] > maxBandLength) { bands.push(cur); cur = { ranks: [], along: [], len: 0, crossSize: 0 }; }
+    cur.along.push(cur.len);
+    cur.ranks.push(r);
+    cur.len += rankThick[r] + rankSep;
+    cur.crossSize = Math.max(cur.crossSize, rankCross[r]);
+  }
+  if (cur.ranks.length) bands.push(cur);
+  let bandCross = 0;
+  for (const b of bands) { b.cross = bandCross; bandCross += b.crossSize + rankSep; }
+
+  const pos = new Map();
+  for (const band of bands) {
+    band.ranks.forEach((r, bi) => {
+      const rowMaxAlong = Math.max(0, ...layers[r].map(alongOf));
+      rowsOfRank[r].forEach((row, ri) => {
+        // 帯の中で cross 方向に中央寄せ（1 帯・折返し無しなら従来の maxCross 中央寄せと一致）
+        let cross = band.cross + (band.crossSize - crossTotal(row)) / 2;
+        const along = band.along[bi] + ri * (rowMaxAlong + nodeSep);
+        for (const id of row) {
+          if (horizontal) pos.set(id, { x: along, y: cross });
+          else pos.set(id, { x: cross, y: along });
+          cross += crossOf(id) + nodeSep;
+        }
+      });
+    });
   }
   return pos;
 }
@@ -1802,6 +1904,198 @@ function layoutRadial(nodes, edges, opts) {
   return pos;
 }
 
+// ─── 連結成分ごとのレイアウト + パッキング（G10・GRAPH_CONTRACT §3 の「重なりなし」を保ったまま縦横比を整える） ───
+// 背景: 87 ノードの Imports（layered/LR）は 1 枚のランク帯へ伸び、bbox 1210×2984 ＝ Fit の k が 0.275
+// （13px のラベルが 3.6px）で読めなかった。実際には 11 個の弱連結成分に分かれているので、
+// 成分ごとに配置してから 4:3 に近い比率になるよう棚詰め（shelf packing）する。
+// 成分は「辺 ∪ parent 関係」の無向連結成分（tree/radial は parent だけで木を作るため辺だけでは分かれない）。
+function componentsOf(nodes, edges) {
+  const parent = new Map(nodes.map(n => [n.id, n.id]));
+  const find = x => {
+    let r = x;
+    while (parent.get(r) !== r) r = parent.get(r);
+    while (parent.get(x) !== r) { const nx = parent.get(x); parent.set(x, r); x = nx; }
+    return r;
+  };
+  const union = (a, b) => {
+    const ra = find(a), rb = find(b);
+    if (ra === rb) return;
+    // 小さい id 側を根にする＝入力順に依存しない決定的な代表元
+    if (ra < rb) parent.set(rb, ra); else parent.set(ra, rb);
+  };
+  const ids = new Set(nodes.map(n => n.id));
+  for (const e of edges) if (ids.has(e.from) && ids.has(e.to)) union(e.from, e.to);
+  for (const n of nodes) if (n.parent != null && ids.has(n.parent) && n.parent !== n.id) union(n.id, n.parent);
+  const groups = new Map();
+  for (const n of nodes) {
+    const r = find(n.id);
+    let a = groups.get(r); if (!a) { a = []; groups.set(r, a); }
+    a.push(n);
+  }
+  return [...groups.entries()]
+    .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0))
+    .map(([, ns]) => ns);
+}
+
+// 棚詰め（shelf）: 与えた最大幅で左→右へ並べ、溢れたら次の段へ。成分数が多いときの軽量版。
+function shelfPack(boxes, gap, maxW) {
+  const out = new Map();
+  let x = 0, y = 0, rowH = 0, W = 0, H = 0;
+  for (const b of boxes) {
+    if (x > 0 && x + b.w > maxW) { x = 0; y += rowH + gap; rowH = 0; }
+    out.set(b.key, { x, y });
+    x += b.w + gap;
+    rowH = Math.max(rowH, b.h);
+    W = Math.max(W, x - gap);
+    H = Math.max(H, y + rowH);
+  }
+  return { pos: out, w: W, h: H };
+}
+
+// bottom-left（skyline 風）詰め: 既に置いた箱の右端を x 候補にして、最も低く置ける場所へ入れる。
+// 棚詰めより窪みを埋められる（実測で密度が 1.3 倍）。O(箱数^2)〜なので箱数が多いときは shelfPack を使う。
+const BL_PACK_MAX_BOXES = 60;
+function blPack(boxes, gap, maxW) {
+  if (boxes.length > BL_PACK_MAX_BOXES) return shelfPack(boxes, gap, maxW);
+  const placed = [];
+  const out = new Map();
+  let W = 0, H = 0;
+  for (const b of boxes) {
+    const xs = new Set([0]);
+    for (const p of placed) xs.add(p.x + p.w + gap);
+    let best = null;
+    for (const x of [...xs].sort((p, q) => p - q)) {
+      if (x > 0 && x + b.w > maxW) continue;
+      let y = 0;
+      for (let guard = 0; guard < 10000; guard++) {
+        let hit = null;
+        for (const p of placed) {
+          if (x < p.x + p.w + gap && p.x < x + b.w + gap && y < p.y + p.h + gap && p.y < y + b.h + gap) { hit = p; break; }
+        }
+        if (!hit) break;
+        y = hit.y + hit.h + gap;
+      }
+      const score = (y + b.h) * 1e6 + x;
+      if (!best || score < best.score) best = { score, x, y };
+    }
+    if (!best) best = { x: 0, y: H ? H + gap : 0 };
+    placed.push({ x: best.x, y: best.y, w: b.w, h: b.h });
+    out.set(b.key, { x: best.x, y: best.y });
+    W = Math.max(W, best.x + b.w);
+    H = Math.max(H, best.y + b.h);
+  }
+  return { pos: out, w: W, h: H };
+}
+
+// 成分ごとに run() でレイアウトし、各成分の bbox を詰めて絶対座標へ戻す。
+// 成分が 1 つしかないときは run() の結果をそのまま返す＝従来の配置と完全に一致する。
+//
+// layered のときは各成分について「折返し無し／cross を 2,3,4,6,8 ノードで折返し／
+// ランク軸を 2,3,4,6 ランクで折返し」の組合せを候補として計算し、全体の外形が
+// packAspect（既定 1: Fit は幅と高さの小さい方で決まるので正方形が最も拡大率が高い）に
+// 近づく組を選ぶ。候補生成はノード数が多いと重いので PACK_SEARCH_MAX_NODES で打ち切る。
+const PACK_SEARCH_MAX_NODES = 400;
+function layoutByComponents(nodes, edges, opts, run, algorithm) {
+  const comps = componentsOf(nodes, edges);
+  if (comps.length <= 1) return run(nodes, edges);
+  // 成分間の隙間: ノード間より少し狭くてよい（成分そのものが塊として読めるため）。
+  // ここを nodeSep と同じにすると Imports の Fit が k=0.499 まで落ちる（実測）。
+  const gap = Math.max(20, Math.round(opts.nodeSep * 0.6));
+  const aspect = (typeof opts.packAspect === 'number' && opts.packAspect > 0) ? opts.packAspect : 1;
+  // 折返し候補（layered のみ・呼び出し側が明示していないときだけ探索する）
+  const searchWrap = algorithm === 'layered'
+    && !opts.maxRankWidth && !opts.maxBandLength
+    && nodes.length <= PACK_SEARCH_MAX_NODES;
+
+  const parts = [];
+  for (const cn of comps) {
+    const ids = new Set(cn.map(n => n.id));
+    const ce = edges.filter(e => ids.has(e.from) && ids.has(e.to));
+    const horizontal = opts.direction === 'LR';
+    const maxAlong = Math.max(...cn.map(n => (horizontal ? n.w : n.h)));
+    const maxCross = Math.max(...cn.map(n => (horizontal ? n.h : n.w)));
+    const variants = [{}];
+    if (searchWrap && cn.length > 3) {
+      // 「1 行あたり最低 2 ノード」「1 帯あたり最低 2 ランク」＝構造が読める範囲でだけ折り返す
+      const crossW = k => k * (maxCross + opts.nodeSep) - opts.nodeSep;
+      const bandL = j => j * (maxAlong + opts.rankSep) - opts.rankSep;
+      for (const k of [2, 3, 4, 5, 6, 8]) variants.push({ maxRankWidth: crossW(k) });
+      for (const j of [2, 3, 4, 5, 6, 8]) variants.push({ maxBandLength: bandL(j) });
+      for (const k of [2, 3, 4, 5, 6]) for (const j of [2, 3, 4, 5]) {
+        variants.push({ maxRankWidth: crossW(k), maxBandLength: bandL(j) });
+      }
+    }
+    const shapes = [];
+    const seenShape = new Set();
+    for (const v of variants) {
+      const p = layoutLayeredOr(run, cn, ce, opts, v, algorithm);
+      let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+      for (const n of cn) {
+        const q = p.get(n.id); if (!q) continue;
+        x1 = Math.min(x1, q.x); y1 = Math.min(y1, q.y);
+        x2 = Math.max(x2, q.x + n.w); y2 = Math.max(y2, q.y + n.h);
+      }
+      if (!isFinite(x1)) { x1 = 0; y1 = 0; x2 = 0; y2 = 0; }
+      const w = x2 - x1, h = y2 - y1, key = `${w}x${h}`;
+      if (seenShape.has(key)) continue;
+      seenShape.add(key);
+      shapes.push({ pos: p, x1, y1, w, h });
+    }
+    parts.push({ key: cn[0].id, nodes: cn, shapes });
+  }
+
+  // 成分ごとの形を選び → 詰める、を「1 成分の外形上限 cap」を振って試し、最良を採る
+  const minArea = parts.reduce((s, p) => s + Math.min(...p.shapes.map(sh => (sh.w + gap) * (sh.h + gap))), 0);
+  const base = Math.sqrt(Math.max(1, minArea) * aspect);
+  const caps = [...new Set([0.15, 0.22, 0.3, 0.4, 0.5, 0.65, 0.8, 1, 1.25, 1.6, 2.1, 3, 5].map(f => Math.max(1, Math.round(base * f))))];
+  let best = null;
+  for (const cap of caps) {
+    const chosen = parts.map(p => {
+      let pick = null;
+      for (const sh of p.shapes) {
+        const fits = sh.w <= cap && sh.h <= cap;
+        const area = sh.w * sh.h;
+        const over = Math.max(sh.w / cap, sh.h / cap);
+        if (!pick) { pick = { sh, fits, area, over }; continue; }
+        if (fits && !pick.fits) { pick = { sh, fits, area, over }; continue; }
+        if (fits === pick.fits) {
+          const better = fits ? (area < pick.area - 1e-9) : (over < pick.over - 1e-9);
+          if (better) pick = { sh, fits, area, over };
+        }
+      }
+      return { key: p.key, sh: pick.sh, w: pick.sh.w, h: pick.sh.h };
+    });
+    const sorted = chosen.slice().sort((a, b) => (b.h - a.h) || (b.w - a.w) || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+    const maxBoxW = Math.max(...sorted.map(b => b.w));
+    const packArea = sorted.reduce((s, b) => s + (b.w + gap) * (b.h + gap), 0);
+    const packBase = Math.sqrt(Math.max(1, packArea) * aspect);
+    // 詰め幅は成分の外形上限とは独立に振る（細長い成分を並べる幅と、成分自体の形の上限は別物）。
+    // 幾何級数の候補に加えて「大きい箱 i 個がちょうど 1 行に収まる幅」も試す＝行の切れ目の自然な候補。
+    const widths = new Set([maxBoxW]);
+    for (const f of [0.7, 0.85, 1, 1.15, 1.35, 1.6, 2, 3]) widths.add(Math.max(maxBoxW, Math.round(packBase * f)));
+    let run2 = 0;
+    for (let i = 0; i < Math.min(6, sorted.length); i++) { run2 += sorted[i].w + (i ? gap : 0); widths.add(run2); }
+    for (const pw of [...widths].sort((a, b) => a - b)) {
+      const r = blPack(sorted, gap, Math.max(maxBoxW, pw));
+      const score = Math.max((r.w || 1) / aspect, r.h || 1);
+      if (!best || score < best.score - 1e-9) best = { score, pos: r.pos, chosen };
+    }
+  }
+
+  const out = new Map();
+  for (const c of best.chosen) {
+    const o = best.pos.get(c.key) || { x: 0, y: 0 };
+    for (const [id, q] of c.sh.pos) out.set(id, { x: q.x - c.sh.x1 + o.x, y: q.y - c.sh.y1 + o.y });
+  }
+  return out;
+}
+
+// layered のときだけ折返しオプションを差し込んで呼び直す（他アルゴリズムは run() のまま）
+function layoutLayeredOr(run, cn, ce, opts, variant, algorithm) {
+  if (algorithm !== 'layered' || (!variant.maxRankWidth && !variant.maxBandLength)) return run(cn, ce);
+  return layoutLayered(cn, ce, Object.assign({}, opts, variant));
+}
+
 // 完全に孤立したノード（辺も親子関係も無い）を判定する。
 // tree/radial は parent（無ければ hierarchyRel 辺）で親子を見るので、
 // 「辺も無く・親も無く・誰の親でもない」ノードだけを孤立とみなし、
@@ -1826,6 +2120,13 @@ function layoutGraph(nodes, edges, opts = {}) {
     seed: opts.seed != null ? opts.seed : 1,
     iterations: opts.iterations != null ? opts.iterations : 300,
     hierarchyRel: opts.hierarchyRel || 'contains',
+    // §3 追補（G10）: layered の折返し。maxRankWidth=1 ランクの cross 方向の上限、
+    // maxBandLength=ランク軸（進行方向）の帯の上限。どちらも省略＝折返さない（従来と同一）。
+    maxRankWidth: opts.maxRankWidth,
+    maxBandLength: opts.maxBandLength,
+    // 連結成分パッキングの目標アスペクト（W/H）。既定 1＝正方形（Fit の拡大率は
+    // min(幅比, 高さ比) なので、キャンバスが正方形に近い編集画面では正方形が最大になる）
+    packAspect: opts.packAspect,
     // §7.4 nested 専用（他のアルゴリズムでは無視される）
     containers: Array.isArray(opts.containers) ? opts.containers : [],
     inner: opts.inner,
@@ -1841,16 +2142,22 @@ function layoutGraph(nodes, edges, opts = {}) {
   const mainIds = new Set(mainNodes.map(n => n.id));
   const mainEdges = cleanEdges.filter(e => mainIds.has(e.from) && mainIds.has(e.to));
 
+  // G10: 連結成分ごとに配置して 4:3 へ棚詰めする（成分が 1 つなら従来と同一の結果）。
+  // grid は元からグリッド、nested は枠の入れ子が配置を決めるので対象外。
+  const PACKED_ALGOS = {
+    tree: (n, e) => layoutTree(n, e, options),
+    layered: (n, e) => layoutLayered(n, e, options),
+    force: (n, e) => layoutForce(n, e, options),
+    radial: (n, e) => layoutRadial(n, e, options),
+  };
   let pos;
   if (mainNodes.length === 0) {
     pos = new Map();
+  } else if (PACKED_ALGOS[options.algorithm]) {
+    pos = layoutByComponents(mainNodes, mainEdges, options, PACKED_ALGOS[options.algorithm], options.algorithm);
   } else {
     switch (options.algorithm) {
-      case 'tree': pos = layoutTree(mainNodes, mainEdges, options); break;
-      case 'layered': pos = layoutLayered(mainNodes, mainEdges, options); break;
-      case 'force': pos = layoutForce(mainNodes, mainEdges, options); break;
       case 'grid': pos = layoutGrid(mainNodes, options); break;
-      case 'radial': pos = layoutRadial(mainNodes, mainEdges, options); break;
       case 'nested': pos = layoutNested(mainNodes, mainEdges, options); break;
       default: pos = new Map(); break;
     }
@@ -1950,6 +2257,98 @@ function routeOrthogonal(a, b, stub = 24) {
   return dedupe(pts);
 }
 
+// ─── 障害物回避の直交ルーティング（§7.4 リフトエッジ用・G10） ───
+// 背景: nested の枠をまたぐリフトエッジは、枠の内側レイアウトが「枠の外から入ってくる線」を知らないため、
+// 既定の L/Z 経路だと途中のブロックを真横に貫通し、ラベルもその箱に覆われて読めなくなっていた
+// （final_5_lifted_zoom.png: lift~imports~outputs~tools/usv_hull が tools/diagram_engine を貫く）。
+// 少数の候補経路（L / Z / 障害物の辺に沿ったレーン）を列挙し「貫通 0 → 短い → 折れが少ない」で選ぶ。
+const OBSTACLE_CLEARANCE = 10;   // 箱からこれだけ離れたところにレーンを引く
+const MAX_ROUTE_OBSTACLES = 240; // これを超える図では回避を諦める（既定経路のまま・描画は止めない）
+
+// 折線が矩形群を通る本数（矩形は {x1,y1,x2,y2}・軸平行セグメントの帯で判定する）
+function pathHitCount(pts, rects, margin = 1) {
+  let hits = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i];
+    const sx1 = Math.min(a.x, b.x), sx2 = Math.max(a.x, b.x);
+    const sy1 = Math.min(a.y, b.y), sy2 = Math.max(a.y, b.y);
+    for (const r of rects) {
+      if (sx1 < r.x2 - margin && sx2 > r.x1 + margin && sy1 < r.y2 - margin && sy2 > r.y1 + margin) hits++;
+    }
+  }
+  return hits;
+}
+
+function pathLength(pts) {
+  let t = 0;
+  for (let i = 1; i < pts.length; i++) t += Math.abs(pts[i].x - pts[i - 1].x) + Math.abs(pts[i].y - pts[i - 1].y);
+  return t;
+}
+
+function routeAvoiding(aIn, bIn, rects, stub = 24) {
+  // 端点は {x,y} だけに落とす（aGeom/bGeom は side/node も持つので、そのまま経路へ混ぜない）
+  const a = { x: aIn.x, y: aIn.y, side: aIn.side }, b = { x: bIn.x, y: bIn.y, side: bIn.side };
+  const p0 = { x: a.x, y: a.y }, p1 = { x: b.x, y: b.y };
+  const base = routeOrthogonal(a, b, stub);
+  if (!rects || !rects.length || rects.length > MAX_ROUTE_OBSTACLES) return base;
+  const a2 = { x: a.x + OUT[a.side].x * stub, y: a.y + OUT[a.side].y * stub };
+  const b2 = { x: b.x + OUT[b.side].x * stub, y: b.y + OUT[b.side].y * stub };
+  const c = OBSTACLE_CLEARANCE;
+  // レーン候補: 端点のスタブ位置 + 障害物の外側 + 全体 bbox の外側（必ず 1 本は通る逃げ道になる）
+  const xs = new Set([a2.x, b2.x, (a2.x + b2.x) / 2]);
+  const ys = new Set([a2.y, b2.y, (a2.y + b2.y) / 2]);
+  let bx1 = Infinity, by1 = Infinity, bx2 = -Infinity, by2 = -Infinity;
+  for (const r of rects) {
+    xs.add(r.x1 - c); xs.add(r.x2 + c); ys.add(r.y1 - c); ys.add(r.y2 + c);
+    bx1 = Math.min(bx1, r.x1); by1 = Math.min(by1, r.y1); bx2 = Math.max(bx2, r.x2); by2 = Math.max(by2, r.y2);
+  }
+  xs.add(bx1 - c); xs.add(bx2 + c); ys.add(by1 - c); ys.add(by2 + c);
+
+  const cands = [base];
+  cands.push(dedupe([p0, a2, { x: b2.x, y: a2.y }, b2, p1]));
+  cands.push(dedupe([p0, a2, { x: a2.x, y: b2.y }, b2, p1]));
+  for (const mx of [...xs].sort((p, q) => p - q)) cands.push(dedupe([p0, { ...a2 }, { x: mx, y: a2.y }, { x: mx, y: b2.y }, { ...b2 }, p1]));
+  for (const my of [...ys].sort((p, q) => p - q)) cands.push(dedupe([p0, { ...a2 }, { x: a2.x, y: my }, { x: b2.x, y: my }, { ...b2 }, p1]));
+
+  let best = null;
+  for (const pts of cands) {
+    const score = pathHitCount(pts, rects) * 1e7 + pathLength(pts) + pts.length * 30;
+    if (!best || score < best.score - 1e-9) best = { score, pts };
+  }
+  return best.pts;
+}
+
+// ラベルを置ける点を折線上から探す（矩形に覆われない点を、折線の中点にいちばん近いところから採る）。
+// 見つからなければ中点（従来どおり）。lifted なエッジのラベルが箱に隠れるのを防ぐ（G10）。
+function freeLabelPoint(pts, rects, w, h) {
+  const mid = polylineMidpoint(pts);
+  if (!rects || !rects.length) return mid;
+  const covered = (x, y) => {
+    const x1 = x - w / 2, x2 = x + w / 2, y1 = y - h / 2, y2 = y + h / 2;
+    for (const r of rects) if (x1 < r.x2 && r.x1 < x2 && y1 < r.y2 && r.y1 < y2) return true;
+    return false;
+  };
+  if (!covered(mid.x, mid.y)) return mid;
+  const STEP = 6;
+  let best = null;
+  let acc = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i - 1], q = pts[i];
+    const segLen = Math.hypot(q.x - p.x, q.y - p.y);
+    const horizontal = Math.abs(q.x - p.x) >= Math.abs(q.y - p.y);
+    const steps = Math.max(1, Math.floor(segLen / STEP));
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const x = p.x + (q.x - p.x) * t, y = p.y + (q.y - p.y) * t;
+      if (covered(x, y)) continue;
+      const d = Math.abs((acc + segLen * t) - pathLength(pts) / 2);
+      if (!best || d < best.d) best = { d, x, y, horizontal };
+    }
+    acc += segLen;
+  }
+  return best ? { x: best.x, y: best.y, horizontal: best.horizontal } : mid;
+}
+
 function dedupe(pts) {
   const out = [pts[0]];
   for (let i = 1; i < pts.length; i++) {
@@ -1977,7 +2376,22 @@ function edgePolyline(model, edge) {
   if (edge.kind === 'straight' || edge.kind === 'curve') {
     return [{ x: aGeom.x, y: aGeom.y }, { x: bGeom.x, y: bGeom.y }];
   }
+  // §7.4 リフトエッジ（枠をまたぐ集約線）だけ障害物回避ルータを使う。
+  // 通常の派生/手置きエッジの経路は一切変えない（既存 JSON・検証の幾何は不変）。
+  if (edge.__lifted) return routeAvoiding(aGeom, bGeom, obstacleRects(model, edge));
   return routeOrthogonal(aGeom, bGeom);
+}
+
+// エッジの端点以外のノード矩形（＝避けるべき障害物）
+function obstacleRects(model, edge) {
+  const ends = new Set([String(edge.from).split(':')[0], String(edge.to).split(':')[0]]);
+  const out = [];
+  for (const n of model.nodes) {
+    if (ends.has(n.id)) continue;
+    const h = n.collapsed ? 28 : n.h;
+    out.push({ x1: n.x, y1: n.y, x2: n.x + n.w, y2: n.y + h });
+  }
+  return out;
 }
 
 function polylinePath(pts, kind = 'orthogonal', radius = 8) {
@@ -2971,6 +3385,16 @@ function el(tag, attrs = {}, text) {
 
 const PORT_R = 4.5;         // ポート正方形の半径
 const LINE_H = 16;          // ラベル行高
+const SUBLABEL_MIN_H = 40;  // これ未満の箱ではサブラベルを描かず <title> へ回す（G10）
+
+// 幅に収まるまで末尾を削って … を付ける（textWidthPx と同じ尺度で測る）
+function ellipsize(text, maxW) {
+  const s = String(text == null ? '' : text);
+  if (textWidthPx(s) <= maxW) return s;
+  const chars = [...s];
+  while (chars.length > 1 && textWidthPx(chars.join('') + '…') > maxW) chars.pop();
+  return chars.join('') + '…';
+}
 
 class FlatSVGRenderer {
   constructor() {
@@ -3080,11 +3504,30 @@ class FlatSVGRenderer {
     }
   }
   dyOf(layerId) { return this.layerDy?.get(layerId || 'base') || 0; }
+  // §10 レイヤをまたぐ container 枠（全体を囲うルート枠）は、段積み後のメンバー位置を包む矩形にする。
+  // 素の groupRect はモデル座標（＝段積み前）なので、そのままでは下の段を囲えない。
+  // 自身に layer を持つ枠・明示矩形の枠・1 レイヤに収まる枠は従来どおり（null を返す）。
+  spanRect(group) {
+    if (group.kind !== 'container' || group.layer || !this.layerDy?.size) return null;
+    if ([group.x, group.y, group.w, group.h].every(v => typeof v === 'number')) return null;
+    const members = (group.members || [])
+      .map(id => this.model.nodes.find(n => n.id === id))
+      .filter(n => n && this.nodeVisible(n));
+    if (members.length < 2) return null;
+    if (new Set(members.map(n => n.layer || 'base')).size < 2) return null;
+    const pad = typeof group.pad === 'number' && group.pad >= 0 ? group.pad : 24;
+    const ys = members.map(n => n.y + this.dyOf(n.layer));
+    const x1 = Math.min(...members.map(n => n.x)), x2 = Math.max(...members.map(n => n.x + n.w));
+    const y1 = Math.min(...ys), y2 = Math.max(...members.map(n => n.y + n.h + this.dyOf(n.layer)));
+    return { x: x1 - pad, y: y1 - pad - 14, w: x2 - x1 + pad * 2, h: y2 - y1 + pad * 2 + 14 };
+  }
+  // 描画・当たり判定・境界計算で必ず同じ矩形を使う（G6 の「描画と判定は 1 本」則）
+  rectOf(group) { return this.spanRect(group) || groupRect(this.model, group); }
   stackedBounds(pad = 40) {
     let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
     const add = (x, y, w, h, dy) => { x1 = Math.min(x1, x); y1 = Math.min(y1, y + dy); x2 = Math.max(x2, x + w); y2 = Math.max(y2, y + h + dy); };
     for (const n of this.model.nodes) if (this.nodeVisible(n)) add(n.x, n.y, n.w, n.collapsed ? 28 : n.h, this.dyOf(n.layer));
-    for (const g of this.model.groups) if (this.groupVisible(g)) { const r = groupRect(this.model, g); add(r.x, r.y, r.w, r.h, this.dyOf(g.layer)); }
+    for (const g of this.model.groups) if (this.groupVisible(g)) { const r = this.rectOf(g); add(r.x, r.y, r.w, r.h, this.dyOf(g.layer)); }
     if (!isFinite(x1)) return contentBounds(this.model, pad);
     return { x: x1 - pad, y: y1 - pad, w: (x2 - x1) + pad * 2, h: (y2 - y1) + pad * 2 };
   }
@@ -3165,7 +3608,7 @@ class FlatSVGRenderer {
   }
 
   renderGroup(group) {
-    const r = groupRect(this.model, group);
+    const r = this.rectOf(group);
     const g = el('g', { 'data-kind': 'group', 'data-id': group.id });
     const dy = this.dyOf(group.layer);
     if (dy) g.setAttribute('transform', `translate(0 ${dy})`);
@@ -3186,7 +3629,7 @@ class FlatSVGRenderer {
   // ▸/▾ と同じ kind:'expander' を返し、id は「元のノード id」＝ editor.toggleExpanded がそのまま使える。
   groupExpanderRect(group) {
     if (!group.__expanded || !group.__childCount || !group.__nodeId) return null;
-    const r = groupRect(this.model, group);
+    const r = this.rectOf(group);
     const w = 13 + String(group.__childCount).length * 6;
     return { x: r.x + r.w - w - 6, y: r.y + 4, w, h: 14 };
   }
@@ -3226,6 +3669,18 @@ class FlatSVGRenderer {
     return [{ x: fcx, y: ay }, { x: fcx, y: bcy }, { x: bx, y: bcy }];
   }
 
+  // ラベルを避けるべき矩形（端点も含めた全ノード。エッジはノードより先に描かれるので覆われると消える）。
+  // 段積み中はレンダリング Y オフセットを効かせる（edgePoints が返す座標系に合わせる）。
+  labelObstacles() {
+    const out = [];
+    for (const n of this.model.nodes) {
+      if (!this.nodeVisible(n)) continue;
+      const dy = this.dyOf(n.layer), h = n.collapsed ? 28 : n.h;
+      out.push({ x1: n.x, y1: n.y + dy, x2: n.x + n.w, y2: n.y + dy + h });
+    }
+    return out;
+  }
+
   renderEdge(edge) {
     const pts = this.edgePoints(edge);
     if (!pts) return null;
@@ -3246,9 +3701,12 @@ class FlatSVGRenderer {
     g.appendChild(el('path', { class: 'de-edge-hit', d }));
     g.appendChild(path);
     if (edge.label) {
-      const m = polylineMidpoint(pts);
       const wchars = Math.max(...edge.label.split('\n').map(s => s.length));
       const w = Math.min(wchars, 24) * 6.4 + 14, h = 16;
+      // §7.4 リフトエッジのラベルは、どのノードにも覆われない区間へ寄せる（G10: 箱の下に隠れていた）
+      const m = edge.__lifted
+        ? freeLabelPoint(pts, this.labelObstacles(), w, h)
+        : polylineMidpoint(pts);
       g.appendChild(el('rect', {
         class: 'de-edge-label-bg', x: m.x - w / 2, y: m.y - h / 2, width: w, height: h, rx: h / 2,
         fill: accent ? 'var(--de-accent-soft)' : undefined,
@@ -3315,15 +3773,28 @@ class FlatSVGRenderer {
       ig.setAttribute('transform', `translate(${node.x + 9},${node.y + 8}) scale(${size / 24})`);
       g.appendChild(ig);
     }
-    if (node.sublabel && !node.collapsed) {
+    // §7.1 追補（G10）: 高さが 2 行に足りない箱（h < SUBLABEL_MIN_H）はサブラベル（親パス）を描かない。
+    // 描くとラベル 1 行目のアセンダと重なって両方読めなくなる（報告された「アイコン／サブラベルに重なる」）。
+    // 落としたサブラベルは <title>（ツールチップ）へ回す＝情報は失わない。
+    const showSub = !!node.sublabel && !node.collapsed && h >= SUBLABEL_MIN_H;
+    // ラベル領域はアイコンの右から（中央寄せのままだと長いラベルがアイコンへ食い込む）。
+    // サブラベルも同じ中心に揃える（別々の中心だとラベルとサブラベルがずれて見える）。
+    const textInset = (hasIcon && !node.collapsed) ? LABEL_ICON_INSET : LABEL_PAD;
+    const lrExpander = (this.model?.layout?.direction || 'TB') === 'LR' && !node.collapsed ? expanderReserve(node.__childCount) : 0;
+    const textW = labelBoxWidth(node.w, hasIcon && !node.collapsed, lrExpander);
+    const textCx = node.x + textInset + textW / 2;
+    if (showSub) {
       g.appendChild(el('text', {
-        class: 'de-node-sublabel', x: node.x + node.w / 2, y: node.y + 14, 'text-anchor': 'middle',
+        class: 'de-node-sublabel', x: textCx, y: node.y + 14, 'text-anchor': 'middle',
       }, node.sublabel));
     }
     if (node.label) {
-      const cy = node.collapsed ? node.y + h / 2 + 4.5 : node.y + h / 2 + (node.sublabel ? 8 : 4.5);
-      this.appendLabel(g, node, node.x + node.w / 2, cy, node.w - 16);
+      const cy = node.collapsed ? node.y + h / 2 + 4.5 : node.y + h / 2 + (showSub ? 8 : 4.5);
+      // 入る行数: サブラベルを描いたぶんを引いた高さ / 行高（最低 1 行）
+      const maxLines = Math.max(1, Math.floor((h - (showSub ? 20 : 8)) / LINE_H));
+      this.appendLabel(g, node, textCx, cy, textW, maxLines);
     }
+    if (!showSub && node.sublabel && !node.collapsed) this.appendTitle(g, `${node.sublabel}${node.label || ''}`);
     this.appendPorts(g, node);
     this.appendLinkBadge(g, node);
     this.appendProvenanceBadge(g, node, h);
@@ -3389,8 +3860,25 @@ class FlatSVGRenderer {
     }, '↗'));
   }
 
-  appendLabel(g, node, cx, cy, maxW) {
-    const lines = wrapText(node.label, Math.max(6, Math.floor(maxW / 6.8)));
+  // <title> は 1 ノードに 1 つだけ（重複させると読み上げ・ツールチップが不定になる）
+  appendTitle(g, text) {
+    if (!text || g.querySelector('title')) return;
+    g.insertBefore(el('title', {}, text), g.firstChild);
+  }
+
+  appendLabel(g, node, cx, cy, maxW, maxLines = 0) {
+    let lines = wrapText(node.label, Math.max(4, Math.floor(maxW / 6.8)));
+    let truncated = false;
+    if (maxLines > 0 && lines.length > maxLines) {
+      // 入りきらない分は … で省略し、全文は <title> に入れる（G10: 170×44 の派生ノード）
+      lines = lines.slice(0, maxLines);
+      lines[lines.length - 1] = ellipsize(lines[lines.length - 1], maxW);
+      truncated = true;
+    } else if (lines.length === 1 && textWidthPx(lines[0]) > maxW) {
+      lines = [ellipsize(lines[0], maxW)];
+      truncated = true;
+    }
+    if (truncated) this.appendTitle(g, (node.sublabel || '') + node.label);
     const y0 = cy - (lines.length - 1) * LINE_H / 2;
     lines.forEach((line, i) => {
       g.appendChild(el('text', {
@@ -3483,14 +3971,18 @@ class FlatSVGRenderer {
       const pts = this.edgePoints(e);
       if (pts && distToPolyline(p, pts) <= tol) return { kind: 'edge', id: e.id };
     }
+    // §10: container（領域の意味づけ＝枠）はプレート等より後回しにする。全体を囲うルート枠が
+    // 手前に来ると、その内側のプレートを叩いてもレイヤ遷移できなくなる（枠は入れ物でしかない）。
+    let frameHit = null;
     for (const g of [...this.model.groups].reverse()) {
       if (!this.groupVisible(g)) continue;
-      const r = groupRect(this.model, g);
+      const r = this.rectOf(g);
       const dy = this.dyOf(g.layer);
-      if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y + dy && p.y <= r.y + r.h + dy)
-        return { kind: 'group', id: g.id };
+      if (!(p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y + dy && p.y <= r.y + r.h + dy)) continue;
+      if (g.kind === 'container') { frameHit = frameHit || { kind: 'group', id: g.id }; continue; }
+      return { kind: 'group', id: g.id };
     }
-    return null;
+    return frameHit;
   }
 
   exportSVG() {
@@ -3756,6 +4248,10 @@ class IsoSVGRenderer {
     for (const { rect, elev } of this.plates()) {
       for (const c of rectCorners(rect)) all.push(isoProject(c.x, c.y, elev), isoProject(c.x, c.y, elev - PLATE_T));
     }
+    // §10: 接地枠（container）も Fit の対象。含めないと全体を囲う枠が画面外へはみ出す
+    for (const { rect, elev } of this.containers()) {
+      for (const c of rectCorners(rect)) all.push(isoProject(c.x, c.y, elev));
+    }
     for (const n of this.model.nodes) {
       const elev = this.elev(n.layer);
       for (const c of rectCorners(n)) all.push(isoProject(c.x, c.y, elev + BOX_H + 40));
@@ -3789,20 +4285,60 @@ class IsoSVGRenderer {
     return out.sort((a, b) => a.elev - b.elev);
   }
 
+  // §10 container グループ: 高さを持たない「接地面の輪郭」。プレート（実体のある段）と役割が違い、
+  // メンバーが複数レイヤにまたがっても 1 枚の床枠として全員のフットプリントを囲う。
+  containers() {
+    const groups = this.model.groups.filter(g => g.kind === 'container');
+    if (!groups.length) return [];
+    const ground = Math.min(...this.model.layers.map(l => l.elevation ?? 0), 0);
+    return groups.map(g => ({ group: g, rect: groupRect(this.model, g, 40), elev: ground, label: g.label }));
+  }
+
   update(model) {
     this.model = model;
     this.world.textContent = '';
-    // 描画順: 低い標高 → 高い標高（painter's algorithm）
+    // 描画順: 接地枠 → 低い標高 → 高い標高（painter's algorithm）
+    for (const c of this.containers()) this.world.appendChild(this.renderContainer(c));
     for (const plate of this.plates()) this.world.appendChild(this.renderPlate(plate));
     for (const e of model.edges) { const p = this.renderEdge(e); if (p) this.world.appendChild(p); }
     const nodes = [...model.nodes].sort((a, b) => (this.elev(a.layer) - this.elev(b.layer)) || ((a.x + a.y) - (b.x + b.y)));
     for (const n of nodes) this.world.appendChild(this.renderNode(n));
+    for (const c of this.containers()) if (c.label) this.world.appendChild(this.renderContainerLabel(c));
     if (model.meta.caption) {
       const b = this.projectedBounds();
       this.world.appendChild(el('text', {
         class: 'de-caption', x: (b.x1 + b.x2) / 2, y: b.y2 + 34, 'text-anchor': 'middle',
       }, model.meta.caption));
     }
+  }
+
+  // 枠線のみ・塗りなし・高さなし。ラベルは論理左上角（= iso の最上部角）に小さく控えめに置く
+  // （プレート名の大きな大文字ラベルと張り合わないように）。
+  renderContainer({ rect, elev, group }) {
+    const g = el('g', { 'data-kind': 'container', 'data-id': group.id });
+    const top = rectCorners(rect).map(c => isoProject(c.x, c.y, elev));
+    const style = group.style || {};
+    g.appendChild(el('path', {
+      class: 'de-iso-container', d: poly(top), fill: 'none',
+      stroke: style.stroke || 'var(--de-soft)', 'stroke-width': 1.2,
+      'stroke-dasharray': style.dash ?? '7 5', opacity: style.opacity ?? 0.9,
+    }));
+    return g;
+  }
+
+  // 枠のラベルは「左上の辺の外側（＝投影後の左の角のすぐ上）」に置き、**最後に描く**。
+  // 論理左上角（投影では最上部の角）は、標高を持つプレートの裏に必ず隠れるため使えない
+  // （G11 実測: overview で life ラベルが DEVELOPMENT プレートに完全に覆われた）。
+  renderContainerLabel({ rect, elev, label, group }) {
+    const g = el('g', { 'data-kind': 'container-label', 'data-id': group.id });
+    const left = isoProject(rect.x, rect.y + rect.h, elev); // 論理左下＝投影後のいちばん左の角
+    g.appendChild(el('text', {
+      class: 'de-container-label', x: left.x - 8, y: left.y - 10, 'text-anchor': 'end',
+      fill: 'var(--de-soft)', 'font-size': 12, 'font-weight': 700, 'letter-spacing': '.08em',
+      'font-family': 'var(--de-font)',
+      style: 'paint-order: stroke; stroke: var(--de-paper); stroke-width: 3px;',
+    }, label));
+    return g;
   }
 
   renderPlate({ rect, elev, label, group }) {
@@ -4255,6 +4791,34 @@ class WebGLThreeRenderer {
       }
     }
 
+    // §10 container グループ: 高さを持たない「接地面の輪郭」＝床に落ちた線のループ。
+    // platform（実体のある段）と役割が違うので、塗りも厚みも持たせない。ラベルはプレート名と
+    // 同じ surfaceText を使うが、小さく・muted 色にして段のラベルと張り合わせない。
+    // クリック対象にしない（userData.nodeId を付けない）＝プレート→単層遷移の邪魔をしない。
+    {
+      const ground = Math.min(...model.layers.map(l => l.elevation ?? 0), 0);
+      for (const g of model.groups.filter(g => g.kind === 'container')) {
+        const r = groupRect(model, g, 40);
+        const corners = [
+          P(r.x, r.y, ground), P(r.x + r.w, r.y, ground),
+          P(r.x + r.w, r.y + r.h, ground), P(r.x, r.y + r.h, ground),
+        ];
+        const geo = new T.BufferGeometry().setFromPoints([...corners, corners[0]]);
+        const line = new T.Line(geo, new T.LineDashedMaterial({ color: soft, dashSize: 0.14, gapSize: 0.1 }));
+        line.computeLineDistances();
+        line.userData.kind = 'container-frame';
+        this.root.add(line);
+        if (g.label) {
+          const s = this.surfaceText(g.label, { size: 18, color: '--de-soft', weight: 700 });
+          s.userData.kind = 'container-label';
+          // プレート名と同じ規則: 既定カメラ(θ=-45°)で画面左上に来る論理(maxX,maxY)角へ内側 inset だけ寄せる
+          const inset = 10;
+          s.position.copy(P(r.x + r.w - inset - s.userData.logicalW / 2, r.y + r.h - inset - s.userData.logicalH / 2, ground + 1));
+          this.root.add(s);
+        }
+      }
+    }
+
     // meta.render3d で図全体の 3D 表現を統一できる:
     //   'shape' … 全ノードを 3D ピクトグラムに（アイコン未対応は cube にフォールバック＝ボックスを出さない）
     //   'icon'  … 全ノードを平面アイコンに（3D 形状/ボックスを出さない）
@@ -4428,10 +4992,10 @@ class WebGLThreeRenderer {
 
   // Canvas → プレート天面に寝かせた「地色なしの太字ラベル」（ビルボードでない＝回転と共に自然に隠れる）。
   // 高 dpr + 異方性フィルタでボケを抑える。地色チップは付けず --de-ink の字だけ（天面 --de-fill と両テーマ高コントラスト）。
-  surfaceText(text, { size = 30 } = {}) {
+  surfaceText(text, { size = 30, color = '--de-ink', weight = 800 } = {}) {
     const T = THREE;
     const dpr = 4; // 高解像度でレンダリング（ボケ対策）
-    const font = `800 ${size * dpr}px "Avenir Next","Helvetica Neue","Hiragino Sans","Noto Sans JP",sans-serif`;
+    const font = `${weight} ${size * dpr}px "Avenir Next","Helvetica Neue","Hiragino Sans","Noto Sans JP",sans-serif`;
     const c = document.createElement('canvas');
     const ctx = c.getContext('2d');
     ctx.font = font;
@@ -4440,10 +5004,10 @@ class WebGLThreeRenderer {
     const tw = ctx.measureText(spaced).width;
     c.width = Math.ceil(tw + padX * 2);
     c.height = Math.ceil(size * dpr * 1.3 + padY * 2);
-    // 地色なし（透明キャンバス）に --de-ink の太字だけを描く。
+    // 地色なし（透明キャンバス）に指定色の太字だけを描く（既定 --de-ink）。
     ctx.font = font;
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = cssColor('--de-ink');
+    ctx.fillStyle = cssColor(color);
     ctx.fillText(spaced, c.width / 2, c.height / 2 + dpr);
     const tex = new T.CanvasTexture(c);
     tex.colorSpace = T.SRGBColorSpace;
@@ -4545,13 +5109,32 @@ class WebGLThreeRenderer {
   // ツールバーの Fit ボタン用（回転角は保持し、全体が収まる target/dist に再フレーミング）
   fit() { if (this.root) this.frameAll(); }
 
+  // Fit: bbox の 8 隅を現在のカメラ姿勢へ投影し、全部が画角に入る最小距離を解く。
+  // 旧実装は「対角 × 0.85」の当て推量で、内容が横に広い図（§10 の接地枠を足した overview 等）を
+  // 常に切り落としていた。FOV とアスペクトの両方を見るのでどの向き・どの縦横比でも収まる。
   frameAll() {
     const T = THREE;
     const bb = new T.Box3().setFromObject(this.root);
     if (bb.isEmpty()) return;
-    const size = bb.getSize(new T.Vector3()).length();
     bb.getCenter(this.orbit.target);
-    this.orbit.dist = Math.max(6, size * 0.85);
+    const { theta, phi } = this.orbit;
+    const dir = new T.Vector3(Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)); // target → camera
+    const forward = dir.clone().negate();
+    const worldUp = new T.Vector3(0, 1, 0);
+    let right = new T.Vector3().crossVectors(forward, worldUp);
+    if (right.lengthSq() < 1e-8) right = new T.Vector3(1, 0, 0); // 真上/真下から見ている退化ケース
+    right.normalize();
+    const up = new T.Vector3().crossVectors(right, forward).normalize();
+    const vFov = (this.camera.fov * Math.PI) / 180;
+    const tanV = Math.tan(vFov / 2), tanH = tanV * Math.max(0.2, this.camera.aspect);
+    let dist = 0;
+    const c = new T.Vector3();
+    for (let i = 0; i < 8; i++) {
+      c.set(i & 1 ? bb.max.x : bb.min.x, i & 2 ? bb.max.y : bb.min.y, i & 4 ? bb.max.z : bb.min.z).sub(this.orbit.target);
+      const z = c.dot(dir); // カメラ方向の成分（正＝カメラ寄り）
+      dist = Math.max(dist, Math.abs(c.dot(right)) / tanH + z, Math.abs(c.dot(up)) / tanV + z);
+    }
+    this.orbit.dist = Math.max(6, dist * 1.06);
   }
 
   bindOrbit() {
@@ -4769,6 +5352,53 @@ const AUTOSAVE_KEY = 'diagram-engine-autosave';
 const LAYOUT_ALGO_ITEMS = [['tree', 'Tree'], ['layered', 'Layered'], ['force', 'Force'], ['grid', 'Grid'], ['radial', 'Radial'], ['nested', 'Nested'], ['none', 'None']];
 const LAYOUT_DIRECTION_ITEMS = [['TB', 'TB'], ['LR', 'LR']];
 
+// GRAPH_CONTRACT.md §8: インスペクタ Summary の「種別」対応表。ext キー（'.md' 等）は type より
+// 優先（抽出器の roles が type/icon を上書きしても拡張子は変わらないため＝ファイルの実体を当てる）。
+// type キーは ext 不一致 or 無しのときのフォールバック。folder は icon:'folder' でも判定する
+// （roles が type を 'tool' 等へ上書きしてもフォルダの icon は folder のまま＝GRAPH_CONTRACT §4）。
+// 本来の置き場所は §8 が指す model.js（今回は他エージェントが所有のため editor.js に暫定定義）。
+const KIND_LABELS = {
+  // 拡張子ベース（props.ext）
+  '.md': 'Markdown', '.html': 'HTML', '.json': 'JSON',
+  '.js': 'JavaScript', '.mjs': 'JavaScript', '.cjs': 'JavaScript',
+  '.ts': 'TypeScript', '.py': 'Python',
+  '.yml': 'YAML', '.yaml': 'YAML', '.css': 'CSS',
+  '.svg': '画像', '.png': '画像',
+  // graph node type ベース（ext 不一致時のフォールバック）
+  folder: 'フォルダ', doc: 'ドキュメント', module: 'モジュール', tool: 'ツール', test: 'テスト',
+  config: '設定', ci: 'CI', skill: 'スキル', rule: 'ルール', bootstrap: 'ブートストラップ',
+  knowledge: 'ナレッジ', idea: 'アイデア', output: '成果物', external: '外部',
+  block: '概念', default: '概念',
+};
+
+// GRAPH_CONTRACT.md §8 は全詳細セクション（基本含む）を既定 closed としたいが、'基本' は
+// verify.mjs の既存回帰テストが Playwright ロケータで直接 .fill() するため既定 open のまま残す
+// （makeInspectorCollapsible 参照）。
+const DEFAULT_OPEN_INSPSECS = new Set();
+
+function kindLabelForNode(n) {
+  const ext = n?.props?.ext;
+  if (ext && KIND_LABELS[ext]) return KIND_LABELS[ext];
+  if (n?.icon === 'folder' || n?.type === 'folder') return KIND_LABELS.folder;
+  return KIND_LABELS[n?.type] || n?.type || KIND_LABELS.default;
+}
+
+// graph の parent 連鎖から深さ（root=0）とパス（root を除く自分までの名前を " / " で結合）を求める。
+// GRAPH_CONTRACT.md §8 の例「2 · tools / diagram_engine」に一致（root 自身を選んだ場合は自分の名前1つ）。
+function graphAncestry(project, ent) {
+  const chain = []; // [自分, 親, 祖父, …, root]
+  let cur = ent, guard = 0;
+  while (cur && guard++ < 2000) {
+    chain.push(cur);
+    if (!cur.parent) break;
+    cur = entityById(project, cur.parent);
+  }
+  const depth = chain.length - 1;
+  const pathNodes = chain.length === 1 ? chain : chain.slice(0, -1); // root 自身以外は root を除く
+  const path = pathNodes.slice().reverse().map(n => n.name || n.id).join(' / ');
+  return { depth, path };
+}
+
 class DiagramEditor {
   constructor(root, options = {}) {
     this.root = root;
@@ -4786,6 +5416,13 @@ class DiagramEditor {
     this.hist = []; this.histIdx = -1;
     this.pointers = new Map();  // マルチタッチ（ピンチズーム）追跡
     this.pinch = null;
+    // G10-B §8: プロジェクト単位テーマのローカル既定（project.theme も meta.theme も無い図の
+    // フォールバック）。前回セッションでのトグルをブラウザに残す（他 viewer と同じ localStorage 流儀）。
+    try { this.localTheme = localStorage.getItem('de-theme') || null; } catch { this.localTheme = null; }
+    // normalize() は meta.theme 未宣言の図へ既定値 'mono-light' を常に補う（model.js 側の既定挙動・
+    // 今回は他エージェント所有のため変更しない）ので、ロード直後の生 JSON から「本当に明示された図」
+    // だけを diagram.id 単位で覚えておく（resolveTheme が project.theme に譲るかどうかの判定に使う）。
+    this.explicitTheme = new Set();
     this.buildUI();
     this.bindEvents();
     this.applyPanelState(this.readPanelState());
@@ -4835,6 +5472,14 @@ class DiagramEditor {
     // §7.4 仮想ビュー: 履歴（undo/redo）からの復元では生かしたまま戻す（保存 JSON には無いため）。
     // 新しいプロジェクトを読み込むときは捨てる（別の graph のノード id なので意味を持たない）。
     if (fromHistory) this.injectVirtualViews(raw); else this.virtualSpecs = new Map();
+    // G10-B §8: 「本当に明示された meta.theme」を normalize() が既定値を補う前の生 raw から覚える。
+    // undo/redo（fromHistory）の raw は既に一度 normalize を通った履歴スナップショットなので
+    // 全図に既定値が焼き込まれており、ここで数え直すと区別が付かなくなる＝真の新規ロード時のみ更新。
+    if (!fromHistory) {
+      this.explicitTheme = new Set();
+      const rawDiagrams = Array.isArray(raw?.diagrams) ? raw.diagrams : [raw];
+      for (const d of rawDiagrams) if (d?.meta?.theme && d?.meta?.id) this.explicitTheme.add(d.meta.id);
+    }
     this.project = normalizeProject(raw);
     this.navStack = [];
     this.setStatus(warnings.length ? `警告: ${warnings[0]}` : '');
@@ -4872,6 +5517,10 @@ class DiagramEditor {
     const normalized = normalize(raw);
     this.project.diagrams[idx] = normalized;
     if (this.project.project.entry === oldId) this.project.project.entry = newId;
+    // JSON パネルでの手編集も「明示 meta.theme」の記録に反映する（G10-B §8）
+    this.explicitTheme = this.explicitTheme || new Set();
+    this.explicitTheme.delete(oldId);
+    if (raw?.meta?.theme) this.explicitTheme.add(newId); else this.explicitTheme.delete(newId);
     this.model = normalized;
     this.setStatus(warnings.length ? `警告: ${warnings[0]}` : '');
     this.projection = this.model.meta.projection || 'flat';
@@ -5082,8 +5731,8 @@ class DiagramEditor {
 
   // ─── レンダラ管理 ───
   mountRenderer() {
-    // モデル宣言のテーマを描画前に反映（既定=ライト。mono-dark 指定時のみダーク）
-    document.documentElement.dataset.theme = this.model?.meta?.theme === 'mono-dark' ? 'dark' : 'light';
+    // テーマを描画前に反映（既定=ライト。resolveTheme: meta.theme ＞ project.theme ＞ localStorage）
+    document.documentElement.dataset.theme = this.resolveTheme();
     this.renderer?.unmount();
     this.viewport.textContent = '';
     this.renderer = createRenderer(this.projection);
@@ -5264,12 +5913,34 @@ class DiagramEditor {
     btn('{ }', 'JSON パネル表示切替', () => this.togglePanel('json'), { role: 'toggle-json' });
   }
 
-  // テーマ切替（既定=ライト。トグルは light ⇄ dark の明示切替）
+  // テーマ切替（既定=ライト。トグルは light ⇄ dark の明示切替）。
+  // G10-B §8: project.theme（プロジェクト単位）＋ localStorage（端末単位の既定）へ書き、
+  // ビュー切替や再読込でも保持する。meta.theme は図単位の明示上書きとして常に併記し続ける
+  // （既存 verify: mbse43 の「promote 後もダーク」テストが meta.theme=mono-dark を前提にしている）。
   toggleTheme() {
     const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
-    this.model.meta.theme = next === 'dark' ? 'mono-dark' : 'mono-light';
+    if (this.project?.project) this.project.project.theme = next;
+    this.localTheme = next;
+    try { localStorage.setItem('de-theme', next); } catch { /* プライベートモード等は黙ってスキップ */ }
+    if (this.model?.meta) this.model.meta.theme = next === 'dark' ? 'mono-dark' : 'mono-light';
+    // このトグルで今の図は「明示宣言あり」になる＝以後は project.theme が変わってもこの図はこのまま
+    if (this.currentId) { this.explicitTheme = this.explicitTheme || new Set(); this.explicitTheme.add(this.currentId); }
     this.mountRenderer(); // 全投影で色を作り直す
+  }
+
+  // 表示テーマの解決順: 図の明示上書き（meta.theme。ただし raw JSON が本当に宣言していた図のみ＝
+  // normalize() が未宣言の図へ補う既定値 'mono-light' と区別する。this.explicitTheme 参照）＞
+  // プロジェクト単位（project.theme）＞ 端末のローカル既定（localStorage）＞ ライト（既定）。
+  resolveTheme() {
+    const mt = this.model?.meta?.theme;
+    if (this.explicitTheme?.has(this.currentId) && (mt === 'mono-dark' || mt === 'mono-light')) {
+      return mt === 'mono-dark' ? 'dark' : 'light';
+    }
+    const pt = this.project?.project?.theme;
+    if (pt === 'dark' || pt === 'light') return pt;
+    if (this.localTheme === 'dark' || this.localTheme === 'light') return this.localTheme;
+    return 'light';
   }
 
   // 左サイドバー: 上=MODEL（graph 全アイテムの木・リサイズ可）／スプリッタ／下=タブ[VIEWS|Palette]
@@ -5991,7 +6662,7 @@ class DiagramEditor {
     const box = this.inspector;
     box.innerHTML = '<h3>Inspector</h3>';
     if (!this.selection) {
-      box.insertAdjacentHTML('beforeend', '<div class="de-help">要素を選択するとプロパティを編集できます</div>');
+      this.renderViewSummary(box);
       return;
     }
     const { kind, id } = this.selection;
@@ -5999,7 +6670,8 @@ class DiagramEditor {
       : kind === 'edge' ? this.model.edges.find(e => e.id === id)
       : this.model.groups.find(g => g.id === id);
     if (!obj) return;
-    box.insertAdjacentHTML('beforeend', `<div class="de-help">${kind}: <b>${id}</b></div>`);
+    // GRAPH_CONTRACT.md §8: 要約4項目（種類/階層/種別/説明）は常時表示・先頭固定（折りたためない）。
+    this.renderSummary(box, kind, id, obj);
 
     const field = (label, value, apply, tag = 'input', opts = null) => {
       const l = document.createElement('label'); l.textContent = label;
@@ -6014,6 +6686,7 @@ class DiagramEditor {
     };
 
     box.insertAdjacentHTML('beforeend', '<h3>基本</h3>');
+    box.insertAdjacentHTML('beforeend', `<div class="de-help">${kind}: <b>${id}</b></div>`);
     field('label', obj.label, v => obj.label = v);
     if (kind === 'node') {
       field('sublabel', obj.sublabel, v => obj.sublabel = v || undefined);
@@ -6091,28 +6764,185 @@ class DiagramEditor {
     this.makeInspectorCollapsible(box);
   }
 
+  // ─── Summary（GRAPH_CONTRACT.md §8）: 種類/階層/種別/説明を常時表示・先頭固定（折りたたまない） ───
+  summaryRow(labelText, value) {
+    const row = document.createElement('div'); row.className = 'de-inspsum-row';
+    const k = document.createElement('div'); k.className = 'de-inspsum-k'; k.textContent = labelText;
+    const v = document.createElement('div'); v.className = 'de-inspsum-v'; v.textContent = value;
+    row.append(k, v);
+    return row;
+  }
+
+  // 説明（インライン編集・auto-grow）。graph-backed（entityId/edge.relationId）は台帳側の
+  // props.description へ書いて rebuildLedger（全図へ反映）。lifted エッジ（relationId 無し＝
+  // 複数 relation の集約で単一の台帳先を持たない）と diagram-local はそのオブジェクト自身の
+  // props.description へ書いて commit（この図のみ）。label は互換のため英語プレフィクスを維持
+  // （mbse2 の verify がラベルテキスト 'description' 前方一致＋nextElementSibling で検出する）。
+  // §9 説明の来歴バッジ。source=抽出器がリポジトリから機械的に取った / ai=AI 生成（basis 不一致なら要再確認）/
+  // human=人が書いた。来歴を持たない説明（旧データ）はバッジを出さない。
+  descriptionBadge(props) {
+    if (!props || !props.description) return null;
+    const src = props.descriptionSource;
+    const spec = src === 'source'
+      ? { text: '✓ 抽出', cls: 'source', tip: 'source: リポジトリ（README / 先頭コメント / frontmatter 等）から機械的に取った説明。元が変われば再抽出で作り直される。' }
+      : src === 'ai'
+        ? (props.descriptionStale
+          ? { text: '⚠ AI・要再確認', cls: 'stale', tip: 'ai（要再確認）: AI が書いた説明。もとになったファイルの内容が書かれた当時から変わっている（descriptionBasis 不一致）。読み直して直す。' }
+          : { text: '▲ AI', cls: 'ai', tip: 'ai: AI が書いた説明。overlay に保存され、再抽出しても消えない。' })
+        : src === 'human'
+          ? { text: '✎ 人', cls: 'human', tip: 'human: 人が書いた説明。再抽出でも AI でも上書きしない。' }
+          : null;
+    if (!spec) return null;
+    const b = document.createElement('span');
+    b.className = 'de-desc-badge de-desc-badge-' + spec.cls;
+    b.dataset.source = spec.cls;
+    b.textContent = spec.text;
+    b.title = spec.tip;
+    return b;
+  }
+
+  descriptionRow(kind, obj) {
+    const row = document.createElement('div'); row.className = 'de-inspsum-row de-inspsum-desc';
+    const l = document.createElement('label'); l.className = 'de-inspsum-k'; l.textContent = 'description（説明）';
+    const ta = document.createElement('textarea'); ta.className = 'de-desc-input'; ta.rows = 1;
+    ta.placeholder = '説明を追加…';
+    let target = obj, isGraph = false;
+    if (kind === 'node' && obj.entityId) {
+      const ent = entityById(this.project, obj.entityId);
+      if (ent) { target = ent; isGraph = true; }
+    } else if (kind === 'edge' && obj.relationId) {
+      const rel = relationById(this.project, obj.relationId);
+      if (rel) { target = rel; isGraph = true; }
+    }
+    ta.value = target?.props?.description || '';
+    // box-sizing:border-box なので枠線 2px を足す（足さないと折り返した最終行が数 px 欠ける）
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = `${ta.scrollHeight + 2}px`; };
+    ta.addEventListener('input', grow);
+    ta.addEventListener('change', () => {
+      const v = ta.value.trim();
+      const before = target.props?.description || '';
+      target.props = target.props || {};
+      if (v) {
+        target.props.description = v;
+        // 人が触った説明は human 層へ（§9.1）。⚠ は解消し、basis は「人が見た版」の記録として残す。
+        if (v !== before) {
+          target.props.descriptionSource = 'human';
+          delete target.props.descriptionStale;
+        }
+      } else {
+        delete target.props.description;
+        delete target.props.descriptionSource;
+        delete target.props.descriptionBasis;
+        delete target.props.descriptionStale;
+      }
+      if (!Object.keys(target.props).length) delete target.props;
+      if (isGraph) { this.rebuildLedger(); } // 内部で select() → renderInspector（バッジも張り直る）
+      else { this.commit(); this.renderInspector(); }
+    });
+    // バッジはテキストの「後」に置く（label.nextElementSibling が textarea である前提の
+    // 既存チェック mbse2 を壊さないため。CSS で値の列へ回り込ませる）
+    row.append(l, ta);
+    const badge = this.descriptionBadge(target?.props);
+    if (badge) row.append(badge);
+    requestAnimationFrame(grow);
+    return row;
+  }
+
+  renderSummary(box, kind, id, obj) {
+    const wrap = document.createElement('div'); wrap.className = 'de-inspsummary';
+    if (kind === 'group') {
+      wrap.appendChild(this.summaryRow('種類', 'グループ'));
+      wrap.appendChild(this.descriptionRow(kind, obj));
+      box.appendChild(wrap);
+      return;
+    }
+    const depthOfRef = raw => {
+      const n = nodeById(this.model, String(raw).split(':')[0]);
+      const gid = n?.entityId || n?.id;
+      const ent = gid ? entityById(this.project, gid) : null;
+      return ent ? graphAncestry(this.project, ent).depth : null;
+    };
+    if (kind === 'node') {
+      const ent = obj.entityId ? entityById(this.project, obj.entityId) : null;
+      wrap.appendChild(this.summaryRow('種類', 'エンティティ'));
+      if (ent) {
+        const { depth, path } = graphAncestry(this.project, ent);
+        wrap.appendChild(this.summaryRow('階層', `${depth} · ${path}`));
+        wrap.appendChild(this.summaryRow('種別', kindLabelForNode(ent)));
+      } else {
+        wrap.appendChild(this.summaryRow('階層', '—'));
+        wrap.appendChild(this.summaryRow('種別', kindLabelForNode(obj)));
+      }
+    } else if (kind === 'edge') {
+      const count = obj.props?.count;
+      wrap.appendChild(this.summaryRow('種類', obj.__lifted ? `エッジ（集約 ×${count ?? '?'}）` : 'エッジ'));
+      const fd = depthOfRef(obj.from), td = depthOfRef(obj.to);
+      wrap.appendChild(this.summaryRow('階層', `${fd ?? '—'} → ${td ?? '—'}`));
+      const relLabel = obj.rel || obj.preset || obj.label || '—';
+      const sub = obj.__lifted ? `（集約 ×${count ?? '?'}）` : (obj.preset && obj.preset !== relLabel ? `（${obj.preset}）` : '');
+      wrap.appendChild(this.summaryRow('種別', `${relLabel}${sub}`));
+    }
+    wrap.appendChild(this.descriptionRow(kind, obj));
+    box.appendChild(wrap);
+  }
+
+  // 何も選んでいないとき: 現在のビューの要約（種類=ビュー / タイトル / ノード数・エッジ数 / select・layout 要旨）
+  renderViewSummary(box) {
+    const d = this.model;
+    const wrap = document.createElement('div'); wrap.className = 'de-inspsummary';
+    wrap.appendChild(this.summaryRow('種類', 'ビュー'));
+    wrap.appendChild(this.summaryRow('タイトル', d?.meta?.title || d?.meta?.id || '—'));
+    wrap.appendChild(this.summaryRow('ノード数 / エッジ数', `${d?.nodes?.length ?? 0} / ${d?.edges?.length ?? 0}`));
+    const sel = d?.select;
+    const selStr = sel ? ([
+      sel.roots?.length ? `roots=${sel.roots.join(',')}` : null,
+      sel.depth !== undefined ? `depth=${sel.depth}` : null,
+      sel.rels?.length ? `rels=${sel.rels.join(',')}` : null,
+      sel.mode ? `mode=${sel.mode}` : null,
+    ].filter(Boolean).join(' ') || '(全件)') : '(なし・手置きのみ)';
+    wrap.appendChild(this.summaryRow('select', selStr));
+    const lay = d?.layout;
+    const layStr = lay ? ([
+      lay.algorithm ? `algorithm=${lay.algorithm}` : null,
+      lay.direction ? `direction=${lay.direction}` : null,
+    ].filter(Boolean).join(' ') || '(既定)') : '(なし)';
+    wrap.appendChild(this.summaryRow('layout', layStr));
+    box.appendChild(wrap);
+  }
+
   // インスペクタ内の各 h3 見出し以下をトグルで折りたためるセクションに再構成（先頭 Inspector 見出しは除く）。
+  // GRAPH_CONTRACT.md §8: 詳細セクションは既定 closed。開閉状態は見出し文言ではなく安定キー
+  // （h.dataset.key。無ければ textContent）ごとに記憶する＝件数入りの動的見出し（例: 関係（この図・N））
+  // でも記憶が切れない。
+  // 例外: '基本' は既定 open のまま残す（verify.mjs #22・G6 が「.de-inspsec-body label:text-is("w")
+  // + input」を実クリック不要な Playwright ロケータで直接 .fill() する既存回帰テストを持っており、
+  // 既定 closed にすると要素が可視化されず timeout でスイート全体が落ちる。GRAPH_CONTRACT §8 は
+  // 基本も既定 closed を求めており、verify.mjs 側でそのフィールドを開いてから操作するよう直せば
+  // 撤廃できる — 詳細は本タスクの報告を参照）。
   makeInspectorCollapsible(box) {
     const kids = [...box.children];
     const groups = []; let cur = null;
     for (const el of kids) {
-      if (el.tagName === 'H3' && el.textContent !== 'Inspector') { cur = { title: el.textContent, head: el, body: [] }; groups.push(cur); }
-      else if (cur) cur.body.push(el);
+      if (el.tagName === 'H3' && el.textContent !== 'Inspector') {
+        cur = { title: el.textContent, key: el.dataset.key || el.textContent, head: el, body: [] };
+        groups.push(cur);
+      } else if (cur) cur.body.push(el);
     }
     for (const g of groups) {
-      const collapsed = this.inspSecClosed?.has(g.title);
+      const remembered = this.inspSecState?.get(g.key);
+      const open = remembered !== undefined ? remembered : DEFAULT_OPEN_INSPSECS.has(g.key);
       const wrap = document.createElement('div'); wrap.className = 'de-inspsec';
       const head = document.createElement('button'); head.className = 'de-inspsec-head'; head.dataset.role = 'inspsec-toggle';
-      const car = document.createElement('span'); car.className = 'de-inspsec-caret'; car.textContent = collapsed ? '▸' : '▾';
+      const car = document.createElement('span'); car.className = 'de-inspsec-caret'; car.textContent = open ? '▾' : '▸';
       head.append(car, document.createTextNode(g.title));
-      const bodyEl = document.createElement('div'); bodyEl.className = 'de-inspsec-body'; if (collapsed) bodyEl.classList.add('de-collapsed');
+      const bodyEl = document.createElement('div'); bodyEl.className = 'de-inspsec-body'; if (!open) bodyEl.classList.add('de-collapsed');
       g.head.replaceWith(wrap);
       for (const b of g.body) bodyEl.appendChild(b); // 既存ノードを移設（リスナー保持）
       wrap.append(head, bodyEl);
       head.addEventListener('click', () => {
-        const c = bodyEl.classList.toggle('de-collapsed'); car.textContent = c ? '▸' : '▾';
-        this.inspSecClosed = this.inspSecClosed || new Set();
-        if (c) this.inspSecClosed.add(g.title); else this.inspSecClosed.delete(g.title); // 再描画後も開閉状態を保持
+        const collapsedNow = bodyEl.classList.toggle('de-collapsed'); car.textContent = collapsedNow ? '▸' : '▾';
+        this.inspSecState = this.inspSecState || new Map();
+        this.inspSecState.set(g.key, !collapsedNow); // 再描画後も開閉状態を保持（既定からの差分として）
       });
     }
   }
@@ -6409,7 +7239,7 @@ class DiagramEditor {
     field('provenance（来歴）', p.provenance || '', v => set('provenance', v || undefined), 'select', ['', 'human', 'ai-assign', 'ai-draft', 'doc']);
     field('status（状態）', p.status || '', v => set('status', v || undefined));
     field('priority（優先度）', p.priority || '', v => set('priority', v || undefined));
-    field('description（説明）', p.description || '', v => set('description', v || undefined), 'textarea');
+    // description は Summary（§8・常時表示）へ集約。ここでは重複させない。
     field('rationale（根拠）', p.rationale || '', v => set('rationale', v || undefined), 'textarea');
     field('verification（検証）', p.verification || '', v => set('verification', v || undefined));
     field('tags（カンマ区切り）', (p.tags || []).join(', '), v => {
@@ -6488,6 +7318,7 @@ class DiagramEditor {
     const inc = this.model.edges.filter(e => e.from.split(':')[0] === nodeId || e.to.split(':')[0] === nodeId);
     const h = document.createElement('h3');
     h.textContent = `関係（この図・${inc.length}）`; h.style.marginTop = '14px';
+    h.dataset.key = 'relations'; // 見出しは件数入りで変動する＝開閉記憶は安定キーで（GRAPH_CONTRACT §8）
     box.appendChild(h);
     if (!inc.length) {
       box.insertAdjacentHTML('beforeend', '<div class="de-help">この図での接続はありません</div>');

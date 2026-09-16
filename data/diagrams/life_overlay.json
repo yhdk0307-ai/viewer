@@ -43,12 +43,13 @@
     { "id": "pub", "label": "Publish", "z": 2, "elevation": 600 }
    ],
    "groups": [
+    { "id": "frame_life", "label": "life", "kind": "container", "pad": 110, "members": ["claude_md", "claude_dir", "gh_workflows", "knowledge", "ideas", "outputs", "tools", "docs", "viewer"] },
     { "id": "plate_gov", "label": "Governance", "kind": "platform", "layer": "gov", "x": 20, "y": 80, "w": 960, "h": 340 },
     { "id": "plate_dev", "label": "Development", "kind": "platform", "layer": "dev", "x": 20, "y": 80, "w": 960, "h": 420 },
     { "id": "plate_pub", "label": "Publish", "kind": "platform", "layer": "pub", "x": 260, "y": 160, "w": 480, "h": 240 }
    ],
    "nodes": [
-    { "id": "claude_md", "type": "block", "label": "CLAUDE.md", "icon": "book", "x": 120, "y": 160, "w": 160, "h": 80, "layer": "gov", "style": { "accent": true } },
+    { "id": "claude_md", "entityId": "CLAUDE.md", "type": "block", "label": "CLAUDE.md", "icon": "book", "x": 120, "y": 160, "w": 160, "h": 80, "layer": "gov", "style": { "accent": true } },
     { "id": "claude_dir", "entityId": ".claude", "type": "block", "label": ".claude/ rules+skills", "icon": "shield-check", "x": 420, "y": 160, "w": 180, "h": 80, "layer": "gov", "link": "subsystems" },
     { "id": "gh_workflows", "entityId": ".github", "type": "block", "label": ".github/ workflows", "icon": "gear", "x": 720, "y": 160, "w": 180, "h": 80, "layer": "gov", "link": "publish_flow" },
     { "id": "knowledge", "entityId": "knowledge", "type": "block", "label": "knowledge/", "icon": "book", "x": 80, "y": 140, "w": 150, "h": 80, "layer": "dev" },
