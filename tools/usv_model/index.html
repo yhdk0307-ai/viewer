@@ -1359,15 +1359,15 @@
 <tr><th>係数</th><th>効く式</th><th>実験式・仮定</th><th>BEM（ポテンシャル流）</th><th>CFD（RANS）</th><th>曳航・水槽試験</th><th>現状・切替</th></tr>
 <tr><td>摩擦抵抗 C<sub>F</sub>・形状影響 (1+k)</td><td>4.1・4.2</td><td><b>ITTC-1957 相関線</b>／(1+k)=1.25 仮定</td><td>出ない（粘性なし）</td><td>出る</td><td>出る（低速域から k）</td><td>実験式。§5.2</td></tr>
 <tr><td>剰余（造波）抵抗 C<sub>R</sub></td><td>4.1・4.2</td><td><b>Fn と痩せ型比の関数・較正値</b></td><td>前進速度つき BEM なら出る（本モデルの BEM は速度ゼロ・未使用）</td><td>出る（自由表面つき）</td><td>出る</td><td>実験式。sw①で再較正。§5.2</td></tr>
-<tr><td>波浪中抵抗増加 R<sub>AW</sub> の応答関数 Φ</td><td>4.1・4.2</td><td><b>反射モデル（短波長漸近）</b>。運動起因分は含まない</td><td>平均波漂流力（反射＋運動起因）。速度は出会い周波数で近似</td><td>出る（非線形・大波高も）</td><td>出る（不規則波中抵抗増加）</td><td>sw⑥で反射／BEM。§5.3</td></tr>
-<tr><td>風圧抵抗 C<sub>d</sub>・A<sub>F</sub></td><td>4.1・4.2</td><td><b>抗力係数 0.8 仮定</b></td><td>出ない</td><td>出る（空力）</td><td>風洞</td><td>実験式。§5.4</td></tr>
+<tr><td>③</td><td>波浪中抵抗増加 R<sub>AW</sub> の応答関数 Φ</td><td>4.1・4.2</td><td><b>反射モデル（短波長漸近）</b>。運動起因分は含まない</td><td>平均波漂流力（反射＋運動起因）。速度は出会い周波数で近似</td><td>出る（非線形・大波高も）</td><td>出る（不規則波中抵抗増加）</td><td>sw⑥で反射／BEM。§5.3</td></tr>
+<tr><td>⑧</td><td>風圧抵抗 C<sub>d</sub>・A<sub>F</sub></td><td>4.1・4.2</td><td><b>抗力係数 0.8 仮定</b></td><td>出ない</td><td>出る（空力）</td><td>風洞</td><td>実験式。§5.4</td></tr>
 <tr><td>付加質量 A・減衰 B・波強制力 F（上下動・縦揺れ）</td><td>4.3</td><td><b>2 次系の仮定</b>（付加質量比 0.8・減衰比 0.35）</td><td>出る（ω 依存の表）</td><td>出る</td><td>強制動揺試験</td><td>sw②で簡易／BEM。§8.1</td></tr>
 <tr><td>横揺れ減衰 B<sub>44</sub></td><td>4.3</td><td><b>抗力モデル</b>（摩擦＋船底＋キール）／一定 ζ</td><td>放射分のみ（実際の 1/3 以下）</td><td>出る</td><td>自由横揺れ試験</td><td>sw③。§8.2</td></tr>
 <tr><td>復原てこ GZ(φ)・GM</td><td>4.4</td><td>—</td><td>—（静水力学で出る。3D 形状の面積分）</td><td>—</td><td>傾斜試験（KG の実測）</td><td><b>3D 形状から計算</b>。KG は sw④。§13.3</td></tr>
 <tr><td>喫水 d・濡れ面積 S・水線面積 A<sub>w</sub></td><td>4.1〜4.3</td><td>方形係数・Denny-Mumford 近似</td><td>—（3D 形状の面積分）</td><td>—</td><td>実測</td><td>sw①で解析式／3D 形状計算。§13.1</td></tr>
 <tr><td>質量 m・重心 KG・慣動半径 k<sub>44</sub> k<sub>55</sub></td><td>4.1〜4.4</td><td>手入力</td><td>—</td><td>—</td><td>重量計測・傾斜試験</td><td>sw④で手入力／重量表。§13.12</td></tr>
 <tr><td>推進効率 η<sub>ctrl</sub> η<sub>motor</sub> η<sub>prop</sub></td><td>4.6</td><td><b>損失分解＋効率カーブ</b>（推進機の公称総合効率で拘束）</td><td>—</td><td>プロペラ CFD</td><td>ベンチ試験・ボラード試験</td><td>実験式。§6</td></tr>
-<tr><td>日射 G・雲量係数・PV ディレート</td><td>4.5</td><td><b>晴天モデル×雲量</b>（緯度・月）</td><td>—</td><td>—</td><td>実艇の発電ログ</td><td>実験式。§7</td></tr>
+<tr><td>⑨</td><td>日射 G・雲量係数・PV ディレート</td><td>4.5</td><td><b>晴天モデル×雲量</b>（緯度・月）</td><td>—</td><td>—</td><td>実艇の発電ログ</td><td>実験式。§7</td></tr>
 </table></div>
 <p style="font-size:12.5px;color:var(--muted)">「—」はその手法の対象外（別の手法で求める量）。「出ない」はその手法の原理上出せない量。BEM で原理的に扱えないものの一覧は §5.5。</p>
 </details>
@@ -1672,7 +1672,7 @@
 <details class="sec" id="s9" open><summary><span class="no">§9</span><span class="ttl">較正と検証</span></summary>
 <div class="tbl"><table>
 <tr><th>較正した量</th><th>合わせた基準（出典）</th><th>決まった値</th></tr>
-<tr><td>剰余抵抗係数 <math><msub><mi>C</mi><mrow><mi>R</mi><mn>0</mn></mrow></msub></math></td><td>最高速力 4.5 kt（Seasats Lightfish の公表値。同艇で唯一の速度系の公表値）◎</td><td>解析式モード 0.00284 ／ 3D 形状モード 0.00264</td></tr>
+<tr><td>④</td><td>剰余抵抗係数 <math><msub><mi>C</mi><mrow><mi>R</mi><mn>0</mn></mrow></msub></math></td><td>最高速力 4.5 kt（Seasats Lightfish の公表値。同艇で唯一の速度系の公表値）◎</td><td>解析式モード 0.00284 ／ 3D 形状モード 0.00264</td></tr>
 <tr><td>ホテル負荷 <math><msub><mi>P</mi><mi>hotel</mi></msub></math></td><td>無日照航続 575 nm（同艇の公表値からの逆算）○</td><td>104 W</td></tr>
 </table></div>
 <p>自由パラメータはこの 2 個だけで、V3 以降の検証ケースは較正に使っていない（ブラインド）。したがってモデルの信頼度は、この 2 つの公表値がどういう条件で測られたかに依存するが、測定条件は非公開である（§11 の限界も参照）。独立に実装した 2 つの計算で数値が一致することを確認した。</p>
@@ -1736,19 +1736,24 @@
 
 <!-- ═══════════ §10 ═══════════ -->
 <details class="sec" id="s10" open><summary><span class="no">§10</span><span class="ttl">実験式・仮定を実測値に置き換える計画</span></summary>
-<p>本モデルの精度は実験式・仮定の質で決まる。各実験式・仮定は<b>関数インターフェースを変えずにテーブル/マップへ差し替えられる</b>よう設計してある。優先度は「結果への感度 × 現在の不確かさ」で付けた。</p>
+<p>本モデルの精度は実験式・仮定の質で決まる。各項目は、<b>支配式を変えずに実測値の表へ差し替えられる</b>形にしてある。優先度は「結果への感度 × 現在の不確かさ」で付けた。</p>
 <div class="tbl"><table>
-<tr><th>実験式・仮定</th><th>現状</th><th>置換インターフェース</th><th>推奨手段</th><th>優先度</th></tr>
-<tr><td>波浪中抵抗増加 <math><msub><mi>Φ</mi><mi>aw</mi></msub></math>（式15）</td><td>反射モデル（実験式）または BEM（速度ゼロ）。<b>いずれも運動起因成分なし</b>（§9 V4 注記）</td><td><math><mrow><msub><mi>Φ</mi><mi>aw</mi></msub><mo>(</mo><mi>ω</mi><mo>,</mo><mi>V</mi><mo>)</mo></mrow></math> テーブル</td><td><b>前進速度を含む BEM（ランキンパネル法。自由表面にもパネルを張り、定常流と遭遇周波数を含めて解く）と曳航・実走</b>。耐航性能 Sim（ストリップ法）でも可</td><td><b>最高</b></td></tr>
-<tr><td>耐航性の係数 <math><msub><mi>H</mi><mi>h</mi></msub></math>, <math><msub><mi>H</mi><mi>θ</mi></msub></math>（付加質量・減衰・波強制力・式20）</td><td>1 自由度近似または BEM（速度ゼロ）</td><td><math><mrow><mi>H</mi><mo>(</mo><mi>ω</mi><mo>,</mo><mi>V</mi><mo>,</mo><mi>χ</mi><mo>)</mo></mrow></math> テーブル（波向 χ 含む）</td><td><b>前進速度を含む BEM（ランキンパネル法）と動揺計測</b>。QTF と同時に得られる</td><td><b>最高</b></td></tr>
-<tr><td>剰余抵抗 <math><msub><mi>C</mi><mi>R</mi></msub></math>（式13・6′）</td><td>Fn⁴ 形・1 点較正。排水量依存は薄船理論の p=4 で近似</td><td><math><mrow><msub><mi>C</mi><mi>R</mi></msub><mo>(</mo><mi>Fn</mi><mo>,</mo><mi>M</mi><mo>)</mo></mrow></math> の 2 次元テーブル</td><td><b>曳航水槽の系統試験</b>（排水量スイープ）または CFD（RANS・自由表面）。<b>造波成分のみなら BEM</b>（ポテンシャル流: ミッチェル積分・ランキンパネル法）でも計算可——ただし剰余には粘性形状分も含まれ、BEM は (1+k)C_F を扱えないため摩擦系と分けた検証が必要。指数 p の実測が第一目標</td><td>高</td></tr>
-<tr><td>PV ディレート <math><msub><mi>f</mi><mi>der</mi></msub></math></td><td>一括 0.70 仮定</td><td>時変 <math><mrow><msub><mi>f</mi><mi>der</mi></msub><mo>(</mo><mi>t</mi><mo>)</mo></mrow></math>（汚損進行込み）</td><td><b>実艇曝露試験</b>（長期滞留判定がこの値に敏感＝§11）</td><td>高</td></tr>
-<tr><td>モーター効率（式17）</td><td>損失 3 係数</td><td>η(トルク, 回転数) 2次元マップ</td><td><b>モーターベンチ試験</b>（ポッド実物）</td><td>中</td></tr>
-<tr><td>プロペラ効率（式18）</td><td>1 山カーブ＋運動量理論上限</td><td>K_T/K_Q–J テーブル</td><td><b>プロペラ単独試験</b>＋ボラード試験。CFD でも可</td><td>中</td></tr>
-<tr><td>風圧 <math><msub><mi>C</mi><mi>d</mi></msub></math>（式16）</td><td>一定 0.8 仮定</td><td><math><mrow><msub><mi>C</mi><mi>X</mi></msub><mo>(</mo><mi>ψ</mi><mo>)</mo></mrow></math> テーブル</td><td>風洞試験 / CFD（第2級項なので優先度低め）</td><td>低</td></tr>
-<tr><td>日射 G(t)（式19）</td><td>Haurwitz＋雲量係数</td><td>海域別時系列</td><td>衛星再解析データ（ERA5 等）の統計</td><td>低</td></tr>
-<tr><td>電池（式10）</td><td>固定効率・容量一定</td><td>SOC/温度依存の等価回路＋劣化</td><td>電池特性試験（長期ミッションでは劣化が効く）</td><td>低</td></tr>
+<tr><th>順序</th><th>実験式・仮定</th><th>現状</th><th>置き換える形（何を表にするか）</th><th>推奨手段</th><th>置換後の検証</th><th>費用・期間</th><th>優先度</th></tr>
+<tr><td>①</td><td>ホテル負荷 <math><msub><mi>P</mi><mi>hotel</mi></msub></math></td><td>公表航続からの逆算で 104 W の一定値（§9 の較正パラメータ）</td><td>運用モード別の消費電力（航走時・観測時・待機時）</td><td><b>実艇の電力ログ</b>（機器ごとの分電計測）</td><td>積算電力とログの一致・モード遷移の再現</td><td>安い・数週間</td><td><b>最高</b></td></tr>
+<tr><td>②</td><td>重心高さ KG と重量分布</td><td>重量表からの推定または手入力（△）</td><td>実測の重心高さと慣動半径</td><td><b>傾斜試験</b>（および振り子試験）</td><td>復原てこの傾き（GM）と横揺れ固有周期の一致</td><td>安い・数日</td><td><b>最高</b></td></tr>
+<tr><td>③</td><td>波浪中抵抗増加 <math><msub><mi>Φ</mi><mi>aw</mi></msub></math>（式15）</td><td>反射モデル（実験式）または BEM（速度ゼロ）。<b>いずれも運動起因成分なし</b>（§9 V4 注記）</td><td><math><mrow><msub><mi>Φ</mi><mi>aw</mi></msub><mo>(</mo><mi>ω</mi><mo>,</mo><mi>V</mi><mo>)</mo></mrow></math> テーブル</td><td><b>前進速度を含む BEM（ランキンパネル法。自由表面にもパネルを張り、定常流と遭遇周波数を含めて解く）と曳航・実走</b>。耐航性能 Sim（ストリップ法。船体を横断面の並びに分けて 2 次元問題として解く方法で、前進速度つきの係数が得られ、3 次元のパネル法より計算が軽い。精度は船型が細長い場合に限られる）でも可</td><td>半球（速度ゼロ極限）と Wigley 船型（文献値）の再現</td><td>中・数週間〜1 か月（ランキンパネル法の自作）</td><td><b>最高</b></td></tr>
+<tr><td>③</td><td>耐航性の係数 <math><msub><mi>H</mi><mi>h</mi></msub></math>, <math><msub><mi>H</mi><mi>θ</mi></msub></math>（付加質量・減衰・波強制力・式20）</td><td>1 自由度近似または BEM（速度ゼロ）</td><td><math><mrow><mi>H</mi><mo>(</mo><mi>ω</mi><mo>,</mo><mi>V</mi><mo>,</mo><mi>χ</mi><mo>)</mo></mrow></math> テーブル（波向 χ 含む）</td><td><b>前進速度を含む BEM（ランキンパネル法）と動揺計測</b>。QTF と同時に得られる</td><td>半球（速度ゼロ極限）と Wigley 船型（文献値）の再現</td><td>中・数週間〜1 か月（ランキンパネル法の自作）</td><td><b>最高</b></td></tr>
+<tr><td>④</td><td>剰余抵抗 <math><msub><mi>C</mi><mi>R</mi></msub></math>（式13・6′）</td><td>Fn⁴ 形・1 点較正。排水量依存は薄船理論の p=4 で近似</td><td><math><mrow><msub><mi>C</mi><mi>R</mi></msub><mo>(</mo><mi>Fn</mi><mo>,</mo><mi>M</mi><mo>)</mo></mrow></math> の 2 次元テーブル</td><td><b>曳航水槽の系統試験</b>（排水量スイープ）または CFD（RANS・自由表面）。<b>造波成分のみなら BEM</b>（ポテンシャル流: ミッチェル積分・ランキンパネル法）でも計算可——ただし剰余には粘性形状分も含まれ、BEM は (1+k)C_F を扱えないため摩擦系と分けた検証が必要。指数 p の実測が第一目標</td><td>較正点の再現と速度依存の一致</td><td>高・1〜2 か月（曳航水槽の系統試験）／中（CFD）</td><td>高</td></tr>
+<tr><td>⑤</td><td>PV ディレート <math><msub><mi>f</mi><mi>der</mi></msub></math></td><td>一括 0.70 仮定</td><td>時変 <math><mrow><msub><mi>f</mi><mi>der</mi></msub><mo>(</mo><mi>t</mi><mo>)</mo></mrow></math>（汚損進行込み）</td><td><b>実艇曝露試験</b>（長期滞留判定がこの値に敏感＝§11）</td><td>実艇の発電ログとの一致（汚損進行を含む）</td><td>安い・数週間〜数か月（曝露期間）</td><td>高</td></tr>
+<tr><td>⑥</td><td>モーター効率（式17）</td><td>損失 3 係数</td><td>η(トルク, 回転数) 2次元マップ</td><td><b>モーターベンチ試験</b>（ポッド実物）</td><td>ベンチ試験の効率マップと航走時の消費電力実測との一致</td><td>中・数週間〜1 か月</td><td>中</td></tr>
+<tr><td>⑦</td><td>プロペラ効率（式18）</td><td>1 山カーブ＋運動量理論上限</td><td>K_T/K_Q–J テーブル</td><td><b>プロペラ単独試験</b>＋ボラード試験。CFD でも可</td><td>単独試験の K_T/K_Q–J カーブと実航走のスラスト・回転数との一致</td><td>中・数週間〜1 か月</td><td>中</td></tr>
+<tr><td>⑧</td><td>風圧 <math><msub><mi>C</mi><mi>d</mi></msub></math>（式16）</td><td>一定 0.8 仮定</td><td><math><mrow><msub><mi>C</mi><mi>X</mi></msub><mo>(</mo><mi>ψ</mi><mo>)</mo></mrow></math> テーブル</td><td>風洞試験 / CFD（第2級項なので優先度低め）</td><td>停止時の風圧力の実測との一致</td><td>中・数週間〜1 か月</td><td>低</td></tr>
+<tr><td>⑨</td><td>日射 G(t)（式19）</td><td>Haurwitz＋雲量係数</td><td>海域別時系列</td><td>衛星再解析データ（ERA5 等）の統計</td><td>実艇の発電ログとの一致</td><td>安い・数日〜数週間</td><td>低</td></tr>
+<tr><td>⑩</td><td>電池（式10）</td><td>固定効率・容量一定</td><td>SOC/温度依存の等価回路＋劣化</td><td>電池特性試験（長期ミッションでは劣化が効く）</td><td>充放電試験の SOC 追従</td><td>安い・数週間</td><td>低</td></tr>
 </table></div>
+<p class="cap" style="font-size:12px;color:var(--muted)">費用・期間は一般的な相場に基づく概算であり、社内実績値ではない。</p>
+<p>根拠として 1 文ずつ: ホテル負荷は感度が最も大きく（±10% で成功率が約 8 ポイント動く・§11 の発見 1）、重心高さは転覆と復帰の限界波高に直接効く（±10% で約 4%）。どちらも安く実測できる。</p>
+<p>表の順序は、安く効くものを先に置いたもの。</p>
 <p>「最高」の 2 行（波浪中抵抗増加と耐航性の係数）は<b>同じ前進速度つき BEM 計算から同時に得られる</b>ため、最初の投資はランキンパネル法の導入が最も効率が良い。いまの BEM（速度ゼロ）は前進速度ゼロで解いているため、設計速力（Fn≈0.41）では遭遇周波数と定常流の影響が抜けており、<b>中途半端な段階</b>にある（§5.5・§9 V4 注記）。ランキンパネル法に進めば、速度つきの係数と付加抵抗を同じ枠組みで出せる。検証は半球（速度ゼロ極限）と Wigley 船型（文献値）で行う。</p>
 </details>
 
