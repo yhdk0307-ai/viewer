@@ -659,7 +659,7 @@
     <div class="kpi"><div class="k">ピッチ RMS</div><div class="v" id="s-pitch">–</div><div class="n" id="s-pitch-n">基準 ≤ 10°（仮置き）</div></div>
     <div class="kpi"><div class="k">上下加速度 RMS</div><div class="v" id="s-accel">–</div><div class="n" id="s-accel-n">基準 ≤ 0.5g（仮置き）</div></div>
     <div class="kpi"><div class="k">運用限界 Hs（この周期で）</div><div class="v" id="s-limhs">–</div><div class="n" id="s-verdict"></div></div>
-    <div class="kpi"><div class="k">ロール RMS（横波・参考）</div><div class="v" id="s-rollrms">–</div><div class="n" id="s-rollzeta">BEM表使用時のみ・判定には不使用</div></div>
+    <div class="kpi"><div class="k">ロール RMS（横波・参考）</div><div class="v" id="s-rollrms">–</div><div class="n" id="s-rollzeta">BEM（速度ゼロ）使用時のみ・判定には不使用</div></div>
   </div>
   <div class="cap">1自由度近似（減衰比 0.35・付加質量は代表値の<b>仮定</b>。位相と相対水位運動は未評価）。応答は Hs に線形なので限界 Hs = Hs × min(基準/RMS)。<b>注意</b>: 運動と抵抗増加はまだ連成していない（抵抗側は反射成分のみ）。</div>
 </div>
@@ -978,10 +978,10 @@
   <figure><svg id="hull-a55b55" viewBox="0 0 420 260" role="img" aria-label="ピッチ付加慣性A55と減衰B55の周波数特性" style="width:100%;height:auto;display:block"></svg>
   <figcaption>図H4: A55(ω)・B55(ω)（ピッチ）。</figcaption></figure>
 </div>
-<figure><svg id="hull-rao" viewBox="0 0 700 300" role="img" aria-label="ヒーブ・ピッチRAOのBEM表と解析式の比較" style="width:100%;height:auto;display:block"></svg>
-<figcaption>図H5: V=0 でのヒーブ・ピッチ RAO — BEM 表補間 vs 0-D 解析式（実線=BEM・破線=解析式）。</figcaption></figure>
+<figure><svg id="hull-rao" viewBox="0 0 700 300" role="img" aria-label="ヒーブ・ピッチRAOのBEM（速度ゼロ）と解析式の比較" style="width:100%;height:auto;display:block"></svg>
+<figcaption>図H5: V=0 でのヒーブ・ピッチ RAO — BEM（速度ゼロ）の係数を周波数で補間 vs 0-D 解析式（実線=BEM・破線=解析式）。</figcaption></figure>
 <figure><svg id="hull-zeta44" viewBox="0 0 700 220" role="img" aria-label="有義波高に対するロール等価粘性減衰比ζ44の特性" style="width:100%;height:auto;display:block"></svg>
-<figcaption>図H6: 有義波高 Hs に対する等価ロール減衰比 ζ44_eff（sw③＝抗力モデル・現在の周期 Tp・V=0・BEM 表の固有周波数 ω_n で評価）。摩擦（Kato）＋船底/キール2次抗力の確率的線形化（設計書§8.2・S4-7）。</figcaption></figure>
+<figcaption>図H6: 有義波高 Hs に対する等価ロール減衰比 ζ44_eff（sw③＝抗力モデル・現在の周期 Tp・V=0・BEM（速度ゼロ）の固有周波数 ω_n で評価）。摩擦（Kato）＋船底/キール2次抗力の確率的線形化（設計書§8.2・S4-7）。</figcaption></figure>
 <div class="tbl" style="overflow-x:auto"><table id="hull-fit-table"></table></div>
 <div class="tbl" style="overflow-x:auto"><table id="hull-tn-table"></table></div>
 
@@ -1199,7 +1199,7 @@
 <tr><td class="sym"><math><msub><mi>ω</mi><mrow><mi>n</mi><mo>,</mo><mi>h</mi></mrow></msub></math></td><td>ヒーブ固有角周波数</td><td>共振周期 T<sub>n</sub>≈1.6 s を与える</td><td>rad/s</td><td class="num">○</td></tr>
 <tr><td class="sym"><math><msub><mi>ζ</mi><mi>h</mi></msub></math>, <math><msub><mi>ζ</mi><mi>θ</mi></msub></math></td><td>ヒーブ・ピッチ減衰比</td><td>共振ピークの高さを決める（放射＋粘性）</td><td>—</td><td class="num">0.35 △</td></tr>
 <tr><td class="sym"><math><msub><mi>μ</mi><mi>a</mi></msub></math></td><td>付加質量比（ヒーブ／ピッチ）</td><td>固有周波数の分母補正。0.8 と仮定</td><td>—</td><td class="num">0.8 △</td></tr>
-<tr><td class="sym"><math><mrow><mi>K</mi><mi>G</mi></mrow></math></td><td>重心高さ（キール基線から）</td><td>復原力 GZ を決める最大の量。sw④（質量と重心の与え方）が手入力なら入力値、重量表なら部品の積み上げ（§13.12）</td><td>m</td><td class="num">0.15 △（手入力）／0.147 ○（重量表）</td></tr><tr><td class="sym"><math><mrow><mi>G</mi><mi>M</mi></mrow></math></td><td>初期復原てこ（メタセンタ高さ）</td><td>小傾斜の復原力とロール固有周期を決める。<math><mrow><mi>G</mi><mi>M</mi><mo>=</mo><mi>K</mi><mi>B</mi><mo>+</mo><mi>B</mi><mi>M</mi><mo>−</mo><mi>K</mi><mi>G</mi></mrow></math></td><td>m</td><td class="num">0.317 ○（KG=0.15 のとき）</td></tr><tr><td class="sym"><math><mrow><mi>GZ</mi><mo>(</mo><mi>φ</mi><mo>)</mo></mrow></math></td><td>復原てこ</td><td>重心 G と浮力の作用線の水平距離。傾斜角 φ での復原モーメント <math><mrow><mi>m</mi><mi>g</mi><mi>GZ</mi></mrow></math>を作り、積分すると転覆・復帰に要る仕事になる（§13.3〜§13.4）</td><td>m</td><td class="num">—</td></tr><tr><td class="sym"><math><msub><mi>ζ</mi><mn>44</mn></msub></math></td><td>ロール減衰比</td><td>横揺れの減衰。sw③（横揺れ減衰の求め方）が抗力モデルなら摩擦・船底・キールの和から求まり Hs とともに増える、一定 ζ なら固定値（§8.2）</td><td>—</td><td class="num">0.089〜0.186 ○（抗力モデル・Hs 依存）／0.08 △（一定 ζ）</td></tr><tr><td class="sym"><math><msub><mi>T</mi><mi>roll</mi></msub></math></td><td>ロール固有周期</td><td>想定波周期 5〜11 s より桁で短く、ロール共振が起きないことを示す（§13.4.4）</td><td>s</td><td class="num">≈0.9〜1.4 ○（k44・KG の与え方による）</td></tr><tr><td class="sym"><math><msub><mi>k</mi><mn>44</mn></msub></math></td><td>ロール慣動半径</td><td>ロール慣性 <math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>。既定（sw④＝手入力）は 0.35B の仮定、重量表 なら重量表（§13.12）の <code>massProps()</code> から部品自己慣性 r44 込みで算出（S6）</td><td>m</td><td class="num">0.315（=0.35B）△／表 0.212 ○（点質量のみ 0.103）</td></tr><tr><td class="sym"><math><msub><mi>I</mi><mn>44</mn></msub></math></td><td>ロール慣性モーメント</td><td>船体（付加物含む）が横揺れするときの回転慣性。<math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>（m は sw④ の与え方による質量）。周波数応答（§8.2）と復原力シミュレーション（§13.15）の両方で使う共通量</td><td>kg·m²</td><td class="num">24.3 ○（KG=0.15・k44=0.315 のとき）</td></tr><tr><td class="sym"><math><msub><mi>A</mi><mn>44</mn></msub></math></td><td>付加慣性モーメント（ロール）</td><td>横揺れに伴い連れ回る周囲水の見かけの慣性。周波数応答（§8.2）は BEM 表の周波数依存値を使い、復原力シミュレーション（§13.15）は BEM 較正から求めた無次元付加慣性比 <math><msub><mi>a</mi><mn>44</mn></msub></math> による一定の代表値 <math><mrow><msub><mi>A</mi><mn>44</mn></msub><mo>=</mo><msub><mi>a</mi><mn>44</mn></msub><msub><mi>I</mi><mn>44</mn></msub></mrow></math> を使う</td><td>kg·m²</td><td class="num">a44≈0.54 ○（BEM フィット）</td></tr>
+<tr><td class="sym"><math><mrow><mi>K</mi><mi>G</mi></mrow></math></td><td>重心高さ（キール基線から）</td><td>復原力 GZ を決める最大の量。sw④（質量と重心の与え方）が手入力なら入力値、重量表なら部品の積み上げ（§13.12）</td><td>m</td><td class="num">0.15 △（手入力）／0.147 ○（重量表）</td></tr><tr><td class="sym"><math><mrow><mi>G</mi><mi>M</mi></mrow></math></td><td>初期復原てこ（メタセンタ高さ）</td><td>小傾斜の復原力とロール固有周期を決める。<math><mrow><mi>G</mi><mi>M</mi><mo>=</mo><mi>K</mi><mi>B</mi><mo>+</mo><mi>B</mi><mi>M</mi><mo>−</mo><mi>K</mi><mi>G</mi></mrow></math></td><td>m</td><td class="num">0.317 ○（KG=0.15 のとき）</td></tr><tr><td class="sym"><math><mrow><mi>GZ</mi><mo>(</mo><mi>φ</mi><mo>)</mo></mrow></math></td><td>復原てこ</td><td>重心 G と浮力の作用線の水平距離。傾斜角 φ での復原モーメント <math><mrow><mi>m</mi><mi>g</mi><mi>GZ</mi></mrow></math>を作り、積分すると転覆・復帰に要る仕事になる（§13.3〜§13.4）</td><td>m</td><td class="num">—</td></tr><tr><td class="sym"><math><msub><mi>ζ</mi><mn>44</mn></msub></math></td><td>ロール減衰比</td><td>横揺れの減衰。sw③（横揺れ減衰の求め方）が抗力モデルなら摩擦・船底・キールの和から求まり Hs とともに増える、一定 ζ なら固定値（§8.2）</td><td>—</td><td class="num">0.089〜0.186 ○（抗力モデル・Hs 依存）／0.08 △（一定 ζ）</td></tr><tr><td class="sym"><math><msub><mi>T</mi><mi>roll</mi></msub></math></td><td>ロール固有周期</td><td>想定波周期 5〜11 s より桁で短く、ロール共振が起きないことを示す（§13.4.4）</td><td>s</td><td class="num">≈0.9〜1.4 ○（k44・KG の与え方による）</td></tr><tr><td class="sym"><math><msub><mi>k</mi><mn>44</mn></msub></math></td><td>ロール慣動半径</td><td>ロール慣性 <math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>。既定（sw④＝手入力）は 0.35B の仮定、重量表 なら重量表（§13.12）の <code>massProps()</code> から部品自己慣性 r44 込みで算出（S6）</td><td>m</td><td class="num">0.315（=0.35B）△／表 0.212 ○（点質量のみ 0.103）</td></tr><tr><td class="sym"><math><msub><mi>I</mi><mn>44</mn></msub></math></td><td>ロール慣性モーメント</td><td>船体（付加物含む）が横揺れするときの回転慣性。<math><mrow><msub><mi>I</mi><mn>44</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>44</mn><mn>2</mn></msubsup></mrow></math>（m は sw④ の与え方による質量）。周波数応答（§8.2）と復原力シミュレーション（§13.15）の両方で使う共通量</td><td>kg·m²</td><td class="num">24.3 ○（KG=0.15・k44=0.315 のとき）</td></tr><tr><td class="sym"><math><msub><mi>A</mi><mn>44</mn></msub></math></td><td>付加慣性モーメント（ロール）</td><td>横揺れに伴い連れ回る周囲水の見かけの慣性。周波数応答（§8.2）は BEM（速度ゼロ）の周波数依存値を使い、復原力シミュレーション（§13.15）は BEM 較正から求めた無次元付加慣性比 <math><msub><mi>a</mi><mn>44</mn></msub></math> による一定の代表値 <math><mrow><msub><mi>A</mi><mn>44</mn></msub><mo>=</mo><msub><mi>a</mi><mn>44</mn></msub><msub><mi>I</mi><mn>44</mn></msub></mrow></math> を使う</td><td>kg·m²</td><td class="num">a44≈0.54 ○（BEM フィット）</td></tr>
 <tr><td class="sym"><math><msub><mi>k</mi><mn>55</mn></msub></math></td><td>ピッチ慣動半径</td><td>ピッチ慣性 <math><mrow><msub><mi>I</mi><mn>55</mn></msub><mo>=</mo><mi>m</mi><msubsup><mi>k</mi><mn>55</mn><mn>2</mn></msubsup></mrow></math>。既定は <math><mrow><msub><mi>r</mi><mi>g</mi></msub><msub><mi>L</mi><mi>wl</mi></msub></mrow></math> の仮定、重量表 なら重量表（§13.12）から部品自己慣性 r55 込みで算出（S6）</td><td>m</td><td class="num">0.8（=0.25L）△／表 0.765 ○（点質量のみ 0.590）</td></tr>
 <tr><td class="sym"><math><mrow><msub><mi>H</mi><mi>h</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math>, <math><mrow><msub><mi>H</mi><mi>θ</mi></msub><mo>(</mo><mi>ω</mi><mo>)</mo></mrow></math></td><td>ヒーブ・ピッチ RAO</td><td>単位波振幅あたりの応答</td><td>m/m, deg/m</td><td class="num">—</td></tr>
 <tr><td class="sym"><math><msub><mi>m</mi><mi>n</mi></msub></math></td><td>応答スペクトルの n 次モーメント（m0: 変位、m2: 速度、m4: 加速度の分散）</td><td>RMS = √m₀</td><td>—</td><td class="num">—</td></tr>
@@ -1604,7 +1604,7 @@
 <msub><mi>ω</mi><mrow><mi>n</mi><mo>,</mo><mi>h</mi></mrow></msub><mo>=</mo>
 <msqrt><mfrac><mrow><mi>ρ</mi><mi>g</mi><msub><mi>A</mi><mi>w</mi></msub></mrow><mrow><mi>m</mi><mo>(</mo><mn>1</mn><mo>+</mo><msub><mi>μ</mi><mi>a</mi></msub><mo>)</mo></mrow></mfrac></msqrt>
 </mrow></math>
-<div class="eqnote">起振力係数 <math><mrow><mi>F</mi><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>k</mi><mi>w</mi></msub><mi>d</mi></mrow></msup><mo>|</mo><mi>sinc</mi><mo>(</mo><msub><mi>k</mi><mi>w</mi></msub><msub><mi>L</mi><mi>wl</mi></msub><mo>/</mo><mn>2</mn><mo>)</mo><mo>|</mo></mrow></math>（深度減衰×船長平均）。ピッチも同形（起振は 1 次モーメント平均）。<b>減衰比 ζ=0.35・付加質量比 μ_a=0.8 は文献代表値の仮定</b>で、位相・連成・相対水位運動（甲板冠水/プロペラ空転）は未評価。判定基準は<b>搭載機器の要件を仮置きしたもの</b>: RMS 上下加速度 ≤ 0.5g・RMS 縦揺れ ≤ 10°・RMS 横揺れ ≤ 20°（横揺れは sw②＝BEM 表で計算されるときだけ評価）。乗員の作業性の基準（0.2g・6°）は無人艇には当てはまらないので使わない。転覆も想定した艇なので意図的に緩く置いてあり、<b>仮置きした機器要件（アンテナの許容動揺角・ペイロードの許容加速度・浸水条件）の明確化が必要</b>。上下加速度と縦揺れは応答が Hs に比例するので、閾値に達する Hs から運用限界 <math><msub><mi>H</mi><mrow><mi>s</mi><mo>,</mo><mi>lim</mi></mrow></msub></math> を逆算。</div></div>
+<div class="eqnote">起振力係数 <math><mrow><mi>F</mi><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>k</mi><mi>w</mi></msub><mi>d</mi></mrow></msup><mo>|</mo><mi>sinc</mi><mo>(</mo><msub><mi>k</mi><mi>w</mi></msub><msub><mi>L</mi><mi>wl</mi></msub><mo>/</mo><mn>2</mn><mo>)</mo><mo>|</mo></mrow></math>（深度減衰×船長平均）。ピッチも同形（起振は 1 次モーメント平均）。<b>減衰比 ζ=0.35・付加質量比 μ_a=0.8 は文献代表値の仮定</b>で、位相・連成・相対水位運動（甲板冠水/プロペラ空転）は未評価。判定基準は<b>搭載機器の要件を仮置きしたもの</b>: RMS 上下加速度 ≤ 0.5g・RMS 縦揺れ ≤ 10°・RMS 横揺れ ≤ 20°（横揺れは sw②＝BEM（速度ゼロ）で計算されるときだけ評価）。乗員の作業性の基準（0.2g・6°）は無人艇には当てはまらないので使わない。転覆も想定した艇なので意図的に緩く置いてあり、<b>仮置きした機器要件（アンテナの許容動揺角・ペイロードの許容加速度・浸水条件）の明確化が必要</b>。上下加速度と縦揺れは応答が Hs に比例するので、閾値に達する Hs から運用限界 <math><msub><mi>H</mi><mrow><mi>s</mi><mo>,</mo><mi>lim</mi></mrow></msub></math> を逆算。</div></div>
 <details class="sub" open><summary>図9 — ヒーブ RAO</summary>
 <figure><svg viewBox="0 0 700 250" role="img" style="width:100%;height:auto;display:block"><line x1="52" y1="216.0" x2="686" y2="216.0" class="grid"/><text x="46" y="219.5" class="tick" text-anchor="end">0</text><line x1="52" y1="137.5" x2="686" y2="137.5" class="grid"/><text x="46" y="141.0" class="tick" text-anchor="end">0.5</text><line x1="52" y1="59.1" x2="686" y2="59.1" class="grid"/><text x="46" y="62.6" class="tick" text-anchor="end">1</text><text x="109.6" y="232" class="tick" text-anchor="middle">2</text><text x="224.9" y="232" class="tick" text-anchor="middle">4</text><text x="340.2" y="232" class="tick" text-anchor="middle">6</text><text x="455.5" y="232" class="tick" text-anchor="middle">8</text><text x="570.7" y="232" class="tick" text-anchor="middle">10</text><text x="686.0" y="232" class="tick" text-anchor="middle">12</text><line x1="52" y1="216" x2="686" y2="216" class="axis"/><text x="369" y="247" class="lab" text-anchor="middle">波周期 T [s]</text><text x="12" y="114" class="lab" text-anchor="middle" transform="rotate(-90 12 114)">|H_h| [m/m]</text><polyline points="52.0,212.6 55.5,202.8 58.9,190.0 62.4,184.1 65.8,185.2 69.3,191.6 72.7,201.6 76.2,213.6 79.7,205.6 83.1,192.8 86.6,180.4 90.0,168.8 93.5,158.1 97.0,148.4 100.4,139.6 103.9,131.6 107.3,124.6 110.8,118.2 114.2,112.6 117.7,107.6 121.2,103.1 124.6,99.1 128.1,95.5 131.5,92.3 135.0,89.4 138.5,86.9 141.9,84.5 145.4,82.5 148.8,80.6 152.3,78.9 155.7,77.4 159.2,76.0 162.7,74.7 166.1,73.6 169.6,72.6 173.0,71.6 176.5,70.8 180.0,70.0 183.4,69.2 186.9,68.6 190.3,68.0 193.8,67.4 197.2,66.9 200.7,66.4 204.2,66.0 207.6,65.6 211.1,65.2 214.5,64.9 218.0,64.5 221.5,64.2 224.9,64.0 228.4,63.7 231.8,63.5 235.3,63.2 238.7,63.0 242.2,62.8 245.7,62.6 249.1,62.5 252.6,62.3 256.0,62.2 259.5,62.0 262.9,61.9 266.4,61.7 269.9,61.6 273.3,61.5 276.8,61.4 280.2,61.3 283.7,61.2 287.2,61.1 290.6,61.0 294.1,61.0 297.5,60.9 301.0,60.8 304.4,60.8 307.9,60.7 311.4,60.6 314.8,60.6 318.3,60.5 321.7,60.5 325.2,60.4 328.7,60.4 332.1,60.3 335.6,60.3 339.0,60.2 342.5,60.2 345.9,60.2 349.4,60.1 352.9,60.1 356.3,60.1 359.8,60.0 363.2,60.0 366.7,60.0 370.2,59.9 373.6,59.9 377.1,59.9 380.5,59.9 384.0,59.8 387.4,59.8 390.9,59.8 394.4,59.8 397.8,59.8 401.3,59.7 404.7,59.7 408.2,59.7 411.7,59.7 415.1,59.7 418.6,59.7 422.0,59.6 425.5,59.6 428.9,59.6 432.4,59.6 435.9,59.6 439.3,59.6 442.8,59.6 446.2,59.5 449.7,59.5 453.1,59.5 456.6,59.5 460.1,59.5 463.5,59.5 467.0,59.5 470.4,59.5 473.9,59.5 477.4,59.5 480.8,59.4 484.3,59.4 487.7,59.4 491.2,59.4 494.6,59.4 498.1,59.4 501.6,59.4 505.0,59.4 508.5,59.4 511.9,59.4 515.4,59.4 518.9,59.4 522.3,59.4 525.8,59.4 529.2,59.4 532.7,59.3 536.1,59.3 539.6,59.3 543.1,59.3 546.5,59.3 550.0,59.3 553.4,59.3 556.9,59.3 560.4,59.3 563.8,59.3 567.3,59.3 570.7,59.3 574.2,59.3 577.6,59.3 581.1,59.3 584.6,59.3 588.0,59.3 591.5,59.3 594.9,59.3 598.4,59.3 601.9,59.3 605.3,59.3 608.8,59.3 612.2,59.3 615.7,59.3 619.1,59.3 622.6,59.2 626.1,59.2 629.5,59.2 633.0,59.2 636.4,59.2 639.9,59.2 643.3,59.2 646.8,59.2 650.3,59.2 653.7,59.2 657.2,59.2 660.6,59.2 664.1,59.2 667.6,59.2 671.0,59.2 674.5,59.2 677.9,59.2 681.4,59.2 684.8,59.2" class="s1" fill="none"/><polyline points="52.0,214.1 55.5,206.7 58.9,193.7 62.4,184.2 65.8,181.7 69.3,187.1 72.7,198.3 76.2,213.0 79.7,203.2 83.1,187.7 86.6,173.3 90.0,160.1 93.5,148.4 97.0,138.1 100.4,129.1 103.9,121.1 107.3,114.2 110.8,108.2 114.2,102.9 117.7,98.3 121.2,94.2 124.6,90.7 128.1,87.5 131.5,84.8 135.0,82.3 138.5,80.1 141.9,78.2 145.4,76.5 148.8,75.0 152.3,73.6 155.7,72.4 159.2,71.3 162.7,70.3 166.1,69.4 169.6,68.6 173.0,67.8 176.5,67.2 180.0,66.6 183.4,66.0 186.9,65.5 190.3,65.1 193.8,64.7 197.2,64.3 200.7,63.9 204.2,63.6 207.6,63.3 211.1,63.1 214.5,62.8 218.0,62.6 221.5,62.4 224.9,62.2 228.4,62.0 231.8,61.8 235.3,61.7 238.7,61.5 242.2,61.4 245.7,61.3 249.1,61.1 252.6,61.0 256.0,60.9 259.5,60.8 262.9,60.7 266.4,60.7 269.9,60.6 273.3,60.5 276.8,60.4 280.2,60.4 283.7,60.3 287.2,60.3 290.6,60.2 294.1,60.2 297.5,60.1 301.0,60.1 304.4,60.0 307.9,60.0 311.4,59.9 314.8,59.9 318.3,59.9 321.7,59.8 325.2,59.8 328.7,59.8 332.1,59.8 335.6,59.7 339.0,59.7 342.5,59.7 345.9,59.7 349.4,59.6 352.9,59.6 356.3,59.6 359.8,59.6 363.2,59.6 366.7,59.6 370.2,59.5 373.6,59.5 377.1,59.5 380.5,59.5 384.0,59.5 387.4,59.5 390.9,59.5 394.4,59.4 397.8,59.4 401.3,59.4 404.7,59.4 408.2,59.4 411.7,59.4 415.1,59.4 418.6,59.4 422.0,59.4 425.5,59.4 428.9,59.4 432.4,59.3 435.9,59.3 439.3,59.3 442.8,59.3 446.2,59.3 449.7,59.3 453.1,59.3 456.6,59.3 460.1,59.3 463.5,59.3 467.0,59.3 470.4,59.3 473.9,59.3 477.4,59.3 480.8,59.3 484.3,59.3 487.7,59.3 491.2,59.3 494.6,59.2 498.1,59.2 501.6,59.2 505.0,59.2 508.5,59.2 511.9,59.2 515.4,59.2 518.9,59.2 522.3,59.2 525.8,59.2 529.2,59.2 532.7,59.2 536.1,59.2 539.6,59.2 543.1,59.2 546.5,59.2 550.0,59.2 553.4,59.2 556.9,59.2 560.4,59.2 563.8,59.2 567.3,59.2 570.7,59.2 574.2,59.2 577.6,59.2 581.1,59.2 584.6,59.2 588.0,59.2 591.5,59.2 594.9,59.2 598.4,59.2 601.9,59.2 605.3,59.2 608.8,59.2 612.2,59.2 615.7,59.2 619.1,59.2 622.6,59.2 626.1,59.2 629.5,59.2 633.0,59.2 636.4,59.2 639.9,59.2 643.3,59.2 646.8,59.2 650.3,59.2 653.7,59.2 657.2,59.2 660.6,59.2 664.1,59.2 667.6,59.1 671.0,59.1 674.5,59.1 677.9,59.1 681.4,59.1 684.8,59.1" class="s2" fill="none" stroke-dasharray="6 4"/><line x1="36.8" y1="12" x2="36.8" y2="216" class="mark"/><text x="41.8" y="25" class="marklab">T_n≈0.7s</text><text x="490.0" y="49.7" class="slab l-mut">長波長→追従 |H|→1</text><text x="259.5" y="118.7" class="slab l1">V=0</text><text x="161.5" y="74.8" class="slab l2">V=2.5kt</text></svg><figcaption>図9: ヒーブ RAO。長波長（右）では波面に追従して |H|→1、短波長（左）では応答しない。固有周期 T_n≈1.6 s の共振は減衰比 0.35 で抑えられている。前進速度は出会い周波数を介して応答を左へずらす。</figcaption></figure>
 </details>
@@ -1670,21 +1670,51 @@
 
 <!-- ═══════════ §9 ═══════════ -->
 <details class="sec" id="s9" open><summary><span class="no">§9</span><span class="ttl">較正と検証</span></summary>
-<p>較正は V1・V2 の 2 ケースのみで行い（自由パラメータ 2 個: <math><msub><mi>C</mi><mrow><mi>R</mi><mn>0</mn></mrow></msub></math>, <math><msub><mi>P</mi><mi>hotel</mi></msub></math>）、V3 以降は較正に使わず<b>ブラインドで</b>通した。Python 試作と JS 実装のクロスチェックで数値一致を確認。</p>
+<div class="tbl"><table>
+<tr><th>較正した量</th><th>合わせた基準（出典）</th><th>決まった値</th></tr>
+<tr><td>剰余抵抗係数 <math><msub><mi>C</mi><mrow><mi>R</mi><mn>0</mn></mrow></msub></math></td><td>最高速力 4.5 kt（Seasats Lightfish の公表値。同艇で唯一の速度系の公表値）◎</td><td>解析式モード 0.00284 ／ 3D 形状モード 0.00264</td></tr>
+<tr><td>ホテル負荷 <math><msub><mi>P</mi><mi>hotel</mi></msub></math></td><td>無日照航続 575 nm（同艇の公表値からの逆算）○</td><td>104 W</td></tr>
+</table></div>
+<p>自由パラメータはこの 2 個だけで、V3 以降の検証ケースは較正に使っていない（ブラインド）。したがってモデルの信頼度は、この 2 つの公表値がどういう条件で測られたかに依存するが、測定条件は非公開である（§11 の限界も参照）。独立に実装した 2 つの計算で数値が一致することを確認した。</p>
 <details class="sub" open><summary>図10 — 推力・抵抗の釣合い（平水と荒天）</summary>
 <figure><svg viewBox="0 0 700 250" role="img" style="width:100%;height:auto;display:block"><line x1="52" y1="216.0" x2="686" y2="216.0" class="grid"/><text x="46" y="219.5" class="tick" text-anchor="end">0</text><line x1="52" y1="137.5" x2="686" y2="137.5" class="grid"/><text x="46" y="141.0" class="tick" text-anchor="end">100</text><line x1="52" y1="59.1" x2="686" y2="59.1" class="grid"/><text x="46" y="62.6" class="tick" text-anchor="end">200</text><text x="52.0" y="232" class="tick" text-anchor="middle">0</text><text x="167.3" y="232" class="tick" text-anchor="middle">1</text><text x="282.5" y="232" class="tick" text-anchor="middle">2</text><text x="397.8" y="232" class="tick" text-anchor="middle">3</text><text x="513.1" y="232" class="tick" text-anchor="middle">4</text><text x="628.4" y="232" class="tick" text-anchor="middle">5</text><line x1="52" y1="216" x2="686" y2="216" class="axis"/><text x="369" y="247" class="lab" text-anchor="middle">速力 V [kt]</text><text x="12" y="114" class="lab" text-anchor="middle" transform="rotate(-90 12 114)">力 [N]</text><polyline points="63.5,44.5 75.1,44.5 86.6,44.5 98.1,44.5 109.6,44.5 121.2,44.5 132.7,44.5 144.2,44.5 155.7,44.5 167.3,44.5 178.8,44.5 190.3,44.5 201.9,44.5 213.4,44.5 224.9,45.0 236.4,49.9 248.0,54.5 259.5,59.1 271.0,63.5 282.5,67.8 294.1,72.0 305.6,76.0 317.1,80.0 328.7,83.8 340.2,87.5 351.7,91.2 363.2,94.7 374.8,98.1 386.3,101.4 397.8,104.6 409.3,107.8 420.9,110.8 432.4,113.8 443.9,116.7 455.5,119.5 467.0,122.2 478.5,124.8 490.0,127.4 501.6,129.9 513.1,132.3 524.6,134.7 536.1,137.0 547.7,139.2 559.2,141.4 570.7,143.5 582.3,145.5 593.8,147.5 605.3,149.4 616.8,151.3 628.4,153.1 639.9,154.9 651.4,156.6 662.9,158.3 674.5,159.9 686.0,161.5" class="s-ink" fill="none" stroke-dasharray="7 5"/><polyline points="63.5,216.0 75.1,215.9 86.6,215.8 98.1,215.7 109.6,215.5 121.2,215.3 132.7,215.1 144.2,214.8 155.7,214.6 167.3,214.2 178.8,213.9 190.3,213.5 201.9,213.1 213.4,212.7 224.9,212.2 236.4,211.7 248.0,211.1 259.5,210.5 271.0,209.9 282.5,209.2 294.1,208.5 305.6,207.7 317.1,206.9 328.7,205.9 340.2,204.9 351.7,203.9 363.2,202.7 374.8,201.4 386.3,200.0 397.8,198.4 409.3,196.7 420.9,194.9 432.4,192.8 443.9,190.5 455.5,188.0 467.0,185.3 478.5,182.2 490.0,178.9 501.6,175.2 513.1,171.1 524.6,166.5 536.1,161.6 547.7,156.1 559.2,150.0 570.7,143.4 582.3,136.1 593.8,128.1 605.3,119.3 616.8,109.6 628.4,99.0 639.9,87.5 651.4,74.8 662.9,61.0 674.5,46.0 686.0,29.6" class="s1" fill="none"/><polyline points="63.5,114.6 75.1,114.3 86.6,114.0 98.1,113.7 109.6,113.3 121.2,112.9 132.7,112.5 144.2,112.0 155.7,111.5 167.3,111.0 178.8,110.4 190.3,109.9 201.9,109.2 213.4,108.6 224.9,107.9 236.4,107.2 248.0,106.4 259.5,105.6 271.0,104.8 282.5,103.9 294.1,103.0 305.6,102.0 317.1,100.9 328.7,99.8 340.2,98.6 351.7,97.3 363.2,95.9 374.8,94.4 386.3,92.8 397.8,91.0 409.3,89.1 420.9,87.0 432.4,84.8 443.9,82.3 455.5,79.6 467.0,76.6 478.5,73.4 490.0,69.8 501.6,65.9 513.1,61.6 524.6,56.9 536.1,51.7 547.7,46.0 559.2,39.7 570.7,32.9 582.3,25.4 593.8,17.1 605.3,12.0 616.8,12.0 628.4,12.0 639.9,12.0 651.4,12.0 662.9,12.0 674.5,12.0 686.0,12.0" class="s2" fill="none"/><line x1="570.6" y1="12" x2="570.6" y2="216" class="mark"/><text x="575.6" y="25" class="marklab">平水 V_eq=4.50kt</text><line x1="366.1" y1="12" x2="366.1" y2="216" class="mark"/><text x="371.1" y="25" class="marklab">荒天 2.73kt</text><text x="190.3" y="29.3" class="slab l-ink">推力 T(V, 450W)</text><text x="553.4" y="121.8" class="slab l1">R 平水</text><text x="351.7" y="98.3" class="slab l2">R 荒天(Hs2.5m,U15m/s)</text></svg><figcaption>図10: 釣合い曲線。推力線（破線・450 W）と抵抗曲線の交点が達成可能速力。平水 4.50 kt（較正点）に対し、荒天（Hs 2.5 m・向い風 15 m/s）では 2.73 kt へ減速する。</figcaption></figure>
 </details>
-<details class="sub" open><summary>検証結果一覧</summary>
-<div class="tbl"><table>
-<tr><th>#</th><th>ケース</th><th>合格基準</th><th>結果</th><th></th></tr>
-<tr><td>V1</td><td>平水・全力（較正: C_R0）</td><td class="num">4.5 ± 0.3 kt</td><td class="num">4.50 kt</td><td class="ok">PASS</td></tr>
-<tr><td>V2</td><td>無日照航続（較正: P_hotel=104 W）</td><td class="num">575 ± 60 nm</td><td class="num">576 nm @ 2.7 kt</td><td class="ok">PASS</td></tr>
-<tr><td>V3</td><td>滞留 90 日（日射 4.5・ホテル 45 W・速力 0）</td><td>SOC 非枯渇</td><td class="num">最低 SOC 85%</td><td class="ok">PASS</td></tr>
-<tr><td>V4</td><td>荒天（Hs 2.5 m・向い風 15 m/s）</td><td>減速の再現</td><td class="num">V_eq 2.73 kt ※</td><td class="ok">PASS</td></tr>
-<tr><td>V5</td><td>スペクトル整合</td><td>m₀=Hs²/16・R_AW≤STAWAVE-1・∝Hs²</td><td class="num">誤差 0.00%・93/2191 N・比 4.000</td><td class="ok">PASS</td></tr>
-<tr><td>V6</td><td>RAO 極限挙動</td><td>長波→1・短波→0・Hs 線形</td><td class="num">1.000／0.056／2.000</td><td class="ok">PASS</td></tr>
+<details class="sub" open><summary>検証結果一覧（V1〜V19）</summary>
+<p>すべてページを開くたびに自動実行され、結果は Ⅱ. 性能タブに表示される。</p>
+<div class="tbl" style="overflow-x:auto"><table>
+<tr><th>#</th><th>ケース</th><th>合格基準</th><th>実測値</th><th>結果</th><th>較正に使ったか</th></tr>
+<tr><td>V1</td><td>最高速力</td><td>V_eq = 4.5 ± 0.3 kt（平水・無風・全力）</td><td class="num">4.50 kt</td><td class="ok">PASS</td><td>較正</td></tr>
+<tr><td>V2</td><td>無日照航続</td><td>575 ± 60 nm（電池4kWh＋燃料30kWh）</td><td class="num">576 nm ＠ 2.7 kt</td><td class="ok">PASS</td><td>較正</td></tr>
+<tr><td>V3</td><td>長期滞留（station keeping）</td><td>日射4.5・ホテル45W・速力0 で 90日 SOC非枯渇</td><td class="num">最低 SOC 85%</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V4</td><td>荒天前進</td><td>Hs2.5m・向い風15m/s で減速を再現（連続性確認）</td><td class="num">2.73 kt</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V5</td><td>スペクトル整合</td><td>m0=Hs²/16（±1%）かつ スペクトル版 R_AW ≤ STAWAVE-1 素値</td><td class="num">誤差 0.00%</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V6</td><td>RAO 極限挙動</td><td>長波長で追従(RAO→1)・短波長で不応答・応答は Hs に線形</td><td class="num">RAO 1.00／0.06</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V7</td><td>排水量→剰余抵抗（痩せ型比補正）</td><td>較正点で f_M=1（V1 不変）・積載増で抵抗増・∇^(4/3) 則</td><td class="num">f_M 1.000→1.636</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V8</td><td>ミッション確率の完全性（§12）</td><td>Σw_σ = 1（±1e-9）・成功率 ∈ [0,1]・成功率＋失敗内訳 = 1</td><td class="num">成功率 61.5%</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V9</td><td>BEM（速度ゼロ）と耐航性係数表の整合</td><td>BEM（速度ゼロ）モード・静止状態で、耐航性係数表から求めたヒーブ・ピッチの応答が、格納した厳密解と各周波数で相対6%以内で一致すること（値が十分大きい点のみ。ヒーブ・ピッチの2自由度近似が省くサージ連成の分で約5%の差が残る）。BEM のデータが無ければ対象外</td><td class="num">最大誤差 5.1%</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V10</td><td>3D 形状計算モードでの較正保存</td><td>3D 形状計算モードでも最高速力 4.50±0.01 kt を再現し、喫水・濡れ面積が3D形状の実測値と一致すること（形状一致・尺度1）。3D 形状データが無ければ対象外</td><td class="num">4.5000 kt</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V11</td><td>粘性ロール減衰の整合（抗力モデル）</td><td>①有義波高→0.01mの極限で船底/キール抗力の寄与が2%以下・等価減衰比ζ44がBEM（速度ゼロ）の等価線形化ζの基準値の0.98〜1.5倍に収束（→BEM+摩擦の値）②有義波高0.5/1/2/3mでζ44が単調非減少③等価線形化恒等式 B_eq=√(8/π)Bqσ_φ̇ が Gauss分布の3次モーメント E[|φ̇|³]=2√(2/π)σ³ の数値求積（消散仕事 Bq·E[|φ̇|³] と B_eq·σ² の一致）と相対誤差1e-6以内で整合。BEM のデータが無ければ対象外</td><td class="num">ζ44 0.0565</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V12</td><td>重量表の質量特性（自己慣性込み）</td><td>①2点質点（1kg@x0,1kg@x2・r44=r55=0）で LCG=1・k55=1・k44=0 ②既定重量表（各部品の自己慣性 r44/r55 込み）で平行軸恒等式 Σm[(x²+z²)+r55²]/M = k55²+LCG²+KG² と Σm[(y²+z²)+r44²]/M = k44²+TCG²+KG² が共に誤差1e-9以内 ③既定重量表 M=159.0±0.01kg・KG は 0.10〜0.20 m の範囲内（自己慣性は位置には効かないため不変）</td><td class="num">k44 0.212 m・k55 0.765 m</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V13</td><td>砕波エネルギー換算の整合（設計書§13.13）</td><td>①H_b∝E^(1/3)・H_b∝η^(−1/3)（2つの比の相対誤差とも1e-9以内）②Rayleigh恒等式 P(H&gt;Hs)=e^(−2)（誤差1e-12以内）③基準形状・重量表KG・η=0.15・U=0でH_b,転覆∈[0.5,1.5]m（経験則B=0.9mとの整合の目安）④風U=20m/sでE_転覆がU=0時より減る（3D形状データ未搭載なら③④は対象外）</td><td class="num">H_b 0.86 m</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V14</td><td>表示用メッシュの整合</td><td>①表示用メッシュ（船体）の体積が静水力学の全排水容積と3%以内で一致 ②3D 形状から生成したメッシュでは、実測した船底の4次モーメント（水理計算による濡れ面積分）が水線半幅の解析式と3%以内で一致 ③埋め込み各パーツが水密（面同士の境界に隙間がない）。表示用メッシュが無ければ対象外</td><td class="num">体積誤差 0.80%</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V15</td><td>地理・海象帯の判定（設計書§12.6）</td><td>①大圏距離が独立実装（球面三角法の余弦公式）と相対1%以内 ②沿岸距離: 母港が1nm未満・外洋目的地が50nm超 ③母港から外洋目的地までの経路上で海域帯が単調に変化（沿岸→陸棚→外洋、逆行なし）④母船搬送フェーズは終了時SOC=100%・エネルギー消費ゼロ（消費前と最低SOCが不変）⑤旧経路の回帰: 目的地を指定しないミッションは地理設定の有無で成功率が完全一致</td><td class="num">大圏距離差 0.0000%</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V16</td><td>早回し再生の整合（設計書§12.6）</td><td>伊豆諸島観測・自走（往復とも目的地指定）を実行し、早回し再生で復元した位置列の累積距離が各フェーズの距離の合計と相対1%以内で一致し、復路が母港へ戻る計画では最終位置が母港と一致（大圏距離2nm未満）する。</td><td class="num">累積距離差 0.0000%</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V17</td><td>BEM（速度ゼロ）の平均波漂流力の整合</td><td>①最小周波数（長波長側）での値が最大値の5%未満 ②既定（反射モデル）は独立に再計算した値と完全一致 ③平均波漂流力が全周波数で非負（数値誤差の許容内）かつ最大値が(1/2)ρgB以下</td><td class="num">最大 1120.6 N/m²</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V18</td><td>復原力シミュレーション（横波中の横揺れ・時間積分）の自由減衰・不変性</td><td>①波高0・初期傾斜10°・KG=0.15の自由減衰で RK4 から求めた周期がロール固有周期 T_roll(=2π/ω_n) の±5%以内、対数減衰率から求めたζが同条件の等価線形化ζ44の±20%以内　②波高0・初期傾斜0°では φ=0 のまま　③GZ表の形状変種を切り替えても V1〜V17 の代表値（喫水・V_eq・全抵抗）が不変。</td><td class="num">T_sim 1.395 s</td><td class="ok">PASS</td><td>ブラインド</td></tr>
+<tr><td>V19</td><td>「転覆させる」「復帰させる」ボタンの到達角（GZ表のエネルギー障壁を実際に越えるか）</td><td>波高0・KG既定・基準形状で直立静止から「転覆させる」相当の衝撃（E_転覆×1.2）を与えて10秒積分すると |φ|≥150° かつ |φ̇|が小さい（裏返り平衡で静止）。続けて「復帰させる」相当の衝撃（E_復帰×1.2・最寄りの不安定平衡へ向かう向き）を与えて10秒積分すると |φ|≤20°。</td><td class="num">φ 177.9°→−1.0°</td><td class="ok">PASS</td><td>ブラインド</td></tr>
 </table></div>
-<p style="font-size:12.5px;color:var(--muted)">※ V4 は運動起因の抵抗増加を含まないため、なお下振れの可能性がある。不変条件テスト（抵抗の速度単調性・推力の非増加性・追い風での負抵抗・SOC 上下限・η ≤ 0.51・ボラード有限性）も全 PASS。</p>
+<p style="font-size:12.5px;color:var(--muted)">※ V4 の 2.73 kt は波浪中抵抗増加を反射モデル（既定）で求めた値である。BEM（速度ゼロ）で求めると波浪中抵抗増加は小さくなり、減速も小さくなる（§5.3 の 20 倍の開き）。どちらが正しいかは決着しておらず、前進速度を含む BEM の検討が必要（§5.5・§10）。運動起因の抵抗増加と相対水位運動は依然として未評価。</p>
+</details>
+<details class="sub" open><summary>不変条件テスト</summary>
+<div class="tbl"><table>
+<tr><th>条件</th><th>確かめていること</th></tr>
+<tr><td>抵抗の速度単調性</td><td>速力を上げるほど抵抗が増える</td></tr>
+<tr><td>推力の非増加性</td><td>電力を固定したとき、速力を上げても推力は増えない</td></tr>
+<tr><td>追い風での負抵抗</td><td>追い風が艇速を上回れば風圧抵抗が推進側に働く（符号が反転する）</td></tr>
+<tr><td>SOC 上下限</td><td>電池残量が 0〜100% の範囲を外れない</td></tr>
+<tr><td>η ≤ 0.51</td><td>推進チェーン全体の効率（Torqeedo の公表値による拘束）が上限を超えない</td></tr>
+<tr><td>ボラード推力の有限性</td><td>速力ゼロでも推力が発散しない</td></tr>
+</table></div>
 </details>
 </details>
 
@@ -1693,8 +1723,8 @@
 <p>本モデルの精度は実験式・仮定の質で決まる。各実験式・仮定は<b>関数インターフェースを変えずにテーブル/マップへ差し替えられる</b>よう設計してある。優先度は「結果への感度 × 現在の不確かさ」で付けた。</p>
 <div class="tbl"><table>
 <tr><th>実験式・仮定</th><th>現状</th><th>置換インターフェース</th><th>推奨手段</th><th>優先度</th></tr>
-<tr><td>波浪中 QTF <math><msub><mi>Φ</mi><mi>aw</mi></msub></math>（式15）</td><td>反射漸近×仮定減衰。<b>運動起因成分なし</b></td><td><math><mrow><msub><mi>Φ</mi><mi>aw</mi></msub><mo>(</mo><mi>ω</mi><mo>,</mo><mi>V</mi><mo>)</mo></mrow></math> テーブル</td><td><b>BEM（3D パネル法）→ 波浪中模型試験</b>。耐航性能 Sim（ストリップ法）でも可</td><td><b>最高</b></td></tr>
-<tr><td>RAO <math><msub><mi>H</mi><mi>h</mi></msub></math>, <math><msub><mi>H</mi><mi>θ</mi></msub></math>（式20）</td><td>1 自由度近似・減衰比仮定</td><td><math><mrow><mi>H</mi><mo>(</mo><mi>ω</mi><mo>,</mo><mi>V</mi><mo>,</mo><mi>χ</mi><mo>)</mo></mrow></math> テーブル（波向 χ 含む）</td><td><b>BEM / 耐航性能 Sim</b>（QTF と同時に得られる）→ 模型試験で検証</td><td><b>最高</b></td></tr>
+<tr><td>波浪中抵抗増加 <math><msub><mi>Φ</mi><mi>aw</mi></msub></math>（式15）</td><td>反射モデル（実験式）または BEM（速度ゼロ）。<b>いずれも運動起因成分なし</b>（§9 V4 注記）</td><td><math><mrow><msub><mi>Φ</mi><mi>aw</mi></msub><mo>(</mo><mi>ω</mi><mo>,</mo><mi>V</mi><mo>)</mo></mrow></math> テーブル</td><td><b>前進速度を含む BEM（ランキンパネル法。自由表面にもパネルを張り、定常流と遭遇周波数を含めて解く）と曳航・実走</b>。耐航性能 Sim（ストリップ法）でも可</td><td><b>最高</b></td></tr>
+<tr><td>耐航性の係数 <math><msub><mi>H</mi><mi>h</mi></msub></math>, <math><msub><mi>H</mi><mi>θ</mi></msub></math>（付加質量・減衰・波強制力・式20）</td><td>1 自由度近似または BEM（速度ゼロ）</td><td><math><mrow><mi>H</mi><mo>(</mo><mi>ω</mi><mo>,</mo><mi>V</mi><mo>,</mo><mi>χ</mi><mo>)</mo></mrow></math> テーブル（波向 χ 含む）</td><td><b>前進速度を含む BEM（ランキンパネル法）と動揺計測</b>。QTF と同時に得られる</td><td><b>最高</b></td></tr>
 <tr><td>剰余抵抗 <math><msub><mi>C</mi><mi>R</mi></msub></math>（式13・6′）</td><td>Fn⁴ 形・1 点較正。排水量依存は薄船理論の p=4 で近似</td><td><math><mrow><msub><mi>C</mi><mi>R</mi></msub><mo>(</mo><mi>Fn</mi><mo>,</mo><mi>M</mi><mo>)</mo></mrow></math> の 2 次元テーブル</td><td><b>曳航水槽の系統試験</b>（排水量スイープ）または CFD（RANS・自由表面）。<b>造波成分のみなら BEM</b>（ポテンシャル流: ミッチェル積分・ランキンパネル法）でも計算可——ただし剰余には粘性形状分も含まれ、BEM は (1+k)C_F を扱えないため摩擦系と分けた検証が必要。指数 p の実測が第一目標</td><td>高</td></tr>
 <tr><td>PV ディレート <math><msub><mi>f</mi><mi>der</mi></msub></math></td><td>一括 0.70 仮定</td><td>時変 <math><mrow><msub><mi>f</mi><mi>der</mi></msub><mo>(</mo><mi>t</mi><mo>)</mo></mrow></math>（汚損進行込み）</td><td><b>実艇曝露試験</b>（長期滞留判定がこの値に敏感＝§11）</td><td>高</td></tr>
 <tr><td>モーター効率（式17）</td><td>損失 3 係数</td><td>η(トルク, 回転数) 2次元マップ</td><td><b>モーターベンチ試験</b>（ポッド実物）</td><td>中</td></tr>
@@ -1702,9 +1732,8 @@
 <tr><td>風圧 <math><msub><mi>C</mi><mi>d</mi></msub></math>（式16）</td><td>一定 0.8 仮定</td><td><math><mrow><msub><mi>C</mi><mi>X</mi></msub><mo>(</mo><mi>ψ</mi><mo>)</mo></mrow></math> テーブル</td><td>風洞試験 / CFD（第2級項なので優先度低め）</td><td>低</td></tr>
 <tr><td>日射 G(t)（式19）</td><td>Haurwitz＋雲量係数</td><td>海域別時系列</td><td>衛星再解析データ（ERA5 等）の統計</td><td>低</td></tr>
 <tr><td>電池（式10）</td><td>固定効率・容量一定</td><td>SOC/温度依存の等価回路＋劣化</td><td>電池特性試験（長期ミッションでは劣化が効く）</td><td>低</td></tr>
-<tr><td>前進速度つき BEM（§5.5）</td><td>速度ゼロの 3D パネル法のみ</td><td>sw②の BEM 表に速度軸を追加</td><td><b>Rankine パネル法</b>（前進速度あり）の導入</td><td>高</td></tr>
 </table></div>
-<p>「最高」の 2 行（QTF と RAO）は<b>同じ BEM 計算から同時に得られる</b>ため、最初の投資は BEM（または耐航性能 Sim の導入）が最も効率が良い。</p>
+<p>「最高」の 2 行（波浪中抵抗増加と耐航性の係数）は<b>同じ前進速度つき BEM 計算から同時に得られる</b>ため、最初の投資はランキンパネル法の導入が最も効率が良い。いまの BEM（速度ゼロ）は前進速度ゼロで解いているため、設計速力（Fn≈0.41）では遭遇周波数と定常流の影響が抜けており、<b>中途半端な段階</b>にある（§5.5・§9 V4 注記）。ランキンパネル法に進めば、速度つきの係数と付加抵抗を同じ枠組みで出せる。検証は半球（速度ゼロ極限）と Wigley 船型（文献値）で行う。</p>
 </details>
 
 <!-- ═══════════ §11 ═══════════ -->
@@ -2043,7 +2072,7 @@ station 距離×海域カタログで成功率がどう下がるかを一覧す�
 </table></div>
 <p>この係数表はページ読み込み時にパースされ（無ければ未設定扱い）、ブラウザでも Node でも同じ計算コードから参照できるようにしてある。</p>
 <div class="eqbox clo"><div class="eqhead"><span class="bdg clo">実験式・仮定（スイッチ）</span><span class="bdg rep">既定は analytic のまま＝V1〜V8 の数値は不変</span><span class="eqno">(30)</span></div>
-<p style="margin:6px 0 0;font-size:14px">sw②（耐航性の係数の出どころ）: 解析式（既定・2 次系近似）／BEM 表（表補間。現在の船体寸法と係数表の船体が一致（または相似）するときだけ有効、それ以外は自動的に解析式へ退避し UI が理由を表示する）。</p></div>
+<p style="margin:6px 0 0;font-size:14px">sw②（耐航性の係数の出どころ）: 解析式（既定・2 次系近似）／BEM（速度ゼロ。境界要素法。前進速度ゼロの仮定で求めた付加質量・減衰・波強制力）の係数を周波数で補間（現在の船体寸法と係数表の船体が一致（または相似）するときだけ有効、それ以外は自動的に解析式へ退避し UI が理由を表示する）。</p></div>
 <h3>形状一致の判定と Froude 相似則</h3>
 <p>形状一致の判定は現在の船体寸法と係数表の船体を比較して行う: 寸法比（L・B・m^(1/3)）が全て 1（±1e-6）＝<b>形状一致</b>、全て等しい比 s（±1%）＝<b>相似</b>（Froude 則で換算）、それ以外＝<b>不一致</b>（解析式へ退避）。相似スケール s の換算は質量∝s³・時間∝√s の Froude 則から:</p>
 <div class="tbl"><table>
@@ -2135,7 +2164,7 @@ station 距離×海域カタログで成功率がどう下がるかを一覧す�
 
 <!-- ═══════════ §13.11 ═══════════ -->
 <details class="sub" open><summary>13.11 粘性ロール減衰（抗力モデル）— 計算結果</summary>
-<p>§8.2 の抗力モデル（sw③＝抗力モデル）を sw①＝3D 形状計算・sw②＝BEM 表で評価した幾何量と、Tp=6s・Hs=0.5/1/2/3mでの結果（決定論的な数値実験。速力は釣合い計算とミッション目標速力2.5ktの小さい方＝2.50kt）。</p>
+<p>§8.2 の抗力モデル（sw③＝抗力モデル）を sw①＝3D 形状計算・sw②＝BEM（速度ゼロ）で評価した幾何量と、Tp=6s・Hs=0.5/1/2/3mでの結果（決定論的な数値実験。速力は釣合い計算とミッション目標速力2.5ktの小さい方＝2.50kt）。</p>
 <h3>幾何量</h3>
 <div class="tbl"><table>
 <tr><th>量</th><th class="num">値</th></tr>
@@ -2207,7 +2236,7 @@ station 距離×海域カタログで成功率がどう下がるかを一覧す�
 <tr><td>E_転覆（直立→最寄り不安定平衡）</td><td class="num">242 J</td><td class="num">249 J</td><td>同様にわずかに拡大</td></tr>
 <tr><td>E_復帰（転覆姿勢→最寄り不安定平衡）</td><td class="num">163 J</td><td class="num">159 J</td><td>わずかに縮小</td></tr>
 </table></div>
-<p style="font-size:12.5px;color:var(--muted)">sw④（質量と重心の与え方） を 'manual'/'table' で切り替えて比較した（sw①＝3D 形状計算・sw②＝BEM 表・決定論的な数値実験）。table 列の「点質量のみ」括弧内は重量表の r44/r55 をすべて 0 にした場合（＝自己慣性を加える前と同じ扱い）。固有周期はロール・ピッチとも不動点反復で求めた（heave-pitch連成 C35 は無視した非連成近似）。GZ 曲線（AVS±・E_転覆・E_復帰）は base 形状の格納済み GZ 曲線に対し、KG だけ振る閉形式で評価した。5 海域ミッション成功率は manual/table・自己慣性の有無を問わず<b>完全一致</b>——耐航性の成立判定が加速度・ピッチのみで決まり、ロールは判定に使わない設計（§8）のため、質量特性の変更はロールの数値自体（RMS・ζ44・固有周期）にのみ表れ、ミッション成立性には伝播しない。</p>
+<p style="font-size:12.5px;color:var(--muted)">sw④（質量と重心の与え方） を 'manual'/'table' で切り替えて比較した（sw①＝3D 形状計算・sw②＝BEM（速度ゼロ）・決定論的な数値実験）。table 列の「点質量のみ」括弧内は重量表の r44/r55 をすべて 0 にした場合（＝自己慣性を加える前と同じ扱い）。固有周期はロール・ピッチとも不動点反復で求めた（heave-pitch連成 C35 は無視した非連成近似）。GZ 曲線（AVS±・E_転覆・E_復帰）は base 形状の格納済み GZ 曲線に対し、KG だけ振る閉形式で評価した。5 海域ミッション成功率は manual/table・自己慣性の有無を問わず<b>完全一致</b>——耐航性の成立判定が加速度・ピッチのみで決まり、ロールは判定に使わない設計（§8）のため、質量特性の変更はロールの数値自体（RMS・ζ44・固有周期）にのみ表れ、ミッション成立性には伝播しない。</p>
 <h3>部品ごとの自己慣性 r44/r55（一様分布近似）</h3>
 <div class="tbl" style="overflow-x:auto"><table>
 <tr><th>部品</th><th class="num">r44 [m]</th><th class="num">r55 [m]</th><th>近似（basisR）</th></tr>
@@ -2243,7 +2272,7 @@ station 距離×海域カタログで成功率がどう下がるかを一覧す�
 <tr><td>E_復帰</td><td class="num">159 J</td><td class="num">165 J</td><td>KG が上がる分だけわずかに拡大</td></tr>
 <tr><td>5 海域ミッション成功率（generic/natl/npac/japan/trade）</td><td class="num">43.3% / 0.8% / 14.4% / 27.5% / 97.9%</td><td class="num">43.3% / 0.8% / 14.4% / 27.5% / 97.9%</td><td>完全一致——ロールは判定に不使用（上記と同じ理由）</td></tr>
 </table></div>
-<div class="eqnote">展開判定はキールフィンの有無と格納状態の両方から一貫して求める（§8.2）。格納時は重量表のキール行の z を保存値+0.28 m として質量特性を評価する（保存されている行の値自体は展開位置のまま）。V_eq・ζ44・ロールRMS は sw①＝3D 形状計算・sw②＝BEM 表・V1（全力）／V4（Hs=2.5,Tp=7,windU=15,2.5kt）相当の条件を流用。<b>既知の限界</b>——BEM放射減衰（A44/B44）はキール込み形状で1回だけ計算された固定テーブルで、sw⑤（引込キールの状態） を切り替えても再計算されない（§8.2 追記）。</div>
+<div class="eqnote">展開判定はキールフィンの有無と格納状態の両方から一貫して求める（§8.2）。格納時は重量表のキール行の z を保存値+0.28 m として質量特性を評価する（保存されている行の値自体は展開位置のまま）。V_eq・ζ44・ロールRMS は sw①＝3D 形状計算・sw②＝BEM（速度ゼロ）・V1（全力）／V4（Hs=2.5,Tp=7,windU=15,2.5kt）相当の条件を流用。<b>既知の限界</b>——BEM放射減衰（A44/B44）はキール込み形状で1回だけ計算された固定テーブルで、sw⑤（引込キールの状態） を切り替えても再計算されない（§8.2 追記）。</div>
 <p><b>既知の限界</b> — k44/k55 は依然として一様分布近似の代表寸法から推定した△の自己慣性項を含む値（詳細設計・実測で更新見込み）。引込キールの格納時 KG オフセット（+0.28 m）は形状からの概算で、実機の展開機構の詳細（ヒンジ位置・格納後の姿勢）までは反映していない。</p>
 <p class="std">回帰検証: V12（検証ケース一覧・モデル整合性検証グループ）。</p>
 </details>
@@ -2321,7 +2350,7 @@ E_転覆・E_復帰 のどちらよりも 1 桁大きいため、<b>同じ砕波
 <li><b>係数ブロックへ格納する</b>——<pre style="white-space:pre-wrap;word-break:break-all;font:11.5px ui-monospace,monospace;background:var(--surface);border:1px solid var(--line2);border-radius:4px;padding:10px 12px;color:var(--ink);margin:8px 0">node pack_hydro.mjs --gz base=out/ext_gz.json --bem out/ext_bem.json \
   --mesh &lt;stl&gt; [--decimate &lt;cell幅 m&gt;] [--keel-area &lt;片面積 m²&gt;] [--keel-zc &lt;重心深さ m&gt;] \
   --Lwl &lt;L&gt; --B &lt;B&gt; --m &lt;m&gt; --Cb &lt;Cb&gt; --target index.html</pre>--mesh は実装済み: 指定した STL を頂点クラスタリングで間引いて（既定セル幅=L/60・上限は約2500三角形になるまで自動で粗くする。--decimate でセル幅を明示指定できる）、3D 表示・水線描画用の形状情報として埋め込む（§13.2 が読む）。水理側（draft・I4・A_lat・z_a）も同じ STL を gz.py が直接測る（STL の三角形にしか依存しない）ので「見た目」と「計算」が別物にならない。キール形状だけは STL の三角形からは自動判別できない（どれがキールかを区別する規約が無い）ため、既知なら --keel-area／--keel-zc（片面積[m²]・重心深さ[m]）で明示する——どちらも指定しなければキール項は 0（寄与なし）として扱われ、船体タブにその旨が出る。</li>
-<li><b>0-D モデル側の入力を一致させる</b>——性能タブの L・B・m（Cb はこれらから自動計算）を、上で使った外部船体の値に一致させる。形状一致の判定がこの一致（または相似）を検出して初めて sw①＝3D 形状計算／sw②＝BEM 表 が有効になる（§13.7）。一致しなければ自動的に解析式へ退避し、船体タブ「係数表の状態と再生成」にその旨が表示される。</li>
+<li><b>0-D モデル側の入力を一致させる</b>——性能タブの L・B・m（Cb はこれらから自動計算）を、上で使った外部船体の値に一致させる。形状一致の判定がこの一致（または相似）を検出して初めて sw①＝3D 形状計算／sw②＝BEM（速度ゼロ）が有効になる（§13.7）。一致しなければ自動的に解析式へ退避し、船体タブ「係数表の状態と再生成」にその旨が表示される。</li>
 </ol>
 <div class="eqnote"><b>既知の限界（外部 STL 経路に固有）</b>——①船体形状の定義由来の実験式・仮定（風圧面積・付加物形状係数等・§5.2/§5.4）は外部船体でも主要目からの推定のままで、STL 形状には連動しない。②表示メッシュは頂点クラスタリングによる間引きのみ（法線・トポロジーの再計算はしない）——元 STL が既に水密でない場合、間引き後の見た目に穴が出ることがある（表示専用なので水理計算には影響しない）。③STL からの自動判別が原理的にできないのはキール形状だけ（上記 --keel-area／--keel-zc で回避）——船底4次モーメント I4（§8.2）は gz.py が没水面を直接積分して求めており、外部 STL でも最初から測れている。船体形状の定義由来の閉形式の解析式は、その形状専用のフォールバック／V14②の照合基準であり、外部 STL 経路では最初から関与しない。</div>
 <p class="std">関連: §3（本図の「外部 STL」入口）。CLI のフルリファレンスはリポジトリ内の README を参照。</p>
@@ -2773,7 +2802,7 @@ const USV = (function(){
     return e;
   }
 
-  // ── usv-hydro（BEM表）読み込み・形状一致判定・表補間RAO・ロール ──
+  // ── usv-hydro（BEM・速度ゼロ）読み込み・形状一致判定・表補間RAO・ロール ──
   // DOM 非依存: ブラウザでは <script id="usv-hydro"> を読む。Node では globalThis.USV_HYDRO を注入して代替
   // （lib/core.mjs loadCore() と同じ抽出方式を使うテスト/受入スクリプトから設定する）。
   const hydro = (typeof document !== 'undefined')
@@ -3013,7 +3042,7 @@ const USV = (function(){
     const zeroParts = { bem:0, fric:0, bottom:0, keel:0 };
     if (env.Hs <= 0) return { heaveRms:0, pitchRmsDeg:0, accelRms:0, limitHs:Infinity, ok:true, rollRmsDeg:0, rollZeta:0, rollDampParts: zeroParts };
     const sp = jonswapS(env.Hs, env.Tp);                       // 規則波選択時も評価はスペクトルで行う
-    const doRoll = !!hydro && p.sea.mode === 'bem';            // ロールはBEM表があるときのみ・出力専用
+    const doRoll = !!hydro && p.sea.mode === 'bem';            // ロールはBEM（速度ゼロ）があるときのみ・出力専用
     let m0h = 0, m0p = 0, m0a = 0;
     for (let i = 0; i < sp.w.length; i++){
       const w = sp.w[i], S = sp.s[i];
@@ -3034,7 +3063,7 @@ const USV = (function(){
     }
     const rA = accelRms / (p.sea.accelLimG * 9.81);
     const rP = pitchRmsDeg / p.sea.pitchLimDeg;
-    const rR = rollRmsDeg > 0 ? rollRmsDeg / p.sea.rollLimDeg : 0;   // 横揺れは sw②=BEM 表のときだけ計算される（簡易式では 0）
+    const rR = rollRmsDeg > 0 ? rollRmsDeg / p.sea.rollLimDeg : 0;   // 横揺れは sw②=BEM（速度ゼロ）のときだけ計算される（簡易式では 0）
     const worst = Math.max(rA, rP);                                   // 運用限界 Hs は Hs に線形な上下加速度・縦揺れから逆算（横揺れは振幅依存減衰のため非線形）
     return { heaveRms, pitchRmsDeg, accelRms,
              limitHs: worst > 1e-9 ? env.Hs / worst : Infinity,
@@ -4820,7 +4849,7 @@ if (typeof module !== 'undefined') module.exports = USV;
       $('s-heave').textContent = '–'; $('s-pitch').textContent = '–';
       $('s-accel').textContent = '–'; $('s-limhs').textContent = '–';
       $('s-rollrms').textContent = '–';
-      $('s-rollzeta').textContent = 'BEM表使用時のみ・判定には不使用';
+      $('s-rollzeta').textContent = 'BEM（速度ゼロ）使用時のみ・判定には不使用';
       $('sb-limhs').textContent = '–（平水）';
       $('s-verdict').textContent = '波高 0（平水）'; return;
     }
@@ -4835,7 +4864,7 @@ if (typeof module !== 'undefined') module.exports = USV;
       const rp = sk.rollDampParts;
       $('s-rollzeta').textContent = `ζ44 = ${fmt(sk.rollZeta, 2)}（BEM ${fmt(rp.bem * 100, 0)}% / 摩擦 ${fmt(rp.fric * 100, 0)}% / 船底 ${fmt(rp.bottom * 100, 0)}% / キール ${fmt(rp.keel * 100, 0)}%）`;
     } else {
-      $('s-rollzeta').textContent = 'BEM表使用時のみ・判定には不使用';
+      $('s-rollzeta').textContent = 'BEM（速度ゼロ）使用時のみ・判定には不使用';
     }
     $('sb-limhs').textContent = $('s-limhs').textContent;
     $('s-verdict').textContent = 'Tp=' + P.env.Tp + 's・速力 ' + fmt(V / USV.KT, 1) + ' kt で評価';
@@ -4847,7 +4876,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     if (P.sea.mode === 'bem'){
       const hm = USV.hydroMatch(P.hull);
       if (hm.ok){
-        el.innerHTML = hm.reason === '形状一致' ? 'BEM 表使用（形状一致）' : `BEM 表使用（${hm.reason}）`;
+        el.innerHTML = hm.reason === '形状一致' ? 'BEM（速度ゼロ）使用（形状一致）' : `BEM（速度ゼロ）使用（${hm.reason}）`;
         el.style.color = 'var(--muted)';
       } else {
         el.innerHTML = `<b style="color:var(--warn-ink)">⚠ ${hm.reason} → 解析式に退避中</b>`;
@@ -5037,7 +5066,7 @@ if (typeof module !== 'undefined') module.exports = USV;
               const ok=Math.abs(wsum-1)<1e-9 && r.successRate>=0 && r.successRate<=1
                     && Math.abs(r.successRate+fsum-1)<1e-9;
               return {val:`Σw=${wsum.toFixed(6)}・成功率 ${(r.successRate*100).toFixed(1)}%・成功+失敗=${((r.successRate+fsum)*100).toFixed(1)}%（${r.nScen} シナリオ）`, ok}; }},
-      {id:'V9',name:'BEM表 vs 6×6解（耐航性表モード）',crit:'mode=bem・V=0で表の各ωのRAO3/RAO5がhydro.bem.rao_ref（6×6厳密解）と相対6%以内（値>1e-3の点のみ。2×2 が省くサージ連成で約5%残る）。BEMデータが無ければ対象外',
+      {id:'V9',name:'BEM（速度ゼロ）と耐航性係数表の整合',crit:'BEM（速度ゼロ）モード・静止状態で、耐航性係数表から求めたヒーブ・ピッチの応答が、格納した厳密解と各周波数で相対6%以内で一致すること（値が十分大きい点のみ。ヒーブ・ピッチの2自由度近似が省くサージ連成の分で約5%の差が残る）。BEM のデータが無ければ対象外',
        why:'raoTableHeavePitch は Heave/Pitch の2×2に縮約した近似で、6×6の厳密解にはサージ等の連成分だけ残るはず。BEMの生データ（rao_ref）と突き合わせて縮約の精度を定量化する。',
        note:'2×2はhydroの様式上サージ連成・Heave-Pitch静復原連成(C35)を持たないため、船体によってはこの縮約誤差が無視できない大きさになりうる（実データでの計測結果は結果欄参照）。3%を超える場合はraoTableHeavePitchの縮約次数を上げる、またはusv-hydroにC35を追加することが対策候補（設計書の既知の限界として記載要）。',
        run(){
@@ -5054,7 +5083,7 @@ if (typeof module !== 'undefined') module.exports = USV;
          }
          const ok=worst<=0.06;   // 2×2（ヒーブ・ピッチ）と 6×6 の差＝サージ連成 ≈5%
          return { val:`最大相対誤差 ${(worst*100).toFixed(1)}%（${worstWhich}・ω=${worstOm.toFixed(2)} rad/s）`, ok }; }},
-      {id:'V10',name:'3D 形状計算モードの較正保存（S4-6）',crit:'hull.geom=hydro で V1（平水・全力）が 4.50±0.01kt を再現・derived().d/S が usv-hydro 実測値と一致（形状一致・scale=1）。usv-hydro 未搭載なら対象外',
+      {id:'V10',name:'3D 形状計算モードでの較正保存',crit:'3D 形状計算モードでも最高速力 4.50±0.01 kt を再現し、喫水・濡れ面積が3D形状の実測値と一致すること（形状一致・尺度1）。3D 形状データが無ければ対象外',
        why:'d・S を C_b/Denny-Mumford から usv-hydro の実測値に差し替え、CrBase を CrBaseHydro に再較正したモード（§13.10）が、差し替え前と同じ較正点（V1）を再現できているかの回帰チェック。derived() が確かに実測値を返しているかも同時に確認する。',
        note:'CrBaseHydro は裸殻面積 S_bare を分母に取り直した値のため CrBase とは値が異なる（摩擦・剰余の内訳が変わるだけで較正点の合計抵抗は同じになるよう再較正してある）。較正点から離れた速度・排水量での挙動差は §13.10 の実測表を参照。',
        run(){
@@ -5066,7 +5095,7 @@ if (typeof module !== 'undefined') module.exports = USV;
          const dOk=Math.abs(der.d-hs.draft_m)<1e-9, sOk=Math.abs(der.S-hs.Swet_m2)<1e-9;
          const ok=Math.abs(veq-4.5)<=0.01 && dOk && sOk && der.geom==='hydro';
          return { val:`V_eq ${veq.toFixed(4)} kt・d=${der.d.toFixed(4)}m(実測${hs.draft_m.toFixed(4)})・S=${der.S.toFixed(3)}m²(実測${hs.Swet_m2.toFixed(3)})`, ok }; }},
-      {id:'V11',name:'粘性ロール減衰の整合（S4-7・抗力モデル）',crit:'①Hs→0.01mで船底/キール抗力寄与≤2%・ζ44がBEM等価線形化の基準値(hydro.bem.fit.zeta44)の0.98〜1.5倍に収束（→BEM+摩擦の値）②Hs=0.5/1/2/3mでζ44が単調非減少③等価線形化恒等式 B_eq=√(8/π)Bqσ_φ̇ が Gauss E[|φ̇|³]=2√(2/π)σ³ の数値求積（消散仕事 Bq·E[|φ̇|³] と B_eq·σ² の一致）と相対誤差1e-6以内で整合。usv-hydro が無ければ対象外',
+      {id:'V11',name:'粘性ロール減衰の整合（抗力モデル）',crit:'①有義波高→0.01mの極限で船底/キール抗力の寄与が2%以下・等価減衰比ζ44がBEM（速度ゼロ）の等価線形化ζの基準値の0.98〜1.5倍に収束（→BEM+摩擦の値）②有義波高0.5/1/2/3mでζ44が単調非減少③等価線形化恒等式 B_eq=√(8/π)Bqσ_φ̇ が Gauss分布の3次モーメント E[|φ̇|³]=2√(2/π)σ³ の数値求積（消散仕事 Bq·E[|φ̇|³] と B_eq·σ² の一致）と相対誤差1e-6以内で整合。BEM のデータが無ければ対象外',
        why:'摩擦（Kato 1958）・船底平板およびキールフィンの2次抗力を確率的線形化した新モデル（rollDamp=drag）が、①振幅→0 の極限でBEMのポテンシャル流減衰＋摩擦のみに収束する（抗力項は振幅の2乗で消える）②有義波高の増加とともに単調に効く③線形化の等価定数 B_eq=√(8/π)Bqσ が消散仕事の等価性という定義から導かれる恒等式を満たす、という3つの物理的要請を同時に満たすかを検証する。',
        note:'③は解析的に自明な恒等式（B_eq の定義そのもの）だが、Gauss 3次モーメントの閉形式 E[|x|³]=2√(2/π)σ³ を独立に数値求積して 1e-6 以内で裏付けることで、closed-form 側の実装誤りを検出できるようにしている。①の基準値 hydro.bem.fit.zeta44 は BEM 単体（粘性ゼロ）の等価ζで、旧一定値モデル（zeta44Visc=0.08・仮定）より物理的な下限として妥当。この船型（Cb_eff≈0.37・B/d≈6.1）は Ikeda 簡易法の適用範囲（Cb 0.5–0.85・B/d 2.5–4.5）外のため、Kato の摩擦成分のみ Ikeda 法の構成要素として流用し、簡易法の丸ごと適用は行っていない（設計書§8.2）。前進速度による揚力減衰（bilge keel 相当の動的効果）は未反映。',
        run(){
@@ -5093,7 +5122,7 @@ if (typeof module !== 'undefined') module.exports = USV;
          const ok3 = relErrMoment<1e-6 && relErrPower<1e-6;
          const ok = ok1 && mono && ok3;
          return { val:`Hs→0.01m: ζ44=${conv0.zetaEff.toFixed(4)}(基準${fitZeta.toFixed(4)})・抗力比${(dragFrac0*100).toFixed(1)}%／単調性 ζ44(0.5,1,2,3m)=${zetas.map(z=>z.toFixed(3)).join('→')}／恒等式誤差 ${relErrMoment.toExponential(1)}・${relErrPower.toExponential(1)}`, ok }; }},
-      {id:'V12',name:'重量表の質量特性（S5/S6・massProps・自己慣性込み）',crit:'①2点質点（1kg@x0,1kg@x2・r44=r55=0）で LCG=1・k55=1・k44=0 ②既定重量表（各部品の自己慣性 r44/r55 込み）で平行軸恒等式 Σm[(x²+z²)+r55²]/M = k55²+LCG²+KG² と Σm[(y²+z²)+r44²]/M = k44²+TCG²+KG² が共に誤差1e-9以内 ③既定重量表 M=159.0±0.01kg・KG は 0.10〜0.20 m の範囲内（自己慣性は位置には効かないため不変）',
+      {id:'V12',name:'重量表の質量特性（自己慣性込み）',crit:'①2点質点（1kg@x0,1kg@x2・r44=r55=0）で LCG=1・k55=1・k44=0 ②既定重量表（各部品の自己慣性 r44/r55 込み）で平行軸恒等式 Σm[(x²+z²)+r55²]/M = k55²+LCG²+KG² と Σm[(y²+z²)+r44²]/M = k44²+TCG²+KG² が共に誤差1e-9以内 ③既定重量表 M=159.0±0.01kg・KG は 0.10〜0.20 m の範囲内（自己慣性は位置には効かないため不変）',
        why:'massProps() の実装バグ（符号・軸の取り違え・正規化漏れ・自己慣性r44/r55の加算漏れ）を検出する回帰チェック。①は解析解が既知の最小ケース（r=0 なので従来どおり点質量の結果と一致すべき）、②は座標系によらず成り立つべき恒等式（平行軸の定理を自己慣性項まで拡張したもの・ロール軸/ピッチ軸の双方）、③は重量表の合計・積み上げが Lightfish 公称質量 159 kg と一致し、KG（自己慣性の影響を受けない）が船体規模に対して妥当な範囲にあることの確認。',
        note:'k44・k55 は今回追加した各部品自身の慣動半径（r44/r55・一様分布近似・設計書§13.12）を平行軸の定理で積み上げた値。r44/r55 を明示しない行は 0（＝点質量）として扱われ、結果欄の「点質量のみ」表示（k44_point/k55_point）が従来の下限値に一致する。',
        run(){
@@ -5110,7 +5139,7 @@ if (typeof module !== 'undefined') module.exports = USV;
          const ok3=Math.abs(mp.M-159.0)<=0.01 && mp.KG>=0.10 && mp.KG<=0.20;
          const ok=ok1&&ok2&&ok3;
          return { val:`2点質点: LCG=${mp2.LCG.toFixed(3)}・k55=${mp2.k55.toFixed(3)}・k44=${mp2.k44.toFixed(3)}／平行軸誤差 pitch=${err55.toExponential(1)}・roll=${err44.toExponential(1)}／既定表 M=${mp.M.toFixed(2)}kg・KG=${mp.KG.toFixed(4)}m・LCG=${mp.LCG.toFixed(4)}m・k44=${mp.k44.toFixed(4)}m（点質量のみ${mp.k44_point.toFixed(4)}m）・k55=${mp.k55.toFixed(4)}m（点質量のみ${mp.k55_point.toFixed(4)}m）`, ok }; }},
-      {id:'V13',name:'S2 換算の整合（設計書§13.13・砕波エネルギー換算）',crit:'①H_b∝E^(1/3)・H_b∝η^(−1/3)（2つの比の相対誤差とも1e-9以内）②Rayleigh恒等式 P(H&gt;Hs)=e^(−2)（誤差1e-12以内）③base形状・重量表KG・η=0.15・U=0でH_b,転覆∈[0.5,1.5]m（経験則B=0.9mとの整合の目安）④風U=20m/sでE_転覆がU=0時より減る（usv-hydro未搭載なら③④は対象外）',
+      {id:'V13',name:'砕波エネルギー換算の整合（設計書§13.13）',crit:'①H_b∝E^(1/3)・H_b∝η^(−1/3)（2つの比の相対誤差とも1e-9以内）②Rayleigh恒等式 P(H&gt;Hs)=e^(−2)（誤差1e-12以内）③基準形状・重量表KG・η=0.15・U=0でH_b,転覆∈[0.5,1.5]m（経験則B=0.9mとの整合の目安）④風U=20m/sでE_転覆がU=0時より減る（3D形状データ未搭載なら③④は対象外）',
        why:'breakingWaveLimits/breakingEventRate の実装が定義式（ローラーのエネルギー∝H_b³・Rayleigh 分布の裾）どおりに動くかをスケーリング恒等式で検出する回帰チェック。③は換算結果が物理的に意味のある帯域（経験則の船幅程度）に収まっているかの桁チェック、④は風が GZ_eff を通じて転覆側の障壁だけを下げる（設計書§13.13 の主張）ことの符号確認。',
        note:'①②は E・η・Hs によらず厳密に成り立つべき恒等式で、Hb/breakingEventRate 内部の指数・係数の実装ミスを検出する。③④は S2 の目安値そのものが妥当な範囲・向きにあるかの実データ確認で、§13.13 の測定表と対応する。',
        run(){
@@ -5136,8 +5165,8 @@ if (typeof module !== 'undefined') module.exports = USV;
          const ok4 = Ecap20 < Ecap0;
          const ok = ok1&&ok2&&ok3&&ok4;
          return { val:`スケーリング誤差 E:${relE.toExponential(1)}・η:${relEta.toExponential(1)}／Rayleigh誤差 ${errRay.toExponential(1)}／H_b,転覆(base・表KG・U=0)=${Hbcap0.toFixed(2)}m／E_転覆 U=0→20m/s: ${Ecap0.toFixed(0)}→${Ecap20.toFixed(0)} J`, ok }; }},
-      {id:'V14',name:'埋め込みメッシュの整合（S4-2・usv-hydro.mesh）',
-       crit:'①hydro.mesh.parts.hull の発散定理体積が hydro.hydrostatics.vol_total_m3 の3%以内 ②source==hullGeom のとき hydro.hydrostatics.I4_m4（実測・gz.py upright()）が USV.bottomI4Analytic(h,d)（水線半幅の解析式・d=実測喫水）の3%以内 ③埋め込み各パーツが水密（有向辺が過不足なく対合）。usv-hydro.mesh 未搭載なら対象外',
+      {id:'V14',name:'表示用メッシュの整合',
+       crit:'①表示用メッシュ（船体）の体積が静水力学の全排水容積と3%以内で一致 ②3D 形状から生成したメッシュでは、実測した船底の4次モーメント（水理計算による濡れ面積分）が水線半幅の解析式と3%以内で一致 ③埋め込み各パーツが水密（面同士の境界に隙間がない）。表示用メッシュが無ければ対象外',
        why:'3D ビューに埋め込んだ表示用メッシュ（lib/mesh.mjs buildParts・pack_hydro.mjs 生成）が、水理計算（gz.py・S1）や解析式（usv-core）と同じ形状を指しているか（「見た目」と「計算」が別物になっていないか）を見る回帰チェック。',
        note:'①は buildParts が export_stl.mjs の水理メッシュと同じ hullGeom() から作られていることの体積面での裏取り。②は実測 I4（gz.py upright() が実際の濡れ面で ∫|n_z||y|³dA を積分した値）が解析式（同じ水線半幅を投影積分した閉形式・§8.2）と一致するかを見る——単値な船底（水線が同じ x で高々1点にしか触れない）なら両者は数学的に厳密に等しいはずで、差はメッシュ離散化誤差のみになる（旧実装はチャイン半幅を誤用しており、この基準は意図的に FAIL のまま置いていた——水線半幅に直したことで PASS に変わった）。③は表示専用メッシュでも間引き・結合の実装ミスで穴が開いていないかの最終防衛。',
        run(){
@@ -5183,8 +5212,8 @@ if (typeof module !== 'undefined') module.exports = USV;
          return { val:`体積誤差 ${(relV*100).toFixed(2)}%（V_mesh=${V.toFixed(4)}／V_ref=${Vref.toFixed(4)} m³）`+
            (relI4!=null?`・I4誤差 ${(relI4*100).toFixed(1)}%（実測${i4hScaled.toFixed(4)}／解析式${i4a.toFixed(4)}）`:'')+
            `・水密性 ${ok3?'OK':'NG: '+bad.join(',')}`, ok }; }},
-      {id:'V15',name:'地理・海象帯（M1・設計書§12.6）',
-       crit:'①大圏距離 gcNm が独立実装（球面三角法の余弦公式）と相対1%以内 ②coastDistNm: 母港&lt;1nm・外洋目的地&gt;50nm ③zoneOf が母港→外洋目的地の経路上で単調（沿岸→陸棚→外洋、逆行なし）④母船搬送フェーズは終了時SOC=1.0・エネルギー消費ゼロ（消費前と最低SOCが不変）⑤旧経路の回帰: to の無いミッションは地理設定の有無で成功率がビット同一',
+      {id:'V15',name:'地理・海象帯の判定（設計書§12.6）',
+       crit:'①大圏距離が独立実装（球面三角法の余弦公式）と相対1%以内 ②沿岸距離: 母港が1nm未満・外洋目的地が50nm超 ③母港から外洋目的地までの経路上で海域帯が単調に変化（沿岸→陸棚→外洋、逆行なし）④母船搬送フェーズは終了時SOC=100%・エネルギー消費ゼロ（消費前と最低SOCが不変）⑤旧経路の回帰: 目的地を指定しないミッションは地理設定の有無で成功率が完全一致',
        why:'地理データ（Natural Earth 10m の粗い海岸線）・大圏距離・距離帯判定・母船搬送の決定論モデルという新規に積んだ4層が、それぞれ独立に正しいことと、既存のミッション計算（§12・V8）を一切壊していないことを同時に保証する。',
        note:'②③は設計書§12.6の目的地一覧にある「外洋（32.5N/140.2E）」をそのまま使う。M1 で coastDistNm が本土（面積≥0.05deg²）以外のポリゴンを無視するようになったため、離島（伊豆諸島の小島）が沿岸距離を引き下げて経路を非単調にする問題が解消し、専用の沖合検証点を別途用意する必要が無くなった（旧: 33.5°N/141.5°E を暫定使用していた）。',
        run(){
@@ -5222,8 +5251,8 @@ if (typeof module !== 'undefined') module.exports = USV;
            `②母港${dPort.toFixed(2)}nm・外洋目的地${dFar.toFixed(1)}nm ③帯列=${zoneSeq.join('')}（単調${ok3?'OK':'NG'}） `+
            `④搬送後SOC=${r4.nominal.phaseLog[0].socEnd}・最低SOC=${r4.nominal.minSoc}（消費ゼロ${ok4?'OK':'NG'}） `+
            `⑤旧経路成功率 ${(rA.successRate*100).toFixed(2)}% = ${(rB.successRate*100).toFixed(2)}%（${ok5?'ビット同一':'不一致'}）`, ok }; }},
-      {id:'V16',name:'早回し再生の整合（M2・設計書§12.6）',
-       crit:'伊豆諸島観測・自走（往復とも to 指定）を実行し、tracePositions() で復元した位置列の累積距離が phaseLog の nm 合計と相対1%以内で一致し、復路が母港へ戻る計画では最終位置が母港と一致（大圏距離2nm未満）する。',
+      {id:'V16',name:'早回し再生の整合（設計書§12.6）',
+       crit:'伊豆諸島観測・自走（往復とも目的地指定）を実行し、早回し再生で復元した位置列の累積距離が各フェーズの距離の合計と相対1%以内で一致し、復路が母港へ戻る計画では最終位置が母港と一致（大圏距離2nm未満）する。',
        why:'早回し再生（M2）は trace（6h間引き＋フェーズ終端）の速力を時間積分して位置を作る——離散化の端数がフェーズをまたいで累積誤差にならないこと、往復ミッションで確実に出発点へ戻ることを保証する。',
        note:'trace はフェーズ終端でも 1 点を残す（本節の実装変更・M2）ため、6h 間引きだけでは取りこぼす端数（間引き周期に満たない最後の刻み）が積分から漏れない。',
        run(){
@@ -5246,8 +5275,8 @@ if (typeof module !== 'undefined') module.exports = USV;
          const ok = ok1 && ok2;
          return { val:`累積 ${total.toFixed(2)}nm / Σnm ${expected.toFixed(2)}nm（差${(Math.abs(total-expected)/expected*100).toFixed(4)}%） `+
            `・最終位置→母港 ${dPort.toFixed(3)}nm（${ok2?'帰着OK':'NG'}）`, ok }; }},
-      {id:'V17',name:'BEM 漂流力の整合',
-       crit:'①usv-hydro.bem.drift で最小ω（長波長側）の値が最大値の5%未満 ②既定（反射モデル）は独立に再計算した値とビット一致 ③Φ_d(ω) が全ωで非負（数値誤差の許容内）かつ最大値が(1/2)ρgB以下',
+      {id:'V17',name:'BEM（速度ゼロ）の平均波漂流力の整合',
+       crit:'①最小周波数（長波長側）での値が最大値の5%未満 ②既定（反射モデル）は独立に再計算した値と完全一致 ③平均波漂流力が全周波数で非負（数値誤差の許容内）かつ最大値が(1/2)ρgB以下',
        why:'波浪中抵抗増加の求め方を切り替えるスイッチ（既定=反射効率の実験式／切替=BEM平均波漂流力）を追加した際、①BEM側の表が長波長極限で物理的に妥当（→0）なこと、②既定側の計算経路を変更していないこと、③向い波の平均漂流力は Newman の運動量保存から恒等的に非負・かつ船が波を全反射する仮想的な鏡面の値 (1/2)ρgB を超えないという物理的な上下限を満たすことを毎回確認する。',
        note:'③の下限0はbem.py側でも同じ許容誤差（信号最大値の2%）でassertしている（パネル離散化・遠方場のθ積分グリッドに由来する数値誤差の分）。上限 (1/2)ρgB はビームB全体を鏡のように全反射したときの理論上限。',
        run(){
@@ -5329,7 +5358,7 @@ if (typeof module !== 'undefined') module.exports = USV;
          return { val:`①${val1} ②max|φ|=${maxAbs.toExponential(2)} rad[${ok2?'OK':'NG'}] `+
            `③変種切替後も喫水・V_eq・全抵抗が不変[${ok3?'OK':'NG'}]`, ok }; }},
       {id:'V19',name:'「転覆させる」「復帰させる」ボタンの到達角（GZ表のエネルギー障壁を実際に越えるか）',
-       crit:'波高0・KG既定・形状baseで直立静止から「転覆させる」相当の衝撃（E_転覆×1.2）を与えて10秒積分すると |φ|≥150° かつ |φ̇|が小さい（裏返り平衡で静止）。続けて「復帰させる」相当の衝撃（E_復帰×1.2・最寄りの不安定平衡へ向かう向き）を与えて10秒積分すると |φ|≤20°。',
+       crit:'波高0・KG既定・基準形状で直立静止から「転覆させる」相当の衝撃（E_転覆×1.2）を与えて10秒積分すると |φ|≥150° かつ |φ̇|が小さい（裏返り平衡で静止）。続けて「復帰させる」相当の衝撃（E_復帰×1.2・最寄りの不安定平衡へ向かう向き）を与えて10秒積分すると |φ|≤20°。',
        why:'A3で追加した2つの定型ボタンが、GZ表（gzLandscape）から求めたエネルギー障壁を実際に越えて裏返り平衡へ落ち、逆向きの衝撃で直立側へ戻ることを、ボタンが呼ぶのと同じ数式コア（rollSimContext ・ rollSimRK4 ・ gzLandscape ・ rollImpulseDir ・ rollImpulseKick）だけで確認する（DOM非依存・Node実行可）。',
        note:'船底・キール2次抗力は速度の3乗で効くため、E_転覆×1.2を単発の速度衝撃で与えると大半が最初の一撃で失われ障壁を越えない（実測）。ボタンは同じ総エネルギーを rollImpulseN 回・rollImpulseSpacing 秒間隔の小刻みな衝撃列（連続する砕波に相当）で与える。断面図の浮上位置の2分法補正は描画専用の近似であり、この検証（φの時間発展）には関与しない。復原モーメントは3DのGZ表をそのまま使う。',
        run(){
@@ -5844,7 +5873,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     const sH=mk(hB,hA,'|H_heave| [m/m]'), sP=mk(pB,pA,'|H_pitch| [deg/m]');
     svg.innerHTML = `<svg x="0" y="0" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${sH}</svg>`+
                     `<svg x="0" y="${h+18}" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${sP}</svg>`+
-                    `<text x="${w-16}" y="14" class="slab l-mut" text-anchor="end">実線=BEM表・破線=解析式</text>`;
+                    `<text x="${w-16}" y="14" class="slab l-mut" text-anchor="end">実線=BEM（速度ゼロ）・破線=解析式</text>`;
   }
   // ── ③b ζ44_eff vs Hs（S4-7・設計書§8.2）── 0.25〜4mを現在のTpで評価（V=0・BEM固有周波数ω_n）
   function renderZeta44Chart(P, der){
@@ -7821,7 +7850,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     ['海と運用','母船搬送速力 V_carry','kt','geo.carryKt','ミッション計算（搬送フェーズ。テンプレート選択時は母船搬送速力を振って評価）',true,'carryKt'],
     ['耐航性の仮定','加速度限界 a_lim','g','sea.accelLimG','運用限界 Hs',true],
     ['耐航性の仮定','縦揺れ限界 θ_lim','°','sea.pitchLimDeg','運用限界 Hs',true],
-    ['耐航性の仮定','横揺れ限界 φ_lim','°','sea.rollLimDeg','運用限界 Hs（BEM 表使用時）',true],
+    ['耐航性の仮定','横揺れ限界 φ_lim','°','sea.rollLimDeg','運用限界 Hs（BEM（速度ゼロ）使用時）',true],
     ['耐航性の仮定','減衰比 ζ','–','sea.zetaHeave','揺れ RAO',true],
     ['耐航性の仮定','砕波伝達効率 η_b','–','sea.etaBreak','転覆・復帰の限界波高',true],
   ].map(([group,label,unit,path,targets,cont,tplKey])=>({group,label,unit,path,targets,cont,tplKey:tplKey||null}));
@@ -7831,7 +7860,7 @@ if (typeof module !== 'undefined') module.exports = USV;
 
   const SWITCHES = [
     { path:'hull.geom',      label:'船体形状の与え方 sw①', a:'analytic', b:'hydro',  an:'解析式',        bn:'3D 形状計算' },
-    { path:'sea.mode',       label:'耐航性の係数 sw②',     a:'analytic', b:'bem',    an:'簡易式',        bn:'BEM 表' },
+    { path:'sea.mode',       label:'耐航性の係数 sw②',     a:'analytic', b:'bem',    an:'簡易式',        bn:'BEM（速度ゼロ）' },
     { path:'sea.rollDamp',   label:'横揺れ減衰 sw③',       a:'drag',     b:'const',  an:'抗力モデル',     bn:'一定 ζ' },
     { path:'hull.massFrom',  label:'質量と重心 sw④',       a:'manual',   b:'table',  an:'手入力',        bn:'重量表' },
     { path:'hull.keelUp',    label:'引込キール sw⑤',       a:false,      b:true,     an:'展開',          bn:'格納' },
@@ -7912,7 +7941,7 @@ if (typeof module !== 'undefined') module.exports = USV;
 
   // ── 対象（テンプレート・現在の切替）の 1 行表示 ──
   function currentSwText(p){
-    return `sw①${p.hull.geom==='hydro'?'3D形状計算':'解析式'}・sw②${p.sea.mode==='bem'?'BEM表':'解析式'}・`+
+    return `sw①${p.hull.geom==='hydro'?'3D形状計算':'解析式'}・sw②${p.sea.mode==='bem'?'BEM（速度ゼロ）':'解析式'}・`+
       `sw③${p.sea.rollDamp==='const'?'一定ζ':'抗力モデル'}・sw④${p.hull.massFrom==='table'?'重量表':'手入力'}・`+
       `sw⑤${p.hull.keelUp?'格納':'展開'}・sw⑥${p.env.rawModel==='bem'?'BEM平均漂流力':'反射効率式'}`;
   }
