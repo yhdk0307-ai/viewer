@@ -551,7 +551,7 @@
    }
   },
   {
-   "id": "~ext/viewer/notebooks",
+   "id": "~ext/viewer_prod/notebooks",
    "props": {
     "description": "本番 manga-epoch/viewer に実体を残す唯一の枠。Colab は公開 GitHub からしか .ipynb を開けないため必要。",
     "descriptionSource": "ai"

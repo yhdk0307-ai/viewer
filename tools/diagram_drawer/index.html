@@ -274,7 +274,21 @@
 .de-modal-body kbd { border: 1px solid var(--de-muted); border-radius: 3px; padding: 0 4px; font-family: var(--de-mono); font-size: 10px; }
 .de-modal-body code { font-family: var(--de-mono); font-size: 11px; background: var(--de-panel); border-radius: 3px; padding: 0 3px; word-break: break-all; }
 .de-modal-body pre { font-family: var(--de-mono); font-size: 10.5px; line-height: 1.55; background: var(--de-panel); border: 1px solid var(--de-grid); border-radius: 4px; padding: 8px 10px; margin: 6px 0; overflow-x: auto; white-space: pre; }
-.de-modal-foot { padding: 10px 16px; border-top: 1px solid var(--de-grid); display: flex; justify-content: flex-end; }
+.de-modal-foot { padding: 10px 16px; border-top: 1px solid var(--de-grid); display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+
+/* §12 実体を開く（open）: インスペクタのボタンとビューア・モーダル */
+a.de-btn { text-decoration: none; display: inline-flex; align-items: center; }
+.de-open-cell { padding-top: 0; }
+.de-open-btn[disabled] { opacity: .45; cursor: not-allowed; }
+.de-modal-wide { max-width: 860px; }
+.de-open-head-path { display: block; margin-top: 3px; font-family: var(--de-mono); font-size: 10.5px; color: var(--de-soft); word-break: break-all; }
+.de-open-body { display: flex; flex-direction: column; gap: 6px; min-height: 180px; }
+.de-open-frame { flex: 1 1 auto; width: 100%; min-height: 56vh; border: 1px solid var(--de-grid); border-radius: 4px; background: #fff; }
+.de-open-img { max-width: 100%; height: auto; align-self: flex-start; border: 1px solid var(--de-grid); border-radius: 4px; }
+/* 取得した本文（textContent のみ）。携帯でも横スクロールを出さないよう折り返す */
+.de-modal-body pre.de-open-pre { max-height: 56vh; overflow: auto; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
+.de-open-note { margin: 0; font-size: 11.5px; line-height: 1.75; color: var(--de-soft); }
+.de-open-extlink { align-self: flex-start; }
 
 .de-status { padding: 4px 12px; font-size: 11px; color: var(--de-soft); background: var(--de-panel); border-top: 1px solid var(--de-grid); display: flex; gap: 16px; }
 .de-status .err { color: var(--de-danger); }
@@ -1170,6 +1184,96 @@ function relationFreshId(proj, prefix = 'R-') {
   let i = 0, id;
   do { id = `${prefix}${(++i).toString(36)}`; } while (taken.has(id));
   return id;
+}
+
+// ─── §12 ノードの実体を開く（open）— 純関数・DOM 非依存 ───
+// 「このノードはどこで開けるか」だけを決める。実際の表示（iframe / img / pre）は editor.js。
+// 優先順（§12.1）: ① props.href（明示・抽出器の rules.hrefs / externals 由来）
+//                  ② sourceRoot ＋ props.path（このファイル群がどこで配信されているかの基点）
+//                  ③ props.preview（抽出時に埋めた抜粋＝fetch できない環境の最後の砦）
+// どれも無ければ null＝「開く」ボタンを出さない（無効なボタンを出さない）。
+const OPEN_HTML_EXTS = new Set(['.html', '.htm']);
+const OPEN_IMAGE_EXTS = new Set(['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp']);
+
+// ?root= の上書き（§12.1）。起動スクリプトが URL から読んで一度だけ入れる。
+// **project.sourceRoot 自体は書き換えない**（authored data を URL パラメータで汚すと
+// projectToJSON がバイト同一でなくなり §6/§12.4 のハードゲートを破るため）。
+let sourceRootOverride = null;
+function setSourceRootOverride(root) {
+  const v = typeof root === 'string' ? root.trim() : '';
+  sourceRootOverride = v || null;
+}
+function getSourceRootOverride() { return sourceRootOverride; }
+
+function openBaseURI() {
+  if (typeof document !== 'undefined' && document.baseURI) return document.baseURI;
+  if (typeof location !== 'undefined' && location.href) return location.href;
+  return 'http://localhost/';   // node（verify.mjs が model.js を直 import するとき）の既定
+}
+function openPageOrigin(base) {
+  if (typeof location !== 'undefined' && location.origin && location.origin !== 'null') return location.origin;
+  try { return new URL(base).origin; } catch { return null; }
+}
+// 拡張子だけで表示方法を決める（§12.3）。拡張子なし＝テキスト扱い。
+function openKindOfPath(p) {
+  const m = String(p || '').toLowerCase().match(/\.[a-z0-9]+$/);
+  const ext = m ? m[0] : '';
+  if (OPEN_HTML_EXTS.has(ext)) return 'html';
+  if (OPEN_IMAGE_EXTS.has(ext)) return 'image';
+  return 'text';
+}
+
+function openTargetOf(proj, node) {
+  if (!node) return null;
+  // 図ノードは resolveLedger で entity の props を継承済みだが、台帳ノードを直接渡された場合や
+  // 継承前の生ノードでも動くよう entityId からも引く（node 側が優先）。
+  let props = node.props || null;
+  if (node.entityId && (!props || (props.href === undefined && props.path === undefined && props.preview === undefined))) {
+    const ent = entityById(proj, node.entityId);
+    if (ent?.props) props = Object.assign({}, ent.props, props || {});
+  }
+  props = props || {};
+  const preview = typeof props.preview === 'string' && props.preview ? props.preview : null;
+  const previewTruncated = !!props.previewTruncated;
+  const base = openBaseURI();
+  const pageOrigin = openPageOrigin(base);
+  const mk = (source, raw, label) => {
+    let u;
+    try { u = new URL(raw, base); } catch { return null; }
+    return {
+      kind: openKindOfPath(u.pathname), url: u.href,
+      sameOrigin: !!pageOrigin && u.origin === pageOrigin,
+      preview, previewTruncated, source, path: label,
+    };
+  };
+  // ① href（props.href が正。node.href は図ノードの「外部URL」欄＝互換のため後段で受ける）
+  const href = typeof props.href === 'string' && props.href.trim() ? props.href.trim()
+    : (typeof node.href === 'string' && node.href.trim() ? node.href.trim() : '');
+  if (href) { const t = mk('href', href, href); if (t) return t; }
+  // ② sourceRoot（?root= の上書きが優先）＋ path
+  const rootRaw = sourceRootOverride ?? proj?.project?.sourceRoot;
+  const root = typeof rootRaw === 'string' ? rootRaw.trim() : '';
+  const path = typeof props.path === 'string' ? props.path.trim() : '';
+  if (root && path) {
+    const dir = root.endsWith('/') ? root : root + '/';
+    let rootURL;
+    try { rootURL = new URL(dir, base); } catch { rootURL = null; }
+    if (rootURL) {
+      const rel = path.replace(/^\/+/, '').replace(/^\.\//, '');
+      let u;
+      try { u = new URL(rel, rootURL); } catch { u = null; }
+      if (u) {
+        return {
+          kind: openKindOfPath(u.pathname), url: u.href,
+          sameOrigin: !!pageOrigin && u.origin === pageOrigin,
+          preview, previewTruncated, source: 'sourceRoot', path,
+        };
+      }
+    }
+  }
+  // ③ preview のみ
+  if (preview) return { kind: 'preview', url: null, sameOrigin: false, preview, previewTruncated, source: 'preview', path: path || null };
+  return null;
 }
 
 function validateProject(raw) {
@@ -5552,6 +5656,10 @@ const KIND_LABELS = {
 // （makeInspectorCollapsible 参照）。
 const DEFAULT_OPEN_INSPSECS = new Set();
 
+// GRAPH_CONTRACT.md §12: ノードの実体を開く。表示方法（kind）の日本語と、テキストを載せる上限。
+const OPEN_KIND_TEXT = { html: 'HTML（サンドボックス表示）', image: '画像', text: 'テキスト', preview: '抜粋（preview）' };
+const OPEN_TEXT_MAX = 200 * 1024;   // 200KB を超えたら切って「(以下略)」
+
 function kindLabelForNode(n) {
   const ext = n?.props?.ext;
   if (ext && KIND_LABELS[ext]) return KIND_LABELS[ext];
@@ -6894,6 +7002,15 @@ class DiagramEditor {
       + '    "select": { "rels": ["flow"] },\n'
       + '    "layout": { "algorithm": "layered", "direction": "LR" } } ] }</pre>'
       + 'AI に書かせるときは <code>schema/project.schema.json</code> と <code>GRAPH_CONTRACT.md</code> を渡す。'
+      + '<h4>実体を開く</h4>'
+      + 'ノードを選ぶと要約の直下に <b>「開く」</b>（<kbd>O</kbd> キーでも可）。開き先は次の順で決まる:<br>'
+      + '① <code>props.href</code>（明示 URL）→ ② <code>project.sourceRoot</code> ＋ <code>props.path</code> → ③ <code>props.preview</code>（抽出時に埋めた抜粋）。<br>'
+      + '<b>ローカル</b>（リポジトリ直下で http サーバ）なら sourceRoot 経由で<b>全ファイル</b>が開ける。'
+      + '<b>公開 viewer</b> では<b>公開済みのものだけ</b>（href 経由）で、未公開ファイルは preview があればそれ、無ければ理由を出す。<br>'
+      + '<code>.html</code> はサンドボックス iframe ／ 画像は <code>&lt;img&gt;</code> ／ その他テキストはソース表示。'
+      + '<b>別オリジンは取得も埋め込みもせず</b>「新しいタブで開く」リンクだけを出す。<br>'
+      + '<b>ローカルのコツ</b>: <code>index.html?src=graph.json&amp;root=../</code> のように '
+      + '<code>?root=</code> を足すと sourceRoot を上書きできる（root はこの HTML から見たリポジトリ直下への相対パス）。'
       + '<h4>AI と往復する</h4>'
       + 'AI はツールの外にいる。会話は<b>ファイルで往復</b>する:<br>'
       + '<code>proposals.json</code> → File ▸ Open proposals… → 左の <b>PROPOSALS</b> タブで <b>op 単位に ✓ / ✗</b>'
@@ -6907,7 +7024,7 @@ class DiagramEditor {
       + '<b>View ▸ ペイン</b>（またはペイン内側の <b>‹ ›</b>）: 左右ペインの開閉。境目のドラッグで幅、ダブルクリックで開閉<br>'
       + '<b>Fit</b>: 全体表示 ／ ホイール・ピンチ: ズーム ／ 空白ドラッグ: パン'
       + '<h4>キャンバス</h4>ドラッグ: 移動 ／ ポート→ポート: 結線 ／ ダブルクリック: ラベル編集<br>'
-      + '<kbd>Del</kbd> 削除 ／ <kbd>Esc</kbd> 解除 ／ <kbd>Ctrl+Z</kbd> 戻す ／ <kbd>Ctrl+Shift+Z</kbd> やり直す<br>'
+      + '<kbd>Del</kbd> 削除 ／ <kbd>Esc</kbd> 解除（モーダルを閉じる）／ <kbd>O</kbd> 実体を開く ／ <kbd>Ctrl+Z</kbd> 戻す ／ <kbd>Ctrl+Shift+Z</kbd> やり直す<br>'
       + '<kbd>Alt</kbd>+クリック: リンク先の図へ ／ 3D: 1本指=回転 ／ 2本指=ズーム&amp;パン ／ （PC: <kbd>Shift</kbd>+ドラッグ=パン）'
       + '<h4>メニューバー</h4>'
       + '<b>File</b>: Project 保存 ／ Import 読込 ／ Open proposals… ／ Export decisions ⬇ ／ Export（Release / 図 JSON・SVG・HTML）<br>'
@@ -6924,6 +7041,169 @@ class DiagramEditor {
     overlay.appendChild(box);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
     this.root.appendChild(overlay);
+  }
+
+  // ─── §12 ノードの実体を開く ───
+  // ?root= の上書き（起動スクリプトから呼ばれる）。project.sourceRoot は書き換えない
+  // ＝ URL パラメータが保存 JSON に混ざらない（§12.4「開く操作はプロジェクトを変更しない」）。
+  setSourceRoot(root) {
+    setSourceRootOverride(root);
+    if (this.project) this.renderInspector();
+    return getSourceRootOverride();
+  }
+
+  // 現在のプロジェクトの保存 JSON（テストとハードゲートの基準。保存ボタンと同じ出力）
+  projectJSON() { return this.project ? projectToJSON(this.project) : ''; }
+
+  openSelectedNode() {
+    if (!this.selection || this.selection.kind !== 'node') return false;
+    const obj = nodeById(this.model, this.selection.id);
+    if (!obj) return false;
+    const target = openTargetOf(this.project, obj);
+    if (!target) {
+      this.setStatus('このノードには開ける実体がありません（href / sourceRoot＋path / preview のいずれも無し）', true);
+      return false;
+    }
+    this.showOpenModal(obj, target);
+    return true;
+  }
+
+  // 実体ビューア。§12.4 の不変条件を**この 1 メソッドで守り切る**:
+  //  - fetch は同一オリジンのみ（別オリジンは取得も iframe もせずリンクだけ）
+  //  - iframe は sandbox="allow-scripts" のみ（allow-same-origin を併記しない＝不透明オリジン）
+  //  - 取得内容は textContent にしか入れない（innerHTML 禁止）
+  //  - プロジェクトを変更しない（projectToJSON がバイト同一であることを開く前後で自己検査する）
+  showOpenModal(node, target) {
+    const before = this.projectJSON();
+    this.closeMenus();
+    document.querySelector('.de-modal-overlay')?.remove();
+    const overlay = document.createElement('div'); overlay.className = 'de-modal-overlay'; overlay.dataset.role = 'open';
+    const box = document.createElement('div'); box.className = 'de-modal de-modal-wide';
+
+    const head = document.createElement('div'); head.className = 'de-modal-head';
+    const name = document.createElement('b'); name.textContent = node.label || node.entityId || node.id;
+    const sub = document.createElement('span'); sub.className = 'de-open-head-path de-selectable';
+    sub.textContent = target.path || target.url || '(抜粋)';
+    head.append(name, sub);
+
+    const body = document.createElement('div'); body.className = 'de-modal-body de-open-body de-selectable';
+    body.dataset.kind = target.kind;
+    body.dataset.origin = target.sameOrigin ? 'same' : 'cross';
+
+    const foot = document.createElement('div'); foot.className = 'de-modal-foot';
+    if (target.url) {
+      const a = document.createElement('a');
+      a.className = 'de-btn'; a.textContent = '新しいタブで開く';
+      a.href = target.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      foot.appendChild(a);
+    }
+    const copy = this.btn('パスをコピー', async () => {
+      const text = target.url || target.path || '';
+      try { await navigator.clipboard.writeText(text); this.setStatus(`コピーしました: ${text}`); }
+      catch { this.setStatus(`コピーできませんでした（手動で選択してください）: ${text}`, true); }
+    });
+    const close = this.btn('閉じる', () => overlay.remove()); close.className = 'de-btn accent';
+    foot.append(copy, close);
+
+    box.append(head, body, foot);
+    overlay.appendChild(box);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    this.root.appendChild(overlay);
+
+    this.fillOpenBody(body, target);
+
+    // ハードゲート（§12.4）: 開く操作でプロジェクトが 1 バイトも変わっていないこと
+    const after = this.projectJSON();
+    this.lastOpenGuard = { ok: before === after, bytes: before.length };
+    if (!this.lastOpenGuard.ok) {
+      console.warn('open: プロジェクトが変化しました（§12.4 違反）');
+      this.setStatus('内部エラー: 開く操作でプロジェクトが変化しました（§12.4）', true);
+    }
+    return overlay;
+  }
+
+  openNote(text) {
+    const p = document.createElement('p'); p.className = 'de-open-note'; p.textContent = text;
+    return p;
+  }
+  openPre(text, cls = '') {
+    const pre = document.createElement('pre'); pre.className = 'de-open-pre ' + cls;
+    pre.textContent = text;        // §12.4: 取得した内容は必ず textContent（innerHTML 禁止）
+    return pre;
+  }
+  // preview への退避（取得失敗・未公開）。preview すら無ければ「どうすれば見られるか」を書く。
+  openFallback(body, target, reason) {
+    body.dataset.state = target.preview ? 'preview-fallback' : 'unavailable';
+    if (target.preview) {
+      body.append(this.openNote(`${reason} 以下は抽出時に埋め込まれた抜粋（props.preview）です。`));
+      body.append(this.openPre(target.preview));
+      if (target.previewTruncated) body.append(this.openNote(`(先頭 ${target.preview.length} バイトの抜粋)`));
+      return;
+    }
+    body.append(this.openNote(`${reason} このファイルはこの場所では配信されていません（抜粋 props.preview もありません）。`));
+    body.append(this.openNote('見る方法: ① ローカルでリポジトリ直下に http サーバを立て、BOOTSTRAP.md の手順で '
+      + '?src=…&root=../ を付けて開く（sourceRoot 経由で全ファイルが開けます）／'
+      + '② node bin/extract.mjs <repo> … --preview で抜粋を埋めて再抽出する。'));
+    if (target.url) body.append(this.openPre(target.url));
+  }
+
+  async fillOpenBody(body, target) {
+    // ③ preview のみ（開き先の URL が無い）
+    if (target.kind === 'preview') {
+      body.dataset.state = 'preview';
+      body.append(this.openPre(target.preview || ''));
+      if (target.previewTruncated) body.append(this.openNote(`(先頭 ${(target.preview || '').length} バイトの抜粋)`));
+      return;
+    }
+    // 別オリジン: §12.4 取得も iframe もしない。リンクだけ出す
+    if (!target.sameOrigin) {
+      body.dataset.state = 'cross-origin';
+      body.append(this.openNote('別オリジンのため、このページでは内容を取得も埋め込みもしません（外部通信ゼロの不変条件・§12.4）。'
+        + '新しいタブで開いてください。'));
+      body.append(this.openPre(target.url));
+      const a = document.createElement('a');
+      a.className = 'de-btn de-open-extlink'; a.textContent = '新しいタブで開く';
+      a.href = target.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      body.append(a);
+      if (target.preview) { body.append(this.openNote('抽出時の抜粋:')); body.append(this.openPre(target.preview)); }
+      return;
+    }
+    // 同一オリジン
+    if (target.kind === 'text') {
+      let res = null, err = '';
+      try { res = await fetch(target.url, { cache: 'no-store' }); }
+      catch (e) { err = String(e && e.message || e); }
+      if (!res) return this.openFallback(body, target, `取得に失敗しました（${err}）。`);
+      if (!res.ok) return this.openFallback(body, target, `取得に失敗しました（HTTP ${res.status}）。`);
+      let text = '';
+      try { text = await res.text(); } catch (e) { return this.openFallback(body, target, `本文を読めませんでした（${e && e.message || e}）。`); }
+      body.dataset.state = 'text';
+      const cut = text.length > OPEN_TEXT_MAX;
+      body.append(this.openPre(cut ? text.slice(0, OPEN_TEXT_MAX) + '\n…(以下略)' : text));
+      if (cut) body.append(this.openNote(`(先頭 ${OPEN_TEXT_MAX} バイトのみ表示・以下略)`));
+      return;
+    }
+    // html / image: 404 を先に検出してから埋め込む（iframe/img は 404 をイベントで区別できない）。
+    // HEAD 自体が失敗（ネットワーク・サーバ非対応）した場合は握りつぶして埋め込みを試す。
+    let head = null;
+    try { head = await fetch(target.url, { method: 'HEAD', cache: 'no-store' }); } catch { head = null; }
+    if (head && !head.ok) return this.openFallback(body, target, `取得に失敗しました（HTTP ${head.status}）。`);
+    if (target.kind === 'image') {
+      body.dataset.state = 'image';
+      const img = document.createElement('img');
+      img.className = 'de-open-img'; img.src = target.url; img.alt = target.path || target.url;
+      img.addEventListener('error', () => { body.textContent = ''; this.openFallback(body, target, '画像を表示できませんでした。'); });
+      body.append(img);
+      return;
+    }
+    body.dataset.state = 'html';
+    const frame = document.createElement('iframe');
+    frame.className = 'de-open-frame';
+    // §12.4: allow-same-origin は絶対に併記しない（不透明オリジンのままにする）
+    frame.setAttribute('sandbox', 'allow-scripts');
+    frame.setAttribute('referrerpolicy', 'no-referrer');
+    frame.src = target.url;        // srcdoc ではなく src（取得内容を DOM に入れない）
+    body.append(frame);
   }
 
   addDiagram() {
@@ -6991,6 +7271,17 @@ class DiagramEditor {
     document.addEventListener('keydown', e => {
       this._altDown = e.altKey;
       if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+      // §12: モーダル（使い方・実体ビューア）が開いていれば Esc はまずそれを閉じる。
+      // O はノード選択中の「開く」（view モードでも使える＝編集可否と無関係）。
+      if (e.key === 'Escape') {
+        const ov = this.root.querySelector('.de-modal-overlay');
+        if (ov) { ov.remove(); e.preventDefault(); return; }
+      }
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'o') {
+        if (this.selection?.kind === 'node' && !this.root.querySelector('.de-modal-overlay')) {
+          this.openSelectedNode(); e.preventDefault(); return;
+        }
+      }
       if (!this.editable) return;
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { this.undo(); e.preventDefault(); return; }
       if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) { this.redo(); e.preventDefault(); return; }
@@ -7601,7 +7892,33 @@ class DiagramEditor {
       wrap.appendChild(this.summaryRow('種別', `${relLabel}${sub}`));
     }
     wrap.appendChild(this.descriptionRow(kind, obj));
+    if (kind === 'node') wrap.appendChild(this.openRow(obj));
     box.appendChild(wrap);
+  }
+
+  // GRAPH_CONTRACT.md §12: 要約の直下に「開く」。開き先が無いノードでは押せない
+  // （無効なボタンは出すが disabled。「このノードは開けない」こと自体が情報なので隠さない）。
+  openRow(obj) {
+    const row = document.createElement('div'); row.className = 'de-inspsum-row de-open-row';
+    const k = document.createElement('div'); k.className = 'de-inspsum-k'; k.textContent = '実体';
+    const wrap = document.createElement('div'); wrap.className = 'de-inspsum-v de-open-cell';
+    const t = openTargetOf(this.project, obj);
+    const b = this.btn('開く', () => this.openSelectedNode());
+    b.classList.add('de-open-btn');
+    b.dataset.role = 'open';
+    if (!t) {
+      b.disabled = true;
+      b.title = '開き先がありません（props.href / project.sourceRoot＋props.path / props.preview のいずれも無い）';
+      b.dataset.openKind = '';
+    } else {
+      b.dataset.openKind = t.kind;
+      b.dataset.openUrl = t.url || '';
+      const mode = t.kind === 'preview' ? '抜粋のみ' : (t.sameOrigin ? '同一オリジン' : '別オリジン（新しいタブ）');
+      b.title = `${t.url || '(抜粋のみ・URL なし)'} — ${mode} ／ ${OPEN_KIND_TEXT[t.kind] || t.kind}（O キーでも開く）`;
+    }
+    wrap.appendChild(b);
+    row.append(k, wrap);
+    return row;
   }
 
   // 何も選んでいないとき: 現在のビューの要約（種類=ビュー / タイトル / ノード数・エッジ数 / select・layout 要旨）
@@ -8144,6 +8461,10 @@ try {
   // 優先順: ?src=URL > 埋込みプロジェクト > 埋込み単図 > 先頭 example。自動保存は非モーダルのバナーで提案
   // ?src= は同一オリジンの JSON を読み込む（例: /tools/diagram_drawer/?src=../../data/diagrams/life_graph.json）。
   const SRC = new URLSearchParams(location.search).get('src');
+  // ?root= … §12.1 の sourceRoot 上書き（例: ローカルで ?src=graph.json&root=../）。
+  // project.sourceRoot 自体は書き換えない（保存 JSON に URL パラメータを混ぜない）。
+  const ROOT = new URLSearchParams(location.search).get('root');
+  if (ROOT) editor.setSourceRoot(ROOT);
   const embeddedProj = document.getElementById('diagram-project');
   const embedded = document.getElementById('diagram-model');
   let srcLoaded = false;

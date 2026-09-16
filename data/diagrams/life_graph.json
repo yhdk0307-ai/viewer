@@ -4472,7 +4472,8 @@
      "path": "outputs/diagrams/interactive/life_descriptions_r2.decisions.json",
      "ext": ".json",
      "size": 1497,
-     "role": "output"
+     "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/data/diagrams/life_descriptions_r2.decisions.json"
     },
     "tags": [
      "layer:PUBLISH"
@@ -4489,7 +4490,8 @@
      "path": "outputs/diagrams/interactive/life_descriptions_r2.proposals.json",
      "ext": ".json",
      "size": 2135,
-     "role": "output"
+     "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/data/diagrams/life_descriptions_r2.proposals.json"
     },
     "tags": [
      "layer:PUBLISH"
@@ -4506,7 +4508,8 @@
      "path": "outputs/diagrams/interactive/life_descriptions.decisions.json",
      "ext": ".json",
      "size": 10455,
-     "role": "output"
+     "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/data/diagrams/life_descriptions.decisions.json"
     },
     "tags": [
      "layer:PUBLISH"
@@ -4523,7 +4526,8 @@
      "path": "outputs/diagrams/interactive/life_descriptions.proposals.json",
      "ext": ".json",
      "size": 61322,
-     "role": "output"
+     "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/data/diagrams/life_descriptions.proposals.json"
     },
     "tags": [
      "layer:PUBLISH"
@@ -4539,8 +4543,9 @@
     "props": {
      "path": "outputs/diagrams/interactive/life_overlay.json",
      "ext": ".json",
-     "size": 61124,
-     "role": "output"
+     "size": 61129,
+     "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/data/diagrams/life_overlay.json"
     },
     "tags": [
      "layer:PUBLISH"
@@ -4697,7 +4702,8 @@
      "path": "outputs/learning/g_test_2026_05/interactive/index.html",
      "ext": ".html",
      "size": 742542,
-     "role": "output"
+     "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/pub/g_test_2026_05/index.html"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4714,7 +4720,8 @@
      "path": "outputs/learning/g_test_2026_05/interactive/math_derivations.html",
      "ext": ".html",
      "size": 18793,
-     "role": "output"
+     "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/pub/g_test_2026_05/math_derivations.html"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -6179,7 +6186,8 @@
      "path": "outputs/learning/manga_epoch/interactive/arc2_outline_map.html",
      "ext": ".html",
      "size": 185885,
-     "role": "output"
+     "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/review/epoch/arc2_outline_map.html"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -6196,7 +6204,8 @@
      "path": "outputs/learning/manga_epoch/interactive/manga_harness.html",
      "ext": ".html",
      "size": 39250,
-     "role": "output"
+     "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/review/epoch/manga_harness.html"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -6213,7 +6222,8 @@
      "path": "outputs/learning/manga_epoch/interactive/outline_map_sync.json",
      "ext": ".json",
      "size": 267,
-     "role": "output"
+     "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/review/epoch/outline_map_sync.json"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -6231,6 +6241,7 @@
      "ext": ".md",
      "size": 3240,
      "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/review/epoch/README.md",
      "description": "ここは「開発中・自分が確認するもの」。",
      "descriptionSource": "source",
      "descriptionBasis": "4c149af9"
@@ -6250,7 +6261,8 @@
      "path": "outputs/learning/manga_epoch/interactive/tech_map.html",
      "ext": ".html",
      "size": 51951,
-     "role": "output"
+     "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/review/epoch/tech_map.html"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -11423,6 +11435,7 @@
      "ext": ".html",
      "size": 220020,
      "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/pub/robotics_ai/index.html",
      "description": "STRIPS から VLA までを触って辿る図解 1 枚。stories/README.md からの入口で /pub/robotics_ai/ の実体。",
      "descriptionSource": "ai"
     },
@@ -14148,7 +14161,8 @@
      "path": "outputs/reports/usv_lightfish_20260912/interactive/index.html",
      "ext": ".html",
      "size": 121210,
-     "role": "output"
+     "role": "output",
+     "href": "https://yhdk0307-ai.github.io/viewer/pub/reports/usv_lightfish_20260912/index.html"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/interactive/",
     "icon": "package"
@@ -15282,7 +15296,7 @@
     "props": {
      "path": "tools/diagram_engine/bin/extract.mjs",
      "ext": ".mjs",
-     "size": 40244,
+     "size": 50026,
      "role": "tool",
      "description": "extract.mjs — G3: repository graph extractor (GRAPH_CONTRACT.md §4)",
      "descriptionSource": "source",
@@ -15359,7 +15373,7 @@
     "props": {
      "path": "tools/diagram_engine/bin/rules/life.json",
      "ext": ".json",
-     "size": 2620,
+     "size": 5605,
      "role": "tool"
     },
     "tags": [
@@ -15396,7 +15410,7 @@
     "props": {
      "path": "tools/diagram_engine/build.mjs",
      "ext": ".mjs",
-     "size": 10441,
+     "size": 10759,
      "role": "tool",
      "description": "build.mjs — 自己完結 dist / リリースパッケージを生成する簡易ビルド（Node 標準のみ・依存ゼロ）",
      "descriptionSource": "source",
@@ -15416,7 +15430,7 @@
     "props": {
      "path": "tools/diagram_engine/editor.html",
      "ext": ".html",
-     "size": 1374,
+     "size": 1564,
      "role": "tool"
     },
     "tags": [
@@ -15538,7 +15552,7 @@
     "props": {
      "path": "tools/diagram_engine/GRAPH_CONTRACT.md",
      "ext": ".md",
-     "size": 27383,
+     "size": 30919,
      "role": "tool",
      "description": "diagram_drawer を「データは全部グラフ／図はグラフに対する選べる投影」へ反転させ、 どのリポジトリ・どの PC にも「持って行って展開すれば使える」ツールにするための単一契約。",
      "descriptionSource": "source",
@@ -15615,8 +15629,9 @@
     "props": {
      "path": "tools/diagram_engine/interactive/index.html",
      "ext": ".html",
-     "size": 1207000,
-     "role": "tool"
+     "size": 1226493,
+     "role": "tool",
+     "href": "https://yhdk0307-ai.github.io/viewer/tools/diagram_drawer/index.html"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -15632,7 +15647,7 @@
     "props": {
      "path": "tools/diagram_engine/MIGRATION.md",
      "ext": ".md",
-     "size": 20167,
+     "size": 22631,
      "role": "tool",
      "description": "既存の図（Mermaid / draw.io / PlantUML / Visio / PowerPoint / 手描き / Excel 構成表 / スクリーンショット）を 本エンジンの JSON へ移管するための正典。",
      "descriptionSource": "source",
@@ -15712,7 +15727,7 @@
     "props": {
      "path": "tools/diagram_engine/schema/project.schema.json",
      "ext": ".json",
-     "size": 13208,
+     "size": 14640,
      "role": "tool",
      "description": "複数ダイアグラム + ナビゲーションの上位モデル。entry の図から開き、nodes[].link で図間をドリルダウンする。単一 diagram JSON も 1 図プロジェクトとして読み込める（後方互換）。",
      "descriptionSource": "source",
@@ -15752,7 +15767,7 @@
     "props": {
      "path": "tools/diagram_engine/src/editor.js",
      "ext": ".js",
-     "size": 146062,
+     "size": 159398,
      "role": "tool",
      "description": "editor.js — フル作図エディタ / 閲覧ビューア（mode: 'edit' | 'view'）",
      "descriptionSource": "source",
@@ -15872,7 +15887,7 @@
     "props": {
      "path": "tools/diagram_engine/src/model.js",
      "ext": ".js",
-     "size": 54073,
+     "size": 58772,
      "role": "tool",
      "description": "model.js — ダイアグラムモデルのロード/検証/正規化/参照解決",
      "descriptionSource": "source",
@@ -16052,7 +16067,7 @@
     "props": {
      "path": "tools/diagram_engine/src/theme.css",
      "ext": ".css",
-     "size": 28075,
+     "size": 29305,
      "role": "tool"
     },
     "tags": [
@@ -16167,7 +16182,7 @@
     "props": {
      "path": "tools/diagram_engine/verification/extract.test.mjs",
      "ext": ".mjs",
-     "size": 29246,
+     "size": 37874,
      "role": "tool",
      "description": "extract.test.mjs — Node-only regression test for bin/extract.mjs (G3 repository graph extractor).",
      "descriptionSource": "source",
@@ -16241,7 +16256,7 @@
     "props": {
      "path": "tools/diagram_engine/verification/LESSONS.md",
      "ext": ".md",
-     "size": 142144,
+     "size": 149101,
      "role": "tool",
      "description": "検証エージェント（.claude/agents/diagram-engine-verifier.md）の記憶。",
      "descriptionSource": "source",
@@ -16261,7 +16276,7 @@
     "props": {
      "path": "tools/diagram_engine/verification/verify.mjs",
      "ext": ".mjs",
-     "size": 257722,
+     "size": 273359,
      "role": "tool",
      "description": "verify.mjs — diagram_engine の恒久検証スイート（検証エージェントの実行基盤）",
      "descriptionSource": "source",
@@ -16654,8 +16669,9 @@
     "props": {
      "path": "tools/usv_model/interactive/index.html",
      "ext": ".html",
-     "size": 890902,
-     "role": "tool"
+     "size": 891706,
+     "role": "tool",
+     "href": "https://yhdk0307-ai.github.io/viewer/tools/usv_model/index.html"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -16684,21 +16700,12 @@
     "icon": "tool"
    },
    {
-    "id": "~ext/viewer/notebooks",
-    "type": "external",
-    "name": "notebooks",
-    "props": {
-     "external": "viewer",
-     "description": "本番 manga-epoch/viewer に実体を残す唯一の枠。Colab は公開 GitHub からしか .ipynb を開けないため必要。",
-     "descriptionSource": "ai"
-    }
-   },
-   {
     "id": "~ext/viewer/pub/robotics_ai",
     "type": "external",
     "name": "pub/robotics_ai",
     "props": {
      "external": "viewer",
+     "href": "https://yhdk0307-ai.github.io/viewer/pub/robotics_ai",
      "description": "robotics_ai LS 図解の公開先。outputs/learning/robotics_ai/interactive/index.html が /pub/ に出る。",
      "descriptionSource": "ai"
     }
@@ -16709,6 +16716,7 @@
     "name": "pub/g_test_2026_05",
     "props": {
      "external": "viewer",
+     "href": "https://yhdk0307-ai.github.io/viewer/pub/g_test_2026_05",
      "description": "G 検定 LS 図解の公開先。outputs/learning/g_test_2026_05/interactive/ が完成扱いで /pub/ に出る。",
      "descriptionSource": "ai"
     }
@@ -16719,6 +16727,7 @@
     "name": "review/epoch",
     "props": {
      "external": "viewer",
+     "href": "https://yhdk0307-ai.github.io/viewer/review/epoch",
      "description": "開発中 reviewer の置き場。LP から貼らず robots.txt で除外し、有料 Arc 2 の 7 本は 2026-09-02 に送信を止めた。",
      "descriptionSource": "ai"
     }
@@ -16729,6 +16738,7 @@
     "name": "tools/diagram_drawer",
     "props": {
      "external": "viewer",
+     "href": "https://yhdk0307-ai.github.io/viewer/tools/diagram_drawer",
      "description": "diagram_drawer の公開 URL。携帯からグラフを見る入口で、サブパス配下のため相対 ?src= が必須。",
      "descriptionSource": "ai"
     }
@@ -16739,6 +16749,7 @@
     "name": "tools/usv_model",
     "props": {
      "external": "viewer",
+     "href": "https://yhdk0307-ai.github.io/viewer/tools/usv_model",
      "description": "USV 0D モデルの dev viewer。Artifact は使わず、報告時は常にこの URL を添える運用になっている。",
      "descriptionSource": "ai"
     }
@@ -16749,6 +16760,7 @@
     "name": "data/diagrams",
     "props": {
      "external": "viewer",
+     "href": "https://yhdk0307-ai.github.io/viewer/data/diagrams",
      "description": "outputs/diagrams/interactive/ の転送先。diagram_drawer は相対 ?src=../../data/diagrams/ で読む必要がある。",
      "descriptionSource": "ai"
     }
@@ -16759,7 +16771,19 @@
     "name": "pub/reports/usv_lightfish_20260912",
     "props": {
      "external": "viewer",
+     "href": "https://yhdk0307-ai.github.io/viewer/pub/reports/usv_lightfish_20260912",
      "description": "tech-report 1 件の公開先。レポートを足すたび sync-viewer.yml の MAP にこの行を明示追加する。",
+     "descriptionSource": "ai"
+    }
+   },
+   {
+    "id": "~ext/viewer_prod/notebooks",
+    "type": "external",
+    "name": "notebooks",
+    "props": {
+     "external": "viewer_prod",
+     "href": "https://manga-epoch.github.io/viewer/notebooks",
+     "description": "本番 manga-epoch/viewer に実体を残す唯一の枠。Colab は公開 GitHub からしか .ipynb を開けないため必要。",
      "descriptionSource": "ai"
     }
    },
@@ -24720,12 +24744,6 @@
     "to": "tools/usv_hull/lib/mesh.mjs"
    },
    {
-    "id": "publishes~outputs/publish/epoch/notebooks~~ext/viewer/notebooks",
-    "rel": "publishes",
-    "from": "outputs/publish/epoch/notebooks",
-    "to": "~ext/viewer/notebooks"
-   },
-   {
     "id": "publishes~outputs/learning/robotics_ai/interactive~~ext/viewer/pub/robotics_ai",
     "rel": "publishes",
     "from": "outputs/learning/robotics_ai/interactive",
@@ -24766,6 +24784,12 @@
     "rel": "publishes",
     "from": "outputs/reports/usv_lightfish_20260912/interactive",
     "to": "~ext/viewer/pub/reports/usv_lightfish_20260912"
+   },
+   {
+    "id": "publishes~outputs/publish/epoch/notebooks~~ext/viewer_prod/notebooks",
+    "rel": "publishes",
+    "from": "outputs/publish/epoch/notebooks",
+    "to": "~ext/viewer_prod/notebooks"
    },
    {
     "id": "realizes~tools/diagram_engine~outputs/diagrams",
