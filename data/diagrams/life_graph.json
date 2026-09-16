@@ -30,7 +30,10 @@
      "path": ".agents",
      "ext": "",
      "size": 0,
-     "role": null
+     "role": null,
+     "description": "Claude のスキルエコシステムから入れる共有スキルの置き場。自作の /research などは .claude/skills 側で、ここは外部由来だけ。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "11635a5a"
     },
     "icon": "folder"
    },
@@ -43,7 +46,10 @@
      "path": ".agents/skills",
      "ext": "",
      "size": 0,
-     "role": null
+     "role": null,
+     "description": "外部スキルのインストール先。いまは find-skills 1 本で、/research などの自作は .claude/skills 側に置く。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "5543e08f"
     },
     "sublabel": ".agents/",
     "icon": "folder"
@@ -57,7 +63,10 @@
      "path": ".agents/skills/find-skills",
      "ext": "",
      "size": 0,
-     "role": null
+     "role": null,
+     "description": "「こういうスキルある?」に答えて外部スキルを探し入れる SKILL.md 1 本。自作を増やす前にここを疑う。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c118f9a8"
     },
     "sublabel": ".agents/skills/",
     "icon": "folder"
@@ -106,7 +115,10 @@
      "path": ".claude/agents",
      "ext": "",
      "size": 0,
-     "role": null
+     "role": null,
+     "description": "サブエージェントの定義置き場。diagram-engine-verifier.md が tools/diagram_engine の変更を verify.mjs で検証する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "53dc9733"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -143,7 +155,10 @@
      "path": ".claude/hooks",
      "ext": "",
      "size": 0,
-     "role": null
+     "role": null,
+     "description": "Bash 実行前のガード。git-policy-guard.sh が main 直 push を止め、manga-coord-reminder.sh が調整文を注入する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "f44c7e34"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -228,7 +243,10 @@
      "path": ".claude/rules",
      "ext": "",
      "size": 0,
-     "role": "rule"
+     "role": "rule",
+     "description": "CLAUDE.md が常時 5 本・オンデマンド 4 本に読み分けるルール本体。パス規約や Git 運用を変えるならここを直す。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "5af3d4af"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -441,7 +459,10 @@
      "path": ".claude/skills",
      "ext": "",
      "size": 0,
-     "role": "skill"
+     "role": "skill",
+     "description": "/research /manga /diagram などスラッシュコマンドの定義 12 本。CLAUDE.md のサブシステム表と対応する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "5fc92ff4"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -458,7 +479,10 @@
      "path": ".claude/skills/dev-planner",
      "ext": "",
      "size": 0,
-     "role": "skill"
+     "role": "skill",
+     "description": "/dev-plan の定義。アイデアを docs/bootstraps の推薦付きプランに変え、outputs/dev_plans/DP-*.md として出す。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c118f9a8"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -812,7 +836,10 @@
      "path": ".claude/skills/learning-support",
      "ext": "",
      "size": 0,
-     "role": "skill"
+     "role": "skill",
+     "description": "/learn (LS) の定義。knowledge/learning の goals・arcs を作り、outputs/learning/<goal>/ に物語と図解を出す手順。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c118f9a8"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -1069,7 +1096,10 @@
      "path": ".claude/skills/minimalist-ui",
      "ext": "",
      "size": 0,
-     "role": "skill"
+     "role": "skill",
+     "description": "外部 taste-skill から取り込んだ UI の標準 taste。原文は改変せず、life 固有の適用は末尾「life 適用ノート」に足す。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c118f9a8"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -1106,7 +1136,10 @@
      "path": ".claude/skills/neta-trend-daily",
      "ext": "",
      "size": 0,
-     "role": "skill"
+     "role": "skill",
+     "description": "はてブ IT と Hacker News の人気記事を集めて ideas/daily/ に日次メモを落とすスキル。Board の 📥 Inbox の入口。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c118f9a8"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -1143,7 +1176,10 @@
      "path": ".claude/skills/research-agent",
      "ext": "",
      "size": 0,
-     "role": "skill"
+     "role": "skill",
+     "description": "/research (RA) の定義。knowledge/research/ に RR-*.md を積み、knowledge_portfolio.svg まで再生成する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c118f9a8"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -1180,7 +1216,10 @@
      "path": ".claude/skills/speech-writer",
      "ext": "",
      "size": 0,
-     "role": "skill"
+     "role": "skill",
+     "description": "/speech (SW) の定義。knowledge/profile の speech_profile.yaml と humor_patterns.yaml を材料に原稿を書く。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c118f9a8"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -1217,7 +1256,10 @@
      "path": ".claude/skills/tech-design-doc",
      "ext": "",
      "size": 0,
-     "role": "skill"
+     "role": "skill",
+     "description": "設計書スキル。支配式と実験式を分けて書く型で、正典実例は tools/usv_model/interactive/index.html の設計書タブ。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c2672166"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -1271,7 +1313,10 @@
      "path": ".claude/skills/tech-report",
      "ext": "",
      "size": 0,
-     "role": "skill"
+     "role": "skill",
+     "description": "結論と図が主役の 1 枚レポート型。出力先は outputs/reports/<slug>_<日付>/interactive/index.html で ❶❷❸ で図を引く。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c2672166"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -1325,7 +1370,10 @@
      "path": ".claude/skills/url-digest",
      "ext": "",
      "size": 0,
-     "role": "skill"
+     "role": "skill",
+     "description": "X / Hacker News / Reddit で取得手段を変えて URL を要約する。WebFetch が効かない先の回避策がここに集約されている。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c118f9a8"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -1362,7 +1410,10 @@
      "path": ".claude/templates",
      "ext": "",
      "size": 0,
-     "role": null
+     "role": null,
+     "description": "KAS・DP・SW が新規ファイルを起こすときの雛形。knowledge_entry.md の front matter が keyword_index 更新の前提。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "fb68d55b"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -1509,7 +1560,10 @@
      "path": ".github/ISSUE_TEMPLATE",
      "ext": "",
      "size": 0,
-     "role": null
+     "role": null,
+     "description": "Board に載る Issue の型 6 種。ra:news / ra:trend / ra:idea ラベルが RA の出力と Kanban の列を結ぶ。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "6070c31d"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -1634,7 +1688,10 @@
      "path": ".github/workflows",
      "ext": "",
      "size": 0,
-     "role": null
+     "role": null,
+     "description": "Claude Actions と自動化 7 本。公開先を増やすときに直すのは sync-viewer.yml の MAP（glob ではなく明示表）。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c8633123"
     },
     "tags": [
      "layer:GOVERNANCE"
@@ -1819,7 +1876,10 @@
      "path": "docs/bootstraps",
      "ext": "",
      "size": 0,
-     "role": "bootstrap"
+     "role": "bootstrap",
+     "description": "LMF や USDF など「読ませれば運用が立ち上がる」インストーラ prompt 7 本。別 repo に同じ仕組みを移すとき使う。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "4a1d041c"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -1976,7 +2036,10 @@
      "path": "docs/reference",
      "ext": "",
      "size": 0,
-     "role": "doc"
+     "role": "doc",
+     "description": "labels.md（Issue ラベルの全定義）と 3 つの資料群の入口。実行しない資料で、運用の根拠を辿るときだけ開く。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c9899f0b"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -2013,7 +2076,10 @@
      "path": "docs/reference/project_development",
      "ext": "",
      "size": 0,
-     "role": "doc"
+     "role": "doc",
+     "description": "UPDF v1.0 と企画〜成果物の Prompt 群。DP が個別プランを書く前の上位フレームにあたる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "1436b570"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -2130,7 +2196,10 @@
      "path": "docs/reference/reports",
      "ext": "",
      "size": 0,
-     "role": "doc"
+     "role": "doc",
+     "description": "SMTDD や知識蓄積システムなど、いまの運用の元になったコンセプトレポート。仕組みの由来を確認するとき読む。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "27b93027"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -2267,7 +2336,10 @@
      "path": "docs/reference/system_development",
      "ext": "",
      "size": 0,
-     "role": "doc"
+     "role": "doc",
+     "description": "USDF v4.3 と実装・仕様化の Prompt 群。ルール読み込みの移行ガイドもここに置く。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "8be565c1"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -2499,7 +2571,10 @@
      "path": "ideas/daily",
      "ext": "",
      "size": 0,
-     "role": "idea"
+     "role": "idea",
+     "description": "neta-trend-daily の出力先。はてブ IT と Hacker News からの日次ネタを置き、Board の 📥 Inbox へ流す起点になる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "1e13b55d"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -2631,7 +2706,10 @@
      "path": "knowledge/domain",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "KAS の分野別ナレッジ。ai_ml / robotics の概念エントリと dev_catalog.yaml を置き、RA が系譜判定に読む。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "beb4a0ff"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -2665,7 +2743,10 @@
      "path": "knowledge/domain/ai_ml",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "ai_ml ドメイン。現状は concepts/transformer.md 1 本で、keyword_index.yaml のカバレッジ判定はここを見る。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "f3bafac3"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -2682,7 +2763,10 @@
      "path": "knowledge/domain/ai_ml/concepts",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "KN-ai_ml-NNN の概念エントリ置き場。.claude/templates/knowledge_entry.md の型で書き keyword_index に登録する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "438f7cd2"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -2913,7 +2997,10 @@
      "path": "knowledge/domain/robotics",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "robotics ドメインの中核。concepts / comparisons / timelines と concept_graph.yaml を持つ。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "10e46fed"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -2930,7 +3017,10 @@
      "path": "knowledge/domain/robotics/comparisons",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "「どれを選ぶか」を並べた比較エントリ。vla_models_comparison.md など概念単体では答えられない問いを集める。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "36cbf004"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3027,7 +3117,10 @@
      "path": "knowledge/domain/robotics/concepts",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "STRIPS から VLA まで 14 本の概念エントリ。robotics_ai LS の蒸留先で concept_graph.yaml のノード実体になる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "bceac45b"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3324,7 +3417,10 @@
      "path": "knowledge/domain/robotics/timelines",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "年表エントリ。robotics_ai_history.md が 1969-2024 を通し、新しい論文がどの系譜に載るかの物差しになる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "9f10a6f2"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3381,7 +3477,10 @@
      "path": "knowledge/learning",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "LS の台帳側。goals / maps / arcs / catalogs が「何を学ぶか」で、読み物本体は outputs/learning/ にある。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "89f97811"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3398,7 +3497,10 @@
      "path": "knowledge/learning/arcs",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "ストーリー Arc の定義。scene ごとの学習ノードを並べ、outputs/learning の原稿と 1 対 1 で対応する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "3d0de26f"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3415,7 +3517,10 @@
      "path": "knowledge/learning/arcs/g_test_2026_05",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "G 検定 Arc 1-4 の定義。各 scene の nodes が maps/g_test_2026_05.yaml のノード id を指す。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "aa84bd03"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3512,7 +3617,10 @@
      "path": "knowledge/learning/catalogs",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "ストーリーに載せきれない暗記型・並列型の項目カタログ。/learn keywords で引く。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "3d0de26f"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3529,7 +3637,10 @@
      "path": "knowledge/learning/catalogs/g_test_2026_05",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "G 検定の暗記型項目を tech / law / ethics に分けた 4 本。keywords.yaml が統合入口になる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "4c68214f"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3626,7 +3737,10 @@
      "path": "knowledge/learning/goals",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "学習ゴールの定義。g_test_2026_05.yaml が締切・時間予算・試験形式を持ち、Arc とマップの起点になる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "9a6e77cf"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3663,7 +3777,10 @@
      "path": "knowledge/learning/maps",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "興味×習熟の 4 色ヒートマップ。黄（興味高・習熟低）が次にどの Arc を書くかを決める。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "9a6e77cf"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3700,7 +3817,10 @@
      "path": "knowledge/learning/robotics_ai",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "robotics_ai LS のゴール定義。G 検定とは独立に VLA まで体系化し knowledge/domain/robotics へ蒸留する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "1150ab69"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3734,7 +3854,10 @@
      "path": "knowledge/meta",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "KAS の索引層。RA は実行前に keyword_index.yaml のカバレッジを読み、PORTFOLIO.md が portfolio の SVG を指す。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "760be372"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3851,7 +3974,10 @@
      "path": "knowledge/profile",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "RA・SW・Trend が読む本人設定。speech_profile.yaml と humor_patterns.yaml がスピーチの口調を決める。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "bb29bfcd"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -3965,7 +4091,10 @@
      "path": "knowledge/research",
      "ext": "",
      "size": 0,
-     "role": "knowledge"
+     "role": "knowledge",
+     "description": "RA が書き出す RR-YYYYMMDD-NN.md の蓄積。keyword_index.yaml へ登録され、次の /research がカバレッジ判定に使う。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "8c20803b"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4254,7 +4383,10 @@
      "path": "outputs/dev_plans",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "/dev-plan (DP) の登録簿。DP-20260825-01.md は本文の正本を tools/usv_model の設計書タブ側に置いている。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "0da45e6c"
     },
     "sublabel": "outputs/",
     "icon": "folder"
@@ -4319,13 +4451,51 @@
      "path": "outputs/diagrams/interactive",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "共通認識図の公開スライス。生成物 life_graph.json と人の正本 life_overlay.json を viewer /data/diagrams/ へ送る。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "726e13f7",
+     "descriptionStale": true
     },
     "tags": [
      "layer:PUBLISH"
     ],
     "sublabel": "outputs/diagrams/",
     "icon": "folder"
+   },
+   {
+    "id": "outputs/diagrams/interactive/life_descriptions.decisions.json",
+    "type": "output",
+    "name": "life_descriptions.decisions.json",
+    "parent": "outputs/diagrams/interactive",
+    "props": {
+     "path": "outputs/diagrams/interactive/life_descriptions.decisions.json",
+     "ext": ".json",
+     "size": 10455,
+     "role": "output"
+    },
+    "tags": [
+     "layer:PUBLISH"
+    ],
+    "sublabel": "outputs/diagrams/interactive/",
+    "icon": "package"
+   },
+   {
+    "id": "outputs/diagrams/interactive/life_descriptions.proposals.json",
+    "type": "output",
+    "name": "life_descriptions.proposals.json",
+    "parent": "outputs/diagrams/interactive",
+    "props": {
+     "path": "outputs/diagrams/interactive/life_descriptions.proposals.json",
+     "ext": ".json",
+     "size": 61322,
+     "role": "output"
+    },
+    "tags": [
+     "layer:PUBLISH"
+    ],
+    "sublabel": "outputs/diagrams/interactive/",
+    "icon": "package"
    },
    {
     "id": "outputs/diagrams/interactive/life_overlay.json",
@@ -4335,7 +4505,7 @@
     "props": {
      "path": "outputs/diagrams/interactive/life_overlay.json",
      "ext": ".json",
-     "size": 15131,
+     "size": 61745,
      "role": "output"
     },
     "tags": [
@@ -4373,7 +4543,10 @@
      "path": "outputs/learning",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "LS と MS の制作ワークスペース。g_test と robotics_ai は完成扱いで /pub/、manga_epoch は開発中で /review/ に出る。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c5fd06eb"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4390,7 +4563,10 @@
      "path": "outputs/learning/g_test_2026_05",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "G 検定 LS の成果物。knowledge/learning の goals・arcs に対応する物語・図解・チートシートを置く。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "a3c55bce"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4407,7 +4583,10 @@
      "path": "outputs/learning/g_test_2026_05/cheatsheets",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "式だけを引くための数理チートシート。「なぜ要るか」は stories/ が語り、ここは最小公倍数の式に絞る。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "f2f16a15"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4444,7 +4623,10 @@
      "path": "outputs/learning/g_test_2026_05/figures",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "ストーリーに差し込む静止 SVG。scene_001_turing_test.svg など、図解ページとは別に本文が参照する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4461,7 +4643,10 @@
      "path": "outputs/learning/g_test_2026_05/interactive",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "G 検定図解の公開スライス。index.html と math_derivations.html が viewer /pub/g_test_2026_05/ になる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "bf72c7c8"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4512,7 +4697,10 @@
      "path": "outputs/learning/g_test_2026_05/stories",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 1-4 の読み物本体。各 Scene がコンセプトマップのノード id を対象に取り、knowledge/learning/arcs と対応する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "6307521e"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4629,7 +4817,10 @@
      "path": "outputs/learning/manga_epoch/_verify",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "頁の指紋台帳。verified.json が検証済みの絵を、typeset_baseline.json が「書き出しを通さない画素改変」を止める。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "a3cb7735"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4680,7 +4871,10 @@
      "path": "outputs/learning/manga_epoch/_wip",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "本番前の実験置き場。arc3_figures/ と transformer_prototypes/ が入り、承認まで公開スライスには出さない。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "fabb04d9"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4697,7 +4891,10 @@
      "path": "outputs/learning/manga_epoch/_wip/arc3_figures",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 3 用図解の試作。build_figures_gnn.py が巻末解説から空リンクだった GNN を白 SVG で作り直す。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "51349364"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4734,7 +4931,10 @@
      "path": "outputs/learning/manga_epoch/_wip/transformer_prototypes",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 1 Scene 1 時代の暗色プロトタイプ図解 4 枚。いまの白エディトリアル版 figures_* の前身として残っている。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "408a3c66"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4899,7 +5099,10 @@
      "path": "outputs/learning/manga_epoch/assets",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "商品面に出さない素材の置き場。いまは jdla_logo/ だけで、貼ってよい場所は README.md が定めている。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c75c5ca7"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4936,7 +5139,10 @@
      "path": "outputs/learning/manga_epoch/assets/jdla_logo/normal",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "通常色の G 検定合格マーク。著者プロフィールにだけ使い、LP や BOOTH の商品画像には貼らない（README.md）。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -4973,7 +5179,10 @@
      "path": "outputs/learning/manga_epoch/assets/jdla_logo/white",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "白版の G 検定合格マーク。normal/ と同じ「この人が受かった証明」であり、教材の認定ではないので商品面に置かない。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -5010,7 +5219,10 @@
      "path": "outputs/learning/manga_epoch/business/assets",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "販促用の原画。cover_arc1/2 とキービジュアル（nova_kv_arc1 ほか）が BOOTH 商品ページと LP の素材になる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -5087,7 +5299,10 @@
      "path": "outputs/learning/manga_epoch/business/deliverables",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "購入者に渡す成果物そのもの。EPOCH_Arc2_アクセスコード.pdf/.txt を BOOTH のダウンロード商品として登録する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "b4780382"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -5104,7 +5319,10 @@
      "path": "outputs/learning/manga_epoch/business/deliverables/booth_samples",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "BOOTH 商品ページに載せる 5 枚。表紙→マンガ→コンセプト→解説→図解の順で中身を見せる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -5238,7 +5456,10 @@
      "path": "outputs/learning/manga_epoch/business/mockups",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "LP と表紙の検討用 HTML。business/README.md から辿る版で、実際に配信されるのは outputs/site/interactive/ の方。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "47533b3b"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -5255,7 +5476,9 @@
      "path": "outputs/learning/manga_epoch/business/mockups/cover_arc1_v2.html",
      "ext": ".html",
      "size": 5958,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 1 表紙の full-bleed 案（v2）。business/README.md から辿る検討用モックで、公開ページそのものではない。",
+     "descriptionSource": "ai"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -5306,7 +5529,9 @@
      "path": "outputs/learning/manga_epoch/business/mockups/lp_v2.html",
      "ext": ".html",
      "size": 16125,
-     "role": "output"
+     "role": "output",
+     "description": "LP の第 2 案。配信される LP は outputs/site/interactive/index.html なので、ここは決定前の検討に留める。",
+     "descriptionSource": "ai"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -5343,7 +5568,10 @@
      "path": "outputs/learning/manga_epoch/business/promo",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "告知原稿の置き場。launch_todo.md が Qiita/Zenn/Shorts の投稿物を並べ、sources.md は qa_claims.py が機械照合する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "46d96250"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -5708,7 +5936,9 @@
      "path": "outputs/learning/manga_epoch/business/system_architecture.md",
      "ext": ".md",
      "size": 12103,
-     "role": "output"
+     "role": "output",
+     "description": "決済(BOOTH)と配信(自前)を分ける設計。gate_path.py の「コードから URL を導出する」方式の根拠がここにある。",
+     "descriptionSource": "ai"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -6227,7 +6457,10 @@
      "path": "outputs/learning/manga_epoch/scenes",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Scene 単位の制作ワークスペース 11 個。並列セッションは自分の arcX_sceneN/ だけを排他編集する（COORDINATION.md）。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "22ad05f8"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -6281,7 +6514,9 @@
      "path": "outputs/learning/manga_epoch/scenes/arc1_scene1/dialogue.json",
      "ext": ".json",
      "size": 17859,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 1 Scene 1 の脚本正典。build_reviewer.py がこれと pages/pageNNjp.png から reviewer HTML を組む。",
+     "descriptionSource": "ai"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -6618,7 +6853,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc1_scene1/reviews",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Issue 経由で送れなかったレビューの手動保管。2026-05-06 の v1 指摘が頁単位の修正根拠として残る。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "308e3672"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -6655,7 +6893,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc1_scene2",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 1 Scene 2「パーセプトロンの興奮と絶望」全 12 頁。outline.md の user_decisions が演出の決定履歴になる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "b438b583"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -6672,7 +6913,9 @@
      "path": "outputs/learning/manga_epoch/scenes/arc1_scene2/dialogue.json",
      "ext": ".json",
      "size": 30840,
-     "role": "output"
+     "role": "output",
+     "description": "Scene 2 の脚本正典。panel ごとの speaker と text を持ち、reviewer の対話ペインに出る。",
+     "descriptionSource": "ai"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -7009,7 +7252,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc1_scene3",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 1 Scene 3「専門家の時代 — 光は形を変える」。存命人物方針を反映した v2 で、commentary.md も持つ。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "ba1e24a8"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -7383,7 +7629,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc1_scene3/redesign_gamma",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Scene 3 の γ 再設計ドラフト。非破壊の案で、承認されるまで本番 dialogue.json と頁は触らない。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "ebac889c"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -7420,7 +7669,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene1",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2 Scene 1「冬を越えた者たち」1991-2006。build_trial.py が試読版として切り出す唯一の Scene。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "a670454e"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -7811,7 +8063,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene1/redesign_gamma",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Scene 1 の γ 案（三軸セットアップ旗艦）。比喩排除・平易な技術語という作法の出所で、以降の Scene が参照する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "ebac889c"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -7868,7 +8123,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene2",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2 Scene 2「機械に、目を」。視覚野 1959 → ネオコグニトロン 1980 → LeNet 1998 の三段回想。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c2a9a1c8"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -8259,7 +8517,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene2/redesign_gamma",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Scene 2 の γ 案「構造×学習の協調」。arc2_master_redesign.md の 3 軸に沿った脚本ドラフト。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "ebac889c"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -8296,7 +8557,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene3",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2 Scene 3「データという大陸」2006-2010。ImageNet 誕生回で S1・S2 と同じ二段挟み構成を取る。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "ec4f5a3c"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -8684,7 +8948,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene4",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2 Scene 4「ビッグバン、2012」。outline.md は superseded_by_v6 で、現行の脚本は dialogue.json を見る。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "ec4f5a3c"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -9072,7 +9339,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene5",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2 Scene 5「より深く」2014-2015（勾配消失と残差接続）。outline.md は旧設計で現行ビートは末尾 AUTO-BEATS。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c2a9a1c8"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -9443,7 +9713,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene5/redesign_gamma",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Scene 5「より深く」の γ リライト案（パイロット）。本番差し替え前の非破壊ドラフト。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "ebac889c"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -9480,7 +9753,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene6",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2 Scene 6「言葉と時間」2013-2016。outline.md の user_decisions は旧設計なので AUTO-BEATS を先に読む。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c2a9a1c8"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -9851,7 +10127,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene6/redesign_gamma",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Scene 6「言葉と時間」の γ リライト案（パイロット）。承認後に本番 dialogue.json へ反映する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "ebac889c"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -9888,7 +10167,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene7",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2 Scene 7「神の一手」2016 年 3 月。Move 37 と Move 78 を等価に置く Arc 2 最大の Talos ピーク。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "ac6ee31a"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -10259,7 +10541,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene8",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2 Scene 8「注意こそ、すべて」2017。脱セピアの到達点で、Arc 2 の締めにあたる Transformer 回。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c2a9a1c8"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -10630,7 +10915,10 @@
      "path": "outputs/learning/manga_epoch/scenes/arc2_scene8/redesign_gamma",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Scene 8「注意こそ、すべて」の γ 再設計案。承認まで本番の頁と脚本には触らない。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "ebac889c"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -10667,7 +10955,10 @@
      "path": "outputs/learning/manga_epoch/scripts",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "生成・合成・公開の道具箱 18 本。build_reviewer.py と build_index.py は CI が回して /review/epoch を作る。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "1acfe486"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -11144,7 +11435,10 @@
      "path": "outputs/learning/robotics_ai",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "robotics_ai LS の制作側。PLAN.md の設計で作り、蒸留結果は knowledge/domain/robotics へ落とす。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "dc7c0546"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -11161,7 +11455,10 @@
      "path": "outputs/learning/robotics_ai/interactive",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "ロボティクス AI 図解の公開スライス。index.html 1 枚が viewer /pub/robotics_ai/ になる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "db306da9"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -11178,7 +11475,9 @@
      "path": "outputs/learning/robotics_ai/interactive/index.html",
      "ext": ".html",
      "size": 220020,
-     "role": "output"
+     "role": "output",
+     "description": "STRIPS から VLA までを触って辿る図解 1 枚。stories/README.md からの入口で /pub/robotics_ai/ の実体。",
+     "descriptionSource": "ai"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -11315,7 +11614,10 @@
      "path": "outputs/portfolio",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "KAS のポートフォリオ可視化 SVG。RA 実行後に再生成され、knowledge/meta/PORTFOLIO.md から参照される。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "sublabel": "outputs/",
     "icon": "folder"
@@ -11329,7 +11631,10 @@
      "path": "outputs/publish",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "完成パッケージの置き場。中身は epoch/ だけで、arcX/interactive/ が viewer /pub/epoch/ へ出る公開経路になる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "779abacc"
     },
     "tags": [
      "layer:PUBLISH"
@@ -11346,7 +11651,10 @@
      "path": "outputs/publish/epoch",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "EPOCH の製品化レイヤ。build_package.py が読み物を組み、gate_path.py と build_trial.py が有料スライスと試読版を切り出す。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "1a722014"
     },
     "tags": [
      "layer:PUBLISH"
@@ -11383,7 +11691,10 @@
      "path": "outputs/publish/epoch/arc1/assets",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 1 の目次用サブセット woff2。arc1/scripts/build_package.py が font_path として埋め込むだけの依存。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "tags": [
      "layer:PUBLISH"
@@ -11400,7 +11711,10 @@
      "path": "outputs/publish/epoch/arc1/interactive",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 1「黎明」の公開スライス 12 枚（index / commentary / figures_* / gken）。viewer /pub/epoch/arc1/ になる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "dbc3cf9b"
     },
     "tags": [
      "layer:PUBLISH"
@@ -11434,7 +11748,10 @@
      "path": "outputs/publish/epoch/arc1/interactive/figures",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 1 の図解が読む SVG 2 枚（チューリングテストとダートマス年表）。HTML から相対参照される。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "tags": [
      "layer:PUBLISH"
@@ -11570,7 +11887,10 @@
      "path": "outputs/publish/epoch/arc1/interactive/img",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "externalize_images.py が data URI から外へ出した頁 JPEG 37 枚。焼き込みのままでは 4G で初頁 25 秒かかっていた。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "tags": [
      "layer:PUBLISH"
@@ -11675,7 +11995,10 @@
      "path": "outputs/publish/epoch/arc1/scripts",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 1 の生成器 6 本。build_package.py が 4 枚組を組み、build_figures_arc1_* が Turing や MYCIN の図を作る。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "b8d3aac4"
     },
     "tags": [
      "layer:PUBLISH"
@@ -11832,7 +12155,10 @@
      "path": "outputs/publish/epoch/arc2/assets",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2 の目次フォントと figures_svg/。arc2/scripts/build_package.py が FIGSVG_DIR として読み込む。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "37665577"
     },
     "tags": [
      "layer:PUBLISH"
@@ -11849,7 +12175,10 @@
      "path": "outputs/publish/epoch/arc2/assets/figures_svg",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "解説本文に貼る白黒 SVG 39 枚。ASCII 図を置き換えるために build_figures_svg_extra.py などが生成する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "fafe1fc3"
     },
     "tags": [
      "layer:PUBLISH"
@@ -11866,7 +12195,10 @@
      "path": "outputs/publish/epoch/arc2/assets/figures_svg/manga",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "マンガのコマに差し込む図版 13 枚（w2v_scatter.svg ほか）。解説本文用の親フォルダと分け、_nc 版を併置する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "tags": [
      "layer:PUBLISH"
@@ -11883,7 +12215,10 @@
      "path": "outputs/publish/epoch/arc2/data",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "図解が読む実測データ。gpt2_attention.json を build_notebooks.py が notebooks/data/ へ複製し Colab と共有。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "6baf2c4e"
     },
     "tags": [
      "layer:PUBLISH"
@@ -11917,7 +12252,10 @@
      "path": "outputs/publish/epoch/arc2/interactive",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2「覚醒」の公開スライス 22 枚。有料のため gate_path.py が導出する推測不能パスへ複製して配る。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "491198f7"
     },
     "tags": [
      "layer:PUBLISH"
@@ -12240,7 +12578,10 @@
      "path": "outputs/publish/epoch/arc2/interactive/img",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2 リーダーの頁 JPEG 98 枚。arc1 と同じく外部ファイル化して初頁が出るまでの待ちを消してある。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "tags": [
      "layer:PUBLISH"
@@ -12308,7 +12649,10 @@
      "path": "outputs/publish/epoch/arc2/interactive/notebooks",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "購入者向け Colab ノート 3 本。build_notebooks.py が OUT_PAID としてここへ書く（無料分は epoch/notebooks/）。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "89e2618f"
     },
     "tags": [
      "layer:PUBLISH"
@@ -12413,7 +12757,10 @@
      "path": "outputs/publish/epoch/arc2/scripts",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2 の生成器 20 本。build_package.py が入口で、図解・巻末解説・G 検定模試をここから一括生成する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "42c33f4a"
     },
     "tags": [
      "layer:PUBLISH"
@@ -12670,7 +13017,9 @@
      "path": "outputs/publish/epoch/arc2/scripts/build_figures_arc2.py",
      "ext": ".py",
      "size": 82417,
-     "role": "output"
+     "role": "output",
+     "description": "Arc 2 図解 Lab の束ね役。build_package.py から呼ばれ CNN〜Attention の figures_*.html を書き出す。",
+     "descriptionSource": "ai"
     },
     "tags": [
      "layer:PUBLISH"
@@ -13387,7 +13736,10 @@
      "path": "outputs/publish/epoch/notebooks/data",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "④「書く」が読むデータ。build_wordvec_data.py の単語ベクトルと gpt2_attention.json を図解と共有する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "fb5d0104"
     },
     "tags": [
      "layer:PUBLISH"
@@ -13803,7 +14155,10 @@
      "path": "outputs/reports",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "tech-report の成果物 home。<slug>_<日付>/interactive/ が viewer /pub/reports/ へ出る（MAP に 1 行追加が要る）。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "feffa0ab"
     },
     "sublabel": "outputs/",
     "icon": "folder"
@@ -13817,7 +14172,10 @@
      "path": "outputs/reports/usv_lightfish_20260912",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "小型太陽電池 USV の性能・復原性検討 1 件分。results.json と scripts/ から index.html を作り直せる形で閉じている。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "61cede0f"
     },
     "sublabel": "outputs/reports/",
     "icon": "folder"
@@ -13845,7 +14203,10 @@
      "path": "outputs/reports/usv_lightfish_20260912/interactive",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "レポートの公開スライス。build_html.mjs が出した index.html 1 枚が /pub/reports/usv_lightfish_20260912/ になる。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "db306da9"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/",
     "icon": "folder"
@@ -13887,7 +14248,10 @@
      "path": "outputs/reports/usv_lightfish_20260912/scripts",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "数値と図の生成器 23 本。baseline / kg_sweep / hw_sweep が数値を作り build_html.mjs が 1 枚に組む。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "b586734d"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/",
     "icon": "folder"
@@ -13918,7 +14282,9 @@
      "path": "outputs/reports/usv_lightfish_20260912/scripts/build_html.mjs",
      "ext": ".mjs",
      "size": 34267,
-     "role": "output"
+     "role": "output",
+     "description": "レポート本体の組み立て。NUM.json と prose_numbers.json を読み ❶〜❾ の図を差し込んで index.html を書く。",
+     "descriptionSource": "ai"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/scripts/",
     "icon": "package"
@@ -13977,7 +14343,9 @@
      "path": "outputs/reports/usv_lightfish_20260912/scripts/fig_kgonly.mjs",
      "ext": ".mjs",
      "size": 5127,
-     "role": "output"
+     "role": "output",
+     "description": "❺ KG だけを動かした場合の復原性。バラストとカウルは重ねず、配置見直し単独の効きを見せる。",
+     "descriptionSource": "ai"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/scripts/",
     "icon": "package"
@@ -13991,7 +14359,9 @@
      "path": "outputs/reports/usv_lightfish_20260912/scripts/fig0.mjs",
      "ext": ".mjs",
      "size": 10477,
-     "role": "output"
+     "role": "output",
+     "description": "❶ 船体側面と 3 レバーの配置。hullGeom() の実測点をそのまま描き、形状式は書き写さない。",
+     "descriptionSource": "ai"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/scripts/",
     "icon": "package"
@@ -14005,7 +14375,9 @@
      "path": "outputs/reports/usv_lightfish_20260912/scripts/fig1.mjs",
      "ext": ".mjs",
      "size": 4055,
-     "role": "output"
+     "role": "output",
+     "description": "❷ 摩擦・剰余・波浪・風圧の抵抗内訳と、450 W 全力での釣合い速力 V_eq を重ねる図。",
+     "descriptionSource": "ai"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/scripts/",
     "icon": "package"
@@ -14019,7 +14391,9 @@
      "path": "outputs/reports/usv_lightfish_20260912/scripts/fig2.mjs",
      "ext": ".mjs",
      "size": 4770,
-     "role": "output"
+     "role": "output",
+     "description": "❸ 距離×海域のミッション成功率ヒートマップ。baseline.json の missions.matrix から自走と母船搬送の差を描く。",
+     "descriptionSource": "ai"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/scripts/",
     "icon": "package"
@@ -14033,7 +14407,9 @@
      "path": "outputs/reports/usv_lightfish_20260912/scripts/fig3.mjs",
      "ext": ".mjs",
      "size": 5202,
-     "role": "output"
+     "role": "output",
+     "description": "❹ 現状の GZ 曲線に 3 レバーの代表点を重ねる図。バラストとカウルで効く角度域が違うことを示す。",
+     "descriptionSource": "ai"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/scripts/",
     "icon": "package"
@@ -14047,7 +14423,9 @@
      "path": "outputs/reports/usv_lightfish_20260912/scripts/fig4.mjs",
      "ext": ".mjs",
      "size": 5012,
-     "role": "output"
+     "role": "output",
+     "description": "❻ キールバラスト単独の掃引（hw_sweep.json の w=0〜30kg）。転覆しにくさは上がるが復帰は緩くしか改善しない。",
+     "descriptionSource": "ai"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/scripts/",
     "icon": "package"
@@ -14061,7 +14439,9 @@
      "path": "outputs/reports/usv_lightfish_20260912/scripts/fig5.mjs",
      "ext": ".mjs",
      "size": 6337,
-     "role": "output"
+     "role": "output",
+     "description": "❼ マストカウル単独の掃引（V=0〜60L）。復帰砕波高が大きく下がり、速力と KG への影響は小さい。",
+     "descriptionSource": "ai"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/scripts/",
     "icon": "package"
@@ -14075,7 +14455,9 @@
      "path": "outputs/reports/usv_lightfish_20260912/scripts/fig6.mjs",
      "ext": ".mjs",
      "size": 6027,
-     "role": "output"
+     "role": "output",
+     "description": "❾ w×V の 30 通り掃引に配置見直し（KG−2cm）を重ねる図。記号の形で V を、数値ラベルで w を示す。",
+     "descriptionSource": "ai"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/scripts/",
     "icon": "package"
@@ -14089,7 +14471,9 @@
      "path": "outputs/reports/usv_lightfish_20260912/scripts/fig7.mjs",
      "ext": ".mjs",
      "size": 6563,
-     "role": "output"
+     "role": "output",
+     "description": "❽ KG 曲線の上にバラスト○とカウル◇を重ね、カウルが KG では代替できない形状効果だと示す図。",
+     "descriptionSource": "ai"
     },
     "sublabel": "outputs/reports/usv_lightfish_20260912/scripts/",
     "icon": "package"
@@ -14290,7 +14674,10 @@
      "path": "outputs/research/interactive",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "RA 資料の閲覧用 HTML。2026-08-30 に review/oceanic の公開を止めたので、いまは private な life 内でのみ読む。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "9c99ca06"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -14652,7 +15039,10 @@
      "path": "outputs/site",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "LP の home。中身は interactive/ だけで、viewer のルート / になる唯一の入口。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "e0759dd0"
     },
     "tags": [
      "layer:PUBLISH"
@@ -14669,7 +15059,10 @@
      "path": "outputs/site/interactive",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "公開 LP そのもの。unlock.html のコード導出規則は gate_path.py と必ず一致させる（ずれると購入者が 404 になる）。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "8e4be345"
     },
     "tags": [
      "layer:PUBLISH"
@@ -14703,7 +15096,10 @@
      "path": "outputs/site/interactive/assets",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "LP の画像。nova_hero.jpg と試し読みカードの prev1〜3.jpg を index.html が相対参照する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "tags": [
      "layer:PUBLISH"
@@ -14771,7 +15167,10 @@
      "path": "outputs/site/interactive/og",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "リンクカード用 1200×630 画像 30 枚。build_og_images.py が版面に題名を組んで作る（図解のスクショではない）。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "adc83b19"
     },
     "tags": [
      "layer:PUBLISH"
@@ -14805,7 +15204,10 @@
      "path": "outputs/speeches",
      "ext": "",
      "size": 0,
-     "role": "output"
+     "role": "output",
+     "description": "/speech (SW) の原稿出力先。いまは .gitkeep だけで、材料は knowledge/profile/speech_profile.yaml。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "a6374e8c"
     },
     "sublabel": "outputs/",
     "icon": "folder"
@@ -14873,7 +15275,10 @@
      "path": "tools",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "description": "自己完結ツールの置き場。diagram_engine と usv_model は interactive/ を viewer /tools/ へ出す（usv_hull は非公開）。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "14da023e"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -14909,13 +15314,37 @@
      "path": "tools/diagram_engine/bin",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "description": "リポジトリからグラフを抽出する CLI。extract.mjs と rules/life.json が life_graph.json を作り直す唯一の経路。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "2d591a12",
+     "descriptionStale": true
     },
     "tags": [
      "layer:DEVELOPMENT"
     ],
     "sublabel": "tools/diagram_engine/",
     "icon": "folder"
+   },
+   {
+    "id": "tools/diagram_engine/bin/apply.mjs",
+    "type": "tool",
+    "name": "apply.mjs",
+    "parent": "tools/diagram_engine/bin",
+    "props": {
+     "path": "tools/diagram_engine/bin/apply.mjs",
+     "ext": ".mjs",
+     "size": 16924,
+     "role": "tool",
+     "description": "apply.mjs — G12-A: 対話層 P1 の「適用」（GRAPH_CONTRACT.md §11.4）",
+     "descriptionSource": "source",
+     "descriptionBasis": "6a760792"
+    },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
+    "sublabel": "tools/diagram_engine/bin/",
+    "icon": "tool"
    },
    {
     "id": "tools/diagram_engine/bin/extract.mjs",
@@ -14925,11 +15354,31 @@
     "props": {
      "path": "tools/diagram_engine/bin/extract.mjs",
      "ext": ".mjs",
-     "size": 42703,
+     "size": 39846,
      "role": "tool",
      "description": "extract.mjs — G3: repository graph extractor (GRAPH_CONTRACT.md §4)",
      "descriptionSource": "source",
      "descriptionBasis": "73e726f6"
+    },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
+    "sublabel": "tools/diagram_engine/bin/",
+    "icon": "tool"
+   },
+   {
+    "id": "tools/diagram_engine/bin/overlay_merge.mjs",
+    "type": "tool",
+    "name": "overlay_merge.mjs",
+    "parent": "tools/diagram_engine/bin",
+    "props": {
+     "path": "tools/diagram_engine/bin/overlay_merge.mjs",
+     "ext": ".mjs",
+     "size": 6530,
+     "role": "tool",
+     "description": "overlay_merge.mjs — GRAPH_CONTRACT.md §7.5 上書き層（overlay）のマージ規則。単一の実装を",
+     "descriptionSource": "source",
+     "descriptionBasis": "52880117"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -14946,7 +15395,10 @@
      "path": "tools/diagram_engine/bin/rules",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "description": "抽出規則。life.json が除外・役割・layer タグ・関係抽出を決め、構造や公開パイプラインを変えたらここを直す。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "c10d0195"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -14996,7 +15448,7 @@
     "props": {
      "path": "tools/diagram_engine/BOOTSTRAP.md",
      "ext": ".md",
-     "size": 6741,
+     "size": 8952,
      "role": "tool",
      "description": "外部通信ゼロ・依存ゼロ。",
      "descriptionSource": "source",
@@ -15054,7 +15506,10 @@
      "path": "tools/diagram_engine/examples",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "description": "他リポジトリへ持ち出すときの見本 JSON。life_structure.json や uml_semantics.json が語彙の使い方を示す。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "45325a78"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -15155,7 +15610,7 @@
     "props": {
      "path": "tools/diagram_engine/GRAPH_CONTRACT.md",
      "ext": ".md",
-     "size": 22052,
+     "size": 26786,
      "role": "tool",
      "description": "diagram_drawer を「データは全部グラフ／図はグラフに対する選べる投影」へ反転させ、 どのリポジトリ・どの PC にも「持って行って展開すれば使える」ツールにするための単一契約。",
      "descriptionSource": "source",
@@ -15213,7 +15668,10 @@
      "path": "tools/diagram_engine/interactive",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "description": "viewer /tools/diagram_drawer/ へ送る公開スライス。index.html 1 枚で、?src= に life_graph.json を渡して開く。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "db306da9"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -15229,7 +15687,7 @@
     "props": {
      "path": "tools/diagram_engine/interactive/index.html",
      "ext": ".html",
-     "size": 1159695,
+     "size": 1186607,
      "role": "tool"
     },
     "tags": [
@@ -15246,7 +15704,7 @@
     "props": {
      "path": "tools/diagram_engine/MIGRATION.md",
      "ext": ".md",
-     "size": 18188,
+     "size": 20167,
      "role": "tool",
      "description": "既存の図（Mermaid / draw.io / PlantUML / Visio / PowerPoint / 手描き / Excel 構成表 / スクリーンショット）を 本エンジンの JSON へ移管するための正典。",
      "descriptionSource": "source",
@@ -15287,7 +15745,10 @@
      "path": "tools/diagram_engine/schema",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "description": "diagram / project の JSON Schema。GRAPH_CONTRACT.md の形を機械検証する側で、語彙を増やすなら契約と同時に直す。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "ab168920"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -15344,7 +15805,10 @@
      "path": "tools/diagram_engine/src",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "description": "エンジン本体。model.js が正規化した 1 モデルを renderers/ の 3 投影と editor.js が共有する。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "ce216436"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -15360,7 +15824,7 @@
     "props": {
      "path": "tools/diagram_engine/src/editor.js",
      "ext": ".js",
-     "size": 111824,
+     "size": 132789,
      "role": "tool",
      "description": "editor.js — フル作図エディタ / 閲覧ビューア（mode: 'edit' | 'view'）",
      "descriptionSource": "source",
@@ -15501,7 +15965,10 @@
      "path": "tools/diagram_engine/src/renderers",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "description": "投影ごとの描画実装。flat_svg / iso_svg / webgl_three が renderer.js の同じ interface を満たす。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "75db9af7"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -15517,7 +15984,7 @@
     "props": {
      "path": "tools/diagram_engine/src/renderers/flat_svg.js",
      "ext": ".js",
-     "size": 34188,
+     "size": 37397,
      "role": "tool",
      "description": "flat_svg.js — 2D SVG レンダラ（SysML SAB 風ブロック図）",
      "descriptionSource": "source",
@@ -15657,7 +16124,7 @@
     "props": {
      "path": "tools/diagram_engine/src/theme.css",
      "ext": ".css",
-     "size": 21023,
+     "size": 23776,
      "role": "tool"
     },
     "tags": [
@@ -15675,7 +16142,10 @@
      "path": "tools/diagram_engine/vendor",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "description": "同梱する第三者ライブラリ。three.module.min.js をローカルに置き CDN 通信ゼロを保つ（帰属は LICENSES.md）。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "4f18d176"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -15729,13 +16199,37 @@
      "path": "tools/diagram_engine/verification",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "description": "回帰検証スイート。バグを見つけたら verify.mjs にチェックを足し LESSONS.md に 1 エントリ残す（削除禁止）。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "fb8f9326",
+     "descriptionStale": true
     },
     "tags": [
      "layer:DEVELOPMENT"
     ],
     "sublabel": "tools/diagram_engine/",
     "icon": "folder"
+   },
+   {
+    "id": "tools/diagram_engine/verification/apply.test.mjs",
+    "type": "tool",
+    "name": "apply.test.mjs",
+    "parent": "tools/diagram_engine/verification",
+    "props": {
+     "path": "tools/diagram_engine/verification/apply.test.mjs",
+     "ext": ".mjs",
+     "size": 19194,
+     "role": "tool",
+     "description": "apply.test.mjs — G12-A: bin/apply.mjs（GRAPH_CONTRACT.md §11.4「適用」）の Node 専用回帰テスト。",
+     "descriptionSource": "source",
+     "descriptionBasis": "e2761b75"
+    },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
+    "sublabel": "tools/diagram_engine/verification/",
+    "icon": "tool"
    },
    {
     "id": "tools/diagram_engine/verification/extract.test.mjs",
@@ -15755,6 +16249,40 @@
      "layer:DEVELOPMENT"
     ],
     "sublabel": "tools/diagram_engine/verification/",
+    "icon": "tool"
+   },
+   {
+    "id": "tools/diagram_engine/verification/fixtures",
+    "type": "tool",
+    "name": "fixtures",
+    "parent": "tools/diagram_engine/verification",
+    "props": {
+     "path": "tools/diagram_engine/verification/fixtures",
+     "ext": "",
+     "size": 0,
+     "role": "tool"
+    },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
+    "sublabel": "tools/diagram_engine/verification/",
+    "icon": "folder"
+   },
+   {
+    "id": "tools/diagram_engine/verification/fixtures/sample.proposals.json",
+    "type": "tool",
+    "name": "sample.proposals.json",
+    "parent": "tools/diagram_engine/verification/fixtures",
+    "props": {
+     "path": "tools/diagram_engine/verification/fixtures/sample.proposals.json",
+     "ext": ".json",
+     "size": 3892,
+     "role": "tool"
+    },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
+    "sublabel": "tools/diagram_engine/verification/fixtures/",
     "icon": "tool"
    },
    {
@@ -15785,7 +16313,7 @@
     "props": {
      "path": "tools/diagram_engine/verification/LESSONS.md",
      "ext": ".md",
-     "size": 132321,
+     "size": 140587,
      "role": "tool",
      "description": "検証エージェント（.claude/agents/diagram-engine-verifier.md）の記憶。",
      "descriptionSource": "source",
@@ -15805,7 +16333,7 @@
     "props": {
      "path": "tools/diagram_engine/verification/verify.mjs",
      "ext": ".mjs",
-     "size": 228886,
+     "size": 243702,
      "role": "tool",
      "description": "verify.mjs — diagram_engine の恒久検証スイート（検証エージェントの実行基盤）",
      "descriptionSource": "source",
@@ -15906,7 +16434,10 @@
      "path": "tools/usv_hull/lib",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "description": "usv_model の index.html から船型関数を抜き出して Node で使う入口。core.mjs が形状定義の二重管理を防ぐ。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "b250fabc"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -16176,7 +16707,10 @@
      "path": "tools/usv_model/interactive",
      "ext": "",
      "size": 0,
-     "role": "tool"
+     "role": "tool",
+     "description": "viewer /tools/usv_model/ へ送る公開スライス。0D モデルと設計書タブの正本で、報告には必ずこの URL を添える。",
+     "descriptionSource": "ai",
+     "descriptionBasis": "db306da9"
     },
     "tags": [
      "layer:DEVELOPMENT"
@@ -16192,7 +16726,7 @@
     "props": {
      "path": "tools/usv_model/interactive/index.html",
      "ext": ".html",
-     "size": 877554,
+     "size": 897013,
      "role": "tool"
     },
     "tags": [
@@ -16202,11 +16736,33 @@
     "icon": "tool"
    },
    {
+    "id": "tools/usv_model/TRADEOFF_DESIGN.md",
+    "type": "tool",
+    "name": "TRADEOFF_DESIGN.md",
+    "parent": "tools/usv_model",
+    "props": {
+     "path": "tools/usv_model/TRADEOFF_DESIGN.md",
+     "ext": ".md",
+     "size": 8623,
+     "role": "tool",
+     "description": "目的: 「見えている設計パラメータから順に決める」進め方を、全体を俯瞰して評価基準に対して最適化する進め方に変える。",
+     "descriptionSource": "source",
+     "descriptionBasis": "cdfac003"
+    },
+    "tags": [
+     "layer:DEVELOPMENT"
+    ],
+    "sublabel": "tools/usv_model/",
+    "icon": "tool"
+   },
+   {
     "id": "~ext/viewer/notebooks",
     "type": "external",
     "name": "notebooks",
     "props": {
-     "external": "viewer"
+     "external": "viewer",
+     "description": "本番 manga-epoch/viewer に実体を残す唯一の枠。Colab は公開 GitHub からしか .ipynb を開けないため必要。",
+     "descriptionSource": "ai"
     }
    },
    {
@@ -16214,7 +16770,9 @@
     "type": "external",
     "name": "pub/robotics_ai",
     "props": {
-     "external": "viewer"
+     "external": "viewer",
+     "description": "robotics_ai LS 図解の公開先。outputs/learning/robotics_ai/interactive/index.html が /pub/ に出る。",
+     "descriptionSource": "ai"
     }
    },
    {
@@ -16222,7 +16780,9 @@
     "type": "external",
     "name": "pub/g_test_2026_05",
     "props": {
-     "external": "viewer"
+     "external": "viewer",
+     "description": "G 検定 LS 図解の公開先。outputs/learning/g_test_2026_05/interactive/ が完成扱いで /pub/ に出る。",
+     "descriptionSource": "ai"
     }
    },
    {
@@ -16230,7 +16790,9 @@
     "type": "external",
     "name": "review/epoch",
     "props": {
-     "external": "viewer"
+     "external": "viewer",
+     "description": "開発中 reviewer の置き場。LP から貼らず robots.txt で除外し、有料 Arc 2 の 7 本は 2026-09-02 に送信を止めた。",
+     "descriptionSource": "ai"
     }
    },
    {
@@ -16238,7 +16800,9 @@
     "type": "external",
     "name": "tools/diagram_drawer",
     "props": {
-     "external": "viewer"
+     "external": "viewer",
+     "description": "diagram_drawer の公開 URL。携帯からグラフを見る入口で、サブパス配下のため相対 ?src= が必須。",
+     "descriptionSource": "ai"
     }
    },
    {
@@ -16246,7 +16810,9 @@
     "type": "external",
     "name": "tools/usv_model",
     "props": {
-     "external": "viewer"
+     "external": "viewer",
+     "description": "USV 0D モデルの dev viewer。Artifact は使わず、報告時は常にこの URL を添える運用になっている。",
+     "descriptionSource": "ai"
     }
    },
    {
@@ -16254,7 +16820,9 @@
     "type": "external",
     "name": "data/diagrams",
     "props": {
-     "external": "viewer"
+     "external": "viewer",
+     "description": "outputs/diagrams/interactive/ の転送先。diagram_drawer は相対 ?src=../../data/diagrams/ で読む必要がある。",
+     "descriptionSource": "ai"
     }
    },
    {
@@ -16262,7 +16830,9 @@
     "type": "external",
     "name": "pub/reports/usv_lightfish_20260912",
     "props": {
-     "external": "viewer"
+     "external": "viewer",
+     "description": "tech-report 1 件の公開先。レポートを足すたび sync-viewer.yml の MAP にこの行を明示追加する。",
+     "descriptionSource": "ai"
     }
    },
    {
@@ -17650,6 +18220,18 @@
     "rel": "contains",
     "from": "outputs/diagrams",
     "to": "outputs/diagrams/interactive"
+   },
+   {
+    "id": "contains~outputs/diagrams/interactive~outputs/diagrams/interactive/life_descriptions.decisions.json",
+    "rel": "contains",
+    "from": "outputs/diagrams/interactive",
+    "to": "outputs/diagrams/interactive/life_descriptions.decisions.json"
+   },
+   {
+    "id": "contains~outputs/diagrams/interactive~outputs/diagrams/interactive/life_descriptions.proposals.json",
+    "rel": "contains",
+    "from": "outputs/diagrams/interactive",
+    "to": "outputs/diagrams/interactive/life_descriptions.proposals.json"
    },
    {
     "id": "contains~outputs/diagrams/interactive~outputs/diagrams/interactive/life_overlay.json",
@@ -21036,10 +21618,22 @@
     "to": "tools/diagram_engine/bin"
    },
    {
+    "id": "contains~tools/diagram_engine/bin~tools/diagram_engine/bin/apply.mjs",
+    "rel": "contains",
+    "from": "tools/diagram_engine/bin",
+    "to": "tools/diagram_engine/bin/apply.mjs"
+   },
+   {
     "id": "contains~tools/diagram_engine/bin~tools/diagram_engine/bin/extract.mjs",
     "rel": "contains",
     "from": "tools/diagram_engine/bin",
     "to": "tools/diagram_engine/bin/extract.mjs"
+   },
+   {
+    "id": "contains~tools/diagram_engine/bin~tools/diagram_engine/bin/overlay_merge.mjs",
+    "rel": "contains",
+    "from": "tools/diagram_engine/bin",
+    "to": "tools/diagram_engine/bin/overlay_merge.mjs"
    },
    {
     "id": "contains~tools/diagram_engine/bin~tools/diagram_engine/bin/rules",
@@ -21300,10 +21894,28 @@
     "to": "tools/diagram_engine/verification"
    },
    {
+    "id": "contains~tools/diagram_engine/verification~tools/diagram_engine/verification/apply.test.mjs",
+    "rel": "contains",
+    "from": "tools/diagram_engine/verification",
+    "to": "tools/diagram_engine/verification/apply.test.mjs"
+   },
+   {
     "id": "contains~tools/diagram_engine/verification~tools/diagram_engine/verification/extract.test.mjs",
     "rel": "contains",
     "from": "tools/diagram_engine/verification",
     "to": "tools/diagram_engine/verification/extract.test.mjs"
+   },
+   {
+    "id": "contains~tools/diagram_engine/verification~tools/diagram_engine/verification/fixtures",
+    "rel": "contains",
+    "from": "tools/diagram_engine/verification",
+    "to": "tools/diagram_engine/verification/fixtures"
+   },
+   {
+    "id": "contains~tools/diagram_engine/verification/fixtures~tools/diagram_engine/verification/fixtures/sample.proposals.json",
+    "rel": "contains",
+    "from": "tools/diagram_engine/verification/fixtures",
+    "to": "tools/diagram_engine/verification/fixtures/sample.proposals.json"
    },
    {
     "id": "contains~tools/diagram_engine/verification~tools/diagram_engine/verification/layout_algos.test.mjs",
@@ -21442,6 +22054,12 @@
     "rel": "contains",
     "from": "tools/usv_model/interactive",
     "to": "tools/usv_model/interactive/index.html"
+   },
+   {
+    "id": "contains~tools/usv_model~tools/usv_model/TRADEOFF_DESIGN.md",
+    "rel": "contains",
+    "from": "tools/usv_model",
+    "to": "tools/usv_model/TRADEOFF_DESIGN.md"
    },
    {
     "id": "links~.claude/skills/diagram-engine/SKILL.md~.claude/skills/diagram-engine/01_json_schema.md",
@@ -23932,6 +24550,18 @@
     "rel": "imports",
     "from": "outputs/reports/usv_lightfish_20260912/scripts/selftest.mjs",
     "to": "outputs/reports/usv_lightfish_20260912/scripts/lib_eval.mjs"
+   },
+   {
+    "id": "imports~tools/diagram_engine/bin/apply.mjs~tools/diagram_engine/bin/overlay_merge.mjs",
+    "rel": "imports",
+    "from": "tools/diagram_engine/bin/apply.mjs",
+    "to": "tools/diagram_engine/bin/overlay_merge.mjs"
+   },
+   {
+    "id": "imports~tools/diagram_engine/bin/extract.mjs~tools/diagram_engine/bin/overlay_merge.mjs",
+    "rel": "imports",
+    "from": "tools/diagram_engine/bin/extract.mjs",
+    "to": "tools/diagram_engine/bin/overlay_merge.mjs"
    },
    {
     "id": "imports~tools/diagram_engine/src/editor.js~tools/diagram_engine/src/model.js",

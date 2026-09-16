@@ -1,0 +1,677 @@
+{
+ "decisions": [
+  {
+   "proposal": "P-0001",
+   "by": "ai-review",
+   "at": "2026-09-16T10:29:19Z",
+   "note": "実ファイルと突き合わせて受理。数値主張を照合し arc1/arc2 の枚数 2 件を訂正済み。質問 6 件は未回答のまま残す。",
+   "results": [
+    {
+     "op": 0,
+     "verdict": "accept"
+    },
+    {
+     "op": 1,
+     "verdict": "accept"
+    },
+    {
+     "op": 2,
+     "verdict": "accept"
+    },
+    {
+     "op": 3,
+     "verdict": "accept"
+    },
+    {
+     "op": 4,
+     "verdict": "accept"
+    },
+    {
+     "op": 5,
+     "verdict": "accept"
+    },
+    {
+     "op": 6,
+     "verdict": "accept"
+    },
+    {
+     "op": 7,
+     "verdict": "accept"
+    },
+    {
+     "op": 8,
+     "verdict": "accept"
+    },
+    {
+     "op": 9,
+     "verdict": "accept"
+    },
+    {
+     "op": 10,
+     "verdict": "accept"
+    },
+    {
+     "op": 11,
+     "verdict": "accept"
+    },
+    {
+     "op": 12,
+     "verdict": "accept"
+    },
+    {
+     "op": 13,
+     "verdict": "accept"
+    },
+    {
+     "op": 14,
+     "verdict": "accept"
+    },
+    {
+     "op": 15,
+     "verdict": "accept"
+    },
+    {
+     "op": 16,
+     "verdict": "accept"
+    }
+   ],
+   "answers": []
+  },
+  {
+   "proposal": "P-0002",
+   "by": "ai-review",
+   "at": "2026-09-16T10:29:19Z",
+   "note": "実ファイルと突き合わせて受理。数値主張を照合し arc1/arc2 の枚数 2 件を訂正済み。質問 6 件は未回答のまま残す。",
+   "results": [
+    {
+     "op": 0,
+     "verdict": "accept"
+    },
+    {
+     "op": 1,
+     "verdict": "accept"
+    },
+    {
+     "op": 2,
+     "verdict": "accept"
+    },
+    {
+     "op": 3,
+     "verdict": "accept"
+    },
+    {
+     "op": 4,
+     "verdict": "accept"
+    },
+    {
+     "op": 5,
+     "verdict": "accept"
+    },
+    {
+     "op": 6,
+     "verdict": "accept"
+    }
+   ],
+   "answers": []
+  },
+  {
+   "proposal": "P-0003",
+   "by": "ai-review",
+   "at": "2026-09-16T10:29:19Z",
+   "note": "実ファイルと突き合わせて受理。数値主張を照合し arc1/arc2 の枚数 2 件を訂正済み。質問 6 件は未回答のまま残す。",
+   "results": [
+    {
+     "op": 0,
+     "verdict": "accept"
+    },
+    {
+     "op": 1,
+     "verdict": "accept"
+    },
+    {
+     "op": 2,
+     "verdict": "accept"
+    },
+    {
+     "op": 3,
+     "verdict": "accept"
+    },
+    {
+     "op": 4,
+     "verdict": "accept"
+    },
+    {
+     "op": 5,
+     "verdict": "accept"
+    },
+    {
+     "op": 6,
+     "verdict": "accept"
+    },
+    {
+     "op": 7,
+     "verdict": "accept"
+    },
+    {
+     "op": 8,
+     "verdict": "accept"
+    },
+    {
+     "op": 9,
+     "verdict": "accept"
+    },
+    {
+     "op": 10,
+     "verdict": "accept"
+    },
+    {
+     "op": 11,
+     "verdict": "accept"
+    },
+    {
+     "op": 12,
+     "verdict": "accept"
+    },
+    {
+     "op": 13,
+     "verdict": "accept"
+    },
+    {
+     "op": 14,
+     "verdict": "accept"
+    },
+    {
+     "op": 15,
+     "verdict": "accept"
+    },
+    {
+     "op": 16,
+     "verdict": "accept"
+    },
+    {
+     "op": 17,
+     "verdict": "accept"
+    },
+    {
+     "op": 18,
+     "verdict": "accept"
+    }
+   ],
+   "answers": []
+  },
+  {
+   "proposal": "P-0004",
+   "by": "ai-review",
+   "at": "2026-09-16T10:29:19Z",
+   "note": "実ファイルと突き合わせて受理。数値主張を照合し arc1/arc2 の枚数 2 件を訂正済み。質問 6 件は未回答のまま残す。",
+   "results": [
+    {
+     "op": 0,
+     "verdict": "accept"
+    },
+    {
+     "op": 1,
+     "verdict": "accept"
+    },
+    {
+     "op": 2,
+     "verdict": "accept"
+    },
+    {
+     "op": 3,
+     "verdict": "accept"
+    },
+    {
+     "op": 4,
+     "verdict": "accept"
+    },
+    {
+     "op": 5,
+     "verdict": "accept"
+    },
+    {
+     "op": 6,
+     "verdict": "accept"
+    },
+    {
+     "op": 7,
+     "verdict": "accept"
+    },
+    {
+     "op": 8,
+     "verdict": "accept"
+    },
+    {
+     "op": 9,
+     "verdict": "accept"
+    },
+    {
+     "op": 10,
+     "verdict": "accept"
+    },
+    {
+     "op": 11,
+     "verdict": "accept"
+    }
+   ],
+   "answers": []
+  },
+  {
+   "proposal": "P-0005",
+   "by": "ai-review",
+   "at": "2026-09-16T10:29:19Z",
+   "note": "実ファイルと突き合わせて受理。数値主張を照合し arc1/arc2 の枚数 2 件を訂正済み。質問 6 件は未回答のまま残す。",
+   "results": [
+    {
+     "op": 0,
+     "verdict": "accept"
+    },
+    {
+     "op": 1,
+     "verdict": "accept"
+    },
+    {
+     "op": 2,
+     "verdict": "accept"
+    },
+    {
+     "op": 3,
+     "verdict": "accept"
+    },
+    {
+     "op": 4,
+     "verdict": "accept"
+    },
+    {
+     "op": 5,
+     "verdict": "accept"
+    },
+    {
+     "op": 6,
+     "verdict": "accept"
+    },
+    {
+     "op": 7,
+     "verdict": "accept"
+    }
+   ],
+   "answers": []
+  },
+  {
+   "proposal": "P-0006",
+   "by": "ai-review",
+   "at": "2026-09-16T10:29:19Z",
+   "note": "実ファイルと突き合わせて受理。数値主張を照合し arc1/arc2 の枚数 2 件を訂正済み。質問 6 件は未回答のまま残す。",
+   "results": [
+    {
+     "op": 0,
+     "verdict": "accept"
+    },
+    {
+     "op": 1,
+     "verdict": "accept"
+    },
+    {
+     "op": 2,
+     "verdict": "accept"
+    },
+    {
+     "op": 3,
+     "verdict": "accept"
+    },
+    {
+     "op": 4,
+     "verdict": "accept"
+    },
+    {
+     "op": 5,
+     "verdict": "accept"
+    },
+    {
+     "op": 6,
+     "verdict": "accept"
+    },
+    {
+     "op": 7,
+     "verdict": "accept"
+    },
+    {
+     "op": 8,
+     "verdict": "accept"
+    },
+    {
+     "op": 9,
+     "verdict": "accept"
+    },
+    {
+     "op": 10,
+     "verdict": "accept"
+    },
+    {
+     "op": 11,
+     "verdict": "accept"
+    },
+    {
+     "op": 12,
+     "verdict": "accept"
+    },
+    {
+     "op": 13,
+     "verdict": "accept"
+    },
+    {
+     "op": 14,
+     "verdict": "accept"
+    },
+    {
+     "op": 15,
+     "verdict": "accept"
+    },
+    {
+     "op": 16,
+     "verdict": "accept"
+    },
+    {
+     "op": 17,
+     "verdict": "accept"
+    },
+    {
+     "op": 18,
+     "verdict": "accept"
+    },
+    {
+     "op": 19,
+     "verdict": "accept"
+    },
+    {
+     "op": 20,
+     "verdict": "accept"
+    },
+    {
+     "op": 21,
+     "verdict": "accept"
+    },
+    {
+     "op": 22,
+     "verdict": "accept"
+    },
+    {
+     "op": 23,
+     "verdict": "accept"
+    },
+    {
+     "op": 24,
+     "verdict": "accept"
+    },
+    {
+     "op": 25,
+     "verdict": "accept"
+    },
+    {
+     "op": 26,
+     "verdict": "accept"
+    },
+    {
+     "op": 27,
+     "verdict": "accept"
+    },
+    {
+     "op": 28,
+     "verdict": "accept"
+    },
+    {
+     "op": 29,
+     "verdict": "accept"
+    },
+    {
+     "op": 30,
+     "verdict": "accept"
+    },
+    {
+     "op": 31,
+     "verdict": "accept"
+    },
+    {
+     "op": 32,
+     "verdict": "accept"
+    },
+    {
+     "op": 33,
+     "verdict": "accept"
+    },
+    {
+     "op": 34,
+     "verdict": "accept"
+    },
+    {
+     "op": 35,
+     "verdict": "accept"
+    }
+   ],
+   "answers": []
+  },
+  {
+   "proposal": "P-0007",
+   "by": "ai-review",
+   "at": "2026-09-16T10:29:19Z",
+   "note": "実ファイルと突き合わせて受理。数値主張を照合し arc1/arc2 の枚数 2 件を訂正済み。質問 6 件は未回答のまま残す。",
+   "results": [
+    {
+     "op": 0,
+     "verdict": "accept"
+    },
+    {
+     "op": 1,
+     "verdict": "accept"
+    },
+    {
+     "op": 2,
+     "verdict": "accept"
+    },
+    {
+     "op": 3,
+     "verdict": "accept"
+    },
+    {
+     "op": 4,
+     "verdict": "accept"
+    },
+    {
+     "op": 5,
+     "verdict": "accept"
+    },
+    {
+     "op": 6,
+     "verdict": "accept"
+    },
+    {
+     "op": 7,
+     "verdict": "accept"
+    },
+    {
+     "op": 8,
+     "verdict": "accept"
+    },
+    {
+     "op": 9,
+     "verdict": "accept"
+    },
+    {
+     "op": 10,
+     "verdict": "accept"
+    },
+    {
+     "op": 11,
+     "verdict": "accept"
+    },
+    {
+     "op": 12,
+     "verdict": "accept"
+    },
+    {
+     "op": 13,
+     "verdict": "accept"
+    },
+    {
+     "op": 14,
+     "verdict": "accept"
+    },
+    {
+     "op": 15,
+     "verdict": "accept"
+    },
+    {
+     "op": 16,
+     "verdict": "accept"
+    }
+   ],
+   "answers": []
+  },
+  {
+   "proposal": "P-0008",
+   "by": "ai-review",
+   "at": "2026-09-16T10:29:19Z",
+   "note": "実ファイルと突き合わせて受理。数値主張を照合し arc1/arc2 の枚数 2 件を訂正済み。質問 6 件は未回答のまま残す。",
+   "results": [
+    {
+     "op": 0,
+     "verdict": "accept"
+    },
+    {
+     "op": 1,
+     "verdict": "accept"
+    },
+    {
+     "op": 2,
+     "verdict": "accept"
+    },
+    {
+     "op": 3,
+     "verdict": "accept"
+    },
+    {
+     "op": 4,
+     "verdict": "accept"
+    },
+    {
+     "op": 5,
+     "verdict": "accept"
+    },
+    {
+     "op": 6,
+     "verdict": "accept"
+    },
+    {
+     "op": 7,
+     "verdict": "accept"
+    },
+    {
+     "op": 8,
+     "verdict": "accept"
+    },
+    {
+     "op": 9,
+     "verdict": "accept"
+    },
+    {
+     "op": 10,
+     "verdict": "accept"
+    },
+    {
+     "op": 11,
+     "verdict": "accept"
+    },
+    {
+     "op": 12,
+     "verdict": "accept"
+    },
+    {
+     "op": 13,
+     "verdict": "accept"
+    },
+    {
+     "op": 14,
+     "verdict": "accept"
+    },
+    {
+     "op": 15,
+     "verdict": "accept"
+    },
+    {
+     "op": 16,
+     "verdict": "accept"
+    },
+    {
+     "op": 17,
+     "verdict": "accept"
+    },
+    {
+     "op": 18,
+     "verdict": "accept"
+    },
+    {
+     "op": 19,
+     "verdict": "accept"
+    },
+    {
+     "op": 20,
+     "verdict": "accept"
+    },
+    {
+     "op": 21,
+     "verdict": "accept"
+    },
+    {
+     "op": 22,
+     "verdict": "accept"
+    }
+   ],
+   "answers": []
+  },
+  {
+   "proposal": "P-0009",
+   "by": "ai-review",
+   "at": "2026-09-16T10:29:19Z",
+   "note": "実ファイルと突き合わせて受理。数値主張を照合し arc1/arc2 の枚数 2 件を訂正済み。質問 6 件は未回答のまま残す。",
+   "results": [
+    {
+     "op": 0,
+     "verdict": "accept"
+    },
+    {
+     "op": 1,
+     "verdict": "accept"
+    },
+    {
+     "op": 2,
+     "verdict": "accept"
+    },
+    {
+     "op": 3,
+     "verdict": "accept"
+    },
+    {
+     "op": 4,
+     "verdict": "accept"
+    },
+    {
+     "op": 5,
+     "verdict": "accept"
+    },
+    {
+     "op": 6,
+     "verdict": "accept"
+    },
+    {
+     "op": 7,
+     "verdict": "accept"
+    },
+    {
+     "op": 8,
+     "verdict": "accept"
+    }
+   ],
+   "answers": []
+  }
+ ]
+}

@@ -223,6 +223,37 @@
 .de-inspsec-caret { font-size: 11px; width: 12px; }
 .de-inspsec-body { padding-bottom: 8px; }
 
+/* ─── §11 対話層 P1: PROPOSALS タブ / op 判定 / ゴーストプレビュー ─── */
+.de-prophead { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.de-propfile { font-size: 10.5px; color: var(--de-soft); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.de-proprow { display: flex; align-items: baseline; gap: 6px; }
+.de-proprow .de-entname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.de-propcount { font-size: 9.5px; color: var(--de-soft); white-space: nowrap; }
+.de-proprow.current .de-propcount { color: var(--de-ink); }
+.de-propmeta { font-size: 11.5px; line-height: 1.7; color: var(--de-ink); margin: 0 0 8px; }
+.de-propmeta b { color: var(--de-soft); font-size: 9.5px; letter-spacing: .08em; text-transform: uppercase; display: block; margin-top: 8px; }
+.de-oprow { border: 1px solid var(--de-grid); border-radius: 4px; padding: 7px 8px; margin-bottom: 6px; background: var(--de-panel); }
+.de-oprow[data-verdict="accept"] { border-color: var(--de-accent); background: var(--de-accent-soft); }
+.de-oprow[data-verdict="reject"] { border-color: var(--de-muted); opacity: .62; }
+.de-opline { font-size: 11.5px; line-height: 1.5; color: var(--de-ink); word-break: break-word; overflow-wrap: anywhere; }
+.de-opnote { font-size: 10.5px; color: var(--de-soft); line-height: 1.6; margin-top: 3px; }
+.de-opacts { display: flex; align-items: center; gap: 4px; margin-top: 6px; }
+.de-opacts .de-opreason { flex: 1; min-width: 0; font-size: 10.5px; padding: 2px 5px; }
+.de-opbtn { min-width: 26px; padding: 1px 7px; font-size: 12px; line-height: 1.5; }
+.de-opbtn.on { background: var(--de-ink); color: var(--de-bg); border-color: var(--de-ink); }
+.de-qrow { border-left: 2px solid var(--de-accent); padding-left: 8px; margin-bottom: 8px; }
+.de-qtext { font-size: 11.5px; line-height: 1.6; color: var(--de-ink); }
+.de-qtarget { font-size: 9.5px; color: var(--de-soft); }
+.de-qrow textarea { width: 100%; box-sizing: border-box; min-height: 34px; margin-top: 4px; font-size: 11.5px; }
+
+/* キャンバス: 影響を受ける既存要素は accent リング、追加される要素はゴースト（点線・半透明） */
+.de-preview-hit { stroke: var(--de-accent) !important; stroke-width: 2.5 !important; }
+.de-preview-ring { fill: none; stroke-dasharray: none; opacity: 1; }
+.de-ghost-layer { opacity: .62; }
+.de-ghost-shape { fill: var(--de-accent-soft); stroke: var(--de-accent); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.de-ghost-edge { stroke: var(--de-accent); stroke-width: 1.5; stroke-dasharray: 5 4; fill: none; }
+.de-ghost-label { fill: var(--de-accent); font-family: var(--de-font); font-size: 11px; font-weight: 600; }
+
 /* Manual モーダル */
 .de-modal-overlay { position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.35); padding: 20px; }
 .de-modal { background: var(--de-bg); color: var(--de-ink); border: 1px solid var(--de-soft); border-radius: 8px; box-shadow: 0 10px 40px var(--de-shadow); max-width: 560px; width: 100%; max-height: 84vh; display: flex; flex-direction: column; }
@@ -3401,6 +3432,7 @@ class FlatSVGRenderer {
     this.svg = null; this.world = null; this.model = null;
     this.view = { x: 0, y: 0, k: 1 };
     this.selection = null;
+    this.preview = null;          // §11.3 提案プレビュー（派生・モデルには入らない）
     this.layerFilter = undefined; // undefined=未決定 / null=全レイヤ / layerId=絞り込み
   }
 
@@ -3604,7 +3636,54 @@ class FlatSVGRenderer {
       this.world.appendChild(el('text', { class: 'de-caption', x: b.x + b.w / 2, y: b.y + b.h + 8, 'text-anchor': 'middle' }, model.meta.caption));
     }
     this.applySelection();
+    this.applyPreview();
     this.drawGrid();
+  }
+
+  // ─── §11.3 提案プレビュー（派生・保存しない・履歴も積まない） ───
+  // preview = { nodes:[viewNodeId], edges:[viewEdgeId],
+  //             ghostNodes:[{id,label,x,y,w,h}], ghostEdges:[{id,label,a,b}] }
+  // a/b は {x,y,w,h,layer}（layer は段積み dy の解決に使う。ゴーストは layer なし＝dy 0）。
+  // update() のたびに張り直す＝モデルには一切触れない（projectToJSON はバイト安定のまま）。
+  setPreview(preview) { this.preview = preview || null; this.applyPreview(); }
+
+  applyPreview() {
+    this.world.querySelector('#de-preview')?.remove();
+    for (const e of this.world.querySelectorAll('.de-preview-hit')) e.classList.remove('de-preview-hit');
+    const p = this.preview;
+    if (!p) return;
+    for (const id of p.edges || []) {
+      const g = this.world.querySelector(`[data-kind="edge"][data-id="${CSS.escape(String(id))}"]`);
+      (g?.classList.contains('de-edge') ? g : g?.querySelector('.de-edge'))?.classList.add('de-preview-hit');
+    }
+    const rings = (p.nodes || []).map(id => this.model?.nodes.find(n => n.id === id)).filter(n => n && this.nodeVisible(n));
+    if (!rings.length && !(p.ghostNodes || []).length && !(p.ghostEdges || []).length) return;
+    const layer = el('g', { id: 'de-preview', class: 'de-ghost-layer', 'pointer-events': 'none' });
+    // リングは「箱の外側の枠」として別要素で描く。ノード本体の stroke を書き換える方式だと
+    // 塗りも枠も持たない type（pictogram 等）に何も出ない＝影響範囲が伝わらない。
+    for (const n of rings) {
+      layer.appendChild(el('rect', {
+        class: 'de-preview-ring de-preview-hit', 'data-ring': n.id, rx: 6,
+        x: n.x - 5, y: n.y + this.dyOf(n.layer) - 5, width: n.w + 10, height: (n.collapsed ? 28 : n.h) + 10,
+      }));
+    }
+    const ctr = (r) => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 + this.dyOf(r.layer) });
+    for (const ge of p.ghostEdges || []) {
+      if (!ge.a || !ge.b) continue;
+      const a = ctr(ge.a), b = ctr(ge.b);
+      layer.appendChild(el('line', { class: 'de-ghost-edge', x1: a.x, y1: a.y, x2: b.x, y2: b.y }));
+      if (ge.label) layer.appendChild(el('text', { class: 'de-ghost-label', x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 - 4, 'text-anchor': 'middle' }, ge.label));
+    }
+    for (const gn of p.ghostNodes || []) {
+      // ゴーストも段積み dy を受ける。ここを忘れると「点線が親から伸びているのに箱だけ別の帯にいる」
+      // （全レイヤ表示では各レイヤが縦にバンド化されるため）。
+      const gy = gn.y + this.dyOf(gn.layer);
+      const g = el('g', { class: 'de-ghost-node', 'data-ghost': gn.id });
+      g.appendChild(el('rect', { class: 'de-ghost-shape', x: gn.x, y: gy, width: gn.w, height: gn.h, rx: 4 }));
+      g.appendChild(el('text', { class: 'de-ghost-label', x: gn.x + gn.w / 2, y: gy + gn.h / 2 + 4, 'text-anchor': 'middle' }, gn.label));
+      layer.appendChild(g);
+    }
+    this.world.appendChild(layer);
   }
 
   renderGroup(group) {
@@ -5347,6 +5426,8 @@ const NODE_PALETTE = [
 
 const HISTORY_MAX = 100;
 const AUTOSAVE_KEY = 'diagram-engine-autosave';
+// §11.3 判定（✓/✗・却下理由・質問への回答）のブラウザ側作業記憶。キーは「提案ファイル名 :: 提案 id」。
+const VERDICT_KEY = 'de-proposal-verdicts';
 
 // View ▸ Layout（GRAPH_CONTRACT.md §2/§3）: layoutGraph の algorithm/direction を選び直す UI 語彙。
 const LAYOUT_ALGO_ITEMS = [['tree', 'Tree'], ['layered', 'Layered'], ['force', 'Force'], ['grid', 'Grid'], ['radial', 'Radial'], ['nested', 'Nested'], ['none', 'None']];
@@ -5423,6 +5504,11 @@ class DiagramEditor {
     // 今回は他エージェント所有のため変更しない）ので、ロード直後の生 JSON から「本当に明示された図」
     // だけを diagram.id 単位で覚えておく（resolveTheme が project.theme に譲るかどうかの判定に使う）。
     this.explicitTheme = new Set();
+    // §11 対話層 P1: 提案（読むだけ）／判定（localStorage に残す）／プレビュー（派生）。
+    // どれもプロジェクトには一切入らない＝projectToJSON はバイト安定のまま（§11.5 の不変条件）。
+    this.proposalDoc = null; this.proposalFileName = null; this.proposalSel = null;
+    this.preview = null;
+    this.verdicts = this.readVerdicts();
     this.buildUI();
     this.bindEvents();
     this.applyPanelState(this.readPanelState());
@@ -5743,6 +5829,7 @@ class DiagramEditor {
       },
     });
     this.renderer.setSelection?.(this.selection);
+    this.renderer.setPreview?.(this.preview);   // §11.3 プレビューは再マウントでも張り直す
     const editable = this.editable && this.projection === 'flat';
     this.viewport.style.cursor = editable ? 'default' : 'grab';
     if (this.editable) this.setStatus(editable ? '' : `${this.projection} はビュー専用（編集は flat で）`);
@@ -5799,6 +5886,9 @@ class DiagramEditor {
     const fileItems = [
       ['Project を保存', () => this.saveProjectFile()],
       ['Import（読込）', () => this.loadProjectFile()],
+      '---',
+      ['Open proposals…（AI の提案を読む）', () => this.openProposalsFile()],
+      ['Export decisions ⬇（判定を書き出す）', () => this.exportDecisions()],
       '---',
       ['Export: Release HTML', exportRelease],
       ['Export: 図 JSON', () => downloadText(`${this.model.meta.id}.json`, toJSON(this.model), 'application/json')],
@@ -5964,7 +6054,7 @@ class DiagramEditor {
     this.lowArea = document.createElement('div'); this.lowArea.className = 'de-lowarea';
     const tabs = document.createElement('div'); tabs.className = 'de-tabs';
     this.lowTabBtns = {};
-    for (const [k, l] of [['diagram', 'VIEWS'], ['palette', 'Palette']]) {
+    for (const [k, l] of [['diagram', 'VIEWS'], ['palette', 'Palette'], ['proposals', 'PROPOSALS']]) {
       const b = document.createElement('button'); b.className = 'de-tab'; b.textContent = l; b.dataset.tab = k;
       b.addEventListener('click', () => this.setLeftTab(k));
       this.lowTabBtns[k] = b; tabs.appendChild(b);
@@ -5982,19 +6072,358 @@ class DiagramEditor {
     // Palette ペイン（ADD NODE）
     this.palettePane = document.createElement('div'); this.palettePane.className = 'de-tabpane de-lowpane'; this.palettePane.dataset.tab = 'palette';
     this.palettePane.appendChild(this.buildPalette());
-    this.lowArea.append(tabs, this.diagramPane, this.palettePane);
+    // PROPOSALS ペイン（§11.3・AI の提案を読んで ✓/✗ を付ける。プロジェクトは変更しない）
+    this.proposalsPane = document.createElement('div'); this.proposalsPane.className = 'de-tabpane de-lowpane'; this.proposalsPane.dataset.tab = 'proposals';
+    this.proposalsPane.appendChild(this.buildProposalsPane());
+    this.lowArea.append(tabs, this.diagramPane, this.palettePane, this.proposalsPane);
     sb.appendChild(this.lowArea);
     this.setLeftTab('diagram');
     return sb;
   }
 
   setLeftTab(k) {
+    const leaving = this.leftTab === 'proposals' && k !== 'proposals';
     this.leftTab = k;
     for (const [key, b] of Object.entries(this.lowTabBtns || {})) b.classList.toggle('active', key === k);
     this.diagramPane?.classList.toggle('de-collapsed', k !== 'diagram');
     this.palettePane?.classList.toggle('de-collapsed', k !== 'palette');
+    this.proposalsPane?.classList.toggle('de-collapsed', k !== 'proposals');
+    // §11.3「タブを離れたらプレビューは消える」。提案の選択自体も解いて右ペインを元へ戻す
+    if (leaving) this.selectProposal(null);
   }
   showPaletteTab() { if (this.panelState?.sidebar) this.togglePanel('sidebar'); this.setLeftTab('palette'); }
+
+  // ════════════════ §11 対話層 P1 — 提案（proposal）/ 判定（decision）/ プレビュー ════════════════
+  // 「AI は外にいる。会話はファイル（JSON）で往復する」。ブラウザは **提案を見せて判定を記録するだけ**で、
+  // overlay もプロジェクトも書き換えない（書き込みは Node の bin/apply.mjs が担う＝§11.5 の不変条件）。
+
+  // 判定は localStorage（ブラウザ側の作業記憶）へ。キーは「提案ファイル名 :: 提案 id」。
+  // ファイル名を含めるのは、別の提案ファイルが同じ P-0001 を使っても混ざらないようにするため。
+  readVerdicts() {
+    try { return JSON.parse(localStorage.getItem(VERDICT_KEY) || '{}') || {}; } catch { return {}; }
+  }
+  writeVerdicts() {
+    try { localStorage.setItem(VERDICT_KEY, JSON.stringify(this.verdicts)); } catch { /* プライベートモード等は黙って諦める */ }
+  }
+  // 保存形式そのものを返す（§11.5「提案の読み込み・判定はプロジェクトを変更しない」の
+  // バイト比較に使う。検証スイートは window.diagramEditor 経由でしかモデルへ触れないため）。
+  projectJSON() { return this.project ? projectToJSON(this.project) : ''; }
+
+  proposalKey(p) { return `${this.proposalFileName || '(no file)'}::${p?.id}`; }
+  verdictEntry(p, { create = false } = {}) {
+    const k = this.proposalKey(p);
+    if (!this.verdicts[k] && create) this.verdicts[k] = { results: {}, answers: {} };
+    return this.verdicts[k] || { results: {}, answers: {} };
+  }
+  verdictFor(p, i) { return this.verdictEntry(p).results?.[String(i)] || null; }
+  answerFor(p, qid) { return this.verdictEntry(p).answers?.[qid] ?? ''; }
+  decidedCount(p) { return Object.keys(this.verdictEntry(p).results || {}).length; }
+
+  // プロジェクトを変更していないことを毎回その場で検算する（§11.5 のハードゲート）。
+  // 提案まわりのハンドラは必ずこれを通す＝将来うっかり model へ書いても即座に status に出る。
+  withProjectUnchanged(label, fn) {
+    const before = this.project ? projectToJSON(this.project) : '';
+    let out;
+    try { out = fn(); } finally {
+      const after = this.project ? projectToJSON(this.project) : '';
+      if (before !== after) {
+        this.proposalMutatedProject = label;
+        this.setStatus(`内部エラー: ${label} がプロジェクトを変更しました（§11.5 違反）`, true);
+      }
+    }
+    return out;
+  }
+
+  // File ▸ Open proposals…（ネットワークは使わない。ローカルの *.proposals.json を読むだけ）
+  openProposalsFile() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = '.json,application/json';
+    input.dataset.role = 'open-proposals';
+    input.addEventListener('change', () => {
+      const f = input.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => this.loadProposals(f.name, r.result);
+      r.readAsText(f);
+    });
+    input.click();
+  }
+
+  // 提案ファイルを読む。**プロジェクトには触らない**。
+  loadProposals(fileName, textOrObj) {
+    return this.withProjectUnchanged('loadProposals', () => {
+      let raw;
+      try { raw = typeof textOrObj === 'string' ? JSON.parse(textOrObj) : textOrObj; }
+      catch (err) { this.setStatus(`提案の JSON 構文エラー: ${err.message}`, true); return false; }
+      if (!raw || !Array.isArray(raw.proposals)) { this.setStatus('提案ファイルに proposals[] がありません', true); return false; }
+      this.proposalDoc = raw;
+      this.proposalFileName = fileName || 'proposals.json';
+      this.proposalSel = null;
+      this.preview = null; this.renderer?.setPreview?.(null);
+      this.renderProposalList();
+      this.setLeftTab('proposals');
+      if (this.panelState?.sidebar) this.togglePanel('sidebar');
+      this.renderInspector();
+      this.setStatus(`${this.proposalFileName}: 提案 ${raw.proposals.length} 件を読み込みました（プロジェクトは変更していません）`);
+      return true;
+    });
+  }
+
+  proposals() { return this.proposalDoc?.proposals || []; }
+  selectedProposal() { return this.proposals().find(p => p.id === this.proposalSel) || null; }
+
+  buildProposalsPane() {
+    const wrap = document.createElement('div');
+    const head = document.createElement('div'); head.className = 'de-prophead';
+    this.propFileEl = document.createElement('span'); this.propFileEl.className = 'de-propfile'; this.propFileEl.dataset.role = 'proposals-file';
+    const openB = this.btn('Open…', () => this.openProposalsFile()); openB.classList.add('de-btn-mini'); openB.title = '*.proposals.json を読む';
+    const expB = this.btn('Export decisions ⬇', () => this.exportDecisions()); expB.classList.add('de-btn-mini'); expB.dataset.role = 'export-decisions';
+    head.append(this.propFileEl, openB, expB);
+    this.propList = document.createElement('div'); this.propList.className = 'de-navtree'; this.propList.dataset.role = 'proposal-list';
+    wrap.append(head, this.propList);
+    this.renderProposalList();
+    return wrap;
+  }
+
+  renderProposalList() {
+    if (!this.propList) return;
+    this.propFileEl.textContent = this.proposalFileName || '（提案ファイル未読込）';
+    this.propFileEl.title = this.proposalFileName || '';
+    this.propList.textContent = '';
+    const list = this.proposals();
+    if (!list.length) {
+      this.propList.insertAdjacentHTML('beforeend',
+        '<div class="de-help">File ▸ Open proposals… で <b>*.proposals.json</b> を読み込むと、AI の提案を op 単位で ✓ / ✗ できます。判定はプロジェクトを変更しません。</div>');
+      return;
+    }
+    for (const p of list) {
+      const row = document.createElement('button');
+      row.className = 'de-navrow de-proprow'; row.dataset.proposal = p.id;
+      if (p.id === this.proposalSel) row.classList.add('current');
+      const nm = document.createElement('span'); nm.className = 'de-entname'; nm.textContent = p.title || p.id;
+      const cnt = document.createElement('span'); cnt.className = 'de-propcount';
+      const n = (p.ops || []).length, d = this.decidedCount(p);
+      cnt.textContent = `${n} op・判定 ${d}/${n}`;
+      row.append(nm, cnt);
+      row.title = `${p.id} — ${p.intent || ''}`;
+      row.addEventListener('click', () => this.selectProposal(p.id === this.proposalSel ? null : p.id));
+      this.propList.appendChild(row);
+    }
+  }
+
+  // 提案を選ぶ＝右ペインが提案詳細になり、キャンバスにプレビューが出る。
+  // もう一度押す / 別の提案を選ぶ / タブを離れる → 解除（§11.3）。
+  selectProposal(id) {
+    return this.withProjectUnchanged('selectProposal', () => {
+      this.proposalSel = id || null;
+      const p = this.selectedProposal();
+      this.preview = p ? this.computeProposalPreview(p) : null;
+      this.renderer?.setPreview?.(this.preview);
+      this.renderProposalList();
+      if (p) this.setRightTab('props');
+      this.renderInspector();
+      return true;
+    });
+  }
+
+  // op の 1 行表現（bin/overlay_merge.mjs の describeOp と同じ文言。
+  // src は bin を import できないので実装は 2 つある＝文言を変えるときは両方直す）。
+  opSummary(op) {
+    if (!op || typeof op !== 'object') return '(不正な op)';
+    const descKeys = ['description', 'descriptionSource', 'descriptionBasis', 'descriptionStale'];
+    switch (op.op) {
+      case 'set-props': {
+        const keys = Object.keys(op.props || {});
+        const onlyDesc = keys.length > 0 && keys.every(k => descKeys.includes(k));
+        return `${onlyDesc ? '説明を設定' : `プロパティ設定 (${keys.join(', ') || '空'})`}: ${op.target}`;
+      }
+      case 'set-tags': {
+        const parts = [];
+        if (op.add?.length) parts.push(`タグ追加: ${op.add.join(', ')}`);
+        if (op.remove?.length) parts.push(`タグ削除: ${op.remove.join(', ')}`);
+        return `${parts.join(' / ') || 'タグ変更なし'} → ${op.target}`;
+      }
+      case 'add-node': return `ノード追加: ${op.node?.id ?? '(id なし)'}${op.node?.name ? ` — ${op.node.name}` : ''}`;
+      case 'add-edge': return `エッジ追加: ${op.edge?.from} → ${op.edge?.to} (${op.edge?.rel ?? 'rel なし'})`;
+      case 'remove-edge': return `エッジ削除: ${op.target}`;
+      case 'add-view': return `ビュー追加: ${op.view?.meta?.id ?? '(id なし)'}`;
+      case 'set-view': return `ビュー更新: ${op.view} (${Object.keys(op.patch || {}).join(', ') || '空'})`;
+      default: return `未知の op: ${op.op}`;
+    }
+  }
+
+  // 右ペイン: title / intent / rationale ＋ op 一覧（✓ ✗ ＋理由欄）＋ questions（回答欄）
+  renderProposalDetail(box) {
+    const p = this.selectedProposal();
+    if (!p) return;
+    box.dataset.proposal = p.id;
+    const meta = document.createElement('div'); meta.className = 'de-propmeta'; meta.dataset.role = 'proposal-meta';
+    const esc = t => String(t ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    meta.innerHTML = `<div style="font-size:13px;font-weight:700">${esc(p.title || p.id)}</div>`
+      + `<div class="de-help">${esc(p.id)} · ${esc(p.author || 'ai')}${p.createdAt ? ' · ' + esc(p.createdAt) : ''}</div>`
+      + (p.intent ? `<b>intent</b>${esc(p.intent)}` : '')
+      + (p.rationale ? `<b>rationale</b>${esc(p.rationale)}` : '');
+    const close = this.btn('✕ 提案を閉じる', () => this.selectProposal(null));
+    // 段落の途中に混ざらないよう独立した行にする（rationale は改行を含む本文）
+    close.classList.add('de-btn-mini'); close.dataset.role = 'close-proposal';
+    close.style.marginTop = '10px'; close.style.display = 'block';
+    meta.appendChild(close);
+    box.appendChild(meta);
+
+    box.insertAdjacentHTML('beforeend', `<h3 data-key="ops">OP（${(p.ops || []).length} 件・受理/却下は op 単位）</h3>`);
+    const opsWrap = document.createElement('div'); opsWrap.dataset.role = 'op-list';
+    (p.ops || []).forEach((op, i) => opsWrap.appendChild(this.buildOpRow(p, op, i)));
+    box.appendChild(opsWrap);
+
+    if (p.questions?.length) {
+      box.insertAdjacentHTML('beforeend', `<h3 data-key="questions">QUESTIONS（${p.questions.length}）</h3>`);
+      const qWrap = document.createElement('div'); qWrap.dataset.role = 'question-list';
+      for (const q of p.questions) {
+        const row = document.createElement('div'); row.className = 'de-qrow'; row.dataset.question = q.id;
+        const t = document.createElement('div'); t.className = 'de-qtext'; t.textContent = `${q.id}. ${q.text || ''}`;
+        row.appendChild(t);
+        if (q.target) { const tg = document.createElement('div'); tg.className = 'de-qtarget'; tg.textContent = `target: ${q.target}`; row.appendChild(tg); }
+        const ta = document.createElement('textarea'); ta.dataset.role = 'q-answer'; ta.placeholder = '回答（AI への返事になります）';
+        ta.value = this.answerFor(p, q.id);
+        ta.addEventListener('input', () => this.setAnswer(p, q.id, ta.value));
+        row.appendChild(ta);
+        qWrap.appendChild(row);
+      }
+      box.appendChild(qWrap);
+    }
+
+    const exp = this.btn('Export decisions ⬇', () => this.exportDecisions());
+    exp.style.marginTop = '10px'; exp.dataset.role = 'export-decisions-detail';
+    box.appendChild(exp);
+    box.insertAdjacentHTML('beforeend',
+      '<div class="de-help" style="margin-top:8px">書き出した <b>*.decisions.json</b> を <code>node bin/apply.mjs --overlay overlay.json --proposals … --decisions …</code> に渡すと overlay へ反映されます（ブラウザは overlay を書き換えません）。</div>');
+  }
+
+  buildOpRow(p, op, i) {
+    const v = this.verdictFor(p, i);
+    const row = document.createElement('div'); row.className = 'de-oprow'; row.dataset.op = String(i);
+    if (v?.verdict) row.dataset.verdict = v.verdict;
+    const line = document.createElement('div'); line.className = 'de-opline';
+    line.textContent = `${i}. ${this.opSummary(op)}`;
+    row.appendChild(line);
+    if (op.note) { const n = document.createElement('div'); n.className = 'de-opnote'; n.textContent = op.note; row.appendChild(n); }
+    const acts = document.createElement('div'); acts.className = 'de-opacts';
+    const reason = document.createElement('input');
+    reason.className = 'de-opreason'; reason.dataset.role = 'op-reason'; reason.placeholder = '却下理由（✗ のときだけ）';
+    reason.value = v?.reason || '';
+    const mk = (text, verdict, role) => {
+      const b = this.btn(text, () => this.setVerdict(p, i, v?.verdict === verdict ? null : verdict, reason.value));
+      b.classList.add('de-btn-mini', 'de-opbtn');
+      if (v?.verdict === verdict) b.classList.add('on');
+      b.dataset.role = role;
+      b.title = verdict === 'accept' ? '受理（apply.mjs が overlay へ書く）' : '却下（理由が AI への返事になる）';
+      return b;
+    };
+    acts.append(mk('✓', 'accept', 'op-accept'), mk('✗', 'reject', 'op-reject'), reason);
+    reason.addEventListener('change', () => { if (this.verdictFor(p, i)?.verdict === 'reject') this.setVerdict(p, i, 'reject', reason.value); });
+    row.appendChild(acts);
+    return row;
+  }
+
+  setVerdict(p, i, verdict, reason) {
+    return this.withProjectUnchanged('setVerdict', () => {
+      const e = this.verdictEntry(p, { create: true });
+      if (!verdict) delete e.results[String(i)];
+      else e.results[String(i)] = verdict === 'reject' ? { verdict, reason: reason || '' } : { verdict };
+      this.writeVerdicts();
+      this.renderProposalList();
+      this.renderInspector();
+      return true;
+    });
+  }
+
+  setAnswer(p, qid, text) {
+    const e = this.verdictEntry(p, { create: true });
+    e.answers[qid] = text;
+    this.writeVerdicts();
+  }
+
+  // §11.2 判定ファイル。判定済みの op だけを出す（未判定＝defer と同義なので載せない）。
+  exportDecisions() {
+    return this.withProjectUnchanged('exportDecisions', () => {
+      if (!this.proposalDoc) { this.setStatus('提案ファイルを読み込んでから書き出してください', true); return false; }
+      const at = new Date().toISOString();
+      const decisions = [];
+      for (const p of this.proposals()) {
+        const e = this.verdictEntry(p);
+        const results = Object.keys(e.results || {}).map(Number).sort((a, b) => a - b).map(i => {
+          const r = e.results[String(i)];
+          return r.verdict === 'reject' ? { op: i, verdict: 'reject', reason: r.reason || '' } : { op: i, verdict: r.verdict };
+        });
+        const answers = Object.entries(e.answers || {}).filter(([, t]) => String(t).trim() !== '').map(([id, text]) => ({ id, text }));
+        if (!results.length && !answers.length) continue;
+        const d = { proposal: p.id, by: 'human', at, results };
+        if (answers.length) d.answers = answers;
+        decisions.push(d);
+      }
+      if (!decisions.length) { this.setStatus('判定がまだありません（✓ / ✗ を付けてください）', true); return false; }
+      const base = (this.proposalFileName || 'proposals.json').replace(/\.proposals\.json$|\.json$/i, '');
+      downloadText(`${base}.decisions.json`, JSON.stringify({ decisions }, null, 2), 'application/json');
+      this.setStatus(`${base}.decisions.json を書き出しました（apply.mjs へ渡してください）`);
+      return true;
+    });
+  }
+
+  // ─── §11.3 キャンバスのプレビュー（派生・保存しない・履歴も積まない） ───
+  // 影響を受ける既存ノード/エッジ＝accent リング、add-node / add-edge ＝ゴースト（点線・半透明）。
+  // 図のノード id は overlay ビューではローカル id なので、graph 側 id は entityId で引き当てる。
+  computeProposalPreview(p) {
+    const m = this.model;
+    if (!p || !m) return null;
+    const nodes = new Set(), edges = new Set(), ghostNodes = [], ghostEdges = [];
+    const ghostById = new Map();
+    const viewNode = gid => gid == null ? null
+      : (m.nodes.find(n => n.id === gid) || m.nodes.find(n => (n.entityId || n.id) === gid) || null);
+    const viewEdge = eid => eid == null ? null
+      : (m.edges.find(e => e.id === eid) || m.edges.find(e => (e.relationId || e.id) === eid) || null);
+    const touchNode = gid => { const n = viewNode(gid); if (n) nodes.add(n.id); return n; };
+    const touchEdge = eid => { const e = viewEdge(eid); if (e) edges.add(e.id); return e; };
+    const dw = m.layout?.node?.w || 170, dh = m.layout?.node?.h || 44;
+    const b = contentBounds(m, 0);
+    let gi = 0;
+    const endpoint = ref => {
+      const id = String(ref ?? '').split(':')[0];
+      const n = viewNode(id);
+      if (n) { nodes.add(n.id); return { x: n.x, y: n.y, w: n.w, h: n.h, layer: n.layer }; }
+      return ghostById.get(id) || null;
+    };
+    for (const op of p.ops || []) {
+      switch (op?.op) {
+        case 'set-props': (op.kind === 'edge' ? touchEdge : touchNode)(op.target); break;
+        case 'set-tags': touchNode(op.target); break;
+        case 'remove-edge': touchEdge(op.target); break;
+        case 'add-node': {
+          const n = op.node; if (!n?.id) break;
+          const already = viewNode(n.id);
+          if (already) { nodes.add(already.id); break; }   // もう図にある＝強調で足りる
+          const w = n.w || dw, h = n.h || dh;
+          const par = n.parent ? viewNode(n.parent) : null;
+          let x, y;
+          if (typeof n.x === 'number' && typeof n.y === 'number') { x = n.x; y = n.y; }
+          else if (par) { x = par.x + par.w + 60; y = par.y + gi * (h + 16); }
+          else { x = b.x + gi * (w + 24); y = b.y + b.h + 60; }
+          gi++;
+          const g = { id: n.id, label: n.name || n.label || n.id, x, y, w, h, layer: par?.layer };
+          ghostNodes.push(g); ghostById.set(n.id, g);
+          if (par) { nodes.add(par.id); ghostEdges.push({ id: `ghost~parent~${n.id}`, a: { x: par.x, y: par.y, w: par.w, h: par.h, layer: par.layer }, b: g, label: '' }); }
+          break;
+        }
+        case 'add-edge': {
+          const e = op.edge; if (!e) break;
+          const a = endpoint(e.from), bb = endpoint(e.to);
+          if (a && bb) ghostEdges.push({ id: e.id, a, b: bb, label: e.rel || '' });  // 端点が解決したときだけ
+          break;
+        }
+        default: break;   // add-view / set-view は現在の図に映らない
+      }
+    }
+    return { nodes: [...nodes], edges: [...edges], ghostNodes, ghostEdges };
+  }
 
   // MODEL と下部タブの上下比率をドラッグで変更
   setupVSplit(split) {
@@ -6661,6 +7090,14 @@ class DiagramEditor {
     if (!this.inspector) return;
     const box = this.inspector;
     box.innerHTML = '<h3>Inspector</h3>';
+    delete box.dataset.proposal;
+    // §11.3: 提案を選んでいる間は右ペインが提案詳細になる（✕ / タブ離脱 / 別提案で元へ戻る）
+    if (this.proposalSel && this.selectedProposal()) {
+      // 折りたたみ（makeInspectorCollapsible）は通さない。op 一覧が既定 closed で隠れると
+      // 「✓ / ✗ を付ける」という唯一の目的が最初のクリックの前に達成できなくなるため。
+      this.renderProposalDetail(box);
+      return;
+    }
     if (!this.selection) {
       this.renderViewSummary(box);
       return;
