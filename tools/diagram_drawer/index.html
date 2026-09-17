@@ -63,6 +63,20 @@
 .de-node-label { fill: var(--de-ink); font-family: var(--de-font); font-size: var(--de-node-font); font-weight: 600; }
 .de-node-sublabel { fill: var(--de-soft); font-family: var(--de-font); font-size: var(--de-node-subfont); letter-spacing: .04em; }
 .de-node-icon { stroke: var(--de-ink); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+/* §13.2 露出バナー。閉じられるが、図の再読込で必ず出直す（見落とさせない） */
+.de-exposure {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 9998;
+  background: #7a1414; color: #fff; font: 12.5px/1.6 var(--de-font);
+  padding: 9px 40px 9px 14px; text-align: center;
+}
+.de-exposure button {
+  position: absolute; right: 10px; top: 7px;
+  background: none; border: 1px solid #fff; color: #fff; cursor: pointer; border-radius: 3px;
+}
+/* §13 公開範囲バッジ。private は地の模様（薄い）、public は目を引く（濃い＋下地）。
+   絵文字はフォント側で着色されるため opacity で強弱を付ける（fill は効かない環境がある）。 */
+.de-vis-private { opacity: .34; }
+.de-vis-public { opacity: 1; paint-order: stroke; stroke: var(--de-paper); stroke-width: 3px; }
 .de-port { fill: var(--de-fill); stroke: var(--de-line); stroke-width: 1.2; }
 .de-port:hover { stroke: var(--de-accent); stroke-width: 2; }
 .de-port-label { fill: var(--de-soft); font-family: var(--de-font); font-size: 9px; }
@@ -450,15 +464,21 @@ function textWidthPx(text, fontPx = nodeFontPx) {
 }
 // ラベルに使える横幅: アイコンがある派生ノードはアイコン（左 9px + 18px）の右から書き始める。
 // 中央寄せのままアイコンへ食い込むのが G10 で報告された「長いラベルがアイコンに重なる」バグ。
+// G15: これらは「基準フォント 15px で焼いた px」。文字サイズを上げるとアイコンもバッジも
+// 一緒に大きくなるので、インセットも同じ倍率で伸ばさないとラベルがアイコンへ食い込む。
+// 定数は基準値として残し、実際に使うのは常に下のスケール済み関数のほう。
 const LABEL_ICON_INSET = 32;   // アイコンありのときの左インセット（9 + 18 + 5）
 const LABEL_PAD = 8;           // 左右の余白
+function labelIconInset() { return LABEL_ICON_INSET * nodeTextScale(); }
+function labelPad() { return LABEL_PAD * nodeTextScale(); }
 // §7.3 の ▸N トグルは LR ではノードの右辺・ラベルと同じ高さに出る。その幅ぶんラベル領域から引く
 // （引かないと「diagram_engine」がバッジの下に潜る）。幾何は flat_svg.expanderRect と 1:1。
 function expanderReserve(childCount) {
-  return childCount ? 13 + String(childCount).length * 6 + 7 : 0;
+  return childCount ? (13 + String(childCount).length * 6 + 7) * nodeTextScale() : 0;
 }
 function labelBoxWidth(w, hasIcon, expanderW = 0) {
-  return Math.max(24, w - (hasIcon ? LABEL_ICON_INSET : LABEL_PAD) - LABEL_PAD - expanderW);
+  const pad = labelPad();
+  return Math.max(24, w - (hasIcon ? labelIconInset() : pad) - pad - expanderW);
 }
 
 // 軽量バリデーション（外部ライブラリなし）。致命的な問題のみ errors、軽微は warnings。
@@ -617,8 +637,21 @@ function normalizeProject(raw) {
   deriveViews(proj);            // §2-1: select → nodes/edges を合成（手置きが勝つ）
   resolveLedger(proj, rawDiagrams);
   applyLayouts(proj);           // §2-2: x/y 未指定ノードだけ自動配置（__autoPos）
+  deriveVisibility(proj);       // §13: 各図ノードへ公開範囲を焼く（派生＝保存時に剥がす）
   proj.index = buildIndex(proj);
   return proj;
+}
+
+// §13: レンダラは proj を持たない（model = 1 枚の図）ので、公開範囲をノード側へ派生させておく。
+// __ 接頭辞＝ stripDerived が保存時に必ず剥がす＝ projectToJSON はバイト安定のまま。
+function deriveVisibility(proj) {
+  if (!projectVisibility(proj)) return;   // 宣言の無いプロジェクトでは鍵も地球も出さない
+  for (const d of proj.diagrams) {
+    for (const n of d.nodes) {
+      const v = visibilityOf(proj, n);
+      if (v) n.__visibility = v;
+    }
+  }
 }
 
 // graph.* と旧 entities/relations を id 重複なしで連結（先勝ち＝graph.* が正）
@@ -919,9 +952,13 @@ function deriveViews(proj) {
     const have = new Map((d.nodes || []).map(n => [n.id, n]));
     const layer0 = d.layers[0].id;
     // §7.1 layout.node: 派生ノードの既定サイズ（ビュー単位。抽出器の既定ビューはコンパクト h=44）
+    // G15: 箱そのものを文字サイズと同じ倍率で伸ばす。ここを固定にしていたのが「特大にすると
+    // 字が箱からはみ出す」の主因＝170×44 のまま字だけ 1.45 倍になっていた。w は下の autoWidth が
+    // ラベル実測でさらに広げるが、h はここでしか伸びない（行高 lineH() は倍率で伸びるため）。
+    const boxScale = nodeTextScale();
     const size = {
-      w: (typeof d.layout?.node?.w === 'number') ? d.layout.node.w : DEFAULT_NODE.w,
-      h: (typeof d.layout?.node?.h === 'number') ? d.layout.node.h : DEFAULT_NODE.h,
+      w: Math.round(((typeof d.layout?.node?.w === 'number') ? d.layout.node.w : DEFAULT_NODE.w) * boxScale),
+      h: Math.round(((typeof d.layout?.node?.h === 'number') ? d.layout.node.h : DEFAULT_NODE.h) * boxScale),
     };
     // §7.1 追補（G10）: layout.node を宣言したビューでは、ラベルが入る幅まで派生ノードを自動で広げる
     // （170×44 の箱に `icon_pack_selection.json` が入らずアイコン／サブラベルへ食い込んでいた）。
@@ -938,7 +975,7 @@ function deriveViews(proj) {
       const n = Object.assign({}, DEFAULT_NODE, size, { ports: [], id, entityId: id, layer: layer0, __derived: true });
       if (autoWidth) {
         const ent = byId.get(id);
-        const need = textWidthPx(ent?.name ?? id) + (ent?.icon ? LABEL_ICON_INSET : LABEL_PAD) + LABEL_PAD;
+        const need = textWidthPx(ent?.name ?? id) + (ent?.icon ? labelIconInset() : labelPad()) + labelPad();
         // G13: ここは Math.round ではなく **ceil**。必要幅が 239.4px のとき round は 239 へ切り下げ、
         // labelBoxWidth が 0.4px 足りずレンダラが「幅は足りているはずのラベル」を … で省略する。
         // 13px 時代は端数がたまたま上へ丸まっていただけで、フォントを変えた瞬間に露見した。
@@ -964,7 +1001,7 @@ function deriveViews(proj) {
       // LR では ▸N バッジがラベルと同じ行に出るので、その幅ぶん余分に広げておく（G10）
       if (autoWidth && n.__derived && (d.layout?.direction || 'TB') === 'LR') {
         const ent = byId.get(gid);
-        const need = textWidthPx(ent?.name ?? gid) + (ent?.icon ? LABEL_ICON_INSET : LABEL_PAD) + LABEL_PAD + expanderReserve(kids.length);
+        const need = textWidthPx(ent?.name ?? gid) + (ent?.icon ? labelIconInset() : labelPad()) + labelPad() + expanderReserve(kids.length);
         n.w = Math.min(Math.round(size.w * MAX_AUTO_W), Math.ceil(Math.max(n.w, need)));
       }
     }
@@ -1186,6 +1223,51 @@ function relationFreshId(proj, prefix = 'R-') {
   return id;
 }
 
+// ─── §13 公開範囲（visibility）— 純関数・DOM 非依存 ───
+// 「このノードの実体は世界から読めるのか」をモデルの一級の属性として持つ。
+// これが無かったために、private リポジトリの構造図が public な配信先に載っていることを
+// ツール上から誰も見て取れなかった（§13 の動機）。
+//   project.visibility   … このプロジェクトの正本の置き場所（'public' | 'private'）
+//   project.publicOrigins… 公開だと**宣言済み**のオリジン（抽出器が rules.externals の public から書く）
+//   node.props.visibility… 個別指定。無ければ href の行き先が公開オリジンなら public、でなければ
+//                          プロジェクトの visibility を継承する
+function projectVisibility(proj) {
+  const v = proj?.project?.visibility;
+  return v === 'public' || v === 'private' ? v : null;
+}
+function publicOriginsOf(proj) {
+  const list = proj?.project?.publicOrigins;
+  return Array.isArray(list) ? list.filter(s => typeof s === 'string' && s) : [];
+}
+function originOf(url) {
+  try { return new URL(String(url)).origin; } catch { return null; }
+}
+// ノード（図ノード / 台帳エンティティのどちらでも）の公開範囲。判定できなければ null。
+function visibilityOf(proj, node) {
+  if (!node) return null;
+  let props = node.props || null;
+  if (node.entityId && (!props || props.visibility === undefined)) {
+    const ent = entityById(proj, node.entityId);
+    if (ent?.props) props = Object.assign({}, ent.props, props || {});
+  }
+  const explicit = props?.visibility;
+  if (explicit === 'public' || explicit === 'private') return explicit;
+  const href = props?.href;
+  if (href) {
+    const o = originOf(href);
+    if (o && publicOriginsOf(proj).includes(o)) return 'public';
+  }
+  return projectVisibility(proj);
+}
+// §13.2 露出検知: private を宣言しているプロジェクトが、そのプロジェクト自身が「公開」と
+// 宣言したオリジンから配信されている状態。**これがツールに出ていれば今回の件は初回で気づけた**。
+// 戻り値は検知した公開オリジン（無ければ null）。origin は呼び出し側が渡す（DOM 非依存を保つため）。
+function publicHostExposure(proj, origin) {
+  if (projectVisibility(proj) !== 'private') return null;
+  if (!origin || origin === 'null') return null;
+  return publicOriginsOf(proj).includes(origin) ? origin : null;
+}
+
 // ─── §12 ノードの実体を開く（open）— 純関数・DOM 非依存 ───
 // 「このノードはどこで開けるか」だけを決める。実際の表示（iframe / img / pre）は editor.js。
 // 優先順（§12.1）: ① props.href（明示・抽出器の rules.hrefs / externals 由来）
@@ -1370,6 +1452,7 @@ function stripDerived(d) {
     if (n.ports?.length) n.ports = n.ports.filter(p => !p.__derived);
     if ('__layerPrev' in n) { n.layer = n.__layerPrev; delete n.__layerPrev; }
     delete n.__childCount; delete n.__expanded;
+    delete n.__visibility;   // §13 公開範囲も派生（正本は project.visibility と props.visibility）
   }
   // §7.5 合成レイヤ（layerBy）も剥がす。全部消えたら既定の単一レイヤへ戻す（normalize と同じ形）
   if (d.layers?.some(l => l.__derived)) {
@@ -3592,17 +3675,29 @@ const PORT_R = 4.5;         // ポート正方形の半径
 // G13: 行高とサブラベルの下限高は「13px 基準で 16px / 40px」という G10 の実測を比として残し、
 // 現在のラベル・フォントサイズ（View ▸ 文字サイズ）から毎回引き直す。定数のままだと
 // 文字を大きくした瞬間に行が重なり、サブラベルがラベルのアセンダへ食い込む。
-const lineH = () => getNodeFontPx() * (16 / 13);          // ラベル行高
+const lineH = (px = getNodeFontPx()) => px * (16 / 13);   // ラベル行高
 const sublabelMinH = () => 40 * nodeTextScale();          // これ未満の箱ではサブラベルを描かず <title> へ回す（G10）
 // wrapText は「1 行あたりの文字数」で折るので、その 1 文字あたり px も同じ尺度で伸ばす
-const wrapCharPx = () => getNodeFontPx() * (6.8 / 13);
+const wrapCharPx = (px = getNodeFontPx()) => px * (6.8 / 13);
+// G15: 箱の高さに 1 行が入りきらないときだけ、その箱のラベル font-px を下げて返す。
+// 派生ノードは箱ごと伸びるので常に素通り（＝返り値は現在の font-px そのまま）。
+const MIN_FIT_FONT = 10;
+const SUBLABEL_RATIO = 0.733;   // theme.css の --de-node-subfont（= --de-node-font × .733）と同値
+function fitFontPx(h, showSub) {
+  const px = getNodeFontPx();
+  // 1 行ぶんの行高 + サブラベル/余白が箱に収まるか。収まらなければ収まる px まで線形に落とす
+  const need = lineH(px) + (showSub ? 20 : 8) * nodeTextScale();
+  if (need <= h) return px;
+  const room = Math.max(0, h - (showSub ? 20 : 8) * nodeTextScale());
+  return Math.max(MIN_FIT_FONT, Math.min(px, room / (16 / 13)));
+}
 
 // 幅に収まるまで末尾を削って … を付ける（textWidthPx と同じ尺度で測る）
-function ellipsize(text, maxW) {
+function ellipsize(text, maxW, fontPx = getNodeFontPx()) {
   const s = String(text == null ? '' : text);
-  if (textWidthPx(s) <= maxW) return s;
+  if (textWidthPx(s, fontPx) <= maxW) return s;
   const chars = [...s];
-  while (chars.length > 1 && textWidthPx(chars.join('') + '…') > maxW) chars.pop();
+  while (chars.length > 1 && textWidthPx(chars.join('') + '…', fontPx) > maxW) chars.pop();
   return chars.join('') + '…';
 }
 
@@ -4025,37 +4120,56 @@ class FlatSVGRenderer {
 
     // アイコン + ラベル
     const hasIcon = node.icon && node.type !== 'pictogram' && node.type !== 'actor';
+    const S = nodeTextScale();   // G15: 以下の px は基準 15px で焼いてある。文字と同じ倍率で伸ばす
     if (hasIcon && !node.collapsed) {
-      const size = 18;
+      const size = 18 * S;
       const ig = iconGroup(document, node.icon);
-      ig.setAttribute('transform', `translate(${node.x + 9},${node.y + 8}) scale(${size / 24})`);
+      ig.setAttribute('transform', `translate(${node.x + 9 * S},${node.y + 8 * S}) scale(${size / 24})`);
       g.appendChild(ig);
     }
     // §7.1 追補（G10）: 高さが 2 行に足りない箱（h < sublabelMinH()）はサブラベル（親パス）を描かない。
     // 描くとラベル 1 行目のアセンダと重なって両方読めなくなる（報告された「アイコン／サブラベルに重なる」）。
     // 落としたサブラベルは <title>（ツールチップ）へ回す＝情報は失わない。
     const showSub = !!node.sublabel && !node.collapsed && h >= sublabelMinH();
+    // G15: 手置きノード（JSON に w/h が書いてある箱）は文字サイズを上げても大きくならないので、
+    // 1 行すら入らない高さになると字が箱の外へ出ていた。入らないぶんは**その箱だけ**字を縮めて
+    // 必ず内側に収める（下限 10px。派生ノードは上の boxScale で箱ごと伸びるのでここは素通り）。
+    const fitPx = fitFontPx(h, showSub);
     // ラベル領域はアイコンの右から（中央寄せのままだと長いラベルがアイコンへ食い込む）。
     // サブラベルも同じ中心に揃える（別々の中心だとラベルとサブラベルがずれて見える）。
-    const textInset = (hasIcon && !node.collapsed) ? LABEL_ICON_INSET : LABEL_PAD;
+    const textInset = (hasIcon && !node.collapsed) ? labelIconInset() : labelPad();
     const lrExpander = (this.model?.layout?.direction || 'TB') === 'LR' && !node.collapsed ? expanderReserve(node.__childCount) : 0;
     const textW = labelBoxWidth(node.w, hasIcon && !node.collapsed, lrExpander);
     const textCx = node.x + textInset + textW / 2;
+    const fitS = fitPx / getNodeFontPx();       // 縮めたぶんは行送り・余白も同じ比で詰める
     if (showSub) {
-      g.appendChild(el('text', {
-        class: 'de-node-sublabel', x: textCx, y: node.y + 14, 'text-anchor': 'middle',
-      }, node.sublabel));
+      // ⚠ font-size は**インラインスタイル**で渡す。theme.css の
+      //   `.de-node-sublabel { font-size: var(--de-node-subfont) }` は CSS 宣言なので、
+      //   SVG のプレゼンテーション属性（setAttribute('font-size', …)）には必ず勝つ。
+      //   属性で渡していたため「縮めたつもりの字が実寸で描かれ、収まり計算だけが嘘になる」
+      //   状態になっていた（検証で getComputedStyle と属性値の乖離として検出）。
+      const subPx = getNodeFontPx() * SUBLABEL_RATIO * fitS;
+      // G15: サブラベルも箱幅で詰める。G10 でラベル側にだけ ellipsize を入れた取りこぼしで、
+      //      実データ（Imports ビュー）では標準サイズでも 35 ノードが箱からはみ出していた。
+      const subText = ellipsize(node.sublabel, textW, subPx);
+      const t = el('text', {
+        class: 'de-node-sublabel', x: textCx, y: node.y + 14 * S * fitS, 'text-anchor': 'middle',
+      }, subText);
+      if (fitS < 1) t.style.fontSize = `${subPx.toFixed(2)}px`;
+      if (subText !== node.sublabel) this.appendTitle(g, `${node.sublabel}${node.label || ''}`);
+      g.appendChild(t);
     }
     if (node.label) {
-      const cy = node.collapsed ? node.y + h / 2 + 4.5 : node.y + h / 2 + (showSub ? 8 : 4.5);
+      const cy = node.collapsed ? node.y + h / 2 + 4.5 * S * fitS : node.y + h / 2 + (showSub ? 8 : 4.5) * S * fitS;
       // 入る行数: サブラベルを描いたぶんを引いた高さ / 行高（最低 1 行）
-      const maxLines = Math.max(1, Math.floor((h - (showSub ? 20 : 8)) / lineH()));
-      this.appendLabel(g, node, textCx, cy, textW, maxLines);
+      const maxLines = Math.max(1, Math.floor((h - (showSub ? 20 : 8) * S * fitS) / lineH(fitPx)));
+      this.appendLabel(g, node, textCx, cy, textW, maxLines, fitPx);
     }
     if (!showSub && node.sublabel && !node.collapsed) this.appendTitle(g, `${node.sublabel}${node.label || ''}`);
     this.appendPorts(g, node);
     this.appendLinkBadge(g, node);
     this.appendProvenanceBadge(g, node, h);
+    this.appendVisibilityBadge(g, node, h);
     this.appendExpander(g, node, h);
     return g;
   }
@@ -4064,12 +4178,14 @@ class FlatSVGRenderer {
   // 幾何は expanderRect() に一本化し、描画とヒットテストで必ず同じ矩形を使う。
   expanderRect(node) {
     if (!node.__childCount || node.collapsed) return null;
+    const S = nodeTextScale();   // G15: 幅は model.expanderReserve() と 1:1 で伸ばす（ずらすとラベルがバッジに潜る）
     const h = node.collapsed ? 28 : node.h;
-    const w = 13 + String(node.__childCount).length * 6;
+    const w = (13 + String(node.__childCount).length * 6) * S;
+    const bh = 14 * S;
     const lr = (this.model?.layout?.direction || 'TB') === 'LR';
     return lr
-      ? { x: node.x + node.w - w - 3, y: node.y + h / 2 - 7, w, h: 14 }
-      : { x: node.x + node.w / 2 - w / 2, y: node.y + h - 16, w, h: 14 };
+      ? { x: node.x + node.w - w - 3 * S, y: node.y + h / 2 - bh / 2, w, h: bh }
+      : { x: node.x + node.w / 2 - w / 2, y: node.y + h - bh - 2 * S, w, h: bh };
   }
 
   appendExpander(g, node, h) {
@@ -4081,8 +4197,8 @@ class FlatSVGRenderer {
       fill: 'var(--de-paper)', stroke: 'var(--de-soft)', 'stroke-width': 0.8,
     }));
     eg.appendChild(el('text', {
-      x: r.x + r.w / 2, y: r.y + r.h - 3.5, 'text-anchor': 'middle',
-      fill: 'var(--de-soft)', 'font-size': 9, 'font-weight': 700, 'font-family': 'var(--de-font)',
+      x: r.x + r.w / 2, y: r.y + r.h - 3.5 * nodeTextScale(), 'text-anchor': 'middle',
+      fill: 'var(--de-soft)', 'font-size': 9 * nodeTextScale(), 'font-weight': 700, 'font-family': 'var(--de-font)',
     }, `${node.__expanded ? '▾' : '▸'}${node.__childCount}`));
     g.appendChild(eg);
   }
@@ -4091,19 +4207,39 @@ class FlatSVGRenderer {
   appendProvenanceBadge(g, node, h) {
     const glyph = { doc: '✓', 'ai-assign': '▲', 'ai-draft': '✎' }[node.props?.provenance];
     if (!glyph) return;
-    const bx = node.x + 10, by = node.y + (h ?? node.h) - 9;
-    g.appendChild(el('circle', { cx: bx, cy: by, r: 6.5, fill: 'var(--de-paper)', stroke: 'var(--de-soft)', 'stroke-width': 1 }));
+    const S = nodeTextScale();
+    const bx = node.x + 10 * S, by = node.y + (h ?? node.h) - 9 * S;
+    g.appendChild(el('circle', { cx: bx, cy: by, r: 6.5 * S, fill: 'var(--de-paper)', stroke: 'var(--de-soft)', 'stroke-width': 1 }));
     g.appendChild(el('text', {
-      x: bx, y: by + 3, 'text-anchor': 'middle',
-      fill: 'var(--de-soft)', 'font-size': 8.5, 'font-weight': 700, 'font-family': 'var(--de-font)',
+      x: bx, y: by + 3 * S, 'text-anchor': 'middle',
+      fill: 'var(--de-soft)', 'font-size': 8.5 * S, 'font-weight': 700, 'font-family': 'var(--de-font)',
     }, glyph));
+  }
+
+  // §13 公開範囲バッジ（node.__visibility）。右下隅。
+  // 🔒 private は**淡く**（private リポジトリでは大多数がこれ＝地の模様として読ませる）、
+  // 🌐 public は**強く**（少数＝世界に出ているものが一目で浮く）。この強弱の付け方が要件で、
+  // 両方を同じ濃さで描くと 855 個の鍵に埋もれて 24 個の公開が見えなくなる。
+  appendVisibilityBadge(g, node, h) {
+    const v = node.__visibility;
+    if (!v || node.collapsed) return;
+    const S = nodeTextScale();
+    const bx = node.x + node.w - 10 * S, by = node.y + (h ?? node.h) - 9 * S;
+    const pub = v === 'public';
+    g.appendChild(el('text', {
+      x: bx, y: by + 3.5 * S, 'text-anchor': 'middle',
+      class: pub ? 'de-vis-public' : 'de-vis-private',
+      'font-size': (pub ? 11 : 10) * S, 'font-family': 'var(--de-font)',
+    }, pub ? '🌐' : '🔒'));
+    this.appendTitle(g, `${pub ? '公開: この実体は誰でも読める場所にあります' : '非公開: この実体は公開されていません'}\n${node.sublabel || ''}${node.label || ''}`);
   }
 
   // ↗ バッジの幾何。描画（appendLinkBadge）とヒットテスト（hitTest の kind:'link'）で必ず同じ円を使う。
   // G8: Alt キーの無いタッチ端末では Alt+クリックの遷移経路が使えず、§7.4 の遅延ドリルダウンに潜れなかった。
   linkBadgePoint(node) {
     if (!node.link) return null;
-    return { x: node.x + node.w - 11, y: node.y + 11, r: 7.5 };
+    const S = nodeTextScale();
+    return { x: node.x + node.w - 11 * S, y: node.y + 11 * S, r: 7.5 * S };
   }
 
   // ドリルダウンリンクを持つノードに ↗ バッジ
@@ -4111,10 +4247,11 @@ class FlatSVGRenderer {
     const b = this.linkBadgePoint(node);
     if (!b) return;
     const bx = b.x, by = b.y;
+    const S = nodeTextScale();
     g.appendChild(el('circle', { cx: bx, cy: by, r: b.r, fill: 'var(--de-accent-soft)', stroke: 'var(--de-accent)', 'stroke-width': 1 }));
     g.appendChild(el('text', {
-      x: bx, y: by + 3.5, 'text-anchor': 'middle',
-      fill: 'var(--de-accent)', 'font-size': 10, 'font-weight': 700, 'font-family': 'var(--de-font)',
+      x: bx, y: by + 3.5 * S, 'text-anchor': 'middle',
+      fill: 'var(--de-accent)', 'font-size': 10 * S, 'font-weight': 700, 'font-family': 'var(--de-font)',
     }, '↗'));
   }
 
@@ -4124,26 +4261,34 @@ class FlatSVGRenderer {
     g.insertBefore(el('title', {}, text), g.firstChild);
   }
 
-  appendLabel(g, node, cx, cy, maxW, maxLines = 0) {
-    let lines = wrapText(node.label, Math.max(4, Math.floor(maxW / wrapCharPx())));
+  // fontPx: G15 の収まり縮小後のラベル px（既定＝現在の文字サイズ）。折り返し・省略・行送りを
+  // すべてこの px で測る（測る尺度と描く尺度がずれると「幅は足りているのに … が出る」に戻る）。
+  appendLabel(g, node, cx, cy, maxW, maxLines = 0, fontPx = getNodeFontPx()) {
+    const shrunk = fontPx < getNodeFontPx() - 0.01;
+    let lines = wrapText(node.label, Math.max(4, Math.floor(maxW / wrapCharPx(fontPx))));
     let truncated = false;
     if (maxLines > 0 && lines.length > maxLines) {
       // 入りきらない分は … で省略し、全文は <title> に入れる（G10: 170×44 の派生ノード）
       lines = lines.slice(0, maxLines);
-      lines[lines.length - 1] = ellipsize(lines[lines.length - 1], maxW);
-      truncated = true;
-    } else if (lines.length === 1 && textWidthPx(lines[0]) > maxW) {
-      lines = [ellipsize(lines[0], maxW)];
       truncated = true;
     }
-    if (truncated) this.appendTitle(g, (node.sublabel || '') + node.label);
-    const lh = lineH();
+    // G15: **全行**を箱幅で詰める。行数が収まるときに各行の幅を見ていなかったため、
+    // 折り返し 1 行が長い（分割できない識別子など）とその行だけ箱の外へ出ていた。
+    const clamped = lines.map(l => ellipsize(l, maxW, fontPx));
+    if (clamped.some((l, i) => l !== lines[i])) truncated = true;
+    lines = clamped;
+    if (truncated || shrunk) this.appendTitle(g, (node.sublabel || '') + node.label);
+    const lh = lineH(fontPx);
     const y0 = cy - (lines.length - 1) * lh / 2;
     lines.forEach((line, i) => {
-      g.appendChild(el('text', {
+      const t = el('text', {
         class: 'de-node-label', x: cx, y: y0 + i * lh, 'text-anchor': 'middle',
         fill: node.style?.textColor,
-      }, line));
+      }, line);
+      // ⚠ 属性ではなく**インラインスタイル**。theme.css の `.de-node-label { font-size: … }` は
+      //   CSS 宣言なので、SVG のプレゼンテーション属性より必ず優先される（属性で渡すと無視される）。
+      if (shrunk) t.style.fontSize = `${fontPx.toFixed(2)}px`;
+      g.appendChild(t);
     });
   }
 
@@ -4462,8 +4607,26 @@ const isoShapeHeight = shapeName => (SHAPES3D[shapeName]?.h || 0) * SHAPE_FOOT; 
 
 // G13: iso のラベルは CSS クラス .de-node-label（= var(--de-node-font)）で描くので字だけは自動で
 // 追従するが、行送りと折返し幅は px で焼いてあった。13px 基準の 14px / 18 文字を比として保つ。
-const isoLineH = () => getNodeFontPx() * (14 / 13);
-const isoWrapCols = () => Math.max(6, Math.round(18 * (13 / getNodeFontPx())));
+const isoLineH = (px = getNodeFontPx()) => px * (14 / 13);
+const isoWrapCols = (px = getNodeFontPx()) => Math.max(6, Math.round(18 * (13 / px)));
+// G15: iso のラベルはビルボード（箱の中ではなく шейп の上に正対で浮かせる）なので、
+// 文字サイズを上げると **隣のノードのラベルと衝突する**。flat と違って箱が受け皿にならない。
+// ノードの投影幅にラベルが収まる px まで落として、行数と占有幅を基準時とほぼ同じに保つ。
+// 手置きの図（overview など）はノード間隔が JSON に焼いてあり広がらないため、これが要る。
+const ISO_MIN_FONT = 10;
+function isoLabelFit(label, nodeW) {
+  const base = getNodeFontPx();
+  // 予算はノードの footprint そのもの。レイアウトがこのノードに割り当てた幅であり、
+  // それを超えた時点で「隣のノードのために空けてある場所」へはみ出している＝衝突の始まり。
+  // flat が「箱に収める」のと同じ規則を、箱の無い iso に持ち込む。
+  const room = Math.max(40, nodeW);          // 投影幅（x 方向は等倍で落ちる）
+  for (let px = base; px > ISO_MIN_FONT; px -= 0.5) {
+    const lines = wrapText(label, isoWrapCols(px));
+    const widest = Math.max(...lines.map(l => textWidthPx(l, px)));
+    if (widest <= room && lines.length <= 2) return { lines, px };
+  }
+  return { lines: wrapText(label, isoWrapCols(ISO_MIN_FONT)), px: ISO_MIN_FONT };
+}
 
 const PLATE_T = 14;   // プレート厚（画面px）
 const BOX_H = 30;     // ノード箱の高さ（標高差）
@@ -4678,10 +4841,11 @@ class IsoSVGRenderer {
       // ラベルはピクトグラム頭頂の少し上に正対配置
       const topPt = isoProject(cx, cy, elev + PED_H + isoShapeHeight(shapeName));
       if (node.label) {
-        const lines = wrapText(node.label, isoWrapCols());
-        lines.forEach((line, i) => g.appendChild(el('text', {
-          class: 'de-node-label', x: topPt.x, y: topPt.y - 10 + i * isoLineH(), 'text-anchor': 'middle',
-          style: 'paint-order: stroke; stroke: var(--de-paper); stroke-width: 3px;',
+        const fit = isoLabelFit(node.label, node.w);
+        // font-size は style に入れる（属性だと theme.css の .de-node-label に負けて効かない）
+        fit.lines.forEach((line, i) => g.appendChild(el('text', {
+          class: 'de-node-label', x: topPt.x, y: topPt.y - 10 + i * isoLineH(fit.px), 'text-anchor': 'middle',
+          style: `paint-order: stroke; stroke: var(--de-paper); stroke-width: 3px; font-size: ${fit.px.toFixed(2)}px;`,
         }, line)));
       }
       return g;
@@ -4718,11 +4882,11 @@ class IsoSVGRenderer {
       labelY = center.y + (flat ? 12 : 2);
     }
     if (node.label) {
-      const lines = wrapText(node.label, isoWrapCols());
-      lines.forEach((line, i) => {
+      const fit = isoLabelFit(node.label, node.w);
+      fit.lines.forEach((line, i) => {
         const t = el('text', {
-          class: 'de-node-label', x: center.x, y: labelY + i * isoLineH(), 'text-anchor': 'middle',
-          style: 'paint-order: stroke; stroke: var(--de-paper); stroke-width: 3px;',
+          class: 'de-node-label', x: center.x, y: labelY + i * isoLineH(fit.px), 'text-anchor': 'middle',
+          style: `paint-order: stroke; stroke: var(--de-paper); stroke-width: 3px; font-size: ${fit.px.toFixed(2)}px;`,
         }, line);
         g.appendChild(t);
       });
@@ -5626,6 +5790,8 @@ const TEXT_SCALE_KEY = 'de-textscale';
 const PANE_WIDTH_KEYS = { left: 'de-leftw', right: 'de-rightw' };
 const RAIL_KEY = 'de-rails';
 const PANE_MIN_W = 180, RAIL_W = 14;
+// G15: ロックモードの端末設定（'1'=ロック / '0'=解除）。未設定は**ロック**（安全側）。
+const LOCK_KEY = 'de-locked';
 const paneMaxW = () => Math.round(window.innerWidth * 0.46);
 
 // View ▸ Layout（GRAPH_CONTRACT.md §2/§3）: layoutGraph の algorithm/direction を選び直す UI 語彙。
@@ -5669,6 +5835,11 @@ function kindLabelForNode(n) {
 
 // graph の parent 連鎖から深さ（root=0）とパス（root を除く自分までの名前を " / " で結合）を求める。
 // GRAPH_CONTRACT.md §8 の例「2 · tools / diagram_engine」に一致（root 自身を選んだ場合は自分の名前1つ）。
+// §13: href をホスト名だけの短い表示にする（右ペインの 1 行に URL 全文は入らない）
+function originLabel(href) {
+  try { return new URL(href).host; } catch { return String(href).slice(0, 40); }
+}
+
 function graphAncestry(project, ent) {
   const chain = []; // [自分, 親, 祖父, …, root]
   let cur = ent, guard = 0;
@@ -5712,6 +5883,10 @@ class DiagramEditor {
     this.proposalDoc = null; this.proposalFileName = null; this.proposalSel = null;
     this.preview = null;
     this.verdicts = this.readVerdicts();
+    // G15 ロックモード（既定 ON）: 図を読むだけのつもりで触ったときに箱が動いてしまう事故を止める。
+    // 止めるのは**キャンバス上の形の編集だけ**（移動 / 結線 / 経由点 / ノード追加 / ラベルの直接編集）。
+    // 閲覧系（パン・ズーム・選択・▸ 展開・↗ ドリルダウン・レイヤ遷移）と右ペインの編集は素通りさせる。
+    this.locked = this.readLocked();
     // G13: 文字サイズは **最初の normalizeProject より前**に確定させる。派生ノードの自動幅
     // （§7.1 追補）は読み込み時のフォント尺度で決まるので、後から当てると幅だけ古い図になる。
     this.applyTextScale(this.readTextScale(), { rebuild: false, persist: false });
@@ -5746,6 +5921,46 @@ class DiagramEditor {
   }
 
   setTextScale(scale) { this.applyTextScale(scale); }
+
+  // ─── G15 ロックモード ───
+  // 既定は**ロック**。「図を読むために触ったら箱が動いた」は、undo を知らないと戻せず、
+  // しかも動いた事実に気づかないまま保存されうる（markHandPlaced で手置き扱いになる）ため、
+  // 既定を安全側に倒す。解除は 🔒 ボタンか L キーで、選択は端末に残す。
+  readLocked() {
+    try {
+      const v = localStorage.getItem(LOCK_KEY);
+      if (v === '0') return false;
+      if (v === '1') return true;
+    } catch { /* プライベートモード等は既定へ */ }
+    return true;
+  }
+
+  setLocked(locked, { persist = true } = {}) {
+    this.locked = !!locked;
+    if (persist) { try { localStorage.setItem(LOCK_KEY, this.locked ? '1' : '0'); } catch { /* noop */ } }
+    if (this.drag && this.locked && this.drag.mode !== 'pan') this.drag = null;   // 掴んだままの解除で取り残さない
+    if (this.locked) this.disarm?.();
+    if (this.viewport) this.viewport.style.cursor = this.canEditGeometry ? 'default' : 'grab';
+    this.updateLockButton();
+    this.setStatus(this.locked
+      ? '🔒 ロック中 — 図は動かせません（閲覧・選択・展開・ドリルダウンは可）。L で解除'
+      : '🔓 ロック解除 — 箱の移動・結線ができます。L で再ロック');
+  }
+
+  toggleLock() { this.setLocked(!this.locked); }
+
+  updateLockButton() {
+    const b = this.lockBtn;
+    if (!b) return;
+    b.textContent = this.locked ? '🔒' : '🔓';
+    b.classList.toggle('active', this.locked);
+    b.title = this.locked ? 'ロック中: 図は動かせない（L で解除）' : 'ロック解除中: 箱を動かせる（L でロック）';
+    b.setAttribute('aria-pressed', String(this.locked));
+  }
+
+  // キャンバス上で形を編集してよいか。ロック中はここが false になり、
+  // 移動 / 結線 / 経由点 / ノード追加 / ラベル直接編集がすべて発火しない。
+  get canEditGeometry() { return this.editable && this.projection === 'flat' && !this.locked; }
 
   // ─── パネル折りたたみ（携帯対応） ───
   readPanelState() {
@@ -5904,8 +6119,31 @@ class DiagramEditor {
     this.navStack = [];
     this.setStatus(warnings.length ? `警告: ${warnings[0]}` : '');
     this.openDiagram(raw.__current || this.project.project.entry);
-    if (!fromHistory) this.pushHistory();
+    if (!fromHistory) { this.pushHistory(); this.warnIfExposed(); }
     return true;
+  }
+
+  // §13.2 露出検知。private を宣言したプロジェクトが、そのプロジェクト自身が「公開」と
+  // 宣言したオリジンから配信されていたら、消えないバナーで知らせる。
+  // 「private リポジトリの構造図が公開ホストに載っている」ことがツールから見て取れなかった、
+  // という今回の反省がそのままこの 1 機能になっている（GRAPH_CONTRACT.md §13.2）。
+  warnIfExposed() {
+    this.root.querySelector('.de-exposure')?.remove();
+    const origin = (typeof location !== 'undefined' && location.origin !== 'null') ? location.origin : null;
+    const host = publicHostExposure(this.project, origin);
+    if (!host) return;
+    const bar = document.createElement('div');
+    bar.className = 'de-exposure';
+    const strong = document.createElement('b');
+    strong.textContent = '⚠ 公開ホストで private のプロジェクトを開いています';
+    const rest = document.createElement('span');
+    rest.textContent = ` — このページの配信元 ${host} は、このプロジェクト自身が「公開」と宣言しているオリジンです。`
+      + 'ここに置かれている限り、図に載っている構造・説明は誰でも読めます。';
+    const x = document.createElement('button');
+    x.textContent = '×'; x.title = '閉じる';
+    x.addEventListener('click', () => bar.remove());
+    bar.append(strong, rest, x);
+    this.root.appendChild(bar);
   }
 
   // JSON パネル（現在図のみ）→ プロジェクトへ反映
@@ -6164,9 +6402,9 @@ class DiagramEditor {
     });
     this.renderer.setSelection?.(this.selection);
     this.renderer.setPreview?.(this.preview);   // §11.3 プレビューは再マウントでも張り直す
-    const editable = this.editable && this.projection === 'flat';
+    const editable = this.canEditGeometry;   // G15: ロック中は掴めないので grab カーソルにする
     this.viewport.style.cursor = editable ? 'default' : 'grab';
-    if (this.editable) this.setStatus(editable ? '' : `${this.projection} はビュー専用（編集は flat で）`);
+    if (this.editable && this.projection !== 'flat') this.setStatus(`${this.projection} はビュー専用（編集は flat で）`);
     this.updateProjectionButtons();
   }
 
@@ -6341,6 +6579,9 @@ class DiagramEditor {
     btn('◐', 'テーマ切替', () => this.toggleTheme());
     if (!this.editable) return;
     ib.appendChild(sep());
+    // G15: ロックは最も押しやすい位置に置く（既定 ON なので「解除の入口」が見えている必要がある）
+    this.lockBtn = btn('🔒', '', () => this.toggleLock(), { role: 'toggle-lock' });
+    this.updateLockButton();
     this.undoBtn = btn('↶', '戻す (Ctrl+Z)', () => this.undo());
     this.redoBtn = btn('↷', 'やり直す (Ctrl+Shift+Z)', () => this.redo());
     btn('＋', 'ノード追加（パレット）', () => this.showPaletteTab());
@@ -7011,6 +7252,18 @@ class DiagramEditor {
       + '<b>別オリジンは取得も埋め込みもせず</b>「新しいタブで開く」リンクだけを出す。<br>'
       + '<b>ローカルのコツ</b>: <code>index.html?src=graph.json&amp;root=../</code> のように '
       + '<code>?root=</code> を足すと sourceRoot を上書きできる（root はこの HTML から見たリポジトリ直下への相対パス）。'
+      + '<h4>ロック（既定 ON）</h4>'
+      + 'アイコンバーの <b>🔒</b>（<kbd>L</kbd> キー）で切替。<b>ロック中は図の形を変えられない</b>'
+      + '＝箱の移動・結線・経由点・ノード追加・ラベルの直接編集・削除がすべて止まる。<br>'
+      + '読むために触っただけで箱が動き、気づかないまま保存されるのを防ぐための既定。'
+      + 'パン・ズーム・選択・▸ 展開・↗ ドリルダウン・右ペインの閲覧と編集はロック中でもできる。'
+      + '<h4>公開範囲（🔒 / 🌐）</h4>'
+      + '箱の右下の印が<b>その実体が世界から読めるか</b>。<b>🌐 は公開</b>（濃い＝少数なので浮く）、'
+      + '<b>🔒 は非公開</b>（淡い＝地の模様）。右ペインにも「公開範囲」の行が出る。<br>'
+      + '判定は <code>props.visibility</code> → <code>props.href</code> の行き先が '
+      + '<code>project.publicOrigins</code> にあるか → <code>project.visibility</code> の継承、の順。<br>'
+      + '<b>private のプロジェクトを、そのプロジェクト自身が公開と宣言したオリジンから開くと'
+      + '赤帯で警告する</b>。「非公開のはずの構造図が公開ホストに載っている」ことに気づくための線。'
       + '<h4>AI と往復する</h4>'
       + 'AI はツールの外にいる。会話は<b>ファイルで往復</b>する:<br>'
       + '<code>proposals.json</code> → File ▸ Open proposals… → 左の <b>PROPOSALS</b> タブで <b>op 単位に ✓ / ✗</b>'
@@ -7283,9 +7536,11 @@ class DiagramEditor {
         }
       }
       if (!this.editable) return;
+      // G15: L でロック切替。ロック中は削除も止める（Backspace 誤爆で図が壊れるのを防ぐ）
+      if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'l') { this.toggleLock(); e.preventDefault(); return; }
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { this.undo(); e.preventDefault(); return; }
       if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) { this.redo(); e.preventDefault(); return; }
-      if (e.key === 'Delete' || e.key === 'Backspace') { this.deleteSelection(); e.preventDefault(); }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !this.locked) { this.deleteSelection(); e.preventDefault(); }
       if (e.key === 'Escape') { this.select(null); this.disarm(); }
     });
     document.addEventListener('keyup', e => { this._altDown = e.altKey; });
@@ -7347,8 +7602,18 @@ class DiagramEditor {
       return;
     }
     try { this.viewport.setPointerCapture(e.pointerId); } catch { /* 合成イベント等でアクティブポインタが無い場合 */ }
-    const geomEditable = this.editable && this.projection === 'flat';
+    const geomEditable = this.canEditGeometry;   // G15: ロック中は false ＝ 以下の編集ドラッグに入らない
     if (!geomEditable) {
+      // パレットで追加タイプを選んだままロックされていると、押しても何も起きない死んだ UI になる。
+      // 黙って無視せず、解除方法を出して武装を解く。
+      if (this.armedType && this.locked) { this.disarm(); this.setStatus('🔒 ロック中はノードを追加できません（L または 🔓 で解除）', true); return; }
+      // G15: ロック中の編集モードでも「選択」は残す。選択できないとインスペクタが開かず、
+      // 説明も 開く も読めない＝ロックが閲覧そのものを殺してしまう（ロックは形の編集だけを止める）。
+      if (this.editable && this.renderer.hitTest) {
+        const hit = this.renderer.hitTest(e.clientX, e.clientY);
+        if (hit && hit.kind !== 'expander' && hit.kind !== 'link') this.select({ kind: hit.kind, id: hit.id });
+        else if (!hit) this.select(null);
+      }
       // view モード / iso・webgl: パン + クリック遷移（webgl は自前カメラ + raycast pick）
       if (this.renderer.setView) this.drag = { mode: 'pan', start: { x: e.clientX, y: e.clientY }, view: this.renderer.getView(), sx: e.clientX, sy: e.clientY };
       return;
@@ -7514,7 +7779,7 @@ class DiagramEditor {
   }
 
   onDblClick(e) {
-    if (!this.editable || this.projection !== 'flat') return;
+    if (!this.canEditGeometry) return;   // G15: ロック中はラベルの直接編集・経由点削除も止める
     // waypoint ハンドルのダブルクリック → 経由点削除
     const wh = this.hitWaypointHandle(e.clientX, e.clientY);
     if (wh?.type === 'wp') {
@@ -7881,6 +8146,14 @@ class DiagramEditor {
       } else {
         wrap.appendChild(this.summaryRow('階層', '—'));
         wrap.appendChild(this.summaryRow('種別', kindLabelForNode(obj)));
+      }
+      // §13: 「これは世界から読めるのか」を要約の最低限の 1 行として出す
+      const vis = visibilityOf(this.project, obj);
+      if (vis) {
+        const href = (obj.props?.href) || (ent?.props?.href);
+        wrap.appendChild(this.summaryRow('公開範囲', vis === 'public'
+          ? `🌐 公開${href ? ` · ${originLabel(href)}` : ''}`
+          : '🔒 非公開（この実体は公開されていません）'));
       }
     } else if (kind === 'edge') {
       const count = obj.props?.count;
