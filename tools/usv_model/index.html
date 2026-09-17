@@ -814,7 +814,7 @@
 </div>
 <div style="margin-top:14px" id="m-pareto"></div>
 
-<h2>厳しさの地図</h2>
+<h2>成功率マトリクス</h2>
 <div class="cap" style="font-size:12px;color:var(--muted);margin:8px 0 6px">
 現在のフェーズ計画の構造はそのまま、ステーション（往路の行き先）だけを母港からの方位に沿って
 5〜150nm まで動かし、距離帯（zone）自動判定と単一海域カタログ固定のそれぞれで成功率を再計算する。
@@ -1212,7 +1212,7 @@
 <p>モデルは <b>2 層</b>に分かれている。<b>第 1 層</b>は船の形から船体の係数（喫水・濡れ面積・復原てこ・波の力）を求める層で、<b>船型を変えたときだけ</b>走らせる。復原性の計算と波の力の計算（BEM）は重く、数分から数十分かかる。<b>第 2 層</b>はその係数と海の条件を受けて、速力・電力・耐航性・ミッション成功率を求める層で、<b>入力を変えるたびに即座に</b>解ける。</p>
 <p>この分け方には理由がある。重い計算の結果は<b>船型を変えなければ変わらない</b>ので、形状ごとに 1 回だけ求めて表にしておけばよい。第 2 層はその表を引くだけなので、画面上で値を動かしてもすぐ答えが出る。<b>表示は軽いが、中身は重い計算の結果そのもの</b>である。</p>
 <figure><div class="figscroll"><svg viewBox="0 0 780 584" role="img" aria-label="2 層構成のモデル全体図。第 1 層は 3D モデルで、入力は形状パラメータまたは外部の船体形状 STL、これを船体形状 3D データにしたうえで復原性の計算と波の力の計算（BEM）を行い、船体の係数（幾何・復原性・耐航性）を出す。第 2 層は 0D モデルで、入力は海の条件と運用の条件、これに第 1 層の係数を加えて抵抗と推進・電力収支・耐航性を計算し、ミッション計算を経て 5 つのトレードオフ評価基準（達成速力・航続距離と電力の余裕・揺れの運用限界・転覆と復帰の限界波高・ミッション成功率）を出す。入力を振ってこの基準で比較することがトレードオフスタディになる。sw①から sw⑤ は計算方法の切替位置。" style="width:100%;height:auto;display:block"><defs><marker id="a3ink" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--ink-chart)"/></marker><marker id="a3s1" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto-start-reverse"><path d="M0,0 L8,4 L0,8 z" style="fill:var(--s1)"/></marker></defs><line x1="8" y1="26" x2="772" y2="26" class="axis"/><text x="8" y="44" text-anchor="start" style="font-size:11.5px;fill:var(--ink-chart);font-weight:600;letter-spacing:.03em">第 1 層 ＝ 3D モデル</text><text x="142" y="44" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">船の形から船体の係数を求める（船型を変えたときだけ・1 回）</text><rect x="8" y="58" width="158" height="56" style="stroke:var(--ink-chart);stroke-width:1.4;fill:none"/><text x="87.0" y="79" text-anchor="middle" style="font-size:12.5px;fill:var(--ink-chart);font-weight:600">形状パラメータ</text><text x="87.0" y="95" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">水線長・船幅・質量</text><text x="87.0" y="109" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">方形係数</text><text x="130" y="132" text-anchor="middle" style="font-size:10.2px;fill:var(--clo);font-weight:600">sw④</text><line x1="117" y1="135" x2="143" y2="135" style="stroke:var(--clo);stroke-width:1;stroke-dasharray:2 2"/><rect x="8" y="146" width="158" height="50" style="stroke:var(--ink-chart);stroke-width:1.4;fill:none"/><text x="87.0" y="167" text-anchor="middle" style="font-size:12.5px;fill:var(--ink-chart);font-weight:600">外部の船体形状</text><text x="87.0" y="183" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">STL を直接入力</text><path d="M166,86L202.0,86.0Q210,86 210.0,94.0L210,110" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round"/><path d="M166,171L202.0,171.0Q210,171 210.0,163.0L210,142" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round"/><text x="210" y="130" text-anchor="middle" style="font-size:10.2px;fill:var(--clo);font-weight:600">sw①</text><line x1="197" y1="133" x2="223" y2="133" style="stroke:var(--clo);stroke-width:1;stroke-dasharray:2 2"/><path d="M210,126L210,126" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round"/><path d="M224,126L254,126" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round;marker-end:url(#a3ink)"/><rect x="254" y="100" width="168" height="52" style="stroke:var(--axis);stroke-width:1;fill:none"/><text x="338.0" y="121" text-anchor="middle" style="font-size:12.5px;fill:var(--ink-chart);font-weight:600">船体形状 3D データ</text><text x="338.0" y="137" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">形状パラメータから起こす</text><text x="300" y="172" text-anchor="middle" style="font-size:10.2px;fill:var(--clo);font-weight:600">sw⑤</text><line x1="287" y1="175" x2="313" y2="175" style="stroke:var(--clo);stroke-width:1;stroke-dasharray:2 2"/><rect x="462" y="58" width="178" height="52" style="stroke:var(--axis);stroke-width:1;fill:none"/><text x="551.0" y="79" text-anchor="middle" style="font-size:12.5px;fill:var(--ink-chart);font-weight:600">復原性の計算</text><text x="551.0" y="95" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">傾けたときに戻る力</text><rect x="462" y="146" width="178" height="52" style="stroke:var(--axis);stroke-width:1;fill:none"/><text x="551.0" y="167" text-anchor="middle" style="font-size:12.5px;fill:var(--ink-chart);font-weight:600">波の力の計算（BEM）</text><text x="551.0" y="183" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">波が船を揺らす力</text><path d="M422,126L434.0,126.0Q442,126 442.0,118.0L442.0,92.0Q442,84 450.0,84.0L462,84" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round;marker-end:url(#a3ink)"/><path d="M442,126L442.0,164.0Q442,172 450.0,172.0L462,172" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round;marker-end:url(#a3ink)"/><text x="600" y="138" text-anchor="middle" style="font-size:10.2px;fill:var(--clo);font-weight:600">sw②</text><line x1="587" y1="141" x2="613" y2="141" style="stroke:var(--clo);stroke-width:1;stroke-dasharray:2 2"/><path d="M640,84L680.0,84.0Q688,84 688.0,92.0L688,208" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round;marker-end:url(#a3ink)"/><path d="M640,172L656.0,172.0Q664,172 664.0,180.0L664.0,184.0Q664,192 672.0,192.0L688,192" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round"/><rect x="8" y="208" width="764" height="50" style="stroke:var(--s1);stroke-width:1.4;fill:none"/><text x="22" y="228" text-anchor="start" style="font-size:11px;fill:var(--ink-chart);font-weight:600">第 1 層の出力 ＝ 船体の係数</text><text x="22" y="248" text-anchor="start" style="font-size:11px;fill:var(--ink-chart);font-weight:600">幾何</text><text x="54" y="248" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">喫水・濡れ面積・水線面積</text><text x="292" y="248" text-anchor="start" style="font-size:11px;fill:var(--ink-chart);font-weight:600">復原性</text><text x="338" y="248" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">復原てこ GZ(φ)・GM</text><text x="512" y="248" text-anchor="start" style="font-size:11px;fill:var(--ink-chart);font-weight:600">耐航性</text><text x="558" y="248" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">付加質量 A・減衰 B・波強制力 F</text><line x1="8" y1="292" x2="772" y2="292" class="axis"/><text x="8" y="310" text-anchor="start" style="font-size:11.5px;fill:var(--ink-chart);font-weight:600;letter-spacing:.03em">第 2 層 ＝ 0D モデル</text><text x="142" y="310" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">海と運用の条件から成立性を判定</text><rect x="8" y="324" width="158" height="72" style="stroke:var(--ink-chart);stroke-width:1.4;fill:none"/><text x="87.0" y="345" text-anchor="middle" style="font-size:12.5px;fill:var(--ink-chart);font-weight:600">海の条件</text><text x="87.0" y="361" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">有義波高・波周期</text><text x="87.0" y="375" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">風速・日射</text><text x="87.0" y="389" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">緯度・季節</text><rect x="8" y="404" width="158" height="72" style="stroke:var(--ink-chart);stroke-width:1.4;fill:none"/><text x="87.0" y="427" text-anchor="middle" style="font-size:12.5px;fill:var(--ink-chart);font-weight:600">運用の条件</text><text x="87.0" y="443" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">航路と距離</text><text x="87.0" y="457" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">期間・ホテル負荷</text><text x="87.0" y="471" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">母船での搬送</text><rect x="216" y="320" width="204" height="192" style="stroke:var(--grid);stroke-width:1;stroke-dasharray:3 4;fill:none"/><rect x="224" y="328" width="188" height="50" style="stroke:var(--axis);stroke-width:1;fill:none"/><text x="318.0" y="349" text-anchor="middle" style="font-size:12.5px;fill:var(--ink-chart);font-weight:600">抵抗と推進</text><text x="318.0" y="365" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">推力と抵抗の釣合い</text><rect x="224" y="392" width="188" height="50" style="stroke:var(--axis);stroke-width:1;fill:none"/><text x="318.0" y="413" text-anchor="middle" style="font-size:12.5px;fill:var(--ink-chart);font-weight:600">電力収支</text><text x="318.0" y="429" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">発電と消費の積み上げ</text><rect x="224" y="456" width="188" height="48" style="stroke:var(--axis);stroke-width:1;fill:none"/><text x="318.0" y="477" text-anchor="middle" style="font-size:12.5px;fill:var(--ink-chart);font-weight:600">耐航性・復原性</text><text x="318.0" y="493" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">揺れ・転覆・復帰</text><text x="190" y="478" text-anchor="middle" style="font-size:10.2px;fill:var(--clo);font-weight:600">sw③</text><line x1="177" y1="481" x2="203" y2="481" style="stroke:var(--clo);stroke-width:1;stroke-dasharray:2 2"/><path d="M166,357L216,357" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round;marker-end:url(#a3ink)"/><path d="M166,439L216,439" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round;marker-end:url(#a3ink)"/><path d="M688,258L688.0,296.0Q688,304 680.0,304.0L326.0,304.0Q318,304 318.0,312.0L318,320" style="stroke:var(--s1);stroke-width:1;fill:none;stroke-linejoin:round;marker-end:url(#a3s1)"/><text x="540" y="300" text-anchor="middle" style="font-size:10.6px;fill:var(--muted-chart);font-weight:400">船体の係数</text><rect x="486" y="328" width="118" height="176" style="stroke:var(--axis);stroke-width:1;fill:none"/><text x="545.0" y="349" text-anchor="middle" style="font-size:12.5px;fill:var(--ink-chart);font-weight:600">ミッション計算</text><text x="545.0" y="365" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">航路と海象帯</text><text x="545.0" y="379" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">母船での搬送</text><text x="545.0" y="393" text-anchor="middle" style="font-size:10.8px;fill:var(--muted-chart);font-weight:400">決定論シナリオ</text><path d="M412,353L486,353" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round;marker-end:url(#a3ink)"/><text x="449" y="346" text-anchor="middle" style="font-size:10.6px;fill:var(--muted-chart);font-weight:400">達成速力</text><path d="M412,417L486,417" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round;marker-end:url(#a3ink)"/><text x="449" y="410" text-anchor="middle" style="font-size:10.6px;fill:var(--muted-chart);font-weight:400">電力の余裕</text><path d="M412,480L486,480" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round;marker-end:url(#a3ink)"/><text x="449" y="473" text-anchor="middle" style="font-size:10.6px;fill:var(--muted-chart);font-weight:400">運用の可否</text><path d="M604,416L630,416" style="stroke:var(--ink-chart);stroke-width:1;fill:none;stroke-linejoin:round;marker-end:url(#a3ink)"/><rect x="630" y="328" width="142" height="176" style="stroke:var(--s1);stroke-width:1.4;fill:none"/><text x="644" y="350" text-anchor="start" style="font-size:11px;fill:var(--ink-chart);font-weight:600">トレードオフ評価基準</text><text x="644" y="372" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">▸ 達成できる速力</text><text x="644" y="394" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">▸ 航続距離と電力の余裕</text><text x="644" y="416" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">▸ 揺れの運用限界</text><text x="644" y="438" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">▸ 転覆・復帰の限界波高</text><text x="644" y="460" text-anchor="start" style="font-size:11px;fill:var(--muted-chart);font-weight:400">▸ ミッション成功率</text><line x1="8" y1="528" x2="772" y2="528" style="stroke:var(--grid);stroke-width:1"/><text x="8" y="548" text-anchor="start" style="font-size:11px;fill:var(--ink-chart);font-weight:400">入力（船の形・海の条件・運用の条件）を振り、この 5 つの基準で比較する ＝ トレードオフスタディ</text><text x="8" y="568" text-anchor="start" style="font-size:10.6px;fill:var(--muted-chart);font-weight:400">太線 ＝ 入力　／　細線 ＝ 計算　／　青線 ＝ 出力・評価基準　／　sw①〜sw⑤ ＝ 計算方法の切替</text></svg></div><figcaption>図1 — モデルの全体構成。第 1 層（3D モデル）は船型を変えたときだけ走らせる重い計算、第 2 層（0D モデル）は入力を変えるたびに即座に解く軽い計算。<span style="color:var(--clo)">sw①〜sw⑤</span> は計算方法の切替位置で、内容は下表のとおり。</figcaption></figure>
-<p>船体の係数と質量特性は、精度の違う <b>2 通りの求め方</b>を持っている。どちらを使うかは 5 つのスイッチで選ぶ。<b>既定はすべて左側（簡易な求め方）</b>で、これは公称値の再現（§9 の検証 V1〜V4）がスイッチ導入前と一致することを保証するためである。右側へ切り替えると、実形状や重量表から求めた値に変わる。</p>
+<p>船体の係数と質量特性は、精度の違う <b>2 通りの求め方</b>を持っている。どちらを使うかは 5 つのスイッチで選ぶ。<b>既定はすべて左側（簡易な求め方）</b>で、公称値の再現（§9 の較正と検証）はこの既定で成り立っている。右側へ切り替えると、実形状や重量表から求めた値に変わる。</p>
 <div class="tbl"><table>
 <tr><th>スイッチ</th><th>何を選ぶか</th><th>既定（簡易）</th><th>切替後（詳細）</th><th>変わる量</th><th>節</th></tr>
 <tr><td class="sym">sw①</td><td>船体形状の与え方</td><td>形状パラメータから推定</td><td>3D 形状から計算</td><td>喫水・濡れ面積・付加物面積・造波抵抗係数の再較正</td><td>§5.2 / §13.10</td></tr>
@@ -1664,7 +1664,7 @@
 </mrow></math>
 <div class="eqnote">2次抗力モーメント <math><mi>Bq</mi><mover><mi>φ</mi><mo>˙</mo></mover><mo>|</mo><mover><mi>φ</mi><mo>˙</mo></mover><mo>|</mo></math> をガウス応答（RMS σ_φ̇）のもとで平均消散仕事が等しくなるよう等価線形化した係数（E[|x|³]=2√(2/π)σ³ から導出・恒等式は V11③で検証）。JONSWAP スペクトルで σ_φ（ロール角RMS）・σ_φ̇（ロール角速度RMS、出会い周波数 ω_e で重み）を積分→φ_a,σ_φ̇ を更新→B44→再積分、を σ_φ の変化が0.5%未満になるまで（最大12回）反復する（旧一定ζモデルを初期値に使用）。収束後の <math><mrow><msub><mi>ζ</mi><mn>44</mn></msub><mi>Eff</mi><mo>=</mo><msub><mi>B</mi><mn>44</mn></msub><mo>(</mo><msub><mi>ω</mi><mi>n</mi></msub><mo>)</mo><mo>/</mo><mn>2</mn><msqrt><msub><mi>C</mi><mn>44</mn></msub><mo>(</mo><msub><mi>I</mi><mn>44</mn></msub><mo>+</mo><msub><mi>A</mi><mn>44</mn></msub><mo>(</mo><msub><mi>ω</mi><mi>n</mi></msub><mo>)</mo><mo>)</mo></msqrt></mrow></math>（ロール固有周波数 <math><msub><mi>ω</mi><mi>n</mi></msub></math> での不動点解）と、BEM/摩擦/船底/キールの寄与比を計算結果として出力する。</div></div>
 
-<p><b>Ikeda の簡易造波・渦流・揚力・摩擦の合算式（簡易法）はそのまま使わない</b>——同法の適用範囲は概ね <math><msub><mi>C</mi><mi>b</mi></msub></math> 0.5–0.85・B/d 2.5–4.5 とされるが、本船体は <math><mrow><msub><mi>C</mi><mi>b</mi></msub><mo>≈</mo><mn>0.37</mn></mrow></math>（3D 形状計算）・B/d≈6.1（B=0.9m, d≈0.146m）と、どちらの軸でも範囲外の高速滑走艇型のため。摩擦成分（Kato 1958）のみは船型に依存しない一般形として流用し、渦流・揚力・造波の各成分は流用せず、代わりに実際のチャイン形状（船底平板）とキールフィンの2次抗力を直接積分する構成にした。<b>前進速度による揚力減衰（ロール-横流れ連成・bilge keel の動的効果に相当）は未反映</b>——静止相当（V に依存しない）の抗力モデルであり、§10 の置換候補（模型試験・CFD）で前進速度依存性の追加が今後の課題。</p>
+<p><b>Ikeda の簡易造波・渦流・揚力・摩擦の合算式（簡易法）はそのまま使わない</b>——同法の適用範囲は概ね <math><msub><mi>C</mi><mi>b</mi></msub></math> 0.5–0.85・B/d 2.5–4.5 とされるが、本船体は <math><mrow><msub><mi>C</mi><mi>b</mi></msub><mo>≈</mo><mn>0.37</mn></mrow></math>（3D 形状計算）・B/d≈6.1（B=0.9m, d≈0.146m）と、どちらの軸でも範囲外の高速滑走艇型のため。摩擦成分（Kato 1958）のみは船型に依存しない一般形として流用し、渦流・揚力・造波の各成分は流用せず、代わりに実際のチャイン形状（船底平板）とキールフィンの2次抗力を直接積分する構成にした。<b>前進速度による揚力減衰（ロール-横流れ連成・bilge keel の動的効果に相当）は未反映</b>——静止相当（前進速度に依存しない）の抗力モデルである。前進速度依存性は §10 の置換（模型試験・CFD）で扱う。</p>
 <p><b>引込キール格納時（sw⑤＝格納）</b>——展開判定は、キールフィンの有無と格納状態の両方から一貫して求める。格納時は式(23)の <math><msub><mi>Bq</mi><mi>keel</mi></msub></math> 項が厳密に0になり、付加物濡れ面積も消える（sw①＝3D 形状計算 時 <math><msub><mi>S</mi><mi>app</mi></msub></math>=0・<math>S</math>=<math><msub><mi>S</mi><mi>bare</mi></msub></math>）。<b>既知の限界</b>——本節冒頭の BEM 放射減衰 <math><msub><mi>A</mi><mn>44</mn></msub></math><sup>bem</sup>／<math><msub><mi>B</mi><mn>44</mn></msub></math><sup>bem</sup>はキールフィン込みの細メッシュ（3020パネル）で1回だけ計算されたテーブルで、sw⑤（引込キールの状態） を切り替えても<b>切り替わらない</b>（格納状態のBEM係数は別途計算していない）。したがって格納時のロール減衰は「粘性項（摩擦・船底）は正しく格納形状で評価するが、ポテンシャル流の放射減衰だけ展開形状のまま」という一部整合の状態にとどまる——キール抵抗が全体の1〜9%程度（本節の計算結果参照）であるためBEM側の寄与が支配的な帯域では影響は小さいが、厳密な格納時ロール特性には格納形状のBEM再計算が必要（§10 の課題）。</p>
 </details>
 </details>
@@ -1749,8 +1749,9 @@
 <tr><td>⑥</td><td>モーター効率（式17）</td><td>損失 3 係数</td><td>η(トルク, 回転数) 2次元マップ</td><td><b>モーターベンチ試験</b>（ポッド実物）</td><td>ベンチ試験の効率マップと航走時の消費電力実測との一致</td><td>中・数週間〜1 か月</td><td>中</td></tr>
 <tr><td>⑦</td><td>プロペラ効率（式18）</td><td>1 山カーブ＋運動量理論上限</td><td>K_T/K_Q–J テーブル</td><td><b>プロペラ単独試験</b>＋ボラード試験。CFD でも可</td><td>単独試験の K_T/K_Q–J カーブと実航走のスラスト・回転数との一致</td><td>中・数週間〜1 か月</td><td>中</td></tr>
 <tr><td>⑧</td><td>風圧 <math><msub><mi>C</mi><mi>d</mi></msub></math>（式16）</td><td>一定 0.8 仮定</td><td><math><mrow><msub><mi>C</mi><mi>X</mi></msub><mo>(</mo><mi>ψ</mi><mo>)</mo></mrow></math> テーブル</td><td>風洞試験 / CFD（第2級項なので優先度低め）</td><td>停止時の風圧力の実測との一致</td><td>中・数週間〜1 か月</td><td>低</td></tr>
-<tr><td>⑨</td><td>日射 G(t)（式19）</td><td>Haurwitz＋雲量係数</td><td>海域別時系列</td><td>衛星再解析データ（ERA5 等）の統計</td><td>実艇の発電ログとの一致</td><td>安い・数日〜数週間</td><td>低</td></tr>
-<tr><td>⑩</td><td>電池（式10）</td><td>固定効率・容量一定</td><td>SOC/温度依存の等価回路＋劣化</td><td>電池特性試験（長期ミッションでは劣化が効く）</td><td>充放電試験の SOC 追従</td><td>安い・数週間</td><td>低</td></tr>
+<tr><td>⑨</td><td>海象の持続相関（区間をまたぐ相関の時間尺度、§12）</td><td>仮定値（既定 2.5 日）</td><td>海域別の遷移行列</td><td>再解析データの時系列からの推定</td><td>定常分布が保存されること（既存の検証が確認している性質）</td><td>安い・数日〜数週間</td><td>中</td></tr>
+<tr><td>⑩</td><td>日射 G(t)（式19）</td><td>Haurwitz＋雲量係数</td><td>海域別時系列</td><td>衛星再解析データ（ERA5 等）の統計</td><td>実艇の発電ログとの一致</td><td>安い・数日〜数週間</td><td>低</td></tr>
+<tr><td>⑪</td><td>電池（式10）</td><td>固定効率・容量一定</td><td>SOC/温度依存の等価回路＋劣化</td><td>電池特性試験（長期ミッションでは劣化が効く）</td><td>充放電試験の SOC 追従</td><td>安い・数週間</td><td>低</td></tr>
 </table></div>
 <p class="cap" style="font-size:12px;color:var(--muted)">費用・期間は一般的な相場に基づく概算であり、社内実績値ではない。</p>
 <p>根拠として 1 文ずつ: ホテル負荷は感度が最も大きく（±10% で成功率が約 8 ポイント動く・§11 の発見 1）、重心高さは転覆と復帰の限界波高に直接効く（±10% で約 4%）。どちらも安く実測できる。</p>
@@ -1787,7 +1788,7 @@
 
 <!-- ═══════════ §12 ═══════════ -->
 <details class="sec" id="s12" open><summary><span class="no">§12</span><span class="ttl">ミッションシミュレーション（決定論シナリオ木）</span></summary>
-<p>V1–V7 の点検証を超えて、<b>ユースケース・シナリオ込みのトレードオフスタディ</b>を行う層。
+<p>§9 の点検証を超えて、<b>ユースケース・シナリオ込みのトレードオフスタディ</b>を行う層。
 乱数（モンテカルロ）は使わず、<b>離散シナリオの全列挙 × 生起確率の重み付け</b>で成功率を定義する
 （DRM: Design Reference Mission × 環境状態マトリクス方式）。結果は完全に再現可能で、
 失敗の原因とフェーズまで決定論的に追跡できる。</p>
@@ -1803,10 +1804,11 @@
 <msub><mi>w</mi><mi>σ</mi></msub><mo>·</mo>
 <mi mathvariant="double-struck">1</mi><mo>[</mo><mtext>全成功条件を満たす</mtext><mo>]</mo>
 </mrow></math></div>
-<p>各シナリオの実行は決定論: フェーズ×状態ごとに定常量（達成速力・推進電力・耐航限界 limitHs）を §4–§8 の式で前計算し、
-SOC・燃料・時刻を持ち越しながら dt = 1 h で時間積分する（速度ポリシー・発電機ヒステリシス・ドリフト挙動は §7 の
-ミッション積分と同一）。成功条件は選択制: <b>エネルギー枯渇</b>（滞留中のドリフト到達・トランジット未達）・
-<b>期限超過</b>・<b>耐航限界超過</b>（状態 Hs &gt; limitHs）。</p>
+<p>各シナリオの実行は決定論: フェーズ×状態ごとに定常量（達成速力・推進電力・運用限界の有義波高）を §4–§8 の式で前計算し、
+SOC・燃料・時刻を持ち越しながら時間積分する。速度ポリシー・発電機の入切ヒステリシス・ドリフトの扱いは §7 の
+ミッション積分と同一だが、<b>時間刻みは異なる</b>——シナリオ木は 1 時間刻み（§7 の名目の軌跡は 10 分刻み）で、
+シナリオを全列挙する都合上、粗くしている。成功条件は選択制: <b>エネルギー枯渇</b>（滞留中のドリフト到達・航走の未達）・
+<b>期限超過</b>・<b>運用限界超過</b>（状態の有義波高が運用限界の有義波高を上回る）。</p>
 <h3>離散化と分割</h3>
 <p>「1 フェーズ = 海象 1 状態」の仮定は長いフェーズで粗くなりすぎるため、滞留フェーズは<b>分割日数（既定 10 日）ごとの
 区間に自動分割</b>し、区間ごとに状態を引く。シナリオ数は 状態数^分割後フェーズ数（上限 4096）。</p>
@@ -1817,96 +1819,94 @@ SOC・燃料・時刻を持ち越しながら dt = 1 h で時間積分する（�
 持続率は前区間の公称所要日数 d と持続時間 τ から <math><mrow><msub><mi>ρ</mi><mi>j</mi></msub><mo>=</mo><msup><mi>e</mi><mrow><mo>−</mo><msub><mi>d</mi><mrow><mi>j</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>/</mo><mi>τ</mi></mrow></msup></mrow></math>。
 シナリオ重みは <math><mrow><msub><mi>w</mi><mi>σ</mi></msub><mo>=</mo><msub><mi>p</mi><msub><mi>k</mi><mn>1</mn></msub></msub><mo>·</mo><munderover><mo>∏</mo><mrow><mi>j</mi><mo>=</mo><mn>2</mn></mrow><mi>N</mi></munderover><mo>[</mo><msub><mi>ρ</mi><mi>j</mi></msub><msub><mi>δ</mi><mrow><msub><mi>k</mi><mi>j</mi></msub><msub><mi>k</mi><mrow><mi>j</mi><mo>−</mo><mn>1</mn></mrow></msub></mrow></msub><mo>+</mo><mo>(</mo><mn>1</mn><mo>−</mo><msub><mi>ρ</mi><mi>j</mi></msub><mo>)</mo><msub><mi>p</mi><msub><mi>k</mi><mi>j</mi></msub></msub><mo>]</mo></mrow></math>。
 行和が 1 のため <math><mrow><mo>Σ</mo><msub><mi>w</mi><mi>σ</mi></msub><mo>=</mo><mn>1</mn></mrow></math> は厳密に保たれる（V8）。
-τ = 0 で従来の独立抽選に退化。既定 τ = 2.5 日（中緯度の気象脱相関 2〜4 日に基づく仮定値）。</p>
-<h3>給電必須フラグと海域カタログ</h3>
-<p>滞留フェーズの<b>給電必須フラグ</b>（crit）: 必須の滞留（観測など）では SOC 下限到達＝ペイロード給電途絶＝失敗。
-crit = false の滞留（<b>充電待機</b>など）は下限タッチを許容する — 低 SOC で到着して回復するためのフェーズを
-判定が殺さないようにするため。トランジットは従来通り「目標未達＋ドリフト」のみを失敗とする。</p>
+τ = 0 で独立抽選に退化する。持続時間 τ は既定 2.5 日（中緯度の気象脱相関 2〜4 日に基づく仮定値。置き換え計画は §10）。</p>
+<h3>給電必須の指定と海域カタログ</h3>
+<p>滞留フェーズの<b>給電必須の指定</b>: 必須の滞留（観測など）では SOC 下限到達＝ペイロード給電途絶＝失敗。
+給電必須でない滞留（<b>充電待機</b>など）は下限タッチを許容する — 低 SOC で到着して回復するためのフェーズを
+判定が殺さないようにするため。航走フェーズは「目標未達＋ドリフト」のみを失敗とする。</p>
 <p>海象カタログには<b>海域プリセット</b>を同梱: 北大西洋（IACS Rec. 34 標準波浪データの Hs 周辺分布を 4 状態に集約）・
 北太平洋・日本近海・熱帯貿易風帯。<b>いずれも公表散布図統計の粗い離散化（概数）</b>であり、確率・Hs・日射の組は
-仮組み込み。既定計画での成功率は 熱帯 97.9% → 汎用 43.3% → 日本近海 27.5% → 北太平洋 14.4% → 北大西洋 0.8% と
-海域の厳しさを正しく順序づける。</p>
+仮組み込み。既定計画での成功率は海域の厳しさ（北大西洋＞北太平洋＞日本近海＞汎用＞熱帯の順に厳しい）を
+正しく順序づける——数値はミッションタブの実行結果に表示される。</p>
 <h3>感度分析（トルネード図）</h3>
-<p>設計パラメータ（m, L, B, C_b, C_d, A_front, 電池容量, パネル定格, 推進最大電力）を<b>1 つずつ ±δ 変化</b>させ、
-成功率の応答を棒で示す OAT（one-at-a-time）感度。<b>パラメータ間の相互作用は拾わない</b>ため、
-上位因子の見当づけに使い、詳細検討は該当パラメータの掃引で行う。</p>
-<div class="caveat"><b>仮定と限界（明示）:</b>
-①マルコフの τ は仮定値（実データからの推定は課題）。②フェーズ内は定常海象（遷移の過渡なし）。
-③航路・退避の意思決定なし（速力一定＋低 SOC ドリフトのみ）。
-④成功率の分解能は海象離散化の粒度で決まる — カタログは概数であり、
-<b>ERA5 等の再解析データによる海域別散布図での置換</b>が §10 の日射と同列の課題。
-⑤日射はフェーズ状態の日平均値を使用（晴天モデルとの併用は不可）。</div>
+<p>ミッションタブ内で<b>成功率に対して</b>行う OAT（one-at-a-time）の単独振りで、対象パラメータの一覧は
+ミッションタブの感度分析の欄にある。<b>パラメータ間の相互作用は拾わない</b>ため、上位因子の見当づけに使い、
+詳細検討は該当パラメータの掃引で行う。設計パラメータ全体（形状・電力・耐航性の仮定を含む）に対する感度は
+Ⅳ. トレードオフタブの感度表を参照。</p>
 <p class="std">検証 V8 が Σw<sub>σ</sub> = 1（確率の完全性）と成功率の有界性を毎ロード確認する。</p>
 
-<h3>12.6 地理・海象帯・母船搬送・早回し再生・厳しさの地図</h3>
-<p>ミッションタブに<b>航路図</b>を追加し、フェーズ計画に<b>地理</b>（母港・目的地・母船搬送）を持たせた。
-狙いは「フェーズ×海象状態」という §12 の抽象的な計画に、実際の距離・海域の厳しさという裏付けを与えること。
-その上に、公称（または任意の）シナリオの軌跡を航路図上で再生する<b>早回し再生</b>と、
-station 距離×海域カタログで成功率がどう下がるかを一覧する<b>成功率マトリクス</b>を積んだ。</p>
+<h3>12.6 地理・距離帯・母船搬送・早回し再生・成功率マトリクス</h3>
+<p>ミッションタブの<b>航路図</b>は、フェーズ計画に<b>地理</b>（母港・目的地・母船搬送）を持たせ、
+「フェーズ×海象状態」という §12 の抽象的な計画に実際の距離・海域という裏付けを与える。
+公称（または任意の）シナリオの軌跡を航路図上で再生する<b>早回し再生</b>と、
+最初の行き先までの距離×海域カタログで成功率がどう下がるかを一覧する<b>成功率マトリクス</b>を備える。</p>
 <h4 style="font-size:13.5px;margin:14px 0 4px">データ源と粗さ</h4>
-<p>海岸線は <b>Natural Earth 10m land（パブリックドメイン）</b>を切り出し・簡略化した 3 層（日本全図 約1km・関東沿岸 約130m・相模湾拡大 約65m）としてページに埋め込み読み込む。
+<p>海岸線は <b>Natural Earth 10m land（パブリックドメイン）</b>を切り出し・簡略化した 3 層（日本全図・関東沿岸・相模湾拡大の順に高分解能）としてページに埋め込み読み込む。
 <b>海図ではない</b>——防波堤・浮標・水深は無く、10m 解像度なので小島・岬の先端は丸まる。</p>
 <h4 style="font-size:13.5px;margin:14px 0 4px">沿岸距離は本土のみで測る</h4>
-<p>沿岸距離は、面積 <b>0.05 deg² 未満の小さなポリゴン</b>（伊豆大島のような小島）を無視し、
+<p>沿岸距離は、面積の小さいポリゴン（伊豆大島のような小島。しきい値 既定 0.05 deg²）を無視し、
 本土（本州・伊豆半島・房総などが繋がった大陸系ポリゴン）だけに絞った最寄りの海岸線までの距離として求める
-（緯度で cos 補正した平面上の点-線分距離）。小島を含めていた導入前は、母港から沖合へ向かう経路の途中で
-沿岸距離が一時的に下がり「沿岸→陸棚→外洋」の帯が単調に進まない区間があったため、本土限定に改めた。</p>
-<h4 style="font-size:13.5px;margin:14px 0 4px">距離帯（zone）と区間（sub-leg）分割</h4>
-<p>距離帯（zone）は沿岸距離を（既定: 沿岸 ≤10nm→日本近海カタログ／陸棚 ≤50nm→汎用カタログ／
-外洋 それ以上→北太平洋カタログ）に落とす。移動フェーズ（transit/carry）は 1 点の代表位置だけで帯を決めるのではなく、
-大圏経路を<b>2nm 刻みでサンプルして帯ごとに区間（sub-leg）へ分割</b>する
-（各区間中点で帯を判定し、連続する同一帯をまとめる。3nm 未満に
-まとまった細片は隣の区間へ吸収し、帯の微細な出入りが経路を無用に刻まないようにする）。滞留（loiter）は移動しない
+（緯度で cos 補正した平面上の点-線分距離）。小島を含めると、母港から沖合へ向かう経路の途中で
+沿岸距離が一時的に下がり「沿岸→陸棚→外洋」の帯が単調に進まない区間が生じるため、本土のみで測る。</p>
+<h4 style="font-size:13.5px;margin:14px 0 4px">距離帯と区間の分割</h4>
+<p>距離帯は沿岸距離を（既定: 沿岸 ≤10nm→日本近海カタログ／陸棚 ≤50nm→汎用カタログ／
+外洋 それ以上→北太平洋カタログ）に落とす。移動フェーズ（航走・母船搬送）は 1 点の代表位置だけで帯を決めるのではなく、
+大圏経路を<b>2nm 刻みでサンプルして帯ごとに区間へ分割</b>する
+（各区間中点で帯を判定し、連続する同一帯をまとめる。既定 3nm 未満に
+まとまった細片は隣の区間へ吸収し、帯の微細な出入りが経路を無用に刻まないようにする）。滞留は移動しない
 ため分割の対象外——直前フェーズの終点 1 点のまま。後方互換の単一の帯・カタログ値は
-区間中点を含む sub-leg のものを返す。ミッション計算は区間を海象状態の分岐単位として展開する
+区間中点を含む区間のものを返す。ミッション計算は区間を海象状態の分岐単位として展開する
 ため、シナリオ数は「フェーズごと」ではなく<b>展開後の区間ごとの状態数の積</b>になる——分割が増えるほど組合せは
 増えるので、上限 4096 を超えたときは<b>最短の区間から順に隣へ併合して粗視化</b>し、その旨を実行結果の行に出す
 （地図・フェーズ表に出す航路そのものは粗視化しない。粗視化はシナリオ列挙にのみ働く）。</p>
 <h4 style="font-size:13.5px;margin:14px 0 4px">母船搬送</h4>
-<p>新フェーズ種別「母船搬送」は母船に載せて運ぶ区間で、所要日数は
-距離÷母船速力（既定 10 kt）の閉形式、終了時 SOC は既定で 1.0
-（無充電のまま搬送する設定も可）に切り替わる<b>決定論・単一状態</b>——海象状態の列挙（分岐）にも
-エネルギー消費判定・耐航限界判定にも入らない。母船搬送も区間には分割される（地図・早回し再生の表示のため）が、
-帯が変わっても状態は常に 1 つなのでシナリオ数には効かない。
-母船の航行そのものの安全性・スケジュール制約はモデル化していない。</p>
+<p>フェーズ種別「母船搬送」は母船に載せて運ぶ区間で、所要日数は
+距離÷母船速力（既定 10 kt）の閉形式で決まる<b>決定論・単一状態</b>——海象状態の列挙（分岐）にも
+エネルギー消費判定・耐航限界判定にも入らない。終了時 SOC は既定で満充電（搬送中に母船側で充電する運用を
+前提とした既定値。無充電のまま搬送する設定も選べる——詳細は本節末の限界の表）。母船搬送も区間には分割される
+（地図・早回し再生の表示のため）が、帯が変わっても状態は常に 1 つなのでシナリオ数には効かない。</p>
 <h4 style="font-size:13.5px;margin:14px 0 4px">早回し再生: 位置は速力の時間積分</h4>
 <p>位置の再生は、時刻・SOC・速力を記録した軌跡
 （フェーズ終端は間引き周期に関わらず必ず 1 点残す）を航路図上の緯度経度へ写して行う。
-移動フェーズ（transit/carry）は区間の始点→終点を大圏経路で結び、そのフェーズに入ってからの
+移動フェーズ（航走・母船搬送）は区間の始点→終点を大圏経路で結び、そのフェーズに入ってからの
 速力 × 経過時間の累積をフェーズ全長で割った比率で内挿する——ドリフト（速力 0 の区間）はこの積分方式の
-まま自然に「その場に留まる」。滞留（loiter）は位置を動かさず直前フェーズの終点に留まる（loiter は station-keeping
-の消費電力として速力を持ちうるが、それは往復の航走ではなく移動には数えない）。側面パネルは日時（開始日は
+まま自然に「その場に留まる」。滞留は位置を動かさず直前フェーズの終点に留まる（滞留は船位保持の
+消費電力として速力を持ちうるが、それは往復の航走ではなく移動には数えない）。側面パネルは日時（開始日は
 既定 6/15）・昼夜（エネルギー収支の
 日射モデルとは独立の別評価）・フェーズ名・海象帯とその状態・SOC・速力・累積航走距離・状態（航行中／観測中／充電待機／
 ドリフト／母船搬送）を出す。シナリオ一覧の各行から「再生」で公称以外のシナリオも選べる——選んだシナリオを決定論的に再実行し、そのシナリオ
-専用の軌跡を再生する。<b>モデル化していないもの</b>: ①海流・偏流
-（leeway）は位置に反映されない（速力は対水速度のまま）。②避航・航路取りの意思決定は無く、表示上の大圏直線を
-なぞるだけ。③早回し再生はあくまで軌跡の可視化であり、シミュレーション自体の物理（§12 のドリフト・エネルギー
-収支）を変えない。</p>
+専用の軌跡を再生する。位置に反映されないもの・意思決定として持たないものは本節末の限界の表にまとめる。
+早回し再生はあくまで軌跡の可視化であり、シミュレーション自体の物理（§12 のドリフト・エネルギー収支）を変えない。</p>
 <p>航路図の表示には、艇の周囲へ向かい波の峰線を重ねて描く模式表現も加えている。峰線の間隔は代表周期、
 濃さと太さは有義波高に対応させ、再生中は艇へ向かって流れるように動かす（母船搬送区間では海象非依存のため描かない）。
 母船搬送フェーズの間は艇の位置に母船の記号を重ね、フェーズ終了後は母船が同じ航路を母港へ引き返す軌跡を、
 母港以外の位置で始まる搬送（回収）では母港から迎えに出る軌跡を、いずれも母船搬送速力からの機械的な時間補間で表示する。</p>
-<h4 style="font-size:13.5px;margin:14px 0 4px">成功率マトリクス: 距離×海域の成功率マトリクス</h4>
-<p>現在のフェーズ計画の構造を保ったまま、station（最初の行き先）だけを母港からの方位に沿って
+<h4 style="font-size:13.5px;margin:14px 0 4px">距離×海域の成功率マトリクス</h4>
+<p>現在のフェーズ計画の構造を保ったまま、最初の行き先だけを母港からの方位に沿って
 5/10/20/30/50/75/100/150nm へ動かし（測地計算による直接指定）、距離ごとに
-①距離帯自動判定と②5 海域カタログをそれぞれ全フェーズへ強制（
-実距離を手入力 nm に固定し、地理情報も外すことで「地理なし＝catalog
-引数を全フェーズ共通で使う」既存の経路にそのまま流す）の成功率を求める（8 距離×6 列＝48 実行）。
-併せて同じ 8 距離で自走 vs 母船搬送（フェーズ種別を一括で入れ替えるだけ）を距離帯自動判定で比較する
-（8 距離×2＝16 実行）。<b>簡略化</b>: 複数の行き先を持つ計画（哨戒テンプレなど）は最初の行き先の方位に
-全ての行き先を寄せる——多区間の計画を「1 本の station 距離」で語るための近似であり、個々の区間の向きは
-再現しない。読み上げ文は自走の成功率が最初に 50% を下回る距離と、75/150nm での母船搬送の改善幅を機械的に生成する。</p>
-<h4 style="font-size:13.5px;margin:14px 0 4px">モデル化していないもの（限界の明示）</h4>
-<p>①<b>海流</b>（黒潮等）・<b>偏流</b>は速力・位置に反映されない。②<b>島を避ける航路取り</b>はせず、母港↔目的地は常に
-大圏直線（sub-leg 分割は帯の把握のためであり、迂回はしない）。③<b>潮汐・潮流</b>は無視。
-④距離帯の境界（10/50nm）と海域カタログの対応（設計書§12「海象カタログには海域プリセットを同梱」参照）はいずれも
-仮置き。⑤厳しさの地図の station 移動は「方位を固定して距離だけ動かす」直線的な操作であり、
-実際の目的地選定（水深・漁業権・航空管制圏等）は考慮しない。</p>
+①距離帯自動判定と②海域カタログ（海域プリセットのそれぞれ）をフェーズへ強制した場合の
+成功率を求める（実距離を手入力 nm に固定し、地理情報も外すことで「地理なし＝海象カタログをすべてのフェーズに
+共通で指定する扱い」に流す）。併せて同じ距離刻みで自走 vs 母船搬送（フェーズ種別を一括で入れ替えるだけ）を
+距離帯自動判定で比較する。<b>簡略化</b>: 複数の行き先を持つ計画（哨戒テンプレなど）は最初の行き先の方位に
+全ての行き先を寄せる——多区間の計画を「最初の行き先までの 1 本の距離」で語るための近似であり、個々の区間の向きは
+再現しない。読み上げ文は自走の成功率が最初に 50% を下回る距離と、遠距離での母船搬送の改善幅を機械的に生成する。</p>
 <p class="std">検証 V15 が①大圏距離の独立実装（球面三角法の余弦公式）との一致②距離帯境界③帯遷移の単調性（本土限定ルールにより
 外洋がそのまま目的地に使える）④母船搬送のSOC/エネルギー⑤地理情報の無いミッションでの
-旧経路との完全回帰（ビット同一）を確認する。V16 が早回し再生の位置積分（累積距離と合計距離の一致・往復計画での
+既存の経路との完全回帰（ビット同一）を確認する。V16 が早回し再生の位置積分（累積距離と合計距離の一致・往復計画での
 帰着）を確認する。</p>
+
+<h3>限界</h3>
+<div class="tbl"><table>
+<tr><th>限界</th><th>内容</th><th>解消の見込み</th></tr>
+<tr><td>①</td><td>海象の持続相関の時定数 τ は仮定値。</td><td>§10 の海象の持続相関の行</td></tr>
+<tr><td>②</td><td>フェーズ・区間の内部は定常海象として扱う（遷移の過渡は表現しない）。</td><td>区間分割を細かくすることでのみ緩和（離散化の原理的な限界）</td></tr>
+<tr><td>③</td><td>海流・偏流・避航（航路取り）の意思決定・潮汐潮流はいずれも位置・速力に反映されない。移動は速力一定で大圏直線をなぞる。</td><td><a href="#s11">§11</a> の限界③（0 次元モデルの原理的限界）に同じ</td></tr>
+<tr><td>④</td><td>母船搬送終了時の SOC は既定で満充電——搬送中に母船側で充電する運用を前提とした既定値であり、無充電のまま搬送する設定も選べる。母船自身の航行の安全性・スケジュール制約は未モデル化。</td><td>母船側の運用モデル化を追加すれば解消（未着手）</td></tr>
+<tr><td>⑤</td><td>距離帯の境界（既定 沿岸 10nm・陸棚 50nm）と海域カタログの対応は仮置き。</td><td>実海域の統計との照合が必要</td></tr>
+<tr><td>⑥</td><td>成功率マトリクスの最初の行き先の移動は方位を固定した距離操作の近似であり、実際の目的地選定（水深・漁業権・航空管制圏等）は考慮しない。</td><td>個々の目的地を直接指定すれば回避可（現状の一覧機能としては近似のまま）</td></tr>
+<tr><td>⑦</td><td>成功率の分解能は海象離散化の粒度で決まる（海域カタログは概数）。</td><td>§10 の海域別統計への置換で解消（<a href="#s11">§11</a> の限界⑦と同じ手段）</td></tr>
+<tr><td>⑧</td><td>日射はフェーズ状態の日平均値を使用する（晴天モデルとの併用は不可）。</td><td>§10 の日射の置換計画に含まれる</td></tr>
+</table></div>
 </details>
 
 <!-- ═══════════ §13 ═══════════ -->
@@ -7746,7 +7746,7 @@ if (typeof module !== 'undefined') module.exports = USV;
     requestAnimationFrame(tick);
   })();
 
-  // ── 厳しさの地図（M3・距離×海域の成功率マトリクス・設計書§12.6） ──
+  // ── 成功率マトリクス（M3・距離×海域・設計書§12.6） ──
   const MX_D = [5,10,20,30,50,75,100,150];
   const MX_CATS = ['generic','japan','npac','natl','trade'];
   const MX_CATNAME = { generic:'汎用', japan:'日本近海', npac:'北太平洋', natl:'北大西洋', trade:'貿易風帯' };
