@@ -646,8 +646,55 @@ function normalizeProject(raw) {
   resolveLedger(proj, rawDiagrams);
   applyLayouts(proj);           // §2-2: x/y 未指定ノードだけ自動配置（__autoPos）
   deriveVisibility(proj);       // §13: 各図ノードへ公開範囲を焼く（派生＝保存時に剥がす）
+  deriveDrillLinks(proj);       // §7.4: 子を持つノードへ ↗（view~）を自動で与える（同上）
   proj.index = buildIndex(proj);
   return proj;
+}
+
+// ─── §7.4 遅延ドリルダウンの自動付与 ───
+// graph に子を持つエンティティに結びついた図ノードへ ↗（view~<id>）を与える。
+// これまでこの規則は **nested レイアウトの中にしか無かった**ので、手で置いた要約図からは
+// 実データへ降りられなかった（System Overview の tools/diagram_engine が実際に行き止まりだった）。
+// 「降り口を付けるか」は人の判断を要さない — **子がいるかどうか**で決まる機械判定なので、
+// レイアウトに関係なく全図へ同じ規則を当てる。手置きの link があればそれが勝つ（人の意図が優先）。
+// __derivedLink は stripDerived が剥がす＝保存 JSON はバイト同一のまま（§6）。
+function deriveDrillLinks(proj) {
+  const childCount = new Map();
+  for (const n of proj.graph.nodes) {
+    if (!n.parent) continue;
+    childCount.set(n.parent, (childCount.get(n.parent) || 0) + 1);
+  }
+  if (!childCount.size) return;
+  for (const d of proj.diagrams) {
+    for (const n of d.nodes) {
+      if (n.link) continue;                         // 手置き／nested 由来が既にある
+      const gid = n.entityId || n.id;
+      if (!childCount.get(gid)) continue;
+      n.link = VIRTUAL_VIEW_PREFIX + gid;
+      n.__derivedLink = true;
+    }
+  }
+}
+
+// graph 上でそのノードの直接の子が何件あるか（＝「中を見る」に意味があるか）。
+function childCountOf(proj, id) {
+  let n = 0;
+  for (const e of proj?.graph?.nodes || []) if (e.parent === id) n++;
+  return n;
+}
+
+// §12.1: フォルダには **取得すべきファイルが無い**。sourceRoot＋path で URL を組み立てると
+// 必ず 404 になる（配信はファイルだけを置くため）。右ペインは「種別: フォルダ」と既に
+// 表示できていたのに、「開く」だけがそれを見ていなかった＝フォルダを選ぶと必ず 404 を出していた。
+// 拡張子があるものは（roles が type/icon を上書きしていても）ファイルなので除外する。
+function isFolderNode(proj, node) {
+  if (!node) return false;
+  const gid = node.entityId || node.id;
+  const ent = entityById(proj, gid) || node;
+  const ext = ent?.props?.ext ?? node?.props?.ext;
+  if (typeof ext === 'string' && ext) return false;
+  if (ent?.icon === 'folder' || ent?.type === 'folder') return true;
+  return childCountOf(proj, gid) > 0;               // icon を出さない抽出器への保険
 }
 
 // §13: レンダラは proj を持たない（model = 1 枚の図）ので、公開範囲をノード側へ派生させておく。
@@ -1344,7 +1391,9 @@ function openTargetOf(proj, node) {
   const rootRaw = sourceRootOverride ?? proj?.project?.sourceRoot;
   const root = typeof rootRaw === 'string' ? rootRaw.trim() : '';
   const path = typeof props.path === 'string' ? props.path.trim() : '';
-  if (root && path) {
+  // フォルダは path を持つが実体（ファイル）が無い＝組み立てた URL は必ず 404 になる。
+  // ① の href は通す（公開スライスのフォルダは配信先 URL を持つため）。
+  if (root && path && !isFolderNode(proj, node)) {
     const dir = root.endsWith('/') ? root : root + '/';
     let rootURL;
     try { rootURL = new URL(dir, base); } catch { rootURL = null; }
@@ -7263,7 +7312,9 @@ class DiagramEditor {
       + '<code>.html</code> はサンドボックス iframe ／ 画像は <code>&lt;img&gt;</code> ／ その他テキストはソース表示。'
       + '<b>別オリジンは取得も埋め込みもせず</b>「新しいタブで開く」リンクだけを出す。<br>'
       + '<b>ローカルのコツ</b>: <code>index.html?src=graph.json&amp;root=../</code> のように '
-      + '<code>?root=</code> を足すと sourceRoot を上書きできる（root はこの HTML から見たリポジトリ直下への相対パス）。'
+      + '<code>?root=</code> を足すと sourceRoot を上書きできる（root はこの HTML から見たリポジトリ直下への相対パス）。<br>'
+      + '<b>フォルダには「開く」が出ない</b>。実体がディレクトリで、配信はファイルしか置かないため必ず 404 になる。'
+      + '代わりに <b>「中を見る（子の件数）」</b>が出る＝そこは<b>掘る</b>場所。'
       + '<h4>ロック（既定 ON）</h4>'
       + 'アイコンバーの<b>錠アイコン</b>（<kbd>L</kbd> キー）で切替。<b>ロック中は図の形を変えられない</b>'
       + '＝箱の移動・結線・経由点・ノード追加・ラベルの直接編集・削除がすべて止まる。<br>'
@@ -7279,10 +7330,15 @@ class DiagramEditor {
       + '<h4>構成を読み解く手順</h4>'
       + 'リポジトリを抽出した図では、次の 3 つを行き来すると速い:<br>'
       + '<b>① 掘る＝構造</b> … <b>Nested (drill-down)</b> で箱をクリック。'
+      + '<b>どのビューでも、子を持つ箱には ↗ が出る</b>ので、要約図からそのまま降りてもよい'
+      + '（右ペインの「中を見る（n）」も同じ場所へ行く）。'
       + '箱がフォルダ/ファイル、矢印が依存。孫以下の依存は 1 本に集約されるので、'
       + '<b>矢印が集中している箱がその階層の中心</b>だと分かる。<br>'
       + '<b>② 右ペイン＝役割</b> … 箱を選ぶと説明が出る（抽出器がファイル冒頭のコメントから採るので実装と一致する）。<br>'
-      + '<b>③ 開く＝実装</b> … <kbd>O</kbd> で全文。ここまで来て初めて「何をしているか」が確かめられる。<br>'
+      + '<b>③ 開く＝実装</b> … <kbd>O</kbd> で全文。ここまで来て初めて「何をしているか」が確かめられる。'
+      + 'フォルダには出ない（そこは ① で掘る）。<br>'
+      + '<b>要約図（System Overview 等）は全体の地図</b>であって掘るための図ではない。'
+      + '地図 → ↗ で実データへ → 役割 → 全文、の順に往復するのが最短。<br>'
       + '<b>Imports</b> ビューはリポジトリ全体なので広すぎることが多い。'
       + '特定フォルダの内部依存は ① のドリルダウンがその役割を果たす。<br>'
       + 'ある階層でエッジが 0 本なのは異常ではない（互いに依存していないだけ）。'
@@ -7336,6 +7392,15 @@ class DiagramEditor {
     if (!obj) return false;
     const target = openTargetOf(this.project, obj);
     if (!target) {
+      // フォルダは「開けない」のではなく「掘るもの」。原因を配信のせいにしない（§12.1）。
+      const gid = obj.entityId || obj.id;
+      if (isFolderNode(this.project, obj)) {
+        const kids = childCountOf(this.project, gid);
+        this.setStatus(kids
+          ? `${gid} はフォルダです。↗ バッジか右ペインの「中を見る（${kids}）」で階層を掘ってください`
+          : `${gid} はフォルダで、この下には何もありません`, true);
+        return false;
+      }
       this.setStatus('このノードには開ける実体がありません（href / sourceRoot＋path / preview のいずれも無し）', true);
       return false;
     }
@@ -8195,17 +8260,32 @@ class DiagramEditor {
 
   // GRAPH_CONTRACT.md §12: 要約の直下に「開く」。開き先が無いノードでは押せない
   // （無効なボタンは出すが disabled。「このノードは開けない」こと自体が情報なので隠さない）。
+  // §12.1: フォルダは「開く」対象ではなく **掘る**対象なので、先頭に「中を見る」を出す。
+  // 以前はフォルダにも「開く」だけを出していて、押すと必ず 404 になっていた。
   openRow(obj) {
     const row = document.createElement('div'); row.className = 'de-inspsum-row de-open-row';
     const k = document.createElement('div'); k.className = 'de-inspsum-k'; k.textContent = '実体';
     const wrap = document.createElement('div'); wrap.className = 'de-inspsum-v de-open-cell';
     const t = openTargetOf(this.project, obj);
+    const gid = obj.entityId || obj.id;
+    const folder = isFolderNode(this.project, obj);
+    const kids = folder ? childCountOf(this.project, gid) : 0;
+    if (kids) {
+      const d = this.btn(`中を見る（${kids}）`, () => this.goToDiagram(VIRTUAL_VIEW_PREFIX + gid));
+      d.classList.add('de-open-btn');
+      d.dataset.role = 'drill';
+      d.dataset.drillCount = String(kids);
+      d.title = `${gid} を root にした階層図へ降りる（直下に ${kids} 件）`;
+      wrap.appendChild(d);
+    }
     const b = this.btn('開く', () => this.openSelectedNode());
     b.classList.add('de-open-btn');
     b.dataset.role = 'open';
     if (!t) {
       b.disabled = true;
-      b.title = '開き先がありません（props.href / project.sourceRoot＋props.path / props.preview のいずれも無い）';
+      b.title = folder
+        ? 'フォルダなので開ける実体（ファイル）がありません。' + (kids ? '「中を見る」で階層を掘ってください' : 'この下には何もありません')
+        : '開き先がありません（props.href / project.sourceRoot＋props.path / props.preview のいずれも無い）';
       b.dataset.openKind = '';
     } else {
       b.dataset.openKind = t.kind;
