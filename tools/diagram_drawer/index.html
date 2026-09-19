@@ -374,6 +374,14 @@ a.de-btn { text-decoration: none; display: inline-flex; align-items: center; }
   .de-modal-body { padding: 12px 12px; font-size: 12.5px; line-height: 1.85; }
 }
 
+/* G17 近傍フォーカス: 選択したものと直接つながっているものだけを残し、他は淡くする。
+   消さずに淡くするのは、全体の形が消えると位置関係の手がかりまで失われるため。
+   図形・文字・アイコンをまとめて落としたいので、グループ単位の opacity で当てる。 */
+g[data-kind="node"].de-faded,
+g[data-kind="edge"].de-faded { opacity: .16; transition: opacity .12s ease; }
+g[data-kind="node"]:not(.de-faded),
+g[data-kind="edge"]:not(.de-faded) { transition: opacity .12s ease; }
+
 html, body { margin: 0; height: 100%; overflow: hidden; }
 </style>
 <div id="app"></div>
@@ -3719,6 +3727,47 @@ function el(tag, attrs = {}, text) {
   return e;
 }
 
+// ─── G17 近傍フォーカス（選択したものと、その相手だけを残して他を淡くする）───
+// 目的は「構成とつながりを理解する」こと。全部が同じ濃さだと、どれがどれに繋がっているのかを
+// 目で追わないと分からない。選択したノード／エッジと**直接つながっている**ものだけを
+// 通常の濃さで残し、それ以外へ .de-faded を付ける（消さずに淡くするのは、全体の形が
+// 分からなくなると位置関係の手がかりまで失われるため）。
+//
+// エッジの端点は "nodeId:portId" の形を取りうるので、必ず ':' の前だけを見る（§7.2）。
+function edgeEndId(v) { return String(v ?? '').split(':')[0]; }
+
+function neighbourhoodOf(model, sel) {
+  const nodes = new Set(), edges = new Set();
+  if (!sel || !model) return { nodes, edges };
+  if (sel.kind === 'node') {
+    nodes.add(sel.id);
+    for (const e of model.edges || []) {
+      const a = edgeEndId(e.from), b = edgeEndId(e.to);
+      if (a !== sel.id && b !== sel.id) continue;
+      edges.add(e.id); nodes.add(a); nodes.add(b);
+    }
+  } else if (sel.kind === 'edge') {
+    const e = (model.edges || []).find(x => x.id === sel.id);
+    if (!e) return { nodes, edges };
+    edges.add(e.id); nodes.add(edgeEndId(e.from)); nodes.add(edgeEndId(e.to));
+  } else {
+    return { nodes, edges };   // グループ選択では淡くしない（対象が「つながり」ではない）
+  }
+  return { nodes, edges };
+}
+
+function applyNeighbourFocus(world, model, sel) {
+  const { nodes, edges } = neighbourhoodOf(model, sel);
+  if (!nodes.size && !edges.size) return false;
+  for (const g of world.querySelectorAll('g[data-kind="node"]')) {
+    if (!nodes.has(g.dataset.id)) g.classList.add('de-faded');
+  }
+  for (const g of world.querySelectorAll('g[data-kind="edge"]')) {
+    if (!edges.has(g.dataset.id)) g.classList.add('de-faded');
+  }
+  return true;
+}
+
 // ═══ src/renderers/flat_svg.js ═══
 // flat_svg.js — 2D SVG レンダラ（SysML SAB 風ブロック図）
 // 角丸ブロック + ポートマーカー + 直交エッジ + 矢印。エディタのヒットテスト面も提供する。
@@ -4374,12 +4423,14 @@ class FlatSVGRenderer {
   setSelection(sel) { this.selection = sel; this.applySelection(); }
   applySelection() {
     for (const e of this.world.querySelectorAll('.de-selected')) e.classList.remove('de-selected');
+    for (const e of this.world.querySelectorAll('.de-faded')) e.classList.remove('de-faded');
     if (!this.selection) return;
     const { kind, id } = this.selection;
     const g = this.world.querySelector(`[data-kind="${kind}"][data-id="${CSS.escape(id)}"]`);
     if (!g) return;
     const shape = g.querySelector('.de-node-shape, .de-edge, .de-group-shape');
     shape?.classList.add('de-selected');
+    applyNeighbourFocus(this.world, this.model, this.selection);
   }
 
   // ─── ヒットテスト（論理座標で幾何判定、描画順の逆） ───
@@ -4668,23 +4719,102 @@ const isoShapeHeight = shapeName => (SHAPES3D[shapeName]?.h || 0) * SHAPE_FOOT; 
 // 追従するが、行送りと折返し幅は px で焼いてあった。13px 基準の 14px / 18 文字を比として保つ。
 const isoLineH = (px = getNodeFontPx()) => px * (14 / 13);
 const isoWrapCols = (px = getNodeFontPx()) => Math.max(6, Math.round(18 * (13 / px)));
-// G15: iso のラベルはビルボード（箱の中ではなく шейп の上に正対で浮かせる）なので、
+// G15/G17: iso のラベルはビルボード（箱の中ではなく shape の上に正対で浮かせる）なので、
 // 文字サイズを上げると **隣のノードのラベルと衝突する**。flat と違って箱が受け皿にならない。
-// ノードの投影幅にラベルが収まる px まで落として、行数と占有幅を基準時とほぼ同じに保つ。
-// 手置きの図（overview など）はノード間隔が JSON に焼いてあり広がらないため、これが要る。
+//
+// ⚠ G17（2026-09-19）: 予算を node.w にしていたが、これは**間違った物差し**だった。
+//    等角投影では x が約 0.87 倍に潰れ、y 方向の間隔は約 0.5 倍になる。一方ラベルは
+//    正対なので傾かない＝「node.w に収まっている」ことは「隣とぶつからない」を意味しない。
+//    実測（特大・life_graph 全 9 ビュー）では**ラベルが 1px も縮まないまま 48 件が重なって**いた。
+//    予算は**投影後に隣のラベルまで実際に空いている距離**でしか決まらないので、
+//    描画前に全ノードのアンカーを集める 2 パスにした（planIsoLabels）。
 const ISO_MIN_FONT = 10;
-function isoLabelFit(label, nodeW) {
+const ISO_LABEL_GAP = 6;        // 隣のラベルとの間に必ず残す余白（px）
+const ISO_MIN_ROOM = 28;        // これ以上は幅で分離できない（＝縦に並んでいる）と判断する閾値
+
+// 1 ノード分の希望形（予算 room に収まる最大の px と行分け）。
+// room に収まらないときは ISO_MIN_FONT まで落とし、それでも溢れるなら末尾を … で詰める。
+// **省略は最後の砦**で、これがあるので「必ず収まる」と言い切れる。
+function isoLabelFit(label, room, maxLines = 2) {
   const base = getNodeFontPx();
-  // 予算はノードの footprint そのもの。レイアウトがこのノードに割り当てた幅であり、
-  // それを超えた時点で「隣のノードのために空けてある場所」へはみ出している＝衝突の始まり。
-  // flat が「箱に収める」のと同じ規則を、箱の無い iso に持ち込む。
-  const room = Math.max(40, nodeW);          // 投影幅（x 方向は等倍で落ちる）
   for (let px = base; px > ISO_MIN_FONT; px -= 0.5) {
     const lines = wrapText(label, isoWrapCols(px));
     const widest = Math.max(...lines.map(l => textWidthPx(l, px)));
-    if (widest <= room && lines.length <= 2) return { lines, px };
+    if (widest <= room && lines.length <= maxLines) return { lines, px, clipped: false };
   }
-  return { lines: wrapText(label, isoWrapCols(ISO_MIN_FONT)), px: ISO_MIN_FONT };
+  const px = ISO_MIN_FONT;
+  const lines = maxLines <= 1
+    ? [isoEllipsize(label, room, px)]
+    : wrapText(label, isoWrapCols(px)).slice(0, maxLines).map(l => isoEllipsize(l, room, px));
+  return { lines, px, clipped: true };
+}
+
+function isoEllipsize(text, room, px) {
+  if (textWidthPx(text, px) <= room) return text;
+  let s = text;
+  while (s.length > 1 && textWidthPx(s + '…', px) > room) s = s.slice(0, -1);
+  return s + '…';
+}
+
+// ラベル 1 枚が占める矩形（アンカーは中央・1 行目のベースライン）。
+// ⚠ textWidthPx も上下の伸び（ascent/descent）も**近似**なので、実際の getBBox より
+//    わずかに小さく出る。小さく見積もると「計画では空いていたのに実物は触れている」に
+//    なるため（実測: 大で縦 1.5px だけ触れる取りこぼしが 1 件残った）、必ず**大きめ**に採る。
+const ISO_BOX_SAFETY = 2;       // 上下左右に足す安全マージン（px）
+function isoLabelBox(anchor, fit) {
+  const w = Math.max(...fit.lines.map(l => textWidthPx(l, fit.px))) + ISO_BOX_SAFETY * 2;
+  const top = anchor.y - fit.px - ISO_BOX_SAFETY;
+  const bottom = anchor.y + isoLineH(fit.px) * (fit.lines.length - 1) + fit.px * 0.35 + ISO_BOX_SAFETY;
+  return { x1: anchor.x - w / 2, x2: anchor.x + w / 2, y1: top, y2: bottom };
+}
+
+// 2 パス目の本体。全ノードのアンカーを受け取り、衝突が無くなるまで
+// **ぶつかっている側だけ**を 1 段ずつ縮める。縮めるのは幅の広い方＝情報量の多い側から
+// 削ると読めなくなるため、**溢れている度合いが大きい方**を選ぶ。
+// 最後は ISO_MIN_FONT ＋ 省略で必ず収束する（上限 12 周で打ち切っても省略が効いている）。
+function planIsoLabels(entries) {
+  const plan = new Map();
+  const room = new Map();
+  const maxLines = new Map();
+  const refit = id => {
+    const e = entries.find(x => x.id === id);
+    plan.set(id, isoLabelFit(e.label, room.get(id), maxLines.get(id)));
+  };
+  for (const e of entries) {
+    room.set(e.id, Infinity);
+    maxLines.set(e.id, 2);
+    plan.set(e.id, isoLabelFit(e.label, Infinity, 2));
+  }
+  for (let round = 0; round < 12; round++) {
+    const boxes = entries.map(e => ({ e, b: isoLabelBox(e.anchor, plan.get(e.id)) }));
+    let hit = false;
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        const A = boxes[i], B = boxes[j];
+        const ox = Math.min(A.b.x2, B.b.x2) - Math.max(A.b.x1, B.b.x1) + ISO_LABEL_GAP;
+        const oy = Math.min(A.b.y2, B.b.y2) - Math.max(A.b.y1, B.b.y1);
+        if (ox <= 0 || oy <= 0) continue;
+        hit = true;
+        // 2 つのラベルで重なりを分け合う。互いの中心間距離が使える幅の上限。
+        const dx = Math.abs(A.e.anchor.x - B.e.anchor.x);
+        const budget = Math.max(ISO_MIN_ROOM, dx - ISO_LABEL_GAP);
+        for (const S of [A, B]) {
+          const cur = room.get(S.e.id);
+          if (budget < cur) { room.set(S.e.id, budget); refit(S.e.id); }
+        }
+        // x がほぼ重なっている（真上/真下に並ぶ）ペアは**幅では絶対に離れない**。
+        // このとき効くのは高さなので、2 行を 1 行へ落として占有を半分にする。
+        // 実測: 大(1.2) の imports で build_figures_arc1_* が縦 1.5px だけ触れていた残り 1 件がこれ。
+        if (dx - ISO_LABEL_GAP <= ISO_MIN_ROOM) {
+          for (const S of [A, B]) {
+            if (maxLines.get(S.e.id) > 1) { maxLines.set(S.e.id, 1); refit(S.e.id); }
+          }
+        }
+      }
+    }
+    if (!hit) break;
+  }
+  return plan;
 }
 
 const PLATE_T = 14;   // プレート厚（画面px）
@@ -4788,6 +4918,10 @@ class IsoSVGRenderer {
     for (const plate of this.plates()) this.world.appendChild(this.renderPlate(plate));
     for (const e of model.edges) { const p = this.renderEdge(e); if (p) this.world.appendChild(p); }
     const nodes = [...model.nodes].sort((a, b) => (this.elev(a.layer) - this.elev(b.layer)) || ((a.x + a.y) - (b.x + b.y)));
+    // G17: ラベルは「隣まで実際に空いている距離」を予算にするので、描く前に全アンカーを集める。
+    this.labelPlan = planIsoLabels(
+      nodes.filter(n => n.label).map(n => ({ id: n.id, label: n.label, anchor: this.labelAnchor(n) })),
+    );
     for (const n of nodes) this.world.appendChild(this.renderNode(n));
     for (const c of this.containers()) if (c.label) this.world.appendChild(this.renderContainerLabel(c));
     if (model.meta.caption) {
@@ -4796,6 +4930,9 @@ class IsoSVGRenderer {
         class: 'de-caption', x: (b.x1 + b.x2) / 2, y: b.y2 + 34, 'text-anchor': 'middle',
       }, model.meta.caption));
     }
+    // G17: 再描画で DOM を作り直したら選択表示（と近傍フォーカス）を貼り直す。
+    // flat の update() が applySelection() を呼ぶのと同じ理由。
+    if (this.selection) this.setSelection(this.selection);
   }
 
   // 枠線のみ・塗りなし・高さなし。ラベルは論理左上角（= iso の最上部角）に小さく控えめに置く
@@ -4879,6 +5016,28 @@ class IsoSVGRenderer {
     return s || null;
   }
 
+  // G17: ラベルのアンカー（中央・1 行目のベースライン）。**計画と描画で必ず同じ式を使う**ため
+  // 1 か所に出した。ここがずれると「計画では空いていたのに実際は重なる」が起きる。
+  labelAnchor(node) {
+    const elev = this.elev(node.layer);
+    const shapeName = this.resolveShape(node);
+    const cx = node.x + node.w / 2, cy = node.y + node.h / 2;
+    if (shapeName) {
+      const topPt = isoProject(cx, cy, elev + PED_H + isoShapeHeight(shapeName));
+      return { x: topPt.x, y: topPt.y - 10 };
+    }
+    const flat = node.type === 'pictogram' || node.type === 'actor';
+    const boxH = flat ? 0 : BOX_H;
+    const center = isoProject(cx, cy, elev + boxH);
+    const iconName = node.type === 'actor' ? 'actor' : node.icon;
+    return { x: center.x, y: iconName ? center.y + (flat ? 12 : 2) : center.y - 12 };
+  }
+
+  // 計画（planIsoLabels）の結果。計画に無いノードは単独で収める。
+  fitFor(node) {
+    return this.labelPlan?.get(node.id) || isoLabelFit(node.label, Infinity);
+  }
+
   renderNode(node) {
     const g = el('g', { 'data-kind': 'node', 'data-id': node.id });
     const elev = this.elev(node.layer);
@@ -4900,7 +5059,7 @@ class IsoSVGRenderer {
       // ラベルはピクトグラム頭頂の少し上に正対配置
       const topPt = isoProject(cx, cy, elev + PED_H + isoShapeHeight(shapeName));
       if (node.label) {
-        const fit = isoLabelFit(node.label, node.w);
+        const fit = this.fitFor(node);
         // font-size は style に入れる（属性だと theme.css の .de-node-label に負けて効かない）
         fit.lines.forEach((line, i) => g.appendChild(el('text', {
           class: 'de-node-label', x: topPt.x, y: topPt.y - 10 + i * isoLineH(fit.px), 'text-anchor': 'middle',
@@ -4941,7 +5100,7 @@ class IsoSVGRenderer {
       labelY = center.y + (flat ? 12 : 2);
     }
     if (node.label) {
-      const fit = isoLabelFit(node.label, node.w);
+      const fit = this.fitFor(node);
       fit.lines.forEach((line, i) => {
         const t = el('text', {
           class: 'de-node-label', x: center.x, y: labelY + i * isoLineH(fit.px), 'text-anchor': 'middle',
@@ -5002,7 +5161,18 @@ class IsoSVGRenderer {
     return n ? n.layer : 'base';
   }
 
-  setSelection() { /* iso はビュー専用 */ }
+  // G17: iso は幾何編集こそ持たないが、**選択と近傍フォーカスは効かせる**。
+  // 「構成とつながりを理解する」のが要約図（既定 2.5D）の役目なので、ここが無いと
+  // 一番使う図でだけ「関連だけ残す」表示が死ぬ。
+  setSelection(sel) {
+    this.selection = sel;
+    for (const e of this.world.querySelectorAll('.de-selected')) e.classList.remove('de-selected');
+    for (const e of this.world.querySelectorAll('.de-faded')) e.classList.remove('de-faded');
+    if (!sel) return;
+    const g = this.world.querySelector(`g[data-kind="${sel.kind}"][data-id="${CSS.escape(sel.id)}"]`);
+    g?.querySelector('.de-node-shape, .de-edge')?.classList.add('de-selected');
+    applyNeighbourFocus(this.world, this.model, sel);
+  }
 
   toLogical(clientX, clientY) { // 投影後（world）座標
     const r = this.svg.getBoundingClientRect();
@@ -7700,6 +7870,14 @@ class DiagramEditor {
         const hit = this.renderer.hitTest(e.clientX, e.clientY);
         if (hit && hit.kind !== 'expander' && hit.kind !== 'link') this.select({ kind: hit.kind, id: hit.id });
         else if (!hit) this.select(null);
+      } else {
+        // G17: hitTest の無いレンダラ（iso）でも**選択だけ**は効かせる。
+        // 要約図は既定が 2.5D なので、ここが無いと「つながりを見る」（近傍フォーカス）が
+        // 一番使う図で丸ごと死ぬ。幾何は触らないので閲覧専用の性質は変わらない。
+        const at = document.elementFromPoint(e.clientX, e.clientY);
+        const g = at?.closest?.('g[data-kind="node"], g[data-kind="edge"]');
+        if (g) this.select({ kind: g.dataset.kind, id: g.dataset.id });
+        else this.select(null);
       }
       // view モード / iso・webgl: パン + クリック遷移（webgl は自前カメラ + raycast pick）
       if (this.renderer.setView) this.drag = { mode: 'pan', start: { x: e.clientX, y: e.clientY }, view: this.renderer.getView(), sx: e.clientX, sy: e.clientY };
@@ -7866,7 +8044,25 @@ class DiagramEditor {
   }
 
   onDblClick(e) {
-    if (!this.canEditGeometry) return;   // G15: ロック中はラベルの直接編集・経由点削除も止める
+    // G17: ダブルクリックは**掘る**が既定。読むために使う操作なので、ロック中（既定）は
+    // ここがドリルダウンになる。ロックを外したときだけ、従来どおりラベルの直接編集になる。
+    // 報告:「ダブルクリックで下の階層に行けると思った。それが最もよく使う」
+    if (!this.canEditGeometry) {
+      // ⚠ 2 つ落とし穴がある。
+      //  ① hitTest は flat レンダラにしか無い（iso / 3D は閲覧専用）。要約図は既定が 2.5D なので、
+      //     hitTest 経由にすると**掘りたい図でだけ効かない**。
+      //  ② e.target も使えない。viewport が pointerdown で setPointerCapture する（パン用）ため、
+      //     dblclick は viewport の DIV へ retarget される（実測: e.target.tagName === 'DIV'）。
+      //  座標から引けばどちらも回避でき、どのレンダラでも同じ 1 本で拾える。
+      const at = document.elementFromPoint(e.clientX, e.clientY);
+      const g = at?.closest?.('g[data-kind="node"]');
+      const node = g ? nodeById(this.model, g.dataset.id) : null;
+      if (!node) return;
+      if (node.link) { this.goToDiagram(node.link); return; }
+      const gid = node.entityId || node.id;
+      this.setStatus(`${gid} には掘れる中身がありません（子を持つ箱には ↗ が付きます）`, true);
+      return;
+    }
     // waypoint ハンドルのダブルクリック → 経由点削除
     const wh = this.hitWaypointHandle(e.clientX, e.clientY);
     if (wh?.type === 'wp') {
