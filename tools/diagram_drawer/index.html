@@ -382,6 +382,31 @@ g[data-kind="edge"].de-faded { opacity: .16; transition: opacity .12s ease; }
 g[data-kind="node"]:not(.de-faded),
 g[data-kind="edge"]:not(.de-faded) { transition: opacity .12s ease; }
 
+/* §18 来歴: 決定論的に抽出されたもの（細線）と、人が描いたもの（太線）を分ける。
+   人と AI は分けない — 読み手には「機械が事実から出したか / 誰かが意味づけたか」の違いだけが
+   意味を持つ（内訳は右ペインの provenance で見られる）。
+   破線・波線は「点線＝予定」「破線＝弱い関係」のような別の意味と衝突するうえ、縮小すると
+   見分けにくい。色にも載せない（印刷・スクショ・色覚特性で落ちる）。太さは意味が衝突せず、
+   縮小しても残る。 */
+g[data-origin="authored"] .de-node-shape { stroke-width: 2.6; }
+g[data-origin="authored"] .de-edge { stroke-width: 2.4; }
+g[data-origin="authored"] .de-edge.accent { stroke-width: 2.8; }
+g[data-origin="extracted"] .de-node-shape { stroke-width: 1.2; }
+g[data-origin="extracted"] .de-edge { stroke-width: 1.1; }
+/* 選択時の強調は来歴より優先（!important は既存の .de-selected が持っている） */
+
+/* 図の内訳バッジ（見出しの右） */
+.de-origin-badge {
+  display: inline-flex; gap: 8px; align-items: center; margin-left: 10px;
+  font-size: 11px; color: var(--de-soft); white-space: nowrap;
+}
+.de-origin-badge b { font-weight: 600; color: var(--de-ink); }
+.de-origin-badge .de-ob-swatch {
+  display: inline-block; width: 14px; height: 0; vertical-align: middle;
+  border-top: 1px solid var(--de-line); margin-right: 3px;
+}
+.de-origin-badge .de-ob-swatch.thick { border-top-width: 3px; }
+
 html, body { margin: 0; height: 100%; overflow: hidden; }
 </style>
 <div id="app"></div>
@@ -498,7 +523,12 @@ function labelBoxWidth(w, hasIcon, expanderW = 0) {
 }
 
 // 軽量バリデーション（外部ライブラリなし）。致命的な問題のみ errors、軽微は warnings。
-function validate(raw) {
+// §2/§18.4: select を持つ図のノードは**派生でしか現れない**（検証は正規化の前に走るので
+// diagrams[].nodes はまだ空）。そこへ手で足したエッジ（折衷の「意味の線」）を
+// 「参照先が無い」と error にすると、**正しい図が読み込めなくなる**（実際にそうなった）。
+// graph に実在する id なら通す — 派生で必ず図に入ってくるため。
+// graph も知らない id は従来どおり error（打ち間違いは今までどおり捕まる）。
+function validate(raw, knownGraphIds = null) {
   const errors = [], warnings = [];
   if (!raw || typeof raw !== 'object') { errors.push('モデルがオブジェクトではありません'); return { errors, warnings }; }
   if (!raw.meta || !raw.meta.id) errors.push('meta.id は必須です');
@@ -525,13 +555,19 @@ function validate(raw) {
     if (!e.id || !e.from || !e.to) { errors.push(`エッジに id/from/to が欠けています (${e.id || '?'})`); continue; }
     for (const ref of [e.from, e.to]) {
       const nodeId = ref.split(':')[0];
-      if (!ids.has(nodeId)) errors.push(`エッジ ${e.id}: 参照先ノード '${nodeId}' が存在しません`);
+      if (ids.has(nodeId)) continue;
+      if ((raw.select || raw.layout) && knownGraphIds?.has(nodeId)) continue;   // 派生で入る
+      errors.push(`エッジ ${e.id}: 参照先ノード '${nodeId}' が存在しません`);
     }
     if (e.rel && !REL_PRESETS[e.rel]) warnings.push(`エッジ ${e.id}: 未知の rel '${e.rel}' → 見た目は既定`);
   }
   for (const g of raw.groups || []) {
     for (const m of g.members || []) {
-      if (!ids.has(m)) warnings.push(`グループ ${g.id}: メンバー '${m}' が存在しません`);
+      if (ids.has(m)) continue;
+      // エッジと同じ理由（上）: select を持つ図のメンバーは派生でしか現れない。
+      // 生成した接地枠・層の帯（§16 summaryGroups）がここで 19 件の警告を出していた。
+      if ((raw.select || raw.layout) && knownGraphIds?.has(m)) continue;
+      warnings.push(`グループ ${g.id}: メンバー '${m}' が存在しません`);
     }
   }
   return { errors, warnings };
@@ -655,6 +691,7 @@ function normalizeProject(raw) {
   applyLayouts(proj);           // §2-2: x/y 未指定ノードだけ自動配置（__autoPos）
   deriveVisibility(proj);       // §13: 各図ノードへ公開範囲を焼く（派生＝保存時に剥がす）
   deriveDrillLinks(proj);       // §7.4: 子を持つノードへ ↗（view~）を自動で与える（同上）
+  deriveOrigin(proj);           // §18: 決定論的に抽出されたものか、人が描いたものか
   proj.index = buildIndex(proj);
   return proj;
 }
@@ -669,8 +706,11 @@ function normalizeProject(raw) {
 function deriveDrillLinks(proj) {
   const childCount = new Map();
   for (const n of proj.graph.nodes) {
-    if (!n.parent) continue;
-    childCount.set(n.parent, (childCount.get(n.parent) || 0) + 1);
+    if (n.parent) childCount.set(n.parent, (childCount.get(n.parent) || 0) + 1);
+    // §17 スコープの中身も「子」として数える。スコープはフォルダ階層と一致しないので
+    // parent では繋がっておらず、これが無いとスコープの箱だけ掘れない行き止まりになる。
+    const sc = n.props?.scope;
+    if (sc) { const k = SCOPE_PREFIX + sc; childCount.set(k, (childCount.get(k) || 0) + 1); }
   }
   if (!childCount.size) return;
   for (const d of proj.diagrams) {
@@ -684,10 +724,73 @@ function deriveDrillLinks(proj) {
   }
 }
 
+// ─── §18 来歴（この箱・この線は誰が置いたか）───
+// 2 分類だけにする。**人と AI は分けない** — 読み手にとっては「機械が事実から出したもの」か
+// 「人（または AI）が意味づけて描いたもの」かの違いだけが意味を持ち、後者の中の内訳は
+// props.provenance に残っているので必要なら右ペインで見られる。
+//
+//   extracted … select から派生した＝決定論的に抽出された事実
+//   authored  … JSON に手で書かれた＝人の解釈（位置・呼び名・意味の線）
+//
+// 表現は**線の太さ**にする。破線・波線は「点線＝予定」「破線＝弱い関係」のような
+// 別の意味と衝突するうえ、細かい図で見分けにくい。太さなら意味が衝突せず、
+// 縮小しても残る（色に載せないのは、印刷・スクショ・色覚特性で落ちるため）。
+const ORIGIN_EXTRACTED = 'extracted';
+const ORIGIN_AUTHORED = 'authored';
+
+function deriveOrigin(proj) {
+  for (const d of proj.diagrams) {
+    for (const n of d.nodes) n.__origin = n.__derived ? ORIGIN_EXTRACTED : ORIGIN_AUTHORED;
+    for (const e of d.edges) e.__origin = e.__derived ? ORIGIN_EXTRACTED : ORIGIN_AUTHORED;
+  }
+}
+
+// §18.3 図の中身のハッシュ。複製元が変わったかを判定するためのもの。
+// **位置は含めない** — 自動レイアウトは文字サイズや窓幅で動くので、位置まで見ると
+// 「何も変わっていないのに変わったと言う」ようになる。見るのは「何が出ているか」だけ。
+// 依存ゼロを守るため crypto は使わず、順序に依存しない安定な 32bit ハッシュにする。
+function viewContentHash(d) {
+  const parts = [];
+  for (const n of d?.nodes || []) parts.push('n:' + (n.entityId || n.id) + '|' + (n.label ?? ''));
+  for (const e of d?.edges || []) parts.push('e:' + String(e.from) + '>' + String(e.to) + '|' + (e.label ?? ''));
+  parts.sort();
+  let h = 2166136261;
+  for (const ch of parts.join('\n')) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619) >>> 0; }
+  return h.toString(16).padStart(8, '0');
+}
+
+// 複製した手描き図の「元」が変わっていないか。変わっていればその図 id とハッシュを返す。
+function staleForks(proj) {
+  const byId = new Map((proj?.diagrams || []).map(d => [d.meta.id, d]));
+  const out = [];
+  for (const d of proj?.diagrams || []) {
+    const from = d.meta?.forkedFrom;
+    if (!from || !d.meta.forkedAtHash) continue;
+    const src = byId.get(from);
+    if (!src) { out.push({ id: d.meta.id, from, reason: 'missing' }); continue; }
+    const now = viewContentHash(src);
+    if (now !== d.meta.forkedAtHash) out.push({ id: d.meta.id, from, reason: 'changed', was: d.meta.forkedAtHash, now });
+  }
+  return out;
+}
+
+// 図の内訳（見出しに出す「自動 N・手描き M」）。
+function originBreakdown(d) {
+  let extracted = 0, authored = 0;
+  for (const x of [...(d?.nodes || []), ...(d?.edges || [])]) {
+    if (x.__origin === ORIGIN_AUTHORED) authored++; else extracted++;
+  }
+  return { extracted, authored, total: extracted + authored };
+}
+
 // graph 上でそのノードの直接の子が何件あるか（＝「中を見る」に意味があるか）。
 function childCountOf(proj, id) {
+  const scope = typeof id === 'string' && id.startsWith(SCOPE_PREFIX) ? id.slice(SCOPE_PREFIX.length) : null;
   let n = 0;
-  for (const e of proj?.graph?.nodes || []) if (e.parent === id) n++;
+  for (const e of proj?.graph?.nodes || []) {
+    if (e.parent === id) n++;
+    else if (scope && e.props?.scope === scope) n++;   // §17 スコープの成員
+  }
   return n;
 }
 
@@ -797,6 +900,14 @@ function selectNodeIds(sel, gnodes, gedges) {
     for (const id of seen) picked.add(id);
   }
   let ids = (roots.length || nbId) ? [...picked] : gnodes.map(n => n.id);
+  // §17 select.scopes: そのスコープに属するノードだけ（props.scope で判定）。
+  // スコープの中身へ降りる（ドリルダウン）ときに使う。roots は parent 連鎖を辿るので、
+  // フォルダ階層と一致しないスコープは roots では表せない。
+  if (Array.isArray(sel.scopes) && sel.scopes.length) {
+    const want = new Set(sel.scopes);
+    const inScope = gnodes.filter(n => want.has(n.props?.scope)).map(n => n.id);
+    ids = (roots.length || nbId) ? ids.filter(id => want.has(byId.get(id)?.props?.scope)) : inScope;
+  }
   // §16 select.ids: 明示的な白リスト。「どれを出すか」の判断を**抽出器が決めて焼く**ための口で、
   // 要約図（summaries）がこれを使う。roots/neighborsOf と併用したときは積（さらに絞る）。
   // 単独で使えば「この id だけ」。graph に無い id は黙って落とす（参照切れは warning・§1）。
@@ -887,6 +998,7 @@ function applyLayerBy(d, ids, byId) {
 // 派生 id の名前空間（どちらも派生物＝保存 JSON には出ない）
 const NESTED_GROUP_PREFIX = 'nested~';   // container グループ id: nested~<nodeId>
 const VIRTUAL_VIEW_PREFIX = 'view~';     // 仮想ビュー id: view~<nodeId>（クリック時に生成）
+const SCOPE_PREFIX = '~scope/';          // §17 スコープノード id: ~scope/<id>
 const NESTED_PAD_BASE = 20, NESTED_PAD_STEP = 22;
 
 // mode:'nested' の図を「コンテナ＋中のブロック」へ組み替える。
@@ -1026,10 +1138,14 @@ function liftEdges(d, sel, byId, gedges) {
   const shown = new Map();                      // graph id → 図ノード id
   for (const n of d.nodes) shown.set(n.entityId || n.id, n.id);
   if (!shown.size) return;
+  // §17: 「この箱の中身か」の判定は **スコープ → 親連鎖** の順。スコープはフォルダ階層と
+  // 一致しないので、親連鎖だけだとスコープの箱へエッジが集まらない。
   const ownerOf = gid => {
     let cur = gid;
     for (let guard = 0; cur && guard < 1000; guard++) {
       if (shown.has(cur)) return cur;
+      const sc = byId.get(cur)?.props?.scope;
+      if (sc && shown.has(SCOPE_PREFIX + sc)) return SCOPE_PREFIX + sc;
       cur = byId.get(cur)?.parent;
     }
     return null;
@@ -1494,8 +1610,9 @@ function validateProject(raw) {
   const diagrams = Array.isArray(raw?.diagrams) ? raw.diagrams : [raw];
   if (!diagrams.length) { errors.push('diagrams が空です'); return { errors, warnings }; }
   const ids = new Set();
+  const graphIds = new Set((raw?.graph?.nodes || raw?.entities || []).map(n => n?.id).filter(Boolean));
   for (const d of diagrams) {
-    const r = validate(d);
+    const r = validate(d, graphIds);
     errors.push(...r.errors.map(e => `[${d?.meta?.id || '?'}] ${e}`));
     warnings.push(...r.warnings.map(w => `[${d?.meta?.id || '?'}] ${w}`));
     const id = d?.meta?.id;
@@ -1572,6 +1689,7 @@ function stripLedgerArtifacts(d) {
 function stripDerived(d) {
   d.nodes = (d.nodes || []).filter(n => !n.__derived);
   d.edges = (d.edges || []).filter(e => !e.__derived);
+  for (const e of d.edges) delete e.__origin;   // §18 派生＝保存へ出さない
   // §7.4 合成した container グループも派生物（graph と select から作り直される）
   d.groups = (d.groups || []).filter(g => !g.__derived);
   for (const n of d.nodes) {
@@ -1584,6 +1702,7 @@ function stripDerived(d) {
     if ('__layerPrev' in n) { n.layer = n.__layerPrev; delete n.__layerPrev; }
     delete n.__childCount; delete n.__expanded;
     delete n.__visibility;   // §13 公開範囲も派生（正本は project.visibility と props.visibility）
+    delete n.__origin;       // §18 来歴も派生（正本は「__derived かどうか」＝その場で決まる）
   }
   // §7.5 合成レイヤ（layerBy）も剥がす。全部消えたら既定の単一レイヤへ戻す（normalize と同じ形）
   if (d.layers?.some(l => l.__derived)) {
@@ -4209,7 +4328,7 @@ class FlatSVGRenderer {
   renderEdge(edge) {
     const pts = this.edgePoints(edge);
     if (!pts) return null;
-    const g = el('g', { 'data-kind': 'edge', 'data-id': edge.id });
+    const g = el('g', { 'data-kind': 'edge', 'data-id': edge.id, 'data-origin': edge.__origin || '' });
     const style = edge.style || {};
     const accent = style.accent;
     // 段積み配線・orthogonal は角丸カギ線で描く
@@ -4245,7 +4364,7 @@ class FlatSVGRenderer {
   }
 
   renderNode(node) {
-    const g = el('g', { 'data-kind': 'node', 'data-id': node.id });
+    const g = el('g', { 'data-kind': 'node', 'data-id': node.id, 'data-origin': node.__origin || '' });
     const dy = this.dyOf(node.layer);
     if (dy) g.setAttribute('transform', `translate(0 ${dy})`);
     if (node.href) g.setAttribute('data-href', node.href);
@@ -5123,7 +5242,7 @@ class IsoSVGRenderer {
   }
 
   renderNode(node) {
-    const g = el('g', { 'data-kind': 'node', 'data-id': node.id });
+    const g = el('g', { 'data-kind': 'node', 'data-id': node.id, 'data-origin': node.__origin || '' });
     const elev = this.elev(node.layer);
     const style = node.style || {};
     // 3D 形状が解決できるノードは iso でも立体ピクトグラムで描く（3D と同一の見た目）
@@ -5210,7 +5329,7 @@ class IsoSVGRenderer {
       const t = total ? acc / total : 0;
       return isoProject(p.x, p.y, e1 + (e2 - e1) * smooth(t));
     });
-    const g = el('g', { 'data-kind': 'edge', 'data-id': edge.id });
+    const g = el('g', { 'data-kind': 'edge', 'data-id': edge.id, 'data-origin': edge.__origin || '' });
     const style = edge.style || {};
     const accent = style.accent;
     const d = 'M' + proj.map(p => `${p.x},${p.y}`).join(' L');
@@ -6260,7 +6379,53 @@ class DiagramEditor {
       : 'ロック解除 — 箱の移動・結線ができます。L で再ロック');
   }
 
-  toggleLock() { this.setLocked(!this.locked); }
+  toggleLock() {
+    // 生成図では錠を外させない（外しても canEditGeometry は false のままで、
+    // 「外したのに動かない」という分からない状態になるだけ）。理由と出口を出す。
+    if (this.isGenerated) {
+      this.setStatus('この図は宣言から自動生成されています。直すには rules を直すか、'
+        + '「複製して手描きにする」で自分の図にしてください', true);
+      return;
+    }
+    this.setLocked(!this.locked);
+  }
+
+  // §18.2 出口②: 生成図を複製して手描き図（authored）にする。
+  // 以後この図は追随しない代わりに自由に編集できる。元がどれで、そのときの中身が何だったかを
+  // 残しておき、**元が変わったら知らせる**（これが無いと複製した瞬間から静かに腐る。
+  // まさに手書きの System Overview がその状態だった）。
+  forkGeneratedView() {
+    const src = this.model;
+    if (!src?.meta?.generated) { this.setStatus('この図は生成図ではありません', true); return null; }
+    const base = `${src.meta.id}_fork`;
+    let id = base, n = 2;
+    while (this.project.diagrams.some(d => d.meta.id === id)) id = `${base}${n++}`;
+    // 派生ノード/エッジを「手で置いたもの」として焼き込む（位置も含めて固定＝以後追随しない）
+    const freeze = x => {
+      const c = structuredClone(x);
+      for (const k of Object.keys(c)) if (k.startsWith('__')) delete c[k];
+      return c;
+    };
+    const spec = {
+      meta: {
+        id, title: `${src.meta.title}（複製・手描き）`,
+        projection: src.meta.projection || 'flat',
+        caption: `${src.meta.id} を複製して手描きにした図。以後は自動で追随しない。`,
+        forkedFrom: src.meta.id,
+        forkedAtHash: viewContentHash(src),
+      },
+      layers: structuredClone(src.layers || []),
+      nodes: src.nodes.map(freeze),
+      edges: src.edges.map(freeze),
+      groups: (src.groups || []).filter(g => !g.__derived).map(freeze),
+    };
+    this.project.diagrams.push(spec);
+    this.pushHistory();
+    this.rebuildProject({ history: false });
+    this.goToDiagram(id);
+    this.setStatus(`${id} として複製しました。この図は手描き扱いになり、自動では追随しません`);
+    return id;
+  }
 
   updateLockButton() {
     const b = this.lockBtn;
@@ -6269,13 +6434,25 @@ class DiagramEditor {
     b.textContent = '';
     b.appendChild(iconSVG(document, this.locked ? 'shield-lock' : 'lock-open', 17));
     b.classList.toggle('active', this.locked);
-    b.title = this.locked ? 'ロック中: 図は動かせない（L で解除）' : 'ロック解除中: 箱を動かせる（L でロック）';
-    b.setAttribute('aria-pressed', String(this.locked));
+    if (this.isGenerated) {
+      b.title = 'この図は宣言から自動生成されています（編集不可）。'
+        + '直すには rules を直すか、File ▸「複製して手描きにする」';
+      b.dataset.generated = '1';
+    } else {
+      b.title = this.locked ? 'ロック中: 図は動かせない（L で解除）' : 'ロック解除中: 箱を動かせる（L でロック）';
+      delete b.dataset.generated;
+    }
+    b.setAttribute('aria-pressed', String(this.locked || this.isGenerated));
   }
 
   // キャンバス上で形を編集してよいか。ロック中はここが false になり、
   // 移動 / 結線 / 経由点 / ノード追加 / ラベル直接編集がすべて発火しない。
-  get canEditGeometry() { return this.editable && this.projection === 'flat' && !this.locked; }
+  get canEditGeometry() { return this.editable && this.projection === 'flat' && !this.locked && !this.isGenerated; }
+
+  // §18.2: 宣言から作られた図か。生成図はその場では直せない。
+  // 直しても**次の再抽出で必ず消える**（しかも黙って消える）＝「編集できる」は自由ではなく罠。
+  // 出口は 2 つだけ用意する: ① 規則（rules）を直す ② 複製して手描き図へ昇格させる。
+  get isGenerated() { return !!this.model?.meta?.generated; }
 
   // ─── パネル折りたたみ（携帯対応） ───
   readPanelState() {
@@ -6535,7 +6712,11 @@ class DiagramEditor {
     const ent = entityById(this.project, nodeId);
     if (!ent) return false;
     const origin = this.model;
-    const select = { roots: [nodeId], depth: 1, mode: 'nested' };
+    // §17 スコープの箱を掘るときは roots（parent 連鎖）ではなく scopes で選ぶ。
+    // スコープはフォルダ階層と一致しないので roots では中身を集められない。
+    const select = nodeId.startsWith(SCOPE_PREFIX)
+      ? { scopes: [nodeId.slice(SCOPE_PREFIX.length)], mode: 'nested' }
+      : { roots: [nodeId], depth: 1, mode: 'nested' };
     if (Array.isArray(origin?.select?.rels) && origin.select.rels.length) select.rels = [...origin.select.rels];
     const spec = {
       meta: { id, title: ent.name || nodeId, projection: origin?.meta?.projection || 'flat' },
@@ -6795,6 +6976,9 @@ class DiagramEditor {
       ['Add Node…（パレット）', () => this.showPaletteTab()],
       ['図を追加', () => this.addDiagram()],
       ['この図を entry に設定', () => { this.project.project.entry = this.currentId; this.refreshChrome(); this.pushHistory(); this.setStatus(`entry を '${this.currentId}' に設定`); }],
+      // §18.2 生成図の出口②。生成図を開いているときだけ押せる
+      () => [this.isGenerated ? '複製して手描きにする' : '複製して手描きにする（生成図のみ）',
+        () => this.forkGeneratedView()],
     ]));
     bar.appendChild(this.buildMenu('View', [
       ['2D（flat）', () => this.setProjection('flat')],
@@ -7830,10 +8014,40 @@ class DiagramEditor {
       .map(id => byId.get(id)?.meta.title || id);
     this.titleEl.textContent = [p.title, ...trail].join(' › ');
     this.titleEl.title = [p.title, ...trail].join(' › ');
+    this.renderOriginBadge();
     this.backBtn.disabled = !this.navStack.length;
     this.renderDiagramTree();
     this.renderEntityTree();
     this.updateProjectionButtons();
+  }
+
+  // §18: この図が「機械が出した事実」と「人が描いた解釈」のどちらでできているかを見出しに出す。
+  // 要素ごとの線の太さだけだと、図全体としてどれくらい信用できるかが一目で分からない。
+  renderOriginBadge() {
+    this.originBadge?.remove();
+    if (!this.model) return;
+    const { extracted, authored } = originBreakdown(this.model);
+    if (!extracted && !authored) return;
+    const el2 = document.createElement('span');
+    el2.className = 'de-origin-badge';
+    el2.dataset.extracted = String(extracted);
+    el2.dataset.authored = String(authored);
+    const part = (n, cls, text) => {
+      const s2 = document.createElement('span');
+      const sw = document.createElement('i');
+      sw.className = 'de-ob-swatch' + (cls ? ' ' + cls : '');
+      s2.appendChild(sw);
+      const b2 = document.createElement('b'); b2.textContent = String(n);
+      s2.appendChild(b2);
+      s2.appendChild(document.createTextNode(' ' + text));
+      return s2;
+    };
+    if (extracted) el2.appendChild(part(extracted, '', '自動'));
+    if (authored) el2.appendChild(part(authored, 'thick', '手描き'));
+    el2.title = `自動（決定論的に抽出）${extracted} ／ 手描き（人の解釈）${authored}\n`
+      + '細線＝自動・太線＝手描き。自動の分は再抽出のたびに作り直される。';
+    this.originBadge = el2;
+    this.titleEl.after(el2);
   }
 
   btn(label, fn) {
