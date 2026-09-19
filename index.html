@@ -4,12 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>開発用ビューア</title>
-<!--
-  ここは**開発・学習用**の配信先。EPOCH の本番パッケージは manga-epoch/viewer にある。
-  分けている理由: 商用の本番物は「購入者が見るもの」で、公開 URL に個人名を出さない・
-  余計なものを混ぜない、という要求がある。開発用と同じ場所に置くとその線引きが崩れる。
--->
+<title>ツール置き場</title>
 <style>
 body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
  background:#FAFAF7;color:#1A1A1A;line-height:1.9;
@@ -23,29 +18,22 @@ li:last-child{border-bottom:1px solid #E4E1D8}
 a{display:block;padding:14px 4px;text-decoration:none;color:#1A1A1A;font-size:14.5px}
 a:hover{background:#F4F2EC}
 a span{display:block;font-size:12.5px;color:#9A9488;margin-top:2px}
-.note{margin-top:28px;font-size:12.5px;color:#9A9488}
-.note a{display:inline;padding:0;color:#3f6178}
 </style>
 </head>
 <body>
 <div class="c">
-  <h1>開発用ビューア</h1>
-  <p class="lead">学習ノートの図解と、制作中のレビュー用ページ。</p>
+  <h1>ツール置き場</h1>
+  <p class="lead">単体で動く公開ツール。</p>
   <ul>
-    <li><a href="pub/robotics_ai/">ロボティクス AI 図解<span>pub/robotics_ai</span></a></li>
-    <li><a href="pub/g_test_2026_05/">G 検定 図解<span>pub/g_test_2026_05</span></a></li>
-    <li><a href="tools/diagram_drawer/">Diagram Engine<span>tools/diagram_drawer</span></a></li>
-    <li><a href="data/diagrams/life_structure.json">図版データ<span>data/diagrams/life_structure.json</span></a></li>
-    <li><a href="review/epoch/">EPOCH レビュー（制作用・全シーンの reviewer）<span>review/epoch</span></a></li>
+    <li><a href="tools/diagram_drawer/">Diagram Engine<span>宣言的ダイアグラム・エンジン（JSON → 2D / 2.5D / 3D）。HTML 1 枚で完結し、外部通信をしない</span></a></li>
   </ul>
 
-  <h1 style="margin-top:34px">EPOCH の公開版</h1>
-  <p class="lead">読者に配っている版。本番リポジトリ（manga-epoch/viewer）にあります。</p>
+  <h1 style="margin-top:34px">EPOCH</h1>
+  <p class="lead">読者に配っている版。本番サイトにあります。</p>
   <ul>
-    <li><a href="https://manga-epoch.github.io/viewer/pub/epoch/arc1/">Arc 1「黎明」<span>無料・全 3 話</span></a></li>
-    <li><a href="https://manga-epoch.github.io/viewer/pub/epoch/arc2/">Arc 2「覚醒」試読版<span>第 1 話＋解説第 1 章</span></a></li>
-    <li><a href="https://manga-epoch.github.io/viewer/unlock.html">Arc 2 製品版（アクセスコードで解錠）<span>コードは business/deliverables/ に保管</span></a></li>
-    <li><a href="https://manga-epoch.github.io/viewer/">作品紹介ページ<span>manga-epoch.github.io/viewer</span></a></li>
+    <li><a href="https://manga-epoch.pages.dev/pub/epoch/arc1/">Arc 1「黎明」<span>無料・全 3 話</span></a></li>
+    <li><a href="https://manga-epoch.pages.dev/pub/epoch/arc2/">Arc 2「覚醒」試読版<span>第 1 話＋解説第 1 章</span></a></li>
+    <li><a href="https://manga-epoch.pages.dev/">作品紹介ページ<span>manga-epoch.pages.dev</span></a></li>
   </ul>
 </div>
 </body>

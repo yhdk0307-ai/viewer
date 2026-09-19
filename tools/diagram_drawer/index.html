@@ -73,10 +73,14 @@
   position: absolute; right: 10px; top: 7px;
   background: none; border: 1px solid #fff; color: #fff; cursor: pointer; border-radius: 3px;
 }
-/* §13 公開範囲バッジ。private は地の模様（薄い）、public は目を引く（濃い＋下地）。
-   絵文字はフォント側で着色されるため opacity で強弱を付ける（fill は効かない環境がある）。 */
-.de-vis-private { opacity: .34; }
-.de-vis-public { opacity: 1; paint-order: stroke; stroke: var(--de-paper); stroke-width: 3px; }
+/* §13 公開範囲バッジ。private は地の模様（薄い）、public は目を引く（濃い）。
+   G16: 絵文字はフォントがカラーで描いてしまい単色線画の図から浮くので、Tabler の
+   線画アイコン（shield-lock / world）を使う。色はここで図の配色に合わせる。 */
+.de-vis-private, .de-vis-public {
+  fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
+}
+.de-vis-private { stroke: var(--de-soft); opacity: .5; }
+.de-vis-public { stroke: var(--de-accent); opacity: 1; }
 .de-port { fill: var(--de-fill); stroke: var(--de-line); stroke-width: 1.2; }
 .de-port:hover { stroke: var(--de-accent); stroke-width: 2; }
 .de-port-label { fill: var(--de-soft); font-family: var(--de-font); font-size: 9px; }
@@ -119,6 +123,10 @@
 .de-iconbtn:hover { border-color: var(--de-ink); }
 .de-iconbtn.active { background: var(--de-ink); color: var(--de-bg); border-color: var(--de-ink); }
 .de-iconbtn-wide { font-size: 11px; letter-spacing: .02em; }
+/* G16: アイコンバーに線画アイコンを置くとき用（iconSVG はクラスを付けないので、
+   ここで fill:none を与えないと塗り潰された黒い四角になる）。色は currentColor に
+   追従させるので、.active（反転）でも自然に白抜きになる。 */
+.de-iconbtn svg { stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 
 .de-sidebar { box-sizing: border-box; width: 230px; min-width: 200px; background: var(--de-panel); border-right: 1px solid var(--de-grid); display: flex; flex-direction: column; min-height: 0; }
 .de-entsec { flex: 0 0 auto; height: 38%; overflow-y: auto; }
@@ -4217,20 +4225,22 @@ class FlatSVGRenderer {
   }
 
   // §13 公開範囲バッジ（node.__visibility）。右下隅。
-  // 🔒 private は**淡く**（private リポジトリでは大多数がこれ＝地の模様として読ませる）、
-  // 🌐 public は**強く**（少数＝世界に出ているものが一目で浮く）。この強弱の付け方が要件で、
-  // 両方を同じ濃さで描くと 855 個の鍵に埋もれて 24 個の公開が見えなくなる。
+  // private は**淡く**（private リポジトリでは大多数がこれ＝地の模様として読ませる）、
+  // public は**強く**（少数＝世界に出ているものが一目で浮く）。この強弱の付け方が要件で、
+  // 両方を同じ濃さで描くと 855 個の鍵に埋もれて 19 個の公開が見えなくなる。
+  // G16: 絵文字（🔒/🌐）をやめて Tabler の線画アイコンにした。絵文字は OS のフォントが
+  // **カラー**で描くため（鍵が黄色くなる）、単色線画で通しているこの図のトンマナから浮く。
+  // 色は CSS 側（.de-vis-*）で --de-soft / --de-accent に寄せる。
   appendVisibilityBadge(g, node, h) {
     const v = node.__visibility;
     if (!v || node.collapsed) return;
     const S = nodeTextScale();
-    const bx = node.x + node.w - 10 * S, by = node.y + (h ?? node.h) - 9 * S;
     const pub = v === 'public';
-    g.appendChild(el('text', {
-      x: bx, y: by + 3.5 * S, 'text-anchor': 'middle',
-      class: pub ? 'de-vis-public' : 'de-vis-private',
-      'font-size': (pub ? 11 : 10) * S, 'font-family': 'var(--de-font)',
-    }, pub ? '🌐' : '🔒'));
+    const size = 13 * S;
+    const bx = node.x + node.w - size - 5 * S, by = node.y + (h ?? node.h) - size - 4 * S;
+    const ig = iconGroup(document, pub ? 'world' : 'shield-lock', pub ? 'de-vis-public' : 'de-vis-private');
+    ig.setAttribute('transform', `translate(${bx},${by}) scale(${size / 24})`);
+    g.appendChild(ig);
     this.appendTitle(g, `${pub ? '公開: この実体は誰でも読める場所にあります' : '非公開: この実体は公開されていません'}\n${node.sublabel || ''}${node.label || ''}`);
   }
 
@@ -5925,7 +5935,7 @@ class DiagramEditor {
   // ─── G15 ロックモード ───
   // 既定は**ロック**。「図を読むために触ったら箱が動いた」は、undo を知らないと戻せず、
   // しかも動いた事実に気づかないまま保存されうる（markHandPlaced で手置き扱いになる）ため、
-  // 既定を安全側に倒す。解除は 🔒 ボタンか L キーで、選択は端末に残す。
+  // 既定を安全側に倒す。解除は錠アイコンのボタンか L キーで、選択は端末に残す。
   readLocked() {
     try {
       const v = localStorage.getItem(LOCK_KEY);
@@ -5943,8 +5953,8 @@ class DiagramEditor {
     if (this.viewport) this.viewport.style.cursor = this.canEditGeometry ? 'default' : 'grab';
     this.updateLockButton();
     this.setStatus(this.locked
-      ? '🔒 ロック中 — 図は動かせません（閲覧・選択・展開・ドリルダウンは可）。L で解除'
-      : '🔓 ロック解除 — 箱の移動・結線ができます。L で再ロック');
+      ? 'ロック中 — 図は動かせません（閲覧・選択・展開・ドリルダウンは可）。L で解除'
+      : 'ロック解除 — 箱の移動・結線ができます。L で再ロック');
   }
 
   toggleLock() { this.setLocked(!this.locked); }
@@ -5952,7 +5962,9 @@ class DiagramEditor {
   updateLockButton() {
     const b = this.lockBtn;
     if (!b) return;
-    b.textContent = this.locked ? '🔒' : '🔓';
+    // G16: 絵文字ではなく線画アイコン（OS が鍵を黄色で描くと単色の UI から浮く）
+    b.textContent = '';
+    b.appendChild(iconSVG(document, this.locked ? 'shield-lock' : 'lock-open', 17));
     b.classList.toggle('active', this.locked);
     b.title = this.locked ? 'ロック中: 図は動かせない（L で解除）' : 'ロック解除中: 箱を動かせる（L でロック）';
     b.setAttribute('aria-pressed', String(this.locked));
@@ -6580,7 +6592,7 @@ class DiagramEditor {
     if (!this.editable) return;
     ib.appendChild(sep());
     // G15: ロックは最も押しやすい位置に置く（既定 ON なので「解除の入口」が見えている必要がある）
-    this.lockBtn = btn('🔒', '', () => this.toggleLock(), { role: 'toggle-lock' });
+    this.lockBtn = btn('', '', () => this.toggleLock(), { role: 'toggle-lock' });
     this.updateLockButton();
     this.undoBtn = btn('↶', '戻す (Ctrl+Z)', () => this.undo());
     this.redoBtn = btn('↷', 'やり直す (Ctrl+Shift+Z)', () => this.redo());
@@ -7246,24 +7258,34 @@ class DiagramEditor {
       + '<h4>実体を開く</h4>'
       + 'ノードを選ぶと要約の直下に <b>「開く」</b>（<kbd>O</kbd> キーでも可）。開き先は次の順で決まる:<br>'
       + '① <code>props.href</code>（明示 URL）→ ② <code>project.sourceRoot</code> ＋ <code>props.path</code> → ③ <code>props.preview</code>（抽出時に埋めた抜粋）。<br>'
-      + '<b>ローカル</b>（リポジトリ直下で http サーバ）なら sourceRoot 経由で<b>全ファイル</b>が開ける。'
-      + '<b>公開 viewer</b> では<b>公開済みのものだけ</b>（href 経由）で、未公開ファイルは preview があればそれ、無ければ理由を出す。<br>'
+      + '<b>認証付きの配信先</b>（Cloudflare Access 等）なら、実体も一緒に置けるので <code>sourceRoot</code> 経由で<b>全ファイルが全文で開ける</b>。'
+      + '公開ホストでは<b>公開済みのものだけ</b>（href 経由）で、未公開ファイルは preview があればそれ、無ければ理由を出す。<br>'
       + '<code>.html</code> はサンドボックス iframe ／ 画像は <code>&lt;img&gt;</code> ／ その他テキストはソース表示。'
       + '<b>別オリジンは取得も埋め込みもせず</b>「新しいタブで開く」リンクだけを出す。<br>'
       + '<b>ローカルのコツ</b>: <code>index.html?src=graph.json&amp;root=../</code> のように '
       + '<code>?root=</code> を足すと sourceRoot を上書きできる（root はこの HTML から見たリポジトリ直下への相対パス）。'
       + '<h4>ロック（既定 ON）</h4>'
-      + 'アイコンバーの <b>🔒</b>（<kbd>L</kbd> キー）で切替。<b>ロック中は図の形を変えられない</b>'
+      + 'アイコンバーの<b>錠アイコン</b>（<kbd>L</kbd> キー）で切替。<b>ロック中は図の形を変えられない</b>'
       + '＝箱の移動・結線・経由点・ノード追加・ラベルの直接編集・削除がすべて止まる。<br>'
       + '読むために触っただけで箱が動き、気づかないまま保存されるのを防ぐための既定。'
       + 'パン・ズーム・選択・▸ 展開・↗ ドリルダウン・右ペインの閲覧と編集はロック中でもできる。'
-      + '<h4>公開範囲（🔒 / 🌐）</h4>'
-      + '箱の右下の印が<b>その実体が世界から読めるか</b>。<b>🌐 は公開</b>（濃い＝少数なので浮く）、'
-      + '<b>🔒 は非公開</b>（淡い＝地の模様）。右ペインにも「公開範囲」の行が出る。<br>'
+      + '<h4>公開範囲（錠 / 地球）</h4>'
+      + '箱の右下の印が<b>その実体が世界から読めるか</b>。<b>地球＝公開</b>（濃い＝少数なので浮く）、'
+      + '<b>錠＝非公開</b>（淡い＝地の模様）。右ペインにも「公開範囲」の行が出る。<br>'
       + '判定は <code>props.visibility</code> → <code>props.href</code> の行き先が '
       + '<code>project.publicOrigins</code> にあるか → <code>project.visibility</code> の継承、の順。<br>'
       + '<b>private のプロジェクトを、そのプロジェクト自身が公開と宣言したオリジンから開くと'
       + '赤帯で警告する</b>。「非公開のはずの構造図が公開ホストに載っている」ことに気づくための線。'
+      + '<h4>構成を読み解く手順</h4>'
+      + 'リポジトリを抽出した図では、次の 3 つを行き来すると速い:<br>'
+      + '<b>① 掘る＝構造</b> … <b>Nested (drill-down)</b> で箱をクリック。'
+      + '箱がフォルダ/ファイル、矢印が依存。孫以下の依存は 1 本に集約されるので、'
+      + '<b>矢印が集中している箱がその階層の中心</b>だと分かる。<br>'
+      + '<b>② 右ペイン＝役割</b> … 箱を選ぶと説明が出る（抽出器がファイル冒頭のコメントから採るので実装と一致する）。<br>'
+      + '<b>③ 開く＝実装</b> … <kbd>O</kbd> で全文。ここまで来て初めて「何をしているか」が確かめられる。<br>'
+      + '<b>Imports</b> ビューはリポジトリ全体なので広すぎることが多い。'
+      + '特定フォルダの内部依存は ① のドリルダウンがその役割を果たす。<br>'
+      + 'ある階層でエッジが 0 本なのは異常ではない（互いに依存していないだけ）。'
       + '<h4>AI と往復する</h4>'
       + 'AI はツールの外にいる。会話は<b>ファイルで往復</b>する:<br>'
       + '<code>proposals.json</code> → File ▸ Open proposals… → 左の <b>PROPOSALS</b> タブで <b>op 単位に ✓ / ✗</b>'
@@ -7606,7 +7628,7 @@ class DiagramEditor {
     if (!geomEditable) {
       // パレットで追加タイプを選んだままロックされていると、押しても何も起きない死んだ UI になる。
       // 黙って無視せず、解除方法を出して武装を解く。
-      if (this.armedType && this.locked) { this.disarm(); this.setStatus('🔒 ロック中はノードを追加できません（L または 🔓 で解除）', true); return; }
+      if (this.armedType && this.locked) { this.disarm(); this.setStatus('ロック中はノードを追加できません（L キーまたは錠アイコンで解除）', true); return; }
       // G15: ロック中の編集モードでも「選択」は残す。選択できないとインスペクタが開かず、
       // 説明も 開く も読めない＝ロックが閲覧そのものを殺してしまう（ロックは形の編集だけを止める）。
       if (this.editable && this.renderer.hitTest) {
@@ -8151,9 +8173,11 @@ class DiagramEditor {
       const vis = visibilityOf(this.project, obj);
       if (vis) {
         const href = (obj.props?.href) || (ent?.props?.href);
+        // G16: ここも絵文字をやめる。OS が鍵を黄色で描くため、単色で通している
+        // この UI から浮く（キャンバスのバッジは Tabler の線画アイコンに置換済み）。
         wrap.appendChild(this.summaryRow('公開範囲', vis === 'public'
-          ? `🌐 公開${href ? ` · ${originLabel(href)}` : ''}`
-          : '🔒 非公開（この実体は公開されていません）'));
+          ? `公開${href ? ` · ${originLabel(href)}` : ''}`
+          : '非公開（この実体は公開されていません）'));
       }
     } else if (kind === 'edge') {
       const count = obj.props?.count;
