@@ -1335,6 +1335,13 @@ function applyLayouts(proj) {
       opts.containers = (d.groups || []).filter(g => g.__derived && g.__nodeId)
         .map(g => ({ id: g.id, parent: g.__containerParent || null, members: g.__directMembers || [], pad: g.pad }));
     }
+    // §21 層帯: 層が 2 つ以上ある図では、同じ層のノードを 1 本の帯へまとめる。
+    // 順は **z の降順**＝上端が最上段。iso の標高（z が高いほど上）と向きを揃えるためで、
+    // 逆順にすると帯のずれと標高のずれが打ち消し合って段が再び重なる（2026-09-19 実測）。
+    // layout.bandByLayer:false で従来の配置（層を見ない）へ戻せる。
+    if (opts.bandByLayer !== false && (d.layers || []).length >= 2) {
+      opts.layerBands = [...d.layers].sort((a, b) => (b.z || 0) - (a.z || 0)).map(l => l.id);
+    }
     let pos = null;
     if (opts.algorithm && opts.algorithm !== 'none') {
       const engine = resolveLayoutEngine();
@@ -1342,6 +1349,7 @@ function applyLayouts(proj) {
         const lnodes = d.nodes.map(n => ({
           id: n.id, w: n.w, h: n.h,
           parent: gById.get(n.entityId)?.parent,
+          layer: n.layer,
         }));
         const ledges = d.edges.map(e => ({ from: String(e.from).split(':')[0], to: String(e.to).split(':')[0], rel: e.rel }));
         try { pos = engine(lnodes, ledges, opts); } catch { pos = null; }
@@ -1775,7 +1783,11 @@ function normalizeInput(nodes, edges) {
     const id = String(n.id);
     if (seen.has(id)) continue;
     seen.add(id);
-    cleanNodes.push({ id, w: n.w > 0 ? n.w : 80, h: n.h > 0 ? n.h : 40, parent: n.parent != null ? String(n.parent) : undefined });
+    cleanNodes.push({
+      id, w: n.w > 0 ? n.w : 80, h: n.h > 0 ? n.h : 40,
+      parent: n.parent != null ? String(n.parent) : undefined,
+      layer: n.layer != null ? String(n.layer) : undefined,   // §21 層帯
+    });
   }
   const ids = new Set(cleanNodes.map(n => n.id));
   const cleanEdges = (edges || [])
@@ -1846,8 +1858,15 @@ function shiftToOrigin(pos, nodes) {
 }
 
 // 孤立ノード（座標未確定）をグリッドで末尾に配置する
-function placeIsolatedGrid(missingNodes, pos, startY, sep) {
-  const cols = Math.max(1, Math.ceil(Math.sqrt(missingNodes.length)));
+// aspect は「並べたい W/H」。既定 1 は正方形＝従来と同一（cols = ceil(√n)）。
+// §21 の層帯だけが 1 より大きい値を渡す: 帯の中の孤立ノードが正方形に固まると、
+// 横帯のはずの帯が四角くなって段が読めなくなる（実測: 5 件が 2 列 3 行）。
+// 箱は横長（190×64）なので、列数は箱の縦横比も入れて解く — n 件を W/H≈aspect に並べるには
+// cols ≈ √(n · aspect · h/w)。
+function placeIsolatedGrid(missingNodes, pos, startY, sep, aspect = 1) {
+  const avgW = missingNodes.reduce((s, n) => s + n.w, 0) / missingNodes.length || 1;
+  const avgH = missingNodes.reduce((s, n) => s + n.h, 0) / missingNodes.length || 1;
+  const cols = Math.max(1, Math.ceil(Math.sqrt(missingNodes.length * (aspect > 0 ? aspect : 1) * (avgH / avgW))));
   let x = 0, y = startY, rowH = 0, col = 0;
   for (const n of missingNodes) {
     pos.set(n.id, { x, y });
@@ -2628,6 +2647,90 @@ function layoutByComponents(nodes, edges, opts, run, algorithm) {
   return out;
 }
 
+// ─── §21 層帯（layer band）───────────────────────────────────────────────────────────
+// 層（node.layer）を宣言した図で、**同じ層のノードを 1 本の帯へまとめる**。
+//
+// なぜ要るか（2026-09-19 実測）:
+//   layered はグラフ構造だけで配置し node.layer を見ないので、異なる層のノードが空間的に
+//   入り混じる。要約図 overview_auto の実測値は
+//       DEVELOPMENT  y 154..466 ／ PUBLISH  y 154..466 ／ GOVERNANCE y 0
+//   で、2 つの層が**完全に同じ帯**を占めていた。結果、
+//     - flat: 層が 1 つも見えない（ただの依存グラフ）
+//     - iso : 段の標高より箱の間隔の方が大きいので、隣の段の箱と重なって読めない
+//   2026-09-19 に一度「層の帯（platform グループ）」だけを足して撤回したのは、配置を直さずに
+//   枠だけ描いたため**帯どうしの外接矩形が重なった**から。原因は枠ではなく配置だった。
+//
+// 帯の並び順は **z の降順**（上端が最上段）。iso の標高は z が高いほど上へ持ち上げるので、
+// 帯の並びを同じ向きに揃えると 2 つの効果が足し算になり、段が最大限に離れる。逆順にすると
+// 打ち消し合って再び重なる。
+//
+// 帯に分けたあとは層どうしが座標上で重ならないので、flat レンダラの段積み
+// （computeLayerDy＝重なったときだけ働く救済）は自然に発火しなくなる＝二重にずれない。
+const BAND_ASPECT = 4;   // 帯 1 本の目標 W/H（積む向きに対して横長）
+function layoutByLayerBands(nodes, edges, opts, run, algorithm) {
+  const byLayer = new Map();
+  for (const n of nodes) {
+    const k = n.layer || 'base';
+    if (!byLayer.has(k)) byLayer.set(k, []);
+    byLayer.get(k).push(n);
+  }
+  if (byLayer.size < 2) return null;   // 単層は帯にしない（従来と同一の結果）
+
+  // 宣言された順（呼び出し側が z 降順で渡す）→ 宣言に無い層は id 順（Map の挿入順に依存させない）
+  const declared = Array.isArray(opts.layerBands) ? opts.layerBands.filter(k => byLayer.has(k)) : [];
+  const rest = [...byLayer.keys()].filter(k => !declared.includes(k)).sort();
+  const keys = [...declared, ...rest];
+
+  const horizontal = opts.direction === 'LR';
+  // 帯どうしの隙間。ランク間より広く取る — 狭いと「同じ層の次のランク」と見分けがつかない。
+  const gap = Math.max(opts.rankSep || 90, 140);
+
+  const blocks = [];
+  for (const k of keys) {
+    const ln = byLayer.get(k);
+    const ids = new Set(ln.map(n => n.id));
+    const le = edges.filter(e => ids.has(e.from) && ids.has(e.to));
+    // ⚠ 帯の中は **layoutGraph をそのまま再帰**で回す（layoutByComponents ではなく）。
+    //    層をまたぐ辺しか持たないノードは**その帯の中では孤立**する（実例: GOVERNANCE の
+    //    1 件は 3 本とも層をまたぐ）。layoutByComponents はそれを配置せず、取りこぼしが
+    //    最後の救済グリッドへ落ちて**帯の外**に置かれる（実測: 他の帯と重なった）。
+    //    layoutGraph は孤立ノードの整列まで面倒を見るので、帯の中が必ず閉じる。
+    //   帯の中の流れは**積む向きと直交**させる（TB で積むなら中は LR）。同じ向きにすると
+    //   ランクが積む方向へ伸びて帯が縦長になり、3 段で図が極端に細長くなる
+    //   （実測: 全体 420×1092。直交させると 1105×568 で、旧・手描き図と同じ「横帯が 3 段」に見える）。
+    //   あわせて棚詰めの目標アスペクトも帯向きにする。既定の 1（正方形）のままだと、
+    //   連結成分が正方形に詰められて帯が四角くなる（実測: 5 件が 2 列 3 行の 470×272）。
+    const p = layoutGraph(ln, le, {
+      ...opts, layerBands: null,
+      direction: horizontal ? 'TB' : 'LR',
+      packAspect: horizontal ? 1 / BAND_ASPECT : BAND_ASPECT,
+    });
+    let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+    for (const n of ln) {
+      const q = p.get(n.id); if (!q) continue;
+      x1 = Math.min(x1, q.x); y1 = Math.min(y1, q.y);
+      x2 = Math.max(x2, q.x + n.w); y2 = Math.max(y2, q.y + n.h);
+    }
+    if (!isFinite(x1)) { x1 = 0; y1 = 0; x2 = 0; y2 = 0; }
+    blocks.push({ key: k, nodes: ln, pos: p, x1, y1, w: x2 - x1, h: y2 - y1 });
+  }
+
+  // 帯を「進行方向」へ積み、直交方向は中央で揃える（層ごとに幅が違っても軸が通る）
+  const crossMax = Math.max(...blocks.map(b => (horizontal ? b.h : b.w)));
+  const out = new Map();
+  let along = 0;
+  for (const b of blocks) {
+    const cross = Math.round((crossMax - (horizontal ? b.h : b.w)) / 2);
+    for (const n of b.nodes) {
+      const q = b.pos.get(n.id); if (!q) continue;
+      const dx = q.x - b.x1, dy = q.y - b.y1;
+      out.set(n.id, horizontal ? { x: along + dx, y: cross + dy } : { x: cross + dx, y: along + dy });
+    }
+    along += (horizontal ? b.w : b.h) + gap;
+  }
+  return out;
+}
+
 // layered のときだけ折返しオプションを差し込んで呼び直す（他アルゴリズムは run() のまま）
 function layoutLayeredOr(run, cn, ce, opts, variant, algorithm) {
   if (algorithm !== 'layered' || (!variant.maxRankWidth && !variant.maxBandLength)) return run(cn, ce);
@@ -2668,13 +2771,19 @@ function layoutGraph(nodes, edges, opts = {}) {
     // §7.4 nested 専用（他のアルゴリズムでは無視される）
     containers: Array.isArray(opts.containers) ? opts.containers : [],
     inner: opts.inner,
+    // §21 層帯: 層 id を **z の降順**（上端が最上段）で。省略＝帯にしない（従来と同一）。
+    layerBands: Array.isArray(opts.layerBands) && opts.layerBands.length >= 2 ? opts.layerBands : null,
   };
   const { nodes: cleanNodes, edges: cleanEdges } = normalizeInput(nodes, edges);
   if (options.algorithm === 'none' || cleanNodes.length === 0) return new Map();
 
   // grid は元からグリッド、nested は自前で全ノードを配置する（孤立ノードも container の中身なので
   // 主レイアウトから外してはならない）。他は孤立ノードを主レイアウトの外へ出す。
-  const isolatedIds = (options.algorithm === 'grid' || options.algorithm === 'nested')
+  // §21 層帯のときも外さない。孤立ノードをここで抜くと、最後の救済グリッドが**帯の外**（全体の
+  // 下端）へ置いてしまい、その層の帯が本来の高さより伸びて隣の帯と重なる（実測: 辺を 1 本も
+  // 持たない ~scope/advisory が DEVELOPMENT の帯からはみ出し、GOVERNANCE の帯と重なった）。
+  // 帯の中で再帰する layoutGraph が、その帯の中の孤立ノードとして面倒を見る。
+  const isolatedIds = (options.algorithm === 'grid' || options.algorithm === 'nested' || options.layerBands)
     ? new Set() : findIsolated(cleanNodes, cleanEdges, options);
   const mainNodes = cleanNodes.filter(n => !isolatedIds.has(n.id));
   const mainIds = new Set(mainNodes.map(n => n.id));
@@ -2692,7 +2801,11 @@ function layoutGraph(nodes, edges, opts = {}) {
   if (mainNodes.length === 0) {
     pos = new Map();
   } else if (PACKED_ALGOS[options.algorithm]) {
-    pos = layoutByComponents(mainNodes, mainEdges, options, PACKED_ALGOS[options.algorithm], options.algorithm);
+    // §21: layerBands が渡されていれば層ごとの帯にまとめる（単層なら null が返り従来どおり）
+    pos = (options.layerBands
+      ? layoutByLayerBands(mainNodes, mainEdges, options, PACKED_ALGOS[options.algorithm], options.algorithm)
+      : null)
+      || layoutByComponents(mainNodes, mainEdges, options, PACKED_ALGOS[options.algorithm], options.algorithm);
   } else {
     switch (options.algorithm) {
       case 'grid': pos = layoutGrid(mainNodes, options); break;
@@ -2709,6 +2822,7 @@ function layoutGraph(nodes, edges, opts = {}) {
     placeIsolatedGrid(
       missing.slice().sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)),
       pos, maxY ? maxY + options.nodeSep : 0, options.nodeSep,
+      options.packAspect,   // §21: 帯の中では横長に並べる（既定 1 のときは従来と同一）
     );
   }
 
