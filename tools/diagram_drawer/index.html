@@ -797,6 +797,13 @@ function selectNodeIds(sel, gnodes, gedges) {
     for (const id of seen) picked.add(id);
   }
   let ids = (roots.length || nbId) ? [...picked] : gnodes.map(n => n.id);
+  // §16 select.ids: 明示的な白リスト。「どれを出すか」の判断を**抽出器が決めて焼く**ための口で、
+  // 要約図（summaries）がこれを使う。roots/neighborsOf と併用したときは積（さらに絞る）。
+  // 単独で使えば「この id だけ」。graph に無い id は黙って落とす（参照切れは warning・§1）。
+  if (Array.isArray(sel.ids) && sel.ids.length) {
+    const want = new Set(sel.ids.filter(id => byId.has(id)));
+    ids = (roots.length || nbId) ? ids.filter(id => want.has(id)) : [...want];
+  }
   if (Array.isArray(sel.types) && sel.types.length) {
     const keep = new Set(sel.types);
     ids = ids.filter(id => keep.has(byId.get(id)?.type || 'block'));
@@ -866,7 +873,14 @@ function applyLayerBy(d, ids, byId) {
     }
     if (n.layer !== layerId) { n.__layerPrev = n.layer; n.layer = layerId; }
   }
-  if (assign.size) d.layers.sort((a, b) => a.z - b.z);
+  if (!assign.size) return;
+  // 既定の 'base' 段に 1 つもノードが残らなかったら落とす。残すと iso/3D で**空の段**が
+  // 描かれ、「ここには何かあるはずだが見えていない」と読めてしまう（要約図で実際に出た）。
+  // 落とすのは自動生成された既定段だけ（ラベル付き＝人が宣言した段は空でも残す）。
+  const used = new Set(d.nodes.map(n => n.layer));
+  d.layers = d.layers.filter(l => !(l.id === 'base' && !l.label && !used.has('base')));
+  if (!d.layers.length) d.layers = [{ id: 'base', label: '', z: 0, elevation: 0 }];
+  d.layers.sort((a, b) => (a.z || 0) - (b.z || 0));
 }
 
 // ─── §7.4 入れ子（nested / FFBD・IBD）と遅延ドリルダウン・エッジのリフティング ───
@@ -1000,6 +1014,54 @@ function applyNested(d, sel, ids, byId, childrenOf, gedges) {
   }
 }
 
+// §16 エッジのリフティング（nested を使わない図むけ）。
+// 規則は §7.4 の nested と**同じ**: contains 以外で、両端が「異なる表示ノードの子孫」にある
+// エッジを 1 本へ集約し `label = "<rel> ×N"` にする。違いは「表示ノード」の決め方だけで、
+// nested は container ブロック、こちらは図に載っている派生ノードそのもの。
+//
+// なぜ要るか: 要約図は第 1 階層の箱しか出さない。graph のエッジはファイル間（深い階層）に
+// あるので、素の deriveViews は「両端が図に載っているものだけ」を採る＝**1 本も残らない**。
+// 箱だけ出て関係が見えない図は、要約図としての役目を果たさない。
+function liftEdges(d, sel, byId, gedges) {
+  const shown = new Map();                      // graph id → 図ノード id
+  for (const n of d.nodes) shown.set(n.entityId || n.id, n.id);
+  if (!shown.size) return;
+  const ownerOf = gid => {
+    let cur = gid;
+    for (let guard = 0; cur && guard < 1000; guard++) {
+      if (shown.has(cur)) return cur;
+      cur = byId.get(cur)?.parent;
+    }
+    return null;
+  };
+  const cache = new Map();
+  const owner = gid => { if (!cache.has(gid)) cache.set(gid, ownerOf(gid)); return cache.get(gid); };
+  const lifted = new Map();
+  for (const ge of selectEdges(gedges, sel)) {
+    if (!ge || !ge.rel || ge.rel === 'contains') continue;
+    if (!byId.has(ge.from) || !byId.has(ge.to)) continue;
+    const a = owner(ge.from), b = owner(ge.to);
+    if (!a || !b || a === b) continue;                    // 箱の中に閉じる／図の外へ出る → 描かない
+    if (a === ge.from && b === ge.to) continue;           // 両端が直接載っている → 通常の派生エッジ
+    const key = `${ge.rel}~${a}~${b}`;
+    let agg = lifted.get(key);
+    if (!agg) { agg = { rel: ge.rel, a, b, count: 0, samples: [] }; lifted.set(key, agg); }
+    agg.count++;
+    if (agg.samples.length < 5) agg.samples.push(ge.id);
+  }
+  const have = new Set(d.edges.map(e => e.id));
+  for (const [key, agg] of lifted) {
+    const id = `lift~${key}`;
+    if (have.has(id)) continue;
+    d.edges.push(applyEdgeLook(Object.assign({}, DEFAULT_EDGE, {
+      id, rel: agg.rel, from: shown.get(agg.a), to: shown.get(agg.b),
+      label: `${agg.rel} ×${agg.count}`,
+      props: { count: agg.count, samples: agg.samples },
+      __lifted: true, __derived: true,
+    })));
+  }
+}
+
 // §2-1: select を持つ図へ graph からノード/エッジを合成する（__derived）。
 // 同 id の手置きノード/エッジが既にあれば手置きが勝つ（位置・見た目の上書き）。
 // 手置き側に entityId が無いときだけ graph id で補い、保存時に剥がす（__derivedEntityId）。
@@ -1091,6 +1153,10 @@ function deriveViews(proj) {
     // §7.4 入れ子（container 合成・ドリルダウンリンク・エッジのリフティング）。
     // ノード集合を組み替えるので、ポート合成（§7.2）やレイヤ写像（§7.5）より先に行う。
     if (sel.mode === 'nested') applyNested(d, sel, ids, byId, childrenOf, gedges);
+    // §16 select.lift: nested を使わない図でも子孫どうしのエッジを束ねて上げる。
+    // 要約図は「第1階層の箱」だけを出すので、エッジ（ファイル間の import 等）は**必ず**
+    // 両端とも図に載らず 1 本も描かれない＝「箱は出たが関係が見えない」図になる。
+    else if (sel.lift) liftEdges(d, sel, byId, gedges);
     applyTreePorts(d, new Map(d.nodes.map(n => [n.id, n])));   // §7.2
     applyLayerBy(d, ids, byId);                                 // §7.5
   }
@@ -4731,6 +4797,7 @@ const isoWrapCols = (px = getNodeFontPx()) => Math.max(6, Math.round(18 * (13 / 
 const ISO_MIN_FONT = 10;
 const ISO_LABEL_GAP = 6;        // 隣のラベルとの間に必ず残す余白（px）
 const ISO_MIN_ROOM = 28;        // これ以上は幅で分離できない（＝縦に並んでいる）と判断する閾値
+const ISO_MAX_DY = 64;          // 縦ずらしの上限（これ以上動かすとどの箱の札か分からなくなる）
 
 // 1 ノード分の希望形（予算 room に収まる最大の px と行分け）。
 // room に収まらないときは ISO_MIN_FONT まで落とし、それでも溢れるなら末尾を … で詰める。
@@ -4763,8 +4830,9 @@ function isoEllipsize(text, room, px) {
 const ISO_BOX_SAFETY = 2;       // 上下左右に足す安全マージン（px）
 function isoLabelBox(anchor, fit) {
   const w = Math.max(...fit.lines.map(l => textWidthPx(l, fit.px))) + ISO_BOX_SAFETY * 2;
-  const top = anchor.y - fit.px - ISO_BOX_SAFETY;
-  const bottom = anchor.y + isoLineH(fit.px) * (fit.lines.length - 1) + fit.px * 0.35 + ISO_BOX_SAFETY;
+  const y = anchor.y + (fit.dy || 0);
+  const top = y - fit.px - ISO_BOX_SAFETY;
+  const bottom = y + isoLineH(fit.px) * (fit.lines.length - 1) + fit.px * 0.35 + ISO_BOX_SAFETY;
   return { x1: anchor.x - w / 2, x2: anchor.x + w / 2, y1: top, y2: bottom };
 }
 
@@ -4776,14 +4844,20 @@ function planIsoLabels(entries) {
   const plan = new Map();
   const room = new Map();
   const maxLines = new Map();
+  const dy = new Map();
   const refit = id => {
     const e = entries.find(x => x.id === id);
-    plan.set(id, isoLabelFit(e.label, room.get(id), maxLines.get(id)));
+    const fit = isoLabelFit(e.label, room.get(id), maxLines.get(id));
+    fit.dy = dy.get(id) || 0;
+    plan.set(id, fit);
   };
   for (const e of entries) {
     room.set(e.id, Infinity);
     maxLines.set(e.id, 2);
-    plan.set(e.id, isoLabelFit(e.label, Infinity, 2));
+    dy.set(e.id, 0);
+    const fit = isoLabelFit(e.label, Infinity, 2);
+    fit.dy = 0;
+    plan.set(e.id, fit);
   }
   for (let round = 0; round < 12; round++) {
     const boxes = entries.map(e => ({ e, b: isoLabelBox(e.anchor, plan.get(e.id)) }));
@@ -4808,6 +4882,16 @@ function planIsoLabels(entries) {
         if (dx - ISO_LABEL_GAP <= ISO_MIN_ROOM) {
           for (const S of [A, B]) {
             if (maxLines.get(S.e.id) > 1) { maxLines.set(S.e.id, 1); refit(S.e.id); }
+          }
+          // 幅の下限（ISO_MIN_ROOM）に当たってもまだ触れているなら、**縦にずらす**しかない。
+          // 下限を外して両方を潰すと "…" だけの読めない札が 2 枚残るだけなので、そうはしない。
+          // 実測: overview_auto で knowledge と ~ext/viewer_prod が 10px・省略済みでも 2.5×5.8px
+          // 触れていた（別レイヤで投影位置がほぼ重なるため）。下にある方をさらに下げる。
+          const lower = A.e.anchor.y >= B.e.anchor.y ? A : B;
+          const cur = dy.get(lower.e.id) || 0;
+          if (cur < ISO_MAX_DY) {
+            dy.set(lower.e.id, Math.min(ISO_MAX_DY, cur + oy + ISO_LABEL_GAP));
+            refit(lower.e.id);
           }
         }
       }
@@ -5062,7 +5146,7 @@ class IsoSVGRenderer {
         const fit = this.fitFor(node);
         // font-size は style に入れる（属性だと theme.css の .de-node-label に負けて効かない）
         fit.lines.forEach((line, i) => g.appendChild(el('text', {
-          class: 'de-node-label', x: topPt.x, y: topPt.y - 10 + i * isoLineH(fit.px), 'text-anchor': 'middle',
+          class: 'de-node-label', x: topPt.x, y: topPt.y - 10 + (fit.dy || 0) + i * isoLineH(fit.px), 'text-anchor': 'middle',
           style: `paint-order: stroke; stroke: var(--de-paper); stroke-width: 3px; font-size: ${fit.px.toFixed(2)}px;`,
         }, line)));
       }
@@ -5103,7 +5187,7 @@ class IsoSVGRenderer {
       const fit = this.fitFor(node);
       fit.lines.forEach((line, i) => {
         const t = el('text', {
-          class: 'de-node-label', x: center.x, y: labelY + i * isoLineH(fit.px), 'text-anchor': 'middle',
+          class: 'de-node-label', x: center.x, y: labelY + (fit.dy || 0) + i * isoLineH(fit.px), 'text-anchor': 'middle',
           style: `paint-order: stroke; stroke: var(--de-paper); stroke-width: 3px; font-size: ${fit.px.toFixed(2)}px;`,
         }, line);
         g.appendChild(t);
@@ -7485,11 +7569,17 @@ class DiagramEditor {
       + '<code>?root=</code> を足すと sourceRoot を上書きできる（root はこの HTML から見たリポジトリ直下への相対パス）。<br>'
       + '<b>フォルダには「開く」が出ない</b>。実体がディレクトリで、配信はファイルしか置かないため必ず 404 になる。'
       + '代わりに <b>「中を見る（子の件数）」</b>が出る＝そこは<b>掘る</b>場所。'
-      + '<h4>ロック（既定 ON）</h4>'
+      + '<h4>ロック（既定 ON）と ダブルクリック</h4>'
       + 'アイコンバーの<b>錠アイコン</b>（<kbd>L</kbd> キー）で切替。<b>ロック中は図の形を変えられない</b>'
-      + '＝箱の移動・結線・経由点・ノード追加・ラベルの直接編集・削除がすべて止まる。<br>'
+      + '＝箱の移動・結線・経由点・ノード追加・削除がすべて止まる。<br>'
       + '読むために触っただけで箱が動き、気づかないまま保存されるのを防ぐための既定。'
-      + 'パン・ズーム・選択・▸ 展開・↗ ドリルダウン・右ペインの閲覧と編集はロック中でもできる。'
+      + 'パン・ズーム・選択・▸ 展開・↗ ドリルダウン・右ペインの閲覧と編集はロック中でもできる。<br>'
+      + '<b>ダブルクリック＝その箱の中へ掘る</b>（ロック中＝既定）。読むときに一番よく使う操作なので、'
+      + 'こちらを既定にした。<b>ロックを外すとダブルクリックはラベルの直接編集</b>に変わる。'
+      + '<h4>つながりだけを見る（近傍フォーカス）</h4>'
+      + '箱か線を<b>クリックすると、それと直接つながっているものだけが残り、他は淡くなる</b>。'
+      + '消さずに淡くしているのは、全体の形が消えると位置関係の手がかりまで失われるため。<br>'
+      + '何もない所をクリック（または <kbd>Esc</kbd>）で元に戻る。2D でも 2.5D でも効く。'
       + '<h4>公開範囲（錠 / 地球）</h4>'
       + '箱の右下の印が<b>その実体が世界から読めるか</b>。<b>地球＝公開</b>（濃い＝少数なので浮く）、'
       + '<b>錠＝非公開</b>（淡い＝地の模様）。右ペインにも「公開範囲」の行が出る。<br>'
