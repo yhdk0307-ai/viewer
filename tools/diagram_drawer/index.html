@@ -2753,6 +2753,66 @@ function layoutByComponents(nodes, edges, opts, run, algorithm) {
 // 帯に分けたあとは層どうしが座標上で重ならないので、flat レンダラの段積み
 // （computeLayerDy＝重なったときだけ働く救済）は自然に発火しなくなる＝二重にずれない。
 const BAND_ASPECT = 4;   // 帯 1 本の目標 W/H（積む向きに対して横長）
+
+// 帯どうしを繋ぐ線を短くする（層状レイアウトの重心スウィープ）。
+//
+// なぜ要るか: 帯の中身は layoutGraph へ再帰するとき **両端が同じ帯にある辺だけ**を渡している
+// （帯の外へ出る辺は構造として扱えないため）。つまり帯の中の並び順は、上下の帯と何が繋がって
+// いるかを一切見ずに決まる。結果、繋がっている箱が左右の端どうしに離れて置かれ、線が図を
+// 斜めに横断する。実測（2026-09-20・life の System Overview）: 帯をまたぐ 6 本の横ずれ合計 908px、
+// 最悪の線 EPOCH → Skills & Agents が直線距離の **x1.82**。
+//
+// 何をするか: 箱の**行**（積む向きの座標が同じもの）の中だけで、横位置の枠（スロット）を
+// 入れ替える。各箱の並び替えキーは、帯をまたぐ相手の横位置の平均（重心）。相手がいない箱は
+// 現在位置をキーにするのでその場に留まる。行の中の入れ替えなので、
+//   - 箱どうしは重ならない（元からあった横位置を配り直すだけ）
+//   - 帯の外接矩形が変わらない＝プレートの幅揃え（§23.1）にも接地枠にも影響しない
+// 下降・上昇の 2 方向を交互に回すのは、片方向だけだと最初に置いた帯が動かないため。
+// 実測の効果はこのファイルの回帰検査（layout_algos.test.mjs）に残す。
+function alignBandsByBarycenter(out, nodes, edges, keys, byLayer, horizontal) {
+  const byId = new Map(nodes.map(n => [n.id, n]));
+  const endId = v => String(v).split(':')[0];
+  const nbrs = new Map(nodes.map(n => [n.id, []]));
+  for (const e of edges) {
+    const a = byId.get(endId(e.from)), b = byId.get(endId(e.to));
+    if (!a || !b || (a.layer || 'base') === (b.layer || 'base')) continue;   // 帯の中の辺は関係ない
+    nbrs.get(a.id).push(b.id); nbrs.get(b.id).push(a.id);
+  }
+  if (![...nbrs.values()].some(v => v.length)) return;    // 帯をまたぐ辺が無ければ何もしない
+
+  const cross = id => { const p = out.get(id), n = byId.get(id); return horizontal ? p.y + n.h / 2 : p.x + n.w / 2; };
+  const along = id => { const p = out.get(id); return horizontal ? p.x : p.y; };
+
+  const rowsOf = k => {
+    const rows = new Map();
+    for (const n of byLayer.get(k)) {
+      if (!out.has(n.id)) continue;
+      const a = Math.round(along(n.id));
+      if (!rows.has(a)) rows.set(a, []);
+      rows.get(a).push(n.id);
+    }
+    return [...rows.values()].filter(r => r.length > 1);
+  };
+
+  for (let pass = 0; pass < 4; pass++) {
+    const order = pass % 2 ? [...keys].reverse() : keys;
+    for (const k of order) {
+      for (const row of rowsOf(k)) {
+        const key = new Map(row.map(id => {
+          const ns = nbrs.get(id).filter(o => out.has(o));
+          return [id, ns.length ? ns.reduce((s, o) => s + cross(o), 0) / ns.length : cross(id)];
+        }));
+        const slots = row.map(id => (horizontal ? out.get(id).y : out.get(id).x)).sort((a, b) => a - b);
+        const sorted = [...row].sort((a, b) => (key.get(a) - key.get(b)) || (a < b ? -1 : 1));
+        sorted.forEach((id, i) => {
+          const p = out.get(id);
+          out.set(id, horizontal ? { x: p.x, y: slots[i] } : { x: slots[i], y: p.y });
+        });
+      }
+    }
+  }
+}
+
 function layoutByLayerBands(nodes, edges, opts, run, algorithm) {
   const byLayer = new Map();
   for (const n of nodes) {
@@ -2814,6 +2874,7 @@ function layoutByLayerBands(nodes, edges, opts, run, algorithm) {
     }
     along += (horizontal ? b.w : b.h) + gap;
   }
+  alignBandsByBarycenter(out, nodes, edges, keys, byLayer, horizontal);
   return out;
 }
 
