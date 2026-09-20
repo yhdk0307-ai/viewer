@@ -161,6 +161,9 @@
 /* MODEL 内の小セクション見出し（フォルダの木 / SCOPES / EXTERNAL）。h3 より一段弱い扱いにして
    「同格の3セクション」ではなく「主役はフォルダの木、あとの2つは補助的な一覧」と読めるようにする。 */
 .de-subhead { margin: 10px 0 4px; font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--de-soft); opacity: .8; }
+/* NEXT.md 項目5-B: MODEL の木が全ファイルではないことを見出し直下で言う一言。h3 より弱く、
+   本文(11px)よりさらに弱いキャプション扱い。hover で内訳が出る（title 属性・cursor で示唆）。 */
+.de-model-coverage { margin: 0 0 8px; font-size: 10px; color: var(--de-soft); cursor: help; }
 .de-palette { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
 .de-palette button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; border: 1px solid var(--de-grid); border-radius: 4px; background: var(--de-fill); color: var(--de-ink); font-size: 10px; font-family: var(--de-font); cursor: pointer; }
 .de-palette button:hover { border-color: var(--de-accent); }
@@ -7625,7 +7628,14 @@ class DiagramEditor {
     const sb = document.createElement('div'); sb.className = 'de-sidebar'; this.sidebar = sb;
     // MODEL（graph.nodes ＝全アイテムの木）＋検索。graph が空なら非表示。data-role は互換のため据え置き。
     this.entSec = document.createElement('div'); this.entSec.className = 'de-section de-entsec de-collapsed';
-    this.entSec.innerHTML = '<h3>MODEL</h3>';
+    const entH3 = document.createElement('h3'); entH3.textContent = 'MODEL';
+    // NEXT.md 項目5-B（網羅性）: MODEL の木は「リポジトリの全ファイル」ではない
+    // （rules.exclude / .gitignore が明示的に外した場所がある）。それがどこにも出ていないと
+    // 「これで全部だ」と誤読される（ユーザー指摘）ので、抽出器が project.coverage に書いた
+    // 走査・表示・除外の件数をここに出す。hover（title 属性）で規則ごとの内訳が読める。
+    this.entCoverage = document.createElement('div'); this.entCoverage.className = 'de-model-coverage';
+    this.entCoverage.style.display = 'none';
+    this.entSec.append(entH3, this.entCoverage);
     this.entSearch = document.createElement('input');
     this.entSearch.className = 'de-entsearch'; this.entSearch.placeholder = 'MODEL 検索…';
     this.entSearch.dataset.role = 'entity-search';
@@ -8107,8 +8117,30 @@ class DiagramEditor {
 
   // フォルダツリー（MBSE エンティティ階層＝フォルダ・parent 隣接・cycle 安全）。
   // フォルダアイコン＋展開折りたたみ＋ツリー字下げ。検索時はフラット絞り込み。台帳が空なら非表示。
+  // NEXT.md 項目5-B: MODEL の見出し直下に「追跡 N 件中 M 件を表示（除外 K 件）」を出す。
+  // project.coverage が無い（rules 側が--no-descriptions等で持たせていない・古いグラフ）ときは
+  // 何も足さない ＝ この機能が無かった頃と表示が変わらない。
+  renderModelCoverage() {
+    if (!this.entCoverage) return;
+    const cov = this.project?.project?.coverage;
+    if (!cov || typeof cov.filesScanned !== 'number') { this.entCoverage.style.display = 'none'; return; }
+    this.entCoverage.style.display = '';
+    // ⚠「追跡」ではなく「走査」。filesScanned は抽出器がディスク上で見たファイル数で、
+    //   git の追跡ファイル数とは一致しない（実測 2026-09-20・life: 走査 1753 / git 追跡 1651。
+    //   差の主因は .gitignore 済みの tools/diagram_engine/scratchpad/ 101 件）。
+    //   網羅性を答えるための表示なので、ここで両者を取り違えると質問の答えそのものが嘘になる。
+    this.entCoverage.textContent = `走査 ${cov.filesScanned} 件中 ${cov.filesShown} 件を表示（除外 ${cov.filesExcluded} 件）`;
+    const rules = Array.isArray(cov.excludedByRule) ? cov.excludedByRule : [];
+    // hover で内訳（どの規則で何件）。個々の除外ファイル名は project.coverage 自体が持たない
+    // （GRAPH_CONTRACT §27・§13 と同じ理由）ので、ここに出す内訳も規則名と件数だけ。
+    this.entCoverage.title = rules.length
+      ? '除外の内訳（規則 → 件数）:\n' + rules.map(r => `  ${r.pattern} → ${r.count}`).join('\n')
+      : '';
+  }
+
   renderEntityTree() {
     if (!this.entTree || !this.entSec) return;
+    this.renderModelCoverage();
     const ents = this.project.entities || [];
     this.entSec.classList.toggle('de-collapsed', ents.length === 0);
     // 台帳空でも古い行を残さない（別図切替時の DOM 残留防止）
@@ -8351,6 +8383,18 @@ class DiagramEditor {
       + '<b>View</b>: 2D ／ 2.5D iso ／ 3D ／ Fit ／ Theme ／ 文字サイズ ／ ペイン ／ Layout<br>'
       + '<b>Help</b>: この使い方'
       + '<h4>左パネル</h4><b>MODEL</b>（graph 全アイテムの木・上下比率はスプリッタでリサイズ）／ 下部タブ <b>VIEWS</b>・Palette・PROPOSALS'
+      + '<h4>VIEWS の出どころ（3種類）</h4>'
+      + 'VIEWS に並ぶ図は出どころが違う3種類が混ざる。**図を開くとキャプションに必ずどれかが書いてある**ので、'
+      + '並び順やアイコンではなくキャプションで見分ける:<br>'
+      + '<b>① 既定ビュー</b> … Directory / Dependencies (imports) / Nested (drill-down) と、'
+      + '<code>rules.relations</code> が宣言した関係ごとに1枚（例: Publish flow (publishes)）。'
+      + '<code>graph.edges</code> から抽出器が必ず作る。手描きではなく、再抽出のたびに作り直される。<br>'
+      + '<b>② 自動生成</b> … <code>rules.summaries[]</code>の宣言（『どこから・何件・何を隠すか』）から抽出器が作る要約図。'
+      + 'ファイルが増減しても再抽出のたびに追随する。<br>'
+      + '<b>③ 手描き</b> … <code>overlay</code>（このプロジェクトなら <code>life_overlay.json</code>）に人が置いた図。'
+      + 'グラフからは作れない**規則**（例: CI の配信ルール）を描くときに使う。再抽出では消えず、'
+      + '**自動更新もされない**ので、実態とずれたら手で直す。<br>'
+      + 'どれも他プロジェクトへ持って行ける一般則で、図名を life 固有に決め打ちしていない。'
       + '<h4>右パネル</h4>プロパティ（要約は常時表示・詳細はサブタイトルのクリックで折りたたみ）／ JSON（現在の図・編集すると即反映）'
       + '</div>';
     const foot = document.createElement('div'); foot.className = 'de-modal-foot';
