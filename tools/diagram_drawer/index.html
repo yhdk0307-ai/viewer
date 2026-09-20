@@ -631,7 +631,7 @@ function resolveEndpoint(model, ref) {
 // グループの実効矩形: x,y,w,h 明示ならそれを、なければ members のバウンディング+pad
 // group.pad があればそれが呼び出し側の既定 pad より優先する（§7.4 入れ子コンテナは、外側ほど
 // 大きい pad を持たせて内側のコンテナとの間に隙間を作る。レンダラごとに pad が違っても形が崩れない）。
-function groupRect(model, group, pad = 24) {
+function rawGroupRect(model, group, pad = 24) {
   if ([group.x, group.y, group.w, group.h].every(v => typeof v === 'number')) {
     return { x: group.x, y: group.y, w: group.w, h: group.h };
   }
@@ -641,6 +641,59 @@ function groupRect(model, group, pad = 24) {
   const x1 = Math.min(...members.map(n => n.x)), y1 = Math.min(...members.map(n => n.y));
   const x2 = Math.max(...members.map(n => n.x + n.w)), y2 = Math.max(...members.map(n => n.y + n.h));
   return { x: x1 - pad, y: y1 - pad - 14, w: x2 - x1 + pad * 2, h: y2 - y1 + pad * 2 + 14 };
+}
+
+// §23.1 段の帯（platform）は**幅を揃える**。中身の数でそのまま幅が変わると、同じ「段」なのに
+// 大きさの違う板が並び、板の大小が何かを意味しているように読めてしまう
+// （実測: GOVERNANCE 238 / DEVELOPMENT 698 / PUBLISH 518）。揃えるのは**積む向きと直交する軸**
+// だけで、進行方向の厚みは中身に従う＝「段ごとに中身の多さは違う」は保つ。
+// 揃える軸は板の並び方から決める（互いに素なのが y なら縦積み＝幅 x を揃える）。
+// レンダラ 3 つが同じ関数を通るので、2D・2.5D・3D で自動的に一致する。
+function alignPlatforms(model, rect, pad) {
+  const plates = (model.groups || []).filter(g => g.kind === 'platform');
+  if (plates.length < 2) return rect;
+  // ⚠ 他の板も**呼び出し元と同じ余白**で測る。24 固定にしていたとき、webgl（pad 40）から呼ぶと
+  //    自分の高さは pad 40・揃えた幅は pad 24 由来という食い違いが出た。
+  const rects = plates.map(g => rawGroupRect(model, g, pad));
+  const disjoint = (a, b, lo, hi) => a[hi] <= b[lo] || b[hi] <= a[lo];
+  const spans = r => ({ x0: r.x, x1: r.x + r.w, y0: r.y, y1: r.y + r.h });
+  let vertical = 0, horizontal = 0;
+  for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
+    const a = spans(rects[i]), b = spans(rects[j]);
+    if (disjoint(a, b, 'y0', 'y1')) vertical++;
+    if (disjoint(a, b, 'x0', 'x1')) horizontal++;
+  }
+  if (vertical === 0 && horizontal === 0) return rect;         // 重なっている＝揃える意味が無い
+  if (vertical >= horizontal) {                                 // 縦積み → 幅を揃える
+    const x = Math.min(...rects.map(r => r.x));
+    const w = Math.max(...rects.map(r => r.x + r.w)) - x;
+    return { ...rect, x, w };
+  }
+  const y = Math.min(...rects.map(r => r.y));                   // 横並び → 高さを揃える
+  const h = Math.max(...rects.map(r => r.y + r.h)) - y;
+  return { ...rect, y, h };
+}
+
+// §23.1b 3D では段を**真上に積む**（板の footprint を揃え、標高だけで分ける）。
+// 2D / 2.5D は帯をずらして並べることで層を見せているが、3D は標高が本物の第 3 軸なので
+// ずらす必要が無く、ずらすと階段状になって「同じ場所の別の層」に見えない。
+// 戻り値は層 id → その層の帯が共通原点からどれだけずれているか。webgl はこれを**引く**。
+// platform の板が無い図・板が重なっている図では全部 0（＝従来と同一）。
+function layerBandOffset(model, pad = 24) {
+  const out = new Map();
+  const plates = (model.groups || []).filter(g => g.kind === 'platform' && g.layer);
+  if (plates.length < 2) return out;
+  const rects = plates.map(g => ({ layer: g.layer, r: groupRect(model, g, pad) }));
+  const x0 = Math.min(...rects.map(o => o.r.x)), y0 = Math.min(...rects.map(o => o.r.y));
+  for (const o of rects) out.set(o.layer, { dx: o.r.x - x0, dy: o.r.y - y0 });
+  return out;
+}
+
+function groupRect(model, group, pad = 24) {
+  const rect = rawGroupRect(model, group, pad);
+  if (group.kind !== 'platform') return rect;
+  if ([group.x, group.y, group.w, group.h].every(v => typeof v === 'number')) return rect;  // 明示矩形は人の意図
+  return alignPlatforms(model, rect, typeof group.pad === 'number' && group.pad >= 0 ? group.pad : pad);
 }
 
 // 論理キャンバスサイズ（meta.size 優先、なければ内容から）
@@ -953,6 +1006,11 @@ function applyTreePorts(d, byNodeId) {
     const fn = byNodeId.get(fromId), tn = byNodeId.get(toId);
     if (!fn || !tn) continue;
     if (String(e.from).includes(':') || String(e.to).includes(':')) continue;  // 既に明示ポート指定
+    // §23.4 **層をまたぐ線にはポートを固定しない**。TB では out=下・in=上 と決め打ちなので、
+    // 上の段へ向かう線が「下から出て上へ入る」ことになり、箱を避けて大きく回り込む
+    // （実測: diagram_engine → viewer_private が直線距離の 2.2 倍）。
+    // ポートを付けなければルータが向かい合う辺を自分で選ぶ（autoSide）。
+    if ((fn.layer || 'base') !== (tn.layer || 'base')) continue;
     ensurePort(fn, 'out', outSide);
     ensurePort(tn, 'in', inSide);
     e.from = `${fromId}:out`; e.to = `${toId}:in`;
@@ -1165,14 +1223,32 @@ function liftEdges(d, sel, byId, gedges) {
     agg.count++;
     if (agg.samples.length < 5) agg.samples.push(ge.id);
   }
+  // §23.2 双方向は 1 本に束ねる。A→B と B→A を別々に描くと、**復路が往路を避けて回り込み**、
+  // 13 折れの弧になる（実測: Knowledge Base ↔ EPOCH がまさにこれで、図に半弧が出ていた）。
+  // 「互いに参照し合っている」は 1 本の両端矢印で言い切れるので、線を 2 本使う理由が無い。
+  // 残すのは **id が辞書順で先の向き**（決定的）。逆向きの本数は label と props に残す。
+  for (const [key, agg] of [...lifted]) {
+    const back = lifted.get(`${agg.rel}~${agg.b}~${agg.a}`);
+    if (!back || back === agg) continue;
+    const forward = `${agg.a}\u0000${agg.b}` < `${agg.b}\u0000${agg.a}`;
+    if (!forward) continue;                     // 逆側の番で処理する
+    agg.backCount = back.count;
+    agg.backSamples = back.samples;
+    lifted.delete(`${agg.rel}~${agg.b}~${agg.a}`);
+    void key;
+  }
   const have = new Set(d.edges.map(e => e.id));
   for (const [key, agg] of lifted) {
     const id = `lift~${key}`;
     if (have.has(id)) continue;
+    const two = agg.backCount > 0;
     d.edges.push(applyEdgeLook(Object.assign({}, DEFAULT_EDGE, {
       id, rel: agg.rel, from: shown.get(agg.a), to: shown.get(agg.b),
-      label: `${agg.rel} ×${agg.count}`,
-      props: { count: agg.count, samples: agg.samples },
+      label: two ? `${agg.rel} ×${agg.count}/${agg.backCount}` : `${agg.rel} ×${agg.count}`,
+      ...(two ? { arrowStart: 'arrow', arrowEnd: 'arrow' } : {}),
+      props: two
+        ? { count: agg.count, samples: agg.samples, backCount: agg.backCount, backSamples: agg.backSamples }
+        : { count: agg.count, samples: agg.samples },
       __lifted: true, __derived: true,
     })));
   }
@@ -1273,8 +1349,9 @@ function deriveViews(proj) {
     // 要約図は「第1階層の箱」だけを出すので、エッジ（ファイル間の import 等）は**必ず**
     // 両端とも図に載らず 1 本も描かれない＝「箱は出たが関係が見えない」図になる。
     else if (sel.lift) liftEdges(d, sel, byId, gedges);
-    applyTreePorts(d, new Map(d.nodes.map(n => [n.id, n])));   // §7.2
+    // ⚠ 順序が逆だと applyTreePorts が層を知らない（§23.4 で層またぎを見分ける必要がある）。
     applyLayerBy(d, ids, byId);                                 // §7.5
+    applyTreePorts(d, new Map(d.nodes.map(n => [n.id, n])));   // §7.2
   }
 }
 
@@ -2916,6 +2993,16 @@ function routeOrthogonal(a, b, stub = 24) {
 // 少数の候補経路（L / Z / 障害物の辺に沿ったレーン）を列挙し「貫通 0 → 短い → 折れが少ない」で選ぶ。
 const OBSTACLE_CLEARANCE = 10;   // 箱からこれだけ離れたところにレーンを引く
 const MAX_ROUTE_OBSTACLES = 240; // これを超える図では回避を諦める（既定経路のまま・描画は止めない）
+// §23.4 コネクタの値段。
+// ⚠ ここで数える hits は **箱の貫通**であって線どうしの交差ではない（obstacleRects はノードの
+//    矩形だけを返す）。2026-09-20 に「交差を無限に嫌うから画面を一周する線ができる」と考えて
+//    有限コスト（直線距離の 0.9 倍まで）にしてみたが、**取り違えだった**: 安くなったのは
+//    線どうしの交差ではなく**箱の貫通**で、実際に viewer (GitHub Pages) と Public Site を
+//    線が突き抜けた。線が交差するのは読めるが、箱を突き抜けるのは読めない。**差し戻した。**
+//    折れの値段を 30 → 150 に上げる案も試したが、実測で経路は 1 本も変わらなかったので
+//    元の値のまま（候補の作り方の方が効いている）。回り道の本当の解は §23.3 の幹線集約。
+const BOX_HIT_COST = 1e7;        // 箱の貫通（実質禁止）
+const CORNER_COST = 30;          // 折れ 1 回の値段
 
 // 折線が矩形群を通る本数（矩形は {x1,y1,x2,y2}・軸平行セグメントの帯で判定する）
 function pathHitCount(pts, rects, margin = 1) {
@@ -2962,9 +3049,10 @@ function routeAvoiding(aIn, bIn, rects, stub = 24) {
   for (const mx of [...xs].sort((p, q) => p - q)) cands.push(dedupe([p0, { ...a2 }, { x: mx, y: a2.y }, { x: mx, y: b2.y }, { ...b2 }, p1]));
   for (const my of [...ys].sort((p, q) => p - q)) cands.push(dedupe([p0, { ...a2 }, { x: a2.x, y: my }, { x: b2.x, y: my }, { ...b2 }, p1]));
 
+  // 値段の内訳と、試して差し戻した案の記録は BOX_HIT_COST / CORNER_COST の宣言にある。
   let best = null;
   for (const pts of cands) {
-    const score = pathHitCount(pts, rects) * 1e7 + pathLength(pts) + pts.length * 30;
+    const score = pathHitCount(pts, rects) * BOX_HIT_COST + pathLength(pts) + pts.length * CORNER_COST;
     if (!best || score < best.score - 1e-9) best = { score, pts };
   }
   return best.pts;
@@ -3016,6 +3104,131 @@ function dedupe(pts) {
 }
 
 // エッジの折線点列（論理座標）を返す
+// ─── §23.3 幹線集約（fan-in trunk）────────────────────────────────────────────────
+// 同じ行き先へ 3 本以上集まると、ルータは 1 本ずつ独立に経路を決めるので**別々の方向から
+// 刺さる**（実測: viewer_private へ 6 本がバラバラに入っていた）。
+// 行き先の手前に**共通のレーン**を 1 本引き、各線をそこへ降ろしてからレーン上を走らせる。
+// レーンの区間は全部の線で重なるので、描画上は 1 本の幹に見える（新しい描画要素は要らない）。
+const TRUNK_MIN = 3;      // これ以上集まったら幹線にする
+const TRUNK_GAPS = [46, 84, 122, 160, 200];   // レーンを置く距離の候補（近い順に試す）
+const TRUNK_TOLERANCE = 1.6;    // 幹線を通って良いのは、直接引くより 1.6 倍までのとき
+const trunkCache = new WeakMap();
+
+function trunkSignature(model) {
+  // 位置が動いたら作り直す。node 数 × edge 数 は小さいので毎回作って構わない。
+  let s = `${model.nodes.length}|${model.edges.length}`;
+  for (const n of model.nodes) s += `|${n.x},${n.y},${n.w},${n.h}`;
+  return s;
+}
+
+function edgeEnds(model, edge) {
+  const bGuess = resolveEndpoint(model, edge.to);
+  const a = endpointGeometry(model, edge.from, bGuess && { x: bGuess.node.x + bGuess.node.w / 2, y: bGuess.node.y + bGuess.node.h / 2 });
+  if (!a) return null;
+  const b = endpointGeometry(model, edge.to, { x: a.x, y: a.y });
+  if (!b) return null;
+  return { a, b };
+}
+
+// export: 検証から幹線の設計そのものを見るため（描画を再現しなくても members / lane を確かめられる）
+function computeTrunks(model) {
+  const nodes = new Map(model.nodes.map(n => [n.id, n]));
+  const byTarget = new Map();
+  for (const e of model.edges) {
+    if (!e.__lifted) continue;                       // 束ねるのは集約線だけ（手置きの経路は変えない）
+    const t = String(e.to).split(':')[0];
+    if (!byTarget.has(t)) byTarget.set(t, []);
+    byTarget.get(t).push(e);
+  }
+  const plan = new Map();
+  for (const [tid, edges] of byTarget) {
+    const t = nodes.get(tid);
+    if (!t || edges.length < TRUNK_MIN) continue;
+    const srcs = edges.map(e => nodes.get(String(e.from).split(':')[0])).filter(Boolean);
+    if (srcs.length < TRUNK_MIN) continue;
+    const cx = t.x + t.w / 2, cy = t.y + t.h / 2;
+    const mx = srcs.reduce((s, n) => s + n.x + n.w / 2, 0) / srcs.length;
+    const my = srcs.reduce((s, n) => s + n.y + n.h / 2, 0) / srcs.length;
+    const dx = mx - cx, dy = my - cy;
+    // 送り手の重心がある側を第一候補に（回り込ませない）。その側が塞がっていたら他の側も試す。
+    const first = Math.abs(dy) >= Math.abs(dx) ? (dy > 0 ? 'bottom' : 'top') : (dx > 0 ? 'right' : 'left');
+    const opposite = { bottom: 'top', top: 'bottom', left: 'right', right: 'left' };
+    const sides = [first, ...['bottom', 'top', 'right', 'left'].filter(s => s !== first && s !== opposite[first]), opposite[first]];
+    const rects = model.nodes.filter(n => n.id !== tid)
+      .map(n => ({ x1: n.x, y1: n.y, x2: n.x + n.w, y2: n.y + (n.collapsed ? 28 : n.h) }));
+
+    let found = null;
+    // ⚠ レーンは固定距離では置けない。実測（viewer_private）では既定の 46px のレーンが
+    //   隣の箱 viewer (GitHub Pages) を横切っており、そこで諦めて**束ねられていなかった**。
+    //   距離を何段か試し、それでも駄目なら側を変える。全部塞がっていたときだけ束ねない。
+    outer:
+    for (const side of sides) {
+      const horiz = side === 'bottom' || side === 'top';
+      for (const gap of TRUNK_GAPS) {
+        const lane = side === 'bottom' ? t.y + t.h + gap
+          : side === 'top' ? t.y - gap
+            : side === 'right' ? t.x + t.w + gap : t.x - gap;
+        const entry = side === 'bottom' ? { x: cx, y: t.y + t.h }
+          : side === 'top' ? { x: cx, y: t.y }
+            : side === 'right' ? { x: t.x + t.w, y: cy } : { x: t.x, y: cy };
+        const junction = horiz ? { x: cx, y: lane } : { x: lane, y: cy };
+        // 各線がレーンへ降りる点（送り手の中心座標。同じ点に重ならないよう最低 14px 離す）
+        const drops = new Map();
+        const used = [];
+        for (const e of edges) {
+          const s = nodes.get(String(e.from).split(':')[0]);
+          if (!s) continue;
+          let v = horiz ? s.x + s.w / 2 : s.y + s.h / 2;
+          while (used.some(u => Math.abs(u - v) < 14)) v += 14;
+          used.push(v);
+          drops.set(e.id, v);
+        }
+        if (drops.size < TRUNK_MIN) continue;
+        const lo = Math.min(...used, horiz ? junction.x : junction.y);
+        const hi = Math.max(...used, horiz ? junction.x : junction.y);
+        const laneSeg = horiz ? [{ x: lo, y: lane }, { x: hi, y: lane }] : [{ x: lane, y: lo }, { x: lane, y: hi }];
+        // レーンも、レーンから箱へ入る枝も、箱を突き抜けてはいけない（§23.4）
+        if (pathHitCount(laneSeg, rects) > 0) continue;
+        if (pathHitCount([junction, entry], rects) > 0) continue;
+
+        // ⚠ 幹線を使うかは**線ごと**に決め、**採用が 3 本に満たないなら幹線を作らない**。
+        //   全部まとめて通すと、行き先のすぐ隣にいる送り手まで一度レーンまで降りて戻る
+        //   （実測: epoch → viewer_private が x1.1 → x2.9、site → viewer_private が x1.2 → x2.7）。
+        //   逆に 1〜2 本しか乗らなければ「幹」にならず、ただ遠回りした線が増えるだけ。
+        const accepted = new Map();
+        for (const e of edges) {
+          const v = drops.get(e.id);
+          if (typeof v !== 'number') continue;
+          const g = edgeEnds(model, e);
+          if (!g) continue;
+          const er = obstacleRects(model, e);
+          const lanePt = horiz ? { x: v, y: lane, side } : { x: lane, y: v, side };
+          const viaTrunk = dedupe([...routeAvoiding(g.a, lanePt, er), junction, entry]);
+          if (pathHitCount(viaTrunk, er) > 0) continue;
+          const direct = routeAvoiding(g.a, g.b, er);
+          if (pathLength(viaTrunk) > pathLength(direct) * TRUNK_TOLERANCE) continue;
+          accepted.set(e.id, v);
+        }
+        if (accepted.size < TRUNK_MIN) continue;
+        found = { side, horiz, lane, junction, entry, drops: accepted };
+        break outer;
+      }
+    }
+    if (!found) continue;
+    plan.set(tid, found);
+  }
+  return plan;
+}
+
+function trunkPlan(model) {
+  const sig = trunkSignature(model);
+  const hit = trunkCache.get(model);
+  if (hit && hit.sig === sig) return hit.plan;
+  const plan = computeTrunks(model);
+  trunkCache.set(model, { sig, plan });
+  return plan;
+}
+
 function edgePolyline(model, edge) {
   const bGuess = resolveEndpoint(model, edge.to);
   const aGeom = endpointGeometry(model, edge.from, bGuess && { x: bGuess.node.x + bGuess.node.w / 2, y: bGuess.node.y + bGuess.node.h / 2 });
@@ -3030,7 +3243,18 @@ function edgePolyline(model, edge) {
   }
   // §7.4 リフトエッジ（枠をまたぐ集約線）だけ障害物回避ルータを使う。
   // 通常の派生/手置きエッジの経路は一切変えない（既存 JSON・検証の幾何は不変）。
-  if (edge.__lifted) return routeAvoiding(aGeom, bGeom, obstacleRects(model, edge));
+  if (edge.__lifted) {
+    const rects = obstacleRects(model, edge);
+    // §23.3 行き先に幹線があるなら、レーンへ降ろして幹線に合流させる。
+    const tp = trunkPlan(model).get(String(edge.to).split(':')[0]);
+    const drop = tp && tp.drops.get(edge.id);
+    // plan には**幹線に乗ると決まった線だけ**が入っている（採否は computeTrunks で判定済み）。
+    if (tp && typeof drop === 'number') {
+      const lanePt = tp.horiz ? { x: drop, y: tp.lane, side: tp.side } : { x: tp.lane, y: drop, side: tp.side };
+      return dedupe([...routeAvoiding(aGeom, lanePt, rects), tp.junction, tp.entry]);
+    }
+    return routeAvoiding(aGeom, bGeom, rects);
+  }
   return routeOrthogonal(aGeom, bGeom);
 }
 
@@ -5223,7 +5447,10 @@ class IsoSVGRenderer {
   containers() {
     const groups = this.model.groups.filter(g => g.kind === 'container');
     if (!groups.length) return [];
-    const ground = Math.min(...this.model.layers.map(l => l.elevation ?? 0), 0);
+    // ⚠ `, 0` を混ぜない。標高が全部正のとき ground が 0 に貼り付き、**一番下の段よりさらに下**へ
+    //    接地枠だけが離れて浮いた（実測: 段は 240 なのに枠は 0。webgl も同じ書き方で同じ症状）。
+    const elevs = this.model.layers.map(l => l.elevation ?? 0);
+    const ground = elevs.length ? Math.min(...elevs) : 0;
     return groups.map(g => ({ group: g, rect: groupRect(this.model, g, 40), elev: ground, label: g.label }));
   }
 
@@ -5682,10 +5909,32 @@ class WebGLThreeRenderer {
   setSelection() { /* webgl はビュー専用 */ }
 
   // ─── シーン構築 ───
+  // §23.1b 3D では段を**真上に積む**。2D / 2.5D は帯を地面の上でずらして層を見せているが、
+  // 3D は標高が本物の第 3 軸なのでずらす必要が無く、ずらすと階段状になって「同じ場所の別の層」に
+  // 見えない。ここで帯のずれ（layerBandOffset）を引いた**表示専用の写し**を作る。
+  // ⚠ ビュー専用なので写しで安全（webgl は編集しない・クリックは id で拾う）。
+  //   板には整列後の矩形を明示座標として焼くので、写しの中で groupRect が揃え直すことはない。
+  flattenBands(model) {
+    const off = layerBandOffset(model, 40);   // webgl は板を pad 40 で描く（下の groupRect と揃える）
+    if (!off.size) return model;
+    const sub = (layer, x, y) => { const o = off.get(layer); return o ? { x: x - o.dx, y: y - o.dy } : { x, y }; };
+    return Object.assign({}, model, {
+      nodes: model.nodes.map(n => Object.assign({}, n, sub(n.layer, n.x, n.y))),
+      groups: model.groups.map(g => {
+        if (g.kind !== 'platform' || !g.layer) return g;
+        const r = groupRect(model, g, 40);
+        return Object.assign({}, g, sub(g.layer, r.x, r.y), { w: r.w, h: r.h });
+      }),
+    });
+  }
+
   buildScene() {
     const T = THREE;
     this.root.clear();
-    const model = this.model;
+    // this.model は編集側の真実、this.viewModel は**実際に描いた座標**（段を真上に積んだ写し）。
+    // 検査は描いたものを見るべきなので、両方を残す。
+    const model = this.flattenBands(this.model);
+    this.viewModel = model;
     const ink = new T.Color(cssColor('--de-line'));
     const fill = new T.Color(cssColor('--de-fill'));
     const fillAlt = new T.Color(cssColor('--de-fill-alt'));
@@ -5770,7 +6019,11 @@ class WebGLThreeRenderer {
     // 同じ surfaceText を使うが、小さく・muted 色にして段のラベルと張り合わせない。
     // クリック対象にしない（userData.nodeId を付けない）＝プレート→単層遷移の邪魔をしない。
     {
-      const ground = Math.min(...model.layers.map(l => l.elevation ?? 0), 0);
+      // ⚠ ここに `, 0` を混ぜてはいけない。標高が全部正のとき ground が 0 に貼り付き、
+      //    **一番下の段よりさらに下**に接地枠だけが浮いて見えた（実測: 段は 240 なのに枠は 0）。
+      //    接地枠は「一番下の段の高さ」に置く。段が 1 つも無い図だけ 0 へ落とす。
+      const elevs = model.layers.map(l => l.elevation ?? 0);
+      const ground = elevs.length ? Math.min(...elevs) : 0;
       for (const g of model.groups.filter(g => g.kind === 'container')) {
         const r = groupRect(model, g, 40);
         const corners = [
@@ -9448,6 +9701,8 @@ try {
   const MODE = window.__DE_MODE__ || new URLSearchParams(location.search).get('mode') || 'edit';
   const editor = new DiagramEditor(document.getElementById('app'), { examples: EXAMPLES, mode: MODE });
   window.diagramEditor = editor;
+  // 検証から幾何の設計（§23.3 幹線など）を直接見るための窓。描画を再現せずに確かめられる。
+  window.DiagramLayout = { edgePolyline, computeTrunks };
 
   // 優先順: ?src=URL > 埋込みプロジェクト > 埋込み単図 > 先頭 example。自動保存は非モーダルのバナーで提案
   // ?src= は同一オリジンの JSON を読み込む（例: /tools/diagram_drawer/?src=../../data/diagrams/life_graph.json）。
