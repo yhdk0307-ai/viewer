@@ -3159,7 +3159,24 @@ function freeLabelPoint(pts, rects, w, h) {
     }
     acc += segLen;
   }
-  return best ? { x: best.x, y: best.y, horizontal: best.horizontal } : mid;
+  if (best) return { x: best.x, y: best.y, horizontal: best.horizontal };
+  // 折線上のどこにも空きが無い場合（実測 2026-09-20: `references` 関係で CLAUDE.md→docs のような
+  // 隣接する箱どうしの短い直結エッジができると、箱の隙間（59px）がラベル幅（97px）より狭く、
+  // 折線上のどの点を選んでもラベルが両端の箱にかかる）。折線に**垂直**な方向へ段階的にずらして
+  // 空きを探す — 行の中に収まらなければ行の外（上下）へ逃がすのはラベル配置の定石で、
+  // 「隙間そのものを広げる」レイアウト側の変更より局所的（他の図の配置に影響しない）。
+  const p0 = pts[0], p1 = pts[pts.length - 1];
+  const dx = p1.x - p0.x, dy = p1.y - p0.y;
+  const segLenTotal = Math.hypot(dx, dy) || 1;
+  const ux = -dy / segLenTotal, uy = dx / segLenTotal; // 垂直単位ベクトル
+  for (let k = 1; k <= 8; k++) {
+    const d = k * (h + 4);
+    for (const sign of [1, -1]) {
+      const x = mid.x + ux * d * sign, y = mid.y + uy * d * sign;
+      if (!covered(x, y)) return { x, y, horizontal: Math.abs(dx) >= Math.abs(dy) };
+    }
+  }
+  return mid;
 }
 
 function dedupe(pts) {
@@ -3302,6 +3319,37 @@ function trunkPlan(model) {
   return plan;
 }
 
+const LIFT_ROUTE_SIDES = ['top', 'right', 'bottom', 'left'];
+function scoreRoute(pts, rects) {
+  return pathHitCount(pts, rects) * BOX_HIT_COST + pathLength(pts) + pts.length * CORNER_COST;
+}
+
+// §23.4 実測（2026-09-20）: 帯の中のランクが箱の高さより狭い間隔で並ぶと、上下に隣接する箱が
+// 挟むように重なり、**その脇を通る経路は「入る辺（entry side）」を変えないと存在しない**のに
+// 既定は autoSide（相手の中心方向）で決めた 1 組の辺しか試していなかった（幹線 §23.3 は
+// レーン距離を複数試すのに、単独の線は辺を 1 組しか試さない、という非対称があった）。
+// ポート指定が無い端点だけ、両端の4辺の組み合わせ（最大16通り）を routeAvoiding へ渡して
+// スコア最小（貫通 0 が最優先・BOX_HIT_COST が支配するので自然にそうなる）を選ぶ。
+// ポート指定がある端点（人が指定した辺）はこれまで通り尊重し、辺を変えない。
+function bestAvoidingRoute(model, edge, aGeom, bGeom, rects) {
+  const aEp = resolveEndpoint(model, edge.from);
+  const bEp = resolveEndpoint(model, edge.to);
+  if (!aEp || !bEp || aEp.port || bEp.port) return routeAvoiding(aGeom, bGeom, rects);
+  const aSides = [aGeom.side, ...LIFT_ROUTE_SIDES.filter(s => s !== aGeom.side)];
+  const bSides = [bGeom.side, ...LIFT_ROUTE_SIDES.filter(s => s !== bGeom.side)];
+  let best = null;
+  for (const aSide of aSides) {
+    const a = { ...portPoint(aEp.node, { side: aSide, offset: 0.5 }), node: aEp.node };
+    for (const bSide of bSides) {
+      const b = { ...portPoint(bEp.node, { side: bSide, offset: 0.5 }), node: bEp.node };
+      const pts = routeAvoiding(a, b, rects);
+      const score = scoreRoute(pts, rects);
+      if (!best || score < best.score - 1e-9) best = { score, pts };
+    }
+  }
+  return best ? best.pts : routeAvoiding(aGeom, bGeom, rects);
+}
+
 function edgePolyline(model, edge) {
   const bGuess = resolveEndpoint(model, edge.to);
   const aGeom = endpointGeometry(model, edge.from, bGuess && { x: bGuess.node.x + bGuess.node.w / 2, y: bGuess.node.y + bGuess.node.h / 2 });
@@ -3326,7 +3374,7 @@ function edgePolyline(model, edge) {
       const lanePt = tp.horiz ? { x: drop, y: tp.lane, side: tp.side } : { x: tp.lane, y: drop, side: tp.side };
       return dedupe([...routeAvoiding(aGeom, lanePt, rects), tp.junction, tp.entry]);
     }
-    return routeAvoiding(aGeom, bGeom, rects);
+    return bestAvoidingRoute(model, edge, aGeom, bGeom, rects);
   }
   return routeOrthogonal(aGeom, bGeom);
 }
