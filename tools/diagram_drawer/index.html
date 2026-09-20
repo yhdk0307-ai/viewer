@@ -6892,6 +6892,12 @@ class DiagramEditor {
   // 移動 / 結線 / 経由点 / ノード追加 / ラベル直接編集がすべて発火しない。
   get canEditGeometry() { return this.editable && this.projection === 'flat' && !this.locked && !this.isGenerated; }
 
+  // §24 右ペインの編集欄を出すかどうか。**幾何とは別の判定**にする ——
+  // 箱を掴んで動かせるのは flat だけだが、ラベル・種別・説明を直すのは 2.5D を見ながらでも
+  // 成立する。canEditGeometry を流用すると「2.5D で見ている間だけ説明が編集できない」という
+  // 説明のつかない状態になる（実際それで検査が 1 件落ちた）。
+  get canEditContent() { return this.editable && !this.locked && !this.isGenerated; }
+
   // §18.2: 宣言から作られた図か。生成図はその場では直せない。
   // 直しても**次の再抽出で必ず消える**（しかも黙って消える）＝「編集できる」は自由ではなく罠。
   // 出口は 2 つだけ用意する: ① 規則（rules）を直す ② 複製して手描き図へ昇格させる。
@@ -9017,12 +9023,39 @@ class DiagramEditor {
       box.append(l, i);
     };
 
+    // §24 右ペインは「読む」が既定。編集欄は錠を外したときだけ出す。
+    //
+    // なぜ: 実測（2026-09-20・life の ~scope/kas を選択し全セクションを開いた状態）で、
+    // 読むための行が 7 に対し編集欄が 23 あり、読み手に必要な情報が埋もれていた。しかも
+    //   - 907 ノード中 priority / rationale / verification / refPath は **0 件**、status は 4 件
+    //   - `type` `provenance` `status` `description` `name/label` の 5 組が「基本」と
+    //     「台帳エンティティ」の両方に出ていた（前者は図ローカルの投影、後者は graph.nodes の正本）
+    //   - **生成ビューでは図ローカル側の編集は保存時に捨てられる**（__derived は stripDerived で消える）
+    // ＝ 使えない欄・効かない欄が読む邪魔をしていた。錠（既定 ON）はもともと
+    // 「読んでいる状態」を表しているので、同じ錠を編集欄の出し分けにも使う。
+    const editing = this.canEditContent;
+    if (!editing) {
+      const why = this.isGenerated
+        ? 'この図は抽出器が作る生成ビューです。箱と線は graph から毎回作り直されるので、ここでの編集は保存されません（形を変えるなら rules / overlay を直す）。'
+        : '読み取りモードです。編集するには L キーか錠アイコンでロックを解除してください。';
+      box.insertAdjacentHTML('beforeend', `<div class="de-help" style="margin-top:10px">${why}</div>`);
+      if (kind === 'node') { this.renderRelations(box, id); this.renderEntityTrace(box, obj); }
+      this.makeInspectorCollapsible(box);
+      return;
+    }
+
     box.insertAdjacentHTML('beforeend', '<h3>基本</h3>');
     box.insertAdjacentHTML('beforeend', `<div class="de-help">${kind}: <b>${id}</b></div>`);
     field('label', obj.label, v => obj.label = v);
     if (kind === 'node') {
       field('sublabel', obj.sublabel, v => obj.sublabel = v || undefined);
-      field('type', obj.type, v => obj.type = v, 'select', NODE_TYPES_LIST);
+      // §24 type の正本は台帳（graph.nodes）側。裏打ちのあるノードでは「台帳エンティティ」に
+      // 同じ `type` が出るので、ここには出さない（同じ名前の欄が 2 つあり、片方は
+      // この図だけ・もう片方は全図という違いが名前からは読めなかった）。
+      // label は台帳の `name（名称）` と名前が別なので、この図だけの言い換えとして残す。
+      if (!(obj.entityId && entityById(this.project, obj.entityId))) {
+        field('type', obj.type, v => obj.type = v, 'select', NODE_TYPES_LIST);
+      }
       this.iconPicker(box, obj);
       field('shape3d（3D形状）', obj.shape3d || '', v => obj.shape3d = v || undefined, 'select', ['', ...SHAPE3D_NAMES]);
       field('w', obj.w, v => obj.w = +v || obj.w);
@@ -9609,9 +9642,18 @@ class DiagramEditor {
   }
 
   // MBSE プロパティDB編集（node.props・全 optional・後方互換）。field は renderInspector のクロージャ。
+  // §24 図ローカルのプロパティ。台帳（graph.nodes）に裏打ちされたノードでは**出さない** ——
+  // 同じ名前の欄が「台帳エンティティ」にもあり、そちらが正本だから（実測: `provenance` `status`
+  // `description` `type` `name/label` の 5 組が二重に出ていた）。図ローカルのノードだけが持ち主。
+  //
+  // 欄も実績で絞った（実測 2026-09-20・life の graph.nodes 907 件）:
+  //   priority 0 件 / rationale 0 件 / verification 0 件 / refPath 0 件 → 落とした
+  //   provenance 13 件 / status 4 件 / tags 849 件 → 残す
+  // 落とした 4 つはスキーマからは消していない（既存データは読める）。書く口が無くなっただけ。
   renderNodeProps(box, obj, field) {
+    if (obj.entityId && entityById(this.project, obj.entityId)) return;   // 正本は台帳側にある
     const h = document.createElement('h3');
-    h.textContent = 'プロパティ（MBSE）'; h.style.marginTop = '14px';
+    h.textContent = 'プロパティ（この図のみ）'; h.style.marginTop = '14px';
     box.appendChild(h);
     const set = (k, v) => {
       obj.props = obj.props || {};
@@ -9621,15 +9663,11 @@ class DiagramEditor {
     const p = obj.props || {};
     field('provenance（来歴）', p.provenance || '', v => set('provenance', v || undefined), 'select', ['', 'human', 'ai-assign', 'ai-draft', 'doc']);
     field('status（状態）', p.status || '', v => set('status', v || undefined));
-    field('priority（優先度）', p.priority || '', v => set('priority', v || undefined));
     // description は Summary（§8・常時表示）へ集約。ここでは重複させない。
-    field('rationale（根拠）', p.rationale || '', v => set('rationale', v || undefined), 'textarea');
-    field('verification（検証）', p.verification || '', v => set('verification', v || undefined));
     field('tags（カンマ区切り）', (p.tags || []).join(', '), v => {
       const arr = v.split(',').map(s => s.trim()).filter(Boolean);
       set('tags', arr.length ? arr : undefined);
     });
-    field('refPath（根拠参照）', p.refPath || '', v => set('refPath', v || undefined));
   }
 
   // 別図の当該ノードへジャンプ（図切替→選択）
