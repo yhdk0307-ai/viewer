@@ -158,6 +158,9 @@
 
 .de-section { padding: 10px 12px; border-bottom: 1px solid var(--de-grid); }
 .de-section h3 { margin: 0 0 8px; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--de-soft); }
+/* MODEL 内の小セクション見出し（フォルダの木 / SCOPES / EXTERNAL）。h3 より一段弱い扱いにして
+   「同格の3セクション」ではなく「主役はフォルダの木、あとの2つは補助的な一覧」と読めるようにする。 */
+.de-subhead { margin: 10px 0 4px; font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--de-soft); opacity: .8; }
 .de-palette { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
 .de-palette button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; border: 1px solid var(--de-grid); border-radius: 4px; background: var(--de-fill); color: var(--de-ink); font-size: 10px; font-family: var(--de-font); cursor: pointer; }
 .de-palette button:hover { border-color: var(--de-accent); }
@@ -7580,7 +7583,17 @@ class DiagramEditor {
     this.entSearch.dataset.role = 'entity-search';
     this.entSearch.addEventListener('input', () => this.renderEntityTree());
     this.entTree = document.createElement('div'); this.entTree.className = 'de-navtree de-enttree'; this.entTree.dataset.role = 'entity-tree';
-    this.entSec.append(this.entSearch, this.entTree);
+    // NEXT.md #2 案B: MODEL を「フォルダの木」「スコープ」「外部」の3セクションに分ける。
+    // 旧実装は rootEntities()（parent 無し全部）を丸ごと1本の木として描いていたため、
+    // ~scope/*（人が宣言した区分け）と ~ext/*（そもそもリポジトリの中身ではない）が
+    // ルート `.`（life）の兄弟として並んでしまっていた（実測: parent 無し15件中12件がこれ）。
+    // セクションの小見出し（英語名・§20）。中身が0件のときは非表示にする（entSec 全体が
+    // 空なら隠れる既存の仕組みに倣う）。
+    this.entScopeHead = document.createElement('div'); this.entScopeHead.className = 'de-subhead'; this.entScopeHead.textContent = 'SCOPES';
+    this.entScopeTree = document.createElement('div'); this.entScopeTree.className = 'de-navtree de-enttree'; this.entScopeTree.dataset.role = 'entity-scope-tree';
+    this.entExtHead = document.createElement('div'); this.entExtHead.className = 'de-subhead'; this.entExtHead.textContent = 'EXTERNAL';
+    this.entExtTree = document.createElement('div'); this.entExtTree.className = 'de-navtree de-enttree'; this.entExtTree.dataset.role = 'entity-ext-tree';
+    this.entSec.append(this.entSearch, this.entTree, this.entScopeHead, this.entScopeTree, this.entExtHead, this.entExtTree);
     sb.appendChild(this.entSec);
     // 縦スプリッタ（MODEL と 下部タブ の上下比率をドラッグで変更）
     const split = document.createElement('div'); split.className = 'de-vsplit'; split.dataset.role = 'vsplit';
@@ -8050,28 +8063,62 @@ class DiagramEditor {
     if (!this.entTree || !this.entSec) return;
     const ents = this.project.entities || [];
     this.entSec.classList.toggle('de-collapsed', ents.length === 0);
-    this.entTree.textContent = ''; // 台帳空でも古い行を残さない（別図切替時の DOM 残留防止）
-    if (!ents.length) return;
+    // 台帳空でも古い行を残さない（別図切替時の DOM 残留防止）
+    this.entTree.textContent = '';
+    if (this.entScopeTree) this.entScopeTree.textContent = '';
+    if (this.entExtTree) this.entExtTree.textContent = '';
+    if (!ents.length) { this.setSubsectionVisible(this.entScopeHead, this.entScopeTree, false); this.setSubsectionVisible(this.entExtHead, this.entExtTree, false); return; }
     if (!this.entCollapsed) this.entCollapsed = new Set();
     const q = (this.entSearch?.value || '').trim().toLowerCase();
-    if (q) { // フラット検索（ブラウザ）
+    if (q) {
+      // 検索はセクションを跨いで効かせる（フォルダ／スコープ／外部の全 ents を対象に既にしている）。
+      // 見せ方は「1本のフラット一覧」を維持: 3セクションに分けて出すと各セクション見出しが
+      // 何度も出て縦に間延びし、ヒット件数が少ない検索結果では逆に読みにくかった（実際に
+      // 切り替えて比較した結果の判断）。代わりに行のツールチップ(title)に元セクションが
+      // わかる情報（フォルダ/scope/ext の別と type）を含めている（entityRow 参照）。
+      this.setSubsectionVisible(this.entScopeHead, this.entScopeTree, false);
+      this.setSubsectionVisible(this.entExtHead, this.entExtTree, false);
       const hits = ents.filter(e => (e.name || '').toLowerCase().includes(q) || e.id.toLowerCase().includes(q));
       for (const e of hits.slice(0, 200)) this.entTree.appendChild(this.entityRow(e, 0, false, false));
       if (hits.length > 200) this.entTree.insertAdjacentHTML('beforeend', `<div class="de-help">… 他 ${hits.length - 200} 件</div>`);
       return;
     }
+    // 判定軸: id の "~scope/" "~ext/" 接頭辞ではなく、抽出器が既にノードへ付けている
+    // e.type（'scope' | 'external'）を見る。接頭辞は抽出器（bin/rules/life.json）の都合の
+    // 命名規則にすぎず、他プロジェクトへ可搬にするなら意味を持つ属性で判定すべき。
+    // 実データ（life_graph.json）で確認済み: scope=11件・external=13件、いずれも type が
+    // そのまま立っている（props.role==='scope' も scope 側は同じ情報を重複して持つが、
+    // external 側には role が無いので type を単一の判定軸にする）。
+    const isScope = e => e.type === 'scope';
+    const isExt = e => e.type === 'external';
     const visited = new Set();
     // render=false でも再帰して visited を付ける＝折りたたんだ子孫が「取り残し」で再出現しない
-    const walk = (e, depth, render) => {
+    const walk = (tree, e, depth, render) => {
       if (visited.has(e.id)) return; // cycle 防止
       visited.add(e.id);
       const kids = childEntities(this.project, e.id);
       const collapsed = this.entCollapsed.has(e.id);
-      if (render) this.entTree.appendChild(this.entityRow(e, depth, kids.length > 0, collapsed));
-      for (const c of kids) walk(c, depth + 1, render && !collapsed);
+      if (render) tree.appendChild(this.entityRow(e, depth, kids.length > 0, collapsed));
+      for (const c of kids) walk(tree, c, depth + 1, render && !collapsed);
     };
-    for (const r of rootEntities(this.project)) walk(r, 0, true);
-    for (const e of ents) if (!visited.has(e.id)) this.entTree.appendChild(this.entityRow(e, 0, false, false)); // 真の取り残し（cycle 孤児のみ）
+    // 1) フォルダの木: ルートのうち scope/external を除いたもの（従来どおり life 単一ルート）
+    for (const r of rootEntities(this.project)) if (!isScope(r) && !isExt(r)) walk(this.entTree, r, 0, true);
+    // 2) スコープ: 平坦寄りの一覧（現状は子を持たないが、将来子ができても崩れないよう walk を再利用）
+    for (const r of rootEntities(this.project)) if (isScope(r)) walk(this.entScopeTree, r, 0, true);
+    // 3) 外部: viewer 系は配下にサブページを持つ（例: ~ext/viewer_private/pub/robotics_ai）ので
+    //    折りたたみ付きの木として描く
+    for (const r of rootEntities(this.project)) if (isExt(r)) walk(this.entExtTree, r, 0, true);
+    // 真の取り残し（cycle 孤児のみ・上記3種のどれでも拾えなかったもの）はフォルダの木に出す
+    for (const e of ents) if (!visited.has(e.id)) this.entTree.appendChild(this.entityRow(e, 0, false, false));
+    this.setSubsectionVisible(this.entScopeHead, this.entScopeTree, this.entScopeTree.childElementCount > 0);
+    this.setSubsectionVisible(this.entExtHead, this.entExtTree, this.entExtTree.childElementCount > 0);
+  }
+
+  // スコープ/外部セクションの見出し・中身を、件数が0なら隠す（entSec 全体を隠す既存の
+  // 仕組み: `ents.length===0` → de-collapsed と同じ考え方を小見出し単位に適用）。
+  setSubsectionVisible(head, tree, visible) {
+    if (head) head.style.display = visible ? '' : 'none';
+    if (tree) tree.style.display = visible ? '' : 'none';
   }
 
   entityRow(e, depth, hasChildren, collapsed) {
