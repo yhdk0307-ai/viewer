@@ -1606,6 +1606,16 @@ function publicHostExposure(proj, origin) {
 // どれも無ければ null＝「開く」ボタンを出さない（無効なボタンを出さない）。
 const OPEN_HTML_EXTS = new Set(['.html', '.htm']);
 const OPEN_IMAGE_EXTS = new Set(['.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp']);
+// §12.5 テキストとして読んでも意味が無いもの。**取りに行かない**。
+// ⚠ 2026-09-20 実測: 6.3 MiB の .lz4 を開くと 6.6 MB を全部落として UTF-8 で復号し、
+//    200 KB 分の文字化け（\u0000 混じり）を <pre> に出していた（4.1 秒・警告なし）。
+//    グラフには props.ext も props.size も入っているのに、どちらも見ていなかった。
+const OPEN_BINARY_EXTS = new Set([
+  '.lz4', '.zst', '.zip', '.gz', '.tgz', '.bz2', '.xz', '.7z', '.rar',
+  '.bin', '.dat', '.db', '.sqlite', '.wasm', '.pack', '.idx',
+  '.woff', '.woff2', '.ttf', '.otf', '.eot', '.ico', '.icns',
+  '.pdf', '.mp3', '.mp4', '.mov', '.wav', '.ogg', '.webm', '.psd',
+]);
 
 // ?root= の上書き（§12.1）。起動スクリプトが URL から読んで一度だけ入れる。
 // **project.sourceRoot 自体は書き換えない**（authored data を URL パラメータで汚すと
@@ -1632,6 +1642,7 @@ function openKindOfPath(p) {
   const ext = m ? m[0] : '';
   if (OPEN_HTML_EXTS.has(ext)) return 'html';
   if (OPEN_IMAGE_EXTS.has(ext)) return 'image';
+  if (OPEN_BINARY_EXTS.has(ext)) return 'binary';
   return 'text';
 }
 
@@ -1649,13 +1660,18 @@ function openTargetOf(proj, node) {
   const previewTruncated = !!props.previewTruncated;
   const base = openBaseURI();
   const pageOrigin = openPageOrigin(base);
-  const mk = (source, raw, label) => {
+  // ⚠ 開き先の形を作るのは**この関数だけ**にする。以前は sourceRoot+path の枝が同じ形を
+  //    その場で組み立てており、props.size を足したとき片方にしか入らなかった（§12.5 の
+  //    「全体は N MiB」がローカル経路でだけ出ない、という形で出た）。
+  const mk = (source, raw, label, from = base) => {
     let u;
-    try { u = new URL(raw, base); } catch { return null; }
+    try { u = new URL(raw, from); } catch { return null; }
     return {
       kind: openKindOfPath(u.pathname), url: u.href,
       sameOrigin: !!pageOrigin && u.origin === pageOrigin,
       preview, previewTruncated, source, path: label,
+      // §12.5 抽出時に分かっている大きさ。取りに行く前に「重いです」と言うために使う。
+      size: typeof props.size === 'number' ? props.size : null,
     };
   };
   // ① href（props.href が正。node.href は図ノードの「外部URL」欄＝互換のため後段で受ける）
@@ -1674,15 +1690,8 @@ function openTargetOf(proj, node) {
     try { rootURL = new URL(dir, base); } catch { rootURL = null; }
     if (rootURL) {
       const rel = path.replace(/^\/+/, '').replace(/^\.\//, '');
-      let u;
-      try { u = new URL(rel, rootURL); } catch { u = null; }
-      if (u) {
-        return {
-          kind: openKindOfPath(u.pathname), url: u.href,
-          sameOrigin: !!pageOrigin && u.origin === pageOrigin,
-          preview, previewTruncated, source: 'sourceRoot', path,
-        };
-      }
+      const t = mk('sourceRoot', rel, path, rootURL);
+      if (t) return t;
     }
   }
   // ③ preview のみ
@@ -6624,6 +6633,12 @@ const DEFAULT_OPEN_INSPSECS = new Set();
 // GRAPH_CONTRACT.md §12: ノードの実体を開く。表示方法（kind）の日本語と、テキストを載せる上限。
 const OPEN_KIND_TEXT = { html: 'HTML（サンドボックス表示）', image: '画像', text: 'テキスト', preview: '抜粋（preview）' };
 const OPEN_TEXT_MAX = 200 * 1024;   // 200KB を超えたら切って「(以下略)」
+// バイト数の読みやすい表記。size が無いグラフ（古い抽出）では何も足さない。
+function fmtBytes(n, prefix = '・') {
+  if (typeof n !== 'number' || !isFinite(n) || n < 0) return '';
+  const u = n >= 1024 * 1024 ? [(n / 1024 / 1024).toFixed(1), 'MiB'] : [(n / 1024).toFixed(0), 'KiB'];
+  return `${prefix}${u[0]} ${u[1]}`;
+}
 
 function kindLabelForNode(n) {
   const ext = n?.props?.ext;
@@ -8319,19 +8334,47 @@ class DiagramEditor {
       if (target.preview) { body.append(this.openNote('抽出時の抜粋:')); body.append(this.openPre(target.preview)); }
       return;
     }
+    // §12.5 バイナリ: **取りに行かない**。テキストとして出しても文字化けにしかならない。
+    if (target.kind === 'binary') {
+      body.dataset.state = 'binary';
+      body.append(this.openNote(`これはバイナリファイルです（${target.path || target.url}${fmtBytes(target.size)}）。`
+        + 'テキストとして開いても意味のある中身にならないので、取得しません。'));
+      body.append(this.openPre(target.url));
+      if (target.sameOrigin) {
+        const a = document.createElement('a');
+        a.className = 'de-btn de-open-extlink'; a.textContent = 'ダウンロード';
+        a.href = target.url; a.download = (target.path || '').split('/').pop() || '';
+        body.append(a);
+      }
+      return;
+    }
     // 同一オリジン
     if (target.kind === 'text') {
+      // §12.5 表示は先頭 OPEN_TEXT_MAX までなのだから、**その分だけ取る**。
+      // ⚠ 以前は常に全部落としてから切っていた。実測で 6.6 MB を落として 200 KB 表示していた
+      //    （life には表示上限を超えるファイルが 17 件ある）。Range に対応していないサーバは
+      //    200 を返すので、そのときは従来どおり全部読む。
       let res = null, err = '';
-      try { res = await fetch(target.url, { cache: 'no-store' }); }
+      const headers = { Range: `bytes=0-${OPEN_TEXT_MAX}` };
+      try { res = await fetch(target.url, { cache: 'no-store', headers }); }
       catch (e) { err = String(e && e.message || e); }
       if (!res) return this.openFallback(body, target, `取得に失敗しました（${err}）。`);
+      // 416 = Range が範囲外（＝ファイルがそれより小さい）。Range 無しで取り直す。
+      if (res.status === 416) {
+        try { res = await fetch(target.url, { cache: 'no-store' }); } catch (e) { res = null; err = String(e && e.message || e); }
+        if (!res) return this.openFallback(body, target, `取得に失敗しました（${err}）。`);
+      }
       if (!res.ok) return this.openFallback(body, target, `取得に失敗しました（HTTP ${res.status}）。`);
       let text = '';
       try { text = await res.text(); } catch (e) { return this.openFallback(body, target, `本文を読めませんでした（${e && e.message || e}）。`); }
       body.dataset.state = 'text';
+      const partial = res.status === 206;
       const cut = text.length > OPEN_TEXT_MAX;
       body.append(this.openPre(cut ? text.slice(0, OPEN_TEXT_MAX) + '\n…(以下略)' : text));
-      if (cut) body.append(this.openNote(`(先頭 ${OPEN_TEXT_MAX} バイトのみ表示・以下略)`));
+      if (cut || partial) {
+        body.append(this.openNote(`(先頭 ${OPEN_TEXT_MAX} バイトのみ表示${fmtBytes(target.size, ' / 全体は')}`
+          + `${partial ? '・その分だけ取得しています' : ''})`));
+      }
       return;
     }
     // html / image: 404 を先に検出してから埋め込む（iframe/img は 404 をイベントで区別できない）。
