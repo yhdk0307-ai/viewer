@@ -322,6 +322,45 @@ a.de-btn { text-decoration: none; display: inline-flex; align-items: center; }
 .de-open-note { margin: 0; font-size: 11.5px; line-height: 1.75; color: var(--de-soft); }
 .de-open-extlink { align-self: flex-start; }
 
+/* §35 Markdown プレビュー（GitHub 風・依存ゼロ自前レンダラ src/markdown.js の出力先）。
+   色は既存のテーマトークンだけを使う（直書きしない＝light/dark 両対応が自動で効く）。 */
+.de-md-wrap { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.de-md-toggle { align-self: flex-start; flex: 0 0 auto; }
+.de-md-pane.de-md { flex: 1 1 auto; min-height: 0; }
+.de-md {
+  font-family: var(--de-font); font-size: 13px; line-height: 1.65; color: var(--de-ink);
+  max-height: 56vh; overflow: auto; padding: 2px 2px 8px;
+}
+.de-md > *:first-child { margin-top: 0; }
+.de-md h1, .de-md h2, .de-md h3, .de-md h4, .de-md h5, .de-md h6 { margin: 18px 0 10px; font-weight: 700; line-height: 1.3; color: var(--de-ink); }
+.de-md h1 { font-size: 1.65em; padding-bottom: .26em; border-bottom: 1px solid var(--de-grid); }
+.de-md h2 { font-size: 1.35em; padding-bottom: .22em; border-bottom: 1px solid var(--de-grid); }
+.de-md h3 { font-size: 1.16em; }
+.de-md h4 { font-size: 1.04em; }
+.de-md h5, .de-md h6 { font-size: 1em; color: var(--de-soft); }
+.de-md p { margin: 8px 0; }
+.de-md ul, .de-md ol { margin: 8px 0; padding-left: 1.7em; }
+.de-md li { margin: 3px 0; }
+.de-md li > p { margin: 4px 0; }
+.de-md li.de-md-task { list-style: none; margin-left: -1.4em; }
+.de-md li.de-md-task input[type="checkbox"] { margin-right: 5px; vertical-align: middle; }
+.de-md blockquote { margin: 10px 0; padding: 1px 12px; border-left: 3px solid var(--de-muted); color: var(--de-soft); }
+.de-md blockquote > *:first-child { margin-top: 0; }
+.de-md blockquote > *:last-child { margin-bottom: 0; }
+.de-md hr { border: 0; border-top: 1px solid var(--de-grid); margin: 18px 0; }
+.de-md code { font-family: var(--de-mono); font-size: .9em; background: var(--de-panel); border-radius: 3px; padding: .1em .35em; }
+.de-md pre { font-family: var(--de-mono); font-size: 12px; line-height: 1.55; background: var(--de-panel); border: 1px solid var(--de-grid); border-radius: 6px; padding: 10px 12px; overflow-x: auto; margin: 10px 0; }
+.de-md pre code { background: none; padding: 0; border-radius: 0; white-space: pre; }
+.de-md table { border-collapse: collapse; width: max-content; max-width: 100%; margin: 10px 0; font-size: .92em; }
+.de-md th, .de-md td { border: 1px solid var(--de-grid); padding: 5px 11px; }
+.de-md th { font-weight: 700; background: var(--de-fill-alt); text-align: left; }
+.de-md tbody tr:nth-child(2n) { background: var(--de-fill-alt); }
+.de-md a { color: var(--de-accent); text-decoration: none; }
+.de-md a:hover { text-decoration: underline; }
+.de-md img { max-width: 100%; height: auto; border-radius: 4px; }
+.de-md del { color: var(--de-soft); }
+.de-md .de-md-truncated { color: var(--de-soft); font-style: italic; }
+
 .de-status { padding: 4px 12px; font-size: 11px; color: var(--de-soft); background: var(--de-panel); border-top: 1px solid var(--de-grid); display: flex; gap: 16px; }
 .de-status .err { color: var(--de-danger); }
 .de-inline-edit { position: absolute; border: 1px solid var(--de-accent); background: var(--de-bg); color: var(--de-ink); font-family: var(--de-font); font-size: var(--de-node-font); font-weight: 600; text-align: center; outline: none; border-radius: 3px; padding: 2px 4px; z-index: 30; }
@@ -7050,12 +7089,493 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
+// ═══ src/markdown.js ═══
+// markdown.js — Markdown（GFM の実用的な部分集合）→ 安全な HTML 断片への変換
+// 純粋関数（文字列 → 文字列）。DOM に一切触れないので Node からも単体で検査できる
+// （verification/markdown.test.mjs）。仕様は GRAPH_CONTRACT.md §35。
+//
+// ⚠ 安全性（§35.4・最重要）: このモジュールは md 内の生 HTML を一切そのまま出力しない。
+//   すべての地の文字は escapeText() を通し、リンク/画像は sanitizeUrl() でスキームを検査してから
+//   組み立てる。生成する HTML は「認識した記法だけを自分で組み立てた」ものであり、入力文字列の
+//   どの断片も未加工のまま出力へ混ざらない。呼び出し側（editor.js）はこの関数が返す文字列だけを
+//   innerHTML に渡す（取得した生テキストそのものを innerHTML へ渡すことは無い）。
+//
+// life 固有のパス・語彙は持たない（他プロジェクトの md でも同じように読めることが要件）。
+
+// ─── エスケープ ─────────────────────────────────────────────────────────
+// 地の文字: & は「既存の実体（&amp; 等）を壊さない」ため、実体でない & だけを &amp; に変換する
+// （要件2「HTML エンティティを壊さないこと」）。< > は常にエスケープ＝生 HTML を一切通さない。
+function escapeText(s) {
+  return String(s == null ? '' : s)
+    .replace(/&(?!#\d+;|#x[0-9a-fA-F]+;|[a-zA-Z][a-zA-Z0-9]*;)/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+// 属性値（href/src/alt/title）用。表示テキストではないので実体保持は不要——常に & もエスケープする。
+function escapeAttr(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ─── URL の安全性検査（§35.4）─────────────────────────────────────────
+// 許可するのは http / https / mailto と「スキーム無し」（相対パス・フラグメント）だけ。
+// javascript: / data: / vbscript: 等は問答無用で弾く（画像 src・リンク href 両方に適用）。
+const SAFE_SCHEMES = new Set(['http', 'https', 'mailto']);
+function sanitizeUrl(raw) {
+  const s = String(raw == null ? '' : raw).trim();
+  if (!s) return null;
+  // タブ/改行を混ぜてスキーム検査をすり抜けようとする亜種（例: "jav\tascript:"）を弾く。
+  if (/[\u0000-\u001f]/.test(s)) return null;
+  const m = s.match(/^([a-zA-Z][a-zA-Z0-9+.\-]*):/);
+  if (!m) return s; // スキーム無し＝相対パスかフラグメント
+  return SAFE_SCHEMES.has(m[1].toLowerCase()) ? s : null;
+}
+// baseUrl を基点に絶対 URL へ解決する（要件5・相対リンク/画像）。baseUrl が無ければ raw のまま
+// （呼び出し側の責務＝その md がどこから開かれたか分からない場面用）。構文的に解決できなければ null。
+function resolveUrl(raw, baseUrl) {
+  if (!baseUrl) return raw;
+  try { return new URL(raw, baseUrl).href; } catch { return null; }
+}
+function titleAttr(t) { return t ? ` title="${escapeAttr(t)}"` : ''; }
+
+// ─── インライン（強調・コード・リンク・画像・自動リンク・打ち消し線）───────────────
+// 1 パスの左→右スキャン。正規表現の連鎖で組み立てず、地の文字は escapeText を通した上でしか
+// 出力バッファに入らない（§35.4 の「自前でエスケープしてから組む」を素直に実装したもの）。
+function isAsciiPunct(ch) { return /[!"#$%&'()*+,\-./:;<=>?@[\]^_`{|}~\\]/.test(ch); }
+
+function findUnescaped(src, from, ch) {
+  for (let k = from; k < src.length; k++) {
+    if (src[k] === '\\') { k++; continue; }
+    if (src[k] === ch) return k;
+    if (src[k] === '\n') return -1;
+  }
+  return -1;
+}
+// '(' の次（depth=1 として渡される）から対応する ')' を探す。改行を跨ぐ url は対象外（単純化）。
+function findMatchingParen(src, from) {
+  let depth = 1;
+  for (let k = from; k < src.length; k++) {
+    if (src[k] === '\\') { k++; continue; }
+    if (src[k] === '(') depth++;
+    else if (src[k] === ')') { depth--; if (depth === 0) return k; }
+    else if (src[k] === '\n') return -1;
+  }
+  return -1;
+}
+function findClosingMarker(src, from, marker) { return src.indexOf(marker, from); }
+
+// pos は '[' を指す。isImage のときは呼び出し側が '!' を読み飛ばして渡す。
+// マッチしなければ null（＝呼び出し側は '[' を普通の文字として流す）。
+function parseLinkLike(src, pos, ctx, isImage) {
+  const closeBracket = findUnescaped(src, pos + 1, ']');
+  if (closeBracket === -1 || src[closeBracket + 1] !== '(') return null;
+  const closeParen = findMatchingParen(src, closeBracket + 2);
+  if (closeParen === -1) return null;
+  const label = src.slice(pos + 1, closeBracket);
+  const inside = src.slice(closeBracket + 2, closeParen).trim();
+  let url = inside, title = '';
+  const tm = inside.match(/^(\S+)\s+"([^"]*)"$/) || inside.match(/^(\S+)\s+'([^']*)'$/);
+  if (tm) { url = tm[1]; title = tm[2]; }
+  const safe = sanitizeUrl(url);
+  const next = closeParen + 1;
+
+  if (isImage) {
+    if (safe === null) return { html: escapeText('![' + label + '](' + url + ')'), next }; // 危険スキーム: 地の文字として出す
+    const resolved = resolveUrl(safe, ctx.baseUrl);
+    if (!resolved) {
+      // 解決できない画像は壊れた画像アイコンにせず、素直にリンクとして出す（要件5）
+      return { html: `<a href="${escapeAttr(safe)}"${titleAttr(title)}>${escapeText(label || url)}</a>`, next };
+    }
+    return { html: `<img src="${escapeAttr(resolved)}" alt="${escapeAttr(label)}"${titleAttr(title)} loading="lazy">`, next };
+  }
+  const inner = renderInline(label, ctx);
+  if (safe === null) return { html: inner, next }; // 危険スキーム: リンクにせずテキストだけ出す
+  const resolved = resolveUrl(safe, ctx.baseUrl) || safe; // 解決不能でも生のまま「リンクとして」出す（要件5）
+  return { html: `<a href="${escapeAttr(resolved)}"${titleAttr(title)}>${inner}</a>`, next };
+}
+
+// pos は '<' を指す。<scheme:...> / <email> 以外は null（認識できない <...> は生 HTML として通さない）。
+function parseAutolink(src, pos, ctx) {
+  const end = src.indexOf('>', pos + 1);
+  if (end === -1) return null;
+  const inner = src.slice(pos + 1, end);
+  if (!inner || /\s/.test(inner) || inner.includes('<')) return null;
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const uriRe = /^[a-zA-Z][a-zA-Z0-9+.\-]{1,31}:\S*$/;
+  let href = null;
+  if (uriRe.test(inner)) href = inner;
+  else if (emailRe.test(inner)) href = 'mailto:' + inner;
+  else return null;
+  const safe = sanitizeUrl(href);
+  if (!safe) return null;
+  // mailto は相対解決すると壊れるので baseUrl を当てない
+  const resolved = (href.startsWith('mailto:') ? safe : resolveUrl(safe, ctx.baseUrl)) || safe;
+  return { html: `<a href="${escapeAttr(resolved)}">${escapeText(inner)}</a>`, next: end + 1 };
+}
+
+function renderInline(raw, ctx) {
+  const src = String(raw == null ? '' : raw);
+  const n = src.length;
+  let i = 0, out = '', buf = '';
+  const flush = () => { if (buf) { out += escapeText(buf); buf = ''; } };
+
+  while (i < n) {
+    const ch = src[i];
+
+    // バックスラッシュエスケープ（commonmark 準拠: ASCII 記号のみ対象）
+    if (ch === '\\' && i + 1 < n && isAsciiPunct(src[i + 1])) { buf += src[i + 1]; i += 2; continue; }
+
+    // インラインコード（開始と同じ長さのバッククォート連を最短一致で探す。中身は一切解釈しない）
+    if (ch === '`') {
+      let j = i; while (src[j] === '`') j++;
+      const fenceLen = j - i;
+      let k = j, close = -1;
+      while (k < n) {
+        if (src[k] === '`') {
+          let m = k; while (src[m] === '`') m++;
+          if (m - k === fenceLen) { close = k; break; }
+          k = m;
+        } else k++;
+      }
+      if (close === -1) { buf += src.slice(i, j); i = j; continue; } // 閉じが無ければ地の文字扱い
+      flush();
+      let content = src.slice(j, close);
+      // commonmark: 前後に空白が1つずつあり全体が空白のみでなければ、その1つずつを落とす
+      if (content.length >= 2 && content[0] === ' ' && content[content.length - 1] === ' ' && content.trim() !== '') {
+        content = content.slice(1, -1);
+      }
+      out += '<code>' + escapeText(content) + '</code>';
+      i = close + fenceLen;
+      continue;
+    }
+
+    // 画像 ![alt](url "title")
+    if (ch === '!' && src[i + 1] === '[') {
+      const p = parseLinkLike(src, i + 1, ctx, true);
+      if (p) { flush(); out += p.html; i = p.next; continue; }
+    }
+
+    // リンク [text](url "title")
+    if (ch === '[') {
+      const p = parseLinkLike(src, i, ctx, false);
+      if (p) { flush(); out += p.html; i = p.next; continue; }
+    }
+
+    // 自動リンク <https://...> / <a@b.co>。認識できなければ '<' は地の文字として escapeText に流す
+    // （＝生 HTML として素通りさせない。これが安全性の要）。
+    if (ch === '<') {
+      const p = parseAutolink(src, i, ctx);
+      if (p) { flush(); out += p.html; i = p.next; continue; }
+      buf += ch; i++; continue;
+    }
+
+    // 打ち消し線 ~~text~~（GFM）
+    if (ch === '~' && src[i + 1] === '~') {
+      const end = findClosingMarker(src, i + 2, '~~');
+      if (end !== -1 && end > i + 2) {
+        flush(); out += '<del>' + renderInline(src.slice(i + 2, end), ctx) + '</del>'; i = end + 2; continue;
+      }
+    }
+
+    // 強調 **/__ ・ 弱い強調 */_（実用サブセット。CommonMark の左右フランキング判定は簡略化するが、
+    // ⚠ _ の「語中では開閉しない」ルールだけは落とせない。これを落とすと MAP_PRIVATE / OPEN_TEXT_MAX
+    // のような snake_case・dunder な識別子（このリポジトリの地の文に大量にある）が
+    // "MAP<em>PRIVATE と MAP</em>DEV" のように化ける（実測: GRAPH_CONTRACT.md 5 件・CLAUDE.md 1 件）。
+    // * は CommonMark でも語中の開閉を許すので、そちらは従来どおり簡略化のままでよい。
+    if (ch === '*' || ch === '_') {
+      const two = src[i + 1] === ch;
+      const marker = two ? ch + ch : ch;
+      const nextCh = src[i + marker.length];
+      const prevCh = i > 0 ? src[i - 1] : '';
+      const isWord = c => /[A-Za-z0-9]/.test(c);
+      // opener 側: _ は直前が英数字なら開けない（* は制約なし）
+      const canOpen = !!nextCh && !/\s/.test(nextCh) && !(ch === '_' && isWord(prevCh));
+      if (canOpen) {
+        // closer 側: _ は直後が英数字な候補を飛ばして次を探す（* は最初に見つかったものでよい）
+        let searchFrom = i + marker.length, end = -1;
+        for (;;) {
+          const cand = findClosingMarker(src, searchFrom, marker);
+          if (cand === -1) { end = -1; break; }
+          const after = src[cand + marker.length];
+          if (ch === '_' && after && isWord(after)) { searchFrom = cand + marker.length; continue; }
+          end = cand; break;
+        }
+        if (end !== -1 && end > i + marker.length) {
+          flush();
+          const inner = renderInline(src.slice(i + marker.length, end), ctx);
+          out += two ? `<strong>${inner}</strong>` : `<em>${inner}</em>`;
+          i = end + marker.length; continue;
+        }
+      }
+    }
+
+    buf += ch; i++;
+  }
+  flush();
+  return out;
+}
+
+// ─── ブロック（見出し・段落・コード・リスト・表・引用・水平線）───────────────────
+function isBlank(line) { return /^\s*$/.test(line); }
+
+function matchListMarker(line) {
+  let m = line.match(/^( {0,3})([-*+])( +)(.*)$/);
+  if (m) return { indent: m[1].length, markerWidth: m[0].length - m[4].length, ordered: false, num: null, rest: m[4] };
+  m = line.match(/^( {0,3})(\d{1,9})([.)])( +)(.*)$/);
+  if (m) return { indent: m[1].length, markerWidth: m[0].length - m[5].length, ordered: true, num: parseInt(m[2], 10), rest: m[5] };
+  return null;
+}
+function looksLikeTableRow(line) { return typeof line === 'string' && line.includes('|') && !/^\s{0,3}>/.test(line); }
+function splitTableRow(line) {
+  let s = line.trim();
+  if (s.startsWith('|')) s = s.slice(1);
+  if (s.endsWith('|') && !s.endsWith('\\|')) s = s.slice(0, -1);
+  const cells = []; let buf = '', esc = false;
+  for (const ch of s) {
+    if (esc) { buf += ch; esc = false; continue; }
+    if (ch === '\\') { buf += ch; esc = true; continue; }
+    if (ch === '|') { cells.push(buf); buf = ''; continue; }
+    buf += ch;
+  }
+  cells.push(buf);
+  return cells.map(c => c.trim());
+}
+function isTableDelimiterRow(line) {
+  if (!looksLikeTableRow(line)) return false;
+  const cells = splitTableRow(line);
+  return cells.length > 0 && cells.every(c => /^:?-+:?$/.test(c));
+}
+function parseTableAlign(delimLine, count) {
+  const cells = splitTableRow(delimLine);
+  const align = [];
+  for (let k = 0; k < count; k++) {
+    const c = cells[k] || '';
+    if (/^:-+:$/.test(c)) align.push('center');
+    else if (/^-+:$/.test(c)) align.push('right');
+    else if (/^:-+$/.test(c)) align.push('left');
+    else align.push(null);
+  }
+  return align;
+}
+// ⚠ ここに looksLikeTableRow は入れない。「| を含む地の文」（例: 本文中の "arc1|arc2"）は
+// 表ではなく段落の一部なので、これで止めると段落が誤って分断される。表として段落を切るかどうかは
+// parseBlocks の段落収集ループ側で「次の行が区切り行のときだけ」個別に判定する（下記参照）。
+function isNewBlockStart(line) {
+  return /^ {0,3}#{1,6}(\s|$)/.test(line)
+    || /^ {0,3}(`{3,}|~{3,})/.test(line)
+    || /^ {0,3}>/.test(line)
+    || /^ {0,3}((\*\s*){3,}|(-\s*){3,}|(_\s*){3,})$/.test(line)
+    || !!matchListMarker(line);
+}
+
+function parseList(lines, start) {
+  const first = matchListMarker(lines[start]);
+  const ordered = first.ordered;
+  const items = [];
+  // tight/loose（GitHub 準拠・要件3「GitHub 調」）: 項目間に空行がある、または項目の中身が
+  // 空行で複数ブロックに分かれているなら loose——そのときだけ <li> の中を <p> で包む。
+  // 実測: このリポジトリの md はリストがほぼ全部 tight（CLAUDE.md 36/36 等）なので、
+  // ここを間違えると全リストが <p> で間延びする（GitHub とは似ても似つかない見た目になる）。
+  let loose = false;
+  let i = start;
+  while (i < lines.length) {
+    const m = matchListMarker(lines[i]);
+    // インデント差が3を超えたら別のリスト（簡易判定。CommonMark 完全準拠ではない実用サブセット）
+    if (!m || m.ordered !== ordered || Math.abs(m.indent - first.indent) > 3) break;
+    const contentIndent = m.markerWidth;
+    const itemLines = [m.rest];
+    let j = i + 1;
+    while (j < lines.length) {
+      const line = lines[j];
+      if (isBlank(line)) {
+        // 空行の連続をまとめて先読みし、その後ろが何であるかで扱いを決める
+        // （旧実装はここで break した後 j が空行を指したまま親ループへ戻り、
+        //  空行は matchListMarker に落ちるのでリスト全体が終了してしまっていた＝実バグ。
+        //  loose なリスト（項目間に空行）で 2 項目目以降が消える形で出た）。
+        //
+        // ⚠ 「空行の次が何か」を見ないまま loose 扱いにすると、リストの直後に表や別の段落が
+        // 続くだけの普通の文書（空行はリストと後続ブロックの区切りであって項目間の区切りではない）
+        // まで loose と誤判定する（実測: README 風の「リスト→空行→表」で全項目が <p> に化けた）。
+        // loose にしてよいのは「次が同じリストの兄弟項目」か「項目自身のネストした続き」のときだけ。
+        let k = j; while (k < lines.length && isBlank(lines[k])) k++;
+        if (k < lines.length) {
+          const nk = lines[k];
+          const nkLead = nk.match(/^ */)[0].length;
+          if (nkLead >= contentIndent) {
+            // インデントされた継続（ネストしたブロック）＝この項目の中身。複数ブロックになるので loose。
+            loose = true;
+            for (let t = j; t < k; t++) itemLines.push('');
+            j = k; continue;
+          }
+          const nkMarker = matchListMarker(nk);
+          if (nkMarker && nkMarker.ordered === ordered && Math.abs(nkMarker.indent - first.indent) <= 3) {
+            // 次が同じリストの兄弟項目＝空行は項目間の区切り＝loose。消費して項目を終える。
+            loose = true;
+            j = k; break;
+          }
+        }
+        // 表・別の段落・文書末尾など、リストの外側が続く＝このリストはここで終わり（loose にはしない）。
+        break;
+      }
+      const lead = line.match(/^ */)[0].length;
+      if (lead >= contentIndent) { itemLines.push(line.slice(contentIndent)); j++; continue; }
+      break; // インデント不足＝新しい兄弟項目かリスト終了
+    }
+    let checked = null;
+    const tm = itemLines[0] && itemLines[0].match(/^\[([ xX])\]( +)(.*)$/);
+    if (tm) { checked = tm[1].toLowerCase() === 'x'; itemLines[0] = tm[3]; }
+    items.push({ checked, blocks: parseBlocks(itemLines) });
+    i = j;
+  }
+  return { block: { type: 'list', ordered, start: first.num || 1, loose, items }, next: i };
+}
+
+function parseBlocks(lines) {
+  const blocks = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (isBlank(lines[i])) { i++; continue; }
+
+    // フェンス付きコードブロック。閉じが無いまま EOF に達したら「そこまでをコードとして閉じる」
+    // ——展開されるだけで崩れた見た目にはならない（§35.6: OPEN_TEXT_MAX で切れた md はまさにこの形）。
+    const fence = lines[i].match(/^( {0,3})(`{3,}|~{3,})\s*(\S*)/);
+    if (fence) {
+      const markerChar = fence[2][0], markerLen = fence[2].length;
+      const lang = fence[3] || '';
+      let j = i + 1; const buf = [];
+      const closeRe = new RegExp(`^ {0,3}(\\${markerChar}{${markerLen},})\\s*$`);
+      while (j < lines.length) {
+        if (closeRe.test(lines[j])) { j++; break; }
+        buf.push(lines[j]); j++;
+      }
+      blocks.push({ type: 'code', lang, text: buf.join('\n') });
+      i = j; continue;
+    }
+
+    // ATX 見出し
+    const heading = lines[i].match(/^ {0,3}(#{1,6})(?:\s+(.*?))?\s*#*\s*$/);
+    if (heading) { blocks.push({ type: 'heading', level: heading[1].length, text: (heading[2] || '').trim() }); i++; continue; }
+
+    // 表（GFM）: この行がヘッダ候補で、直後が区切り行なら表として確定
+    if (looksLikeTableRow(lines[i]) && i + 1 < lines.length && isTableDelimiterRow(lines[i + 1])) {
+      const header = splitTableRow(lines[i]);
+      const align = parseTableAlign(lines[i + 1], header.length);
+      let j = i + 2; const rows = [];
+      while (j < lines.length && looksLikeTableRow(lines[j])) { rows.push(splitTableRow(lines[j])); j++; }
+      blocks.push({ type: 'table', header, align, rows });
+      i = j; continue;
+    }
+
+    // 水平線（表の区切り行と誤認しないよう、表検出の後に置く）
+    if (/^ {0,3}((\*\s*){3,}|(-\s*){3,}|(_\s*){3,})$/.test(lines[i])) { blocks.push({ type: 'hr' }); i++; continue; }
+
+    // 引用（ネストは再帰で自然に扱う: '>' を1段剥がして中身をもう一度 parseBlocks に渡す）
+    if (/^ {0,3}>/.test(lines[i])) {
+      let j = i; const buf = [];
+      while (j < lines.length && (/^ {0,3}>/.test(lines[j]) || (buf.length > 0 && !isBlank(lines[j]) && !isNewBlockStart(lines[j])))) {
+        buf.push(lines[j].replace(/^ {0,3}>\s?/, '')); j++;
+      }
+      blocks.push({ type: 'blockquote', blocks: parseBlocks(buf) });
+      i = j; continue;
+    }
+
+    // リスト
+    if (matchListMarker(lines[i])) { const { block, next } = parseList(lines, i); blocks.push(block); i = next; continue; }
+
+    // 段落（空行 or 他ブロックの開始まで）。表の開始（次行が区切り行）だけは個別に見る——
+    // 「| を含むだけの地の文」（例: 本文中の "arc1|arc2"）で段落を分断しないため、
+    // isNewBlockStart 自体には入れていない（上のコメント参照）。
+    let j = i; const buf = [];
+    while (j < lines.length && !isBlank(lines[j]) && !isNewBlockStart(lines[j])) {
+      if (looksLikeTableRow(lines[j]) && j + 1 < lines.length && isTableDelimiterRow(lines[j + 1])) break;
+      buf.push(lines[j]); j++;
+    }
+    if (!buf.length) { buf.push(lines[i]); j = i + 1; } // 空振り防止（無限ループガード）
+    blocks.push({ type: 'paragraph', lines: buf });
+    i = j;
+  }
+  return blocks;
+}
+
+function alignAttr(a) { return a ? ` style="text-align:${a}"` : ''; }
+function blocksToHtml(blocks, ctx) { return blocks.map(b => blockToHtml(b, ctx)).join(''); }
+function blockToHtml(b, ctx) {
+  switch (b.type) {
+    case 'heading': {
+      const level = Math.min(6, Math.max(1, b.level));
+      return `<h${level}>${renderInline(b.text, ctx)}</h${level}>`;
+    }
+    case 'hr': return '<hr>';
+    case 'code': {
+      // 言語名は表示に使わない（要件どおり）。class 名として埋め込むので英数字と - _ だけに絞る。
+      const langCls = b.lang ? ` class="language-${escapeAttr(b.lang.replace(/[^A-Za-z0-9_-]/g, ''))}"` : '';
+      return `<pre><code${langCls}>${escapeText(b.text)}</code></pre>`;
+    }
+    case 'blockquote': return `<blockquote>${blocksToHtml(b.blocks, ctx)}</blockquote>`;
+    case 'table': {
+      const th = b.header.map((c, k) => `<th${alignAttr(b.align[k])}>${renderInline(c, ctx)}</th>`).join('');
+      const rows = b.rows.map(r => '<tr>' + b.header.map((_, k) => `<td${alignAttr(b.align[k])}>${renderInline(r[k] || '', ctx)}</td>`).join('') + '</tr>').join('');
+      return `<table><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table>`;
+    }
+    case 'list': {
+      const tag = b.ordered ? 'ol' : 'ul';
+      const startAttr = b.ordered && b.start !== 1 ? ` start="${b.start}"` : '';
+      // tight（既定・GitHub 準拠）: 項目内の段落は <p> で包まない。loose のときだけ包む。
+      const render = b.loose ? blocksToHtml : blocksToHtmlTight;
+      const items = b.items.map(it => {
+        const inner = render(it.blocks, ctx);
+        if (it.checked !== null) {
+          return `<li class="de-md-task"><input type="checkbox" disabled${it.checked ? ' checked' : ''}>${inner}</li>`;
+        }
+        return `<li>${inner}</li>`;
+      }).join('');
+      return `<${tag}${startAttr}>${items}</${tag}>`;
+    }
+    case 'paragraph': return `<p>${paragraphInlineHtml(b, ctx)}</p>`;
+    default: return '';
+  }
+}
+// 段落の行を結合してインライン変換する（<p> で包むかどうかは呼び出し側が決める——
+// 通常の段落は包み、tight リストの項目内段落は包まない）。
+function paragraphInlineHtml(b, ctx) {
+  const n = b.lines.length;
+  return b.lines.map((l, idx) => {
+    const hard = idx < n - 1 && (/ {2,}$/.test(l) || /\\$/.test(l));
+    const text = l.replace(/ +$/, '').replace(/\\$/, '');
+    return renderInline(text, ctx) + (hard ? '<br>' : (idx < n - 1 ? ' ' : ''));
+  }).join('');
+}
+// tight リスト用: 段落だけ <p> を外して他はそのまま（ネストしたリスト・コードブロック等はブロックのまま）。
+function blockToHtmlTight(b, ctx) { return b.type === 'paragraph' ? paragraphInlineHtml(b, ctx) : blockToHtml(b, ctx); }
+function blocksToHtmlTight(blocks, ctx) { return blocks.map(b => blockToHtmlTight(b, ctx)).join(''); }
+
+// ─── エントリポイント ───────────────────────────────────────────────────
+// src: md のテキスト（取得した生テキストそのもの。ここでしか未加工の入力を扱わない）。
+// opts.baseUrl: 相対リンク/画像を解決する基点（その md 自身の絶対 URL）。無ければ解決しない。
+// opts.truncated: §12.5 の表示上限（OPEN_TEXT_MAX）でバイト単位に切れたテキストかどうか。
+//   true のときは最後の行（改行で終わっていない残り＝壊れている可能性が高い）を丸ごと落としてから
+//   解釈する。未閉鎖のフェンス付きコードブロックは EOF で暗黙に閉じる（上の parseBlocks 参照）ので、
+//   表の縦棒や見出しの # が中途半端に残って囲みごと崩れる、という見た目にはならない。
+//   ※ props.preview（抽出時の抜粋）はここでは対象外——バイト境界の保証が無い別の切れ方のため、
+//   呼び出し側（editor.js）は preview 経由のときは truncated を渡さない（GRAPH_CONTRACT §35.6）。
+function renderMarkdown(src, opts = {}) {
+  const ctx = { baseUrl: opts.baseUrl || null };
+  let text = String(src == null ? '' : src).replace(/\r\n?/g, '\n');
+  if (opts.truncated) {
+    const lastNL = text.lastIndexOf('\n');
+    text = lastNL === -1 ? '' : text.slice(0, lastNL);
+  }
+  let html = blocksToHtml(parseBlocks(text.split('\n')), ctx);
+  if (opts.truncated) html += '<p class="de-md-truncated">…(以下略)</p>';
+  return html;
+}
+
 // ═══ src/editor.js ═══
 // editor.js — フル作図エディタ / 閲覧ビューア（mode: 'edit' | 'view'）
 // プロジェクト（複数図 + nodes[].link によるドリルダウン）を単位に扱う。
 // edit: 選択/ドラッグ/結線/追加/削除/インライン編集/waypoint/JSON往復/Undo/Redo/保存・読込
 // view: パン/ズーム/3D回転/投影トグル/クリック遷移のみ（リリースパッケージ用）
 // 幾何編集は flat 投影時のみ有効。
+
 
 
 
@@ -7123,6 +7643,13 @@ const DEFAULT_OPEN_INSPSECS = new Set();
 // GRAPH_CONTRACT.md §12: ノードの実体を開く。表示方法（kind）の日本語と、テキストを載せる上限。
 const OPEN_KIND_TEXT = { html: 'HTML（サンドボックス表示）', image: '画像', text: 'テキスト', preview: '抜粋（preview）' };
 const OPEN_TEXT_MAX = 200 * 1024;   // 200KB を超えたら切って「(以下略)」
+// §35: kind:'text' のうち .md/.markdown だけ GitHub 風プレビューにする（model.js の openKindOfPath
+// は変えない——§12 の kind 判定は他の枝と共有されているので、拡張子の特別扱いは表示層だけで持つ）。
+const MD_PATH_RE = /\.(md|markdown)$/i;
+function isMarkdownTarget(target) {
+  const p = (target.path || target.url || '').split(/[?#]/)[0];
+  return MD_PATH_RE.test(p);
+}
 // バイト数の読みやすい表記。size が無いグラフ（古い抽出）では何も足さない。
 function fmtBytes(n, prefix = '・') {
   if (typeof n !== 'number' || !isFinite(n) || n < 0) return '';
@@ -8856,7 +9383,10 @@ class DiagramEditor {
   // 実体ビューア。§12.4 の不変条件を**この 1 メソッドで守り切る**:
   //  - fetch は同一オリジンのみ（別オリジンは取得も iframe もせずリンクだけ）
   //  - iframe は sandbox="allow-scripts" のみ（allow-same-origin を併記しない＝不透明オリジン）
-  //  - 取得内容は textContent にしか入れない（innerHTML 禁止）
+  //  - 取得内容は textContent にしか入れない（innerHTML 禁止）——ただし §35 で唯一の例外を設けた:
+  //    .md は renderMarkdown()（src/markdown.js）が「認識した記法だけを自前で組み立てて返した」
+  //    文字列に限り innerHTML へ渡してよい。取得した生テキストそのものを innerHTML に渡すことは無い
+  //    （GRAPH_CONTRACT §12.4/§35.4）。
   //  - プロジェクトを変更しない（projectToJSON がバイト同一であることを開く前後で自己検査する）
   showOpenModal(node, target) {
     const before = this.projectJSON();
@@ -8916,12 +9446,49 @@ class DiagramEditor {
     pre.textContent = text;        // §12.4: 取得した内容は必ず textContent（innerHTML 禁止）
     return pre;
   }
+  // .md を開くときだけ「プレビュー / ソース」を切り替えて表示する（§35・要件6）。既定はプレビュー。
+  // truncated: §12.5 の OPEN_TEXT_MAX でバイト単位に切れているか（true のときだけ markdown.js に
+  // truncated を渡す——props.preview 由来の text はここでは常に false。GRAPH_CONTRACT §35.6 参照）。
+  renderMarkdownPreview(body, rawText, target, truncated) {
+    const wrap = document.createElement('div'); wrap.className = 'de-md-wrap';
+    const toggle = document.createElement('div'); toggle.className = 'de-btngroup de-md-toggle';
+    const bPrev = this.btn('プレビュー', () => setView('preview'));
+    const bSrc = this.btn('ソース', () => setView('source'));
+    toggle.append(bPrev, bSrc);
+
+    const previewPane = document.createElement('div'); previewPane.className = 'de-md de-md-pane de-md-preview';
+    // ↑ renderMarkdown は「認識した記法だけを組み立てた」HTML 文字列を返す純粋関数（src/markdown.js）。
+    //   取得した生テキストそのものをここへ渡すのではなく、この変換を経た文字列だけを innerHTML に渡す
+    //   （§12.4 は「取得内容をそのまま innerHTML に入れない」の意——GRAPH_CONTRACT §35.4 参照）。
+    previewPane.innerHTML = renderMarkdown(rawText, { baseUrl: target.url || null, truncated });
+
+    const sourcePane = this.openPre(truncated ? rawText + '\n…(以下略)' : rawText);
+    sourcePane.classList.add('de-md-pane', 'de-md-source');
+    sourcePane.style.display = 'none';
+
+    const setView = (which) => {
+      previewPane.style.display = which === 'preview' ? '' : 'none';
+      sourcePane.style.display = which === 'source' ? '' : 'none';
+      bPrev.classList.toggle('active', which === 'preview');
+      bSrc.classList.toggle('active', which === 'source');
+      body.dataset.mdView = which;
+    };
+    bPrev.classList.add('active');
+    wrap.append(toggle, previewPane, sourcePane);
+    body.append(wrap);
+    body.dataset.mdView = 'preview';
+  }
+  // .md なら GitHub 風プレビュー（既定）+ ソース切替、それ以外は従来どおり <pre>。
+  appendTextOrMarkdown(body, text, target, truncated = false) {
+    if (isMarkdownTarget(target)) { this.renderMarkdownPreview(body, text, target, truncated); return; }
+    body.append(this.openPre(truncated ? text + '\n…(以下略)' : text));
+  }
   // preview への退避（取得失敗・未公開）。preview すら無ければ「どうすれば見られるか」を書く。
   openFallback(body, target, reason) {
     body.dataset.state = target.preview ? 'preview-fallback' : 'unavailable';
     if (target.preview) {
       body.append(this.openNote(`${reason} 以下は抽出時に埋め込まれた抜粋（props.preview）です。`));
-      body.append(this.openPre(target.preview));
+      this.appendTextOrMarkdown(body, target.preview, target, false);
       if (target.previewTruncated) body.append(this.openNote(`(先頭 ${target.preview.length} バイトの抜粋)`));
       return;
     }
@@ -8936,7 +9503,7 @@ class DiagramEditor {
     // ③ preview のみ（開き先の URL が無い）
     if (target.kind === 'preview') {
       body.dataset.state = 'preview';
-      body.append(this.openPre(target.preview || ''));
+      this.appendTextOrMarkdown(body, target.preview || '', target, false);
       if (target.previewTruncated) body.append(this.openNote(`(先頭 ${(target.preview || '').length} バイトの抜粋)`));
       return;
     }
@@ -8987,12 +9554,29 @@ class DiagramEditor {
       let text = '';
       try { text = await res.text(); } catch (e) { return this.openFallback(body, target, `本文を読めませんでした（${e && e.message || e}）。`); }
       body.dataset.state = 'text';
-      const partial = res.status === 206;
-      const cut = text.length > OPEN_TEXT_MAX;
-      body.append(this.openPre(cut ? text.slice(0, OPEN_TEXT_MAX) + '\n…(以下略)' : text));
-      if (cut || partial) {
-        body.append(this.openNote(`(先頭 ${OPEN_TEXT_MAX} バイトのみ表示${fmtBytes(target.size, ' / 全体は')}`
-          + `${partial ? '・その分だけ取得しています' : ''})`));
+      // 切れたかどうかの一次情報は Content-Range の総バイト数。206 という事実だけでは判定できない
+      // ——Range に応えるサーバ（本番の配信先 Cloudflare Pages を含む）は、要求した Range が
+      // ファイル全体を覆っていても 206 を返す。実測: 18KB の CLAUDE.md を開いても
+      // 「先頭 200KB のみ表示」という嘘の注記が出ていた（§35 の md プレビューで初めて実害＝
+      // 誤った注記として表に出た。この判定自体は §12.5 発足時点からの既存欠陥）。
+      // "bytes 0-204800/18429" のような形式（RFC 9110）から総バイト数/受信バイト数を読む。
+      const cr = res.headers.get('content-range') || '';
+      const crm = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(cr);
+      const totalBytes = crm ? Number(crm[3]) : null;
+      const gotBytes = crm ? Number(crm[2]) - Number(crm[1]) + 1 : null;
+      let truncated = totalBytes != null && gotBytes != null && gotBytes < totalBytes;
+      // Content-Range を返さないサーバ（Range 非対応・200 で常に全文）向けの保険。text.length は
+      // 文字数でありバイト数ではない（日本語では乖離する）ので、ここは「全文を読めてしまった」の
+      // 検知にしか使わない——本来の切り詰めは Range 経由（上）で行う。
+      let shown = text;
+      if (!crm && text.length > OPEN_TEXT_MAX) { shown = text.slice(0, OPEN_TEXT_MAX); truncated = true; }
+      this.appendTextOrMarkdown(body, shown, target, truncated);
+      if (truncated) {
+        const totalTxt = fmtBytes(totalBytes ?? target.size, '全体 ');
+        const gotTxt = fmtBytes(gotBytes, '先頭 ');
+        body.append(this.openNote(gotTxt
+          ? `(${totalTxt ? totalTxt + 'のうち' : ''}${gotTxt}のみ表示)`
+          : `(先頭の一部のみ表示${totalTxt ? ' / ' + totalTxt : ''})`));
       }
       return;
     }
