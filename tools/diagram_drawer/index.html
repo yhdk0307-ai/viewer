@@ -3143,20 +3143,32 @@ function routeAvoiding(aIn, bIn, rects, stub = 24) {
   return best.pts;
 }
 
-// ラベルを置ける点を折線上から探す（矩形に覆われない点を、折線の中点にいちばん近いところから採る）。
-// 見つからなければ中点（従来どおり）。lifted なエッジのラベルが箱に隠れるのを防ぐ（G10）。
-function freeLabelPoint(pts, rects, w, h) {
-  const mid = polylineMidpoint(pts);
-  if (!rects || !rects.length) return mid;
+// ラベルを置ける点を折線上から探す（矩形に覆われない点を、探索アンカーにいちばん近いところから採る）。
+// 見つからなければアンカー点そのもの（従来どおり）。lifted なエッジのラベルが箱に隠れるのを防ぐ（G10）。
+//
+// §34（2026-09-21・可読性②-1）: アンカーは既定で折線の**弧長中点**（anchorT=0.5）だが、
+// バスバー/幹線に乗るエッジは複数の線が経路の大部分（スパイン区間）を共有するため、
+// 「中点にいちばん近い空き」を探すと**どの線のラベルも同じスパイン付近**に集まって
+// 縦に積み上がる（ユーザー報告 2026-09-21: 「エッジのタグが左の縦線の上に乱立していて見にくい」）。
+// 重なり自体は §32.8 で 0 にしたが、「重ならない」だけでは「どの線か分からない」ままだった。
+// 直し方はユーザー指定どおり——ラベルを出元/受取先の**ブロック付近**（＝折線の端寄り）に
+// 置く。呼び出し側（flat_svg.js）がエッジごとに「どちらの端がより空いているか」を実測して
+// `anchorT` を渡す（0 に近いほど始点寄り＝出元、1 に近いほど終点寄り＝受取先）。
+// この関数自体は矩形を避けるだけの汎用の純関数のまま（life 固有の値は一切見ない）。
+function freeLabelPoint(pts, rects, w, h, anchorT = 0.5) {
+  const total = pathLength(pts);
+  const anchor = polylinePointAt(pts, total * anchorT);
+  if (!rects || !rects.length) return anchor;
   const covered = (x, y) => {
     const x1 = x - w / 2, x2 = x + w / 2, y1 = y - h / 2, y2 = y + h / 2;
     for (const r of rects) if (x1 < r.x2 && r.x1 < x2 && y1 < r.y2 && r.y1 < y2) return true;
     return false;
   };
-  if (!covered(mid.x, mid.y)) return mid;
+  if (!covered(anchor.x, anchor.y)) return anchor;
   const STEP = 6;
   let best = null;
   let acc = 0;
+  const anchorLen = total * anchorT;
   for (let i = 1; i < pts.length; i++) {
     const p = pts[i - 1], q = pts[i];
     const segLen = Math.hypot(q.x - p.x, q.y - p.y);
@@ -3166,7 +3178,7 @@ function freeLabelPoint(pts, rects, w, h) {
       const t = s / steps;
       const x = p.x + (q.x - p.x) * t, y = p.y + (q.y - p.y) * t;
       if (covered(x, y)) continue;
-      const d = Math.abs((acc + segLen * t) - pathLength(pts) / 2);
+      const d = Math.abs((acc + segLen * t) - anchorLen);
       if (!best || d < best.d) best = { d, x, y, horizontal };
     }
     acc += segLen;
@@ -3184,11 +3196,11 @@ function freeLabelPoint(pts, rects, w, h) {
   for (let k = 1; k <= 8; k++) {
     const d = k * (h + 4);
     for (const sign of [1, -1]) {
-      const x = mid.x + ux * d * sign, y = mid.y + uy * d * sign;
+      const x = anchor.x + ux * d * sign, y = anchor.y + uy * d * sign;
       if (!covered(x, y)) return { x, y, horizontal: Math.abs(dx) >= Math.abs(dy) };
     }
   }
-  return mid;
+  return anchor;
 }
 
 function dedupe(pts) {
@@ -3546,6 +3558,32 @@ function bestAvoidingRoute(model, edge, aGeom, bGeom, rects) {
   return best ? best.pts : routeAvoiding(aGeom, bGeom, rects);
 }
 
+// ─── §23.4（2026-09-21 拡張）: 「普通の」エッジの自己貫通を防ぐ ──────────────────────
+// 背景: 回避ルータ（bestAvoidingRoute/routeAvoiding）は __lifted エッジにしか使っていない
+// （既存の派生/手置きエッジの経路を変えない、という §7.4 の設計判断をそのまま踏襲）。
+// だが実測（life の `imports` 図・126 本中 146 件 own-endpoint pierce）で分かったのは、
+// これは「バスバーだけの問題」ではなく routeOrthogonal 自体の欠陥だったこと: ノードに
+// 固定ポート（例: type:"output" の out=right/in=left）があると、相手が実際にはポートの
+// 向きと逆側（例: 出口は右固定なのに相手は左下）にいる配置で、L/Z の「合流点」計算
+// （facingMid が null を返す側＝相手が背後にいる側）が、出口スタブから相手側へ戻る区間で
+// 自分自身の箱をそのまま横切る（出口→合流点の区間が、出口が乗っている箱の内側を通過する）。
+// 直し方: 既存の見た目は変えない（回帰を避ける・§7.4 の設計判断を尊重）— routeOrthogonal の
+// 結果が**自分の2端点**を貫通しないかだけを確かめ、貫通するときだけ routeAvoiding
+// （自分の2端点だけを障害物にした回避）へフォールバックする。貫通しない大多数のエッジは
+// 従来どおり routeOrthogonal のまま＝既存図のピクセルは変わらない。
+function ownEndpointRects(aGeom, bGeom) {
+  const out = [];
+  if (aGeom.node) out.push({ x1: aGeom.node.x, y1: aGeom.node.y, x2: aGeom.node.x + aGeom.node.w, y2: aGeom.node.y + (aGeom.node.collapsed ? 28 : aGeom.node.h) });
+  if (bGeom.node) out.push({ x1: bGeom.node.x, y1: bGeom.node.y, x2: bGeom.node.x + bGeom.node.w, y2: bGeom.node.y + (bGeom.node.collapsed ? 28 : bGeom.node.h) });
+  return out;
+}
+function safeOrthogonal(aGeom, bGeom) {
+  const base = routeOrthogonal(aGeom, bGeom);
+  const own = ownEndpointRects(aGeom, bGeom);
+  if (!own.length || pathHitCount(base, own) === 0) return base;
+  return routeAvoiding(aGeom, bGeom, own);
+}
+
 function edgePolyline(model, edge) {
   const bGuess = resolveEndpoint(model, edge.to);
   const aGeom = endpointGeometry(model, edge.from, bGuess && { x: bGuess.node.x + bGuess.node.w / 2, y: bGuess.node.y + bGuess.node.h / 2 });
@@ -3576,15 +3614,28 @@ function edgePolyline(model, edge) {
     }
     return bestAvoidingRoute(model, edge, aGeom, bGeom, rects);
   }
-  return routeOrthogonal(aGeom, bGeom);
+  return safeOrthogonal(aGeom, bGeom);
 }
 
-// エッジの端点以外のノード矩形（＝避けるべき障害物）
+// 避けるべき障害物（全ノード）。
+// §23.4（2026-09-21 改訂）: 以前は edge 自身の両端（from/to）をここで除外していた。
+// 理由は「自分の端点には触れる必要があるので障害物にできない」だったが、実測すると
+// この除外が**端点そのものではなく端点の内側**まで通行自由にしてしまい、線が自分の
+// 繋ぎ先ブロックを内側から貫通する形が life 実データで 22 件見つかった
+// （ユーザー報告 2026-09-21・`lift~links~kas~ls` が kas/ls 双方の内側 148px 相当・
+// `lift~publishes~epoch~viewer_prod` が viewer_prod の内側 174px 相当、等）。
+// 実際には「端点に触れる」ことと「端点の境界だけに触れる」ことは両立する——
+// `portPoint` が返す座標は常にノードの**境界線上**（x===n.x や y===n.y+n.h 等）であり、
+// `pathHitCount` の判定は `margin`（既定 1px）だけ内側に食い込んで初めて hit を数える
+// （このファイル冒頭の判定式）。つまり境界に乗るだけの正しい経路は、両端を障害物に
+// 含めても margin の分だけ余裕を持って hit 扱いされない。除外をやめても正しい経路は
+// 通り続け、境界を越えて内側を走る経路だけが BOX_HIT_COST で弾かれるようになる
+// （routeAvoiding / bestAvoidingRoute / trunk / busbar は全部ここを通るので、
+// 一箇所の直しで §23.4 が言う「線は端点のブロックの内側を走ってはいけない」が
+// 経路探索そのものの制約になる。個別の呼び出し側を直す必要はない）。
 function obstacleRects(model, edge) {
-  const ends = new Set([String(edge.from).split(':')[0], String(edge.to).split(':')[0]]);
   const out = [];
   for (const n of model.nodes) {
-    if (ends.has(n.id)) continue;
     const h = n.collapsed ? 28 : n.h;
     out.push({ x1: n.x, y1: n.y, x2: n.x + n.w, y2: n.y + h });
   }
@@ -3613,14 +3664,14 @@ function polylinePath(pts, kind = 'orthogonal', radius = 8) {
   return d;
 }
 
-function polylineMidpoint(pts) {
-  let total = 0;
-  for (let i = 1; i < pts.length; i++) total += dist(pts[i - 1], pts[i]);
+// 折線の弧長 len の位置の点を返す（0 <= len <= 全長。範囲外は端にクランプ）。
+// polylineMidpoint（len=全長/2）と freeLabelPoint の探索アンカー（len=全長×anchorT）が共有する。
+function polylinePointAt(pts, len) {
   let acc = 0;
   for (let i = 1; i < pts.length; i++) {
     const seg = dist(pts[i - 1], pts[i]);
-    if (acc + seg >= total / 2) {
-      const t = (total / 2 - acc) / seg;
+    if (acc + seg >= len || i === pts.length - 1) {
+      const t = seg > 0 ? Math.min(1, Math.max(0, (len - acc) / seg)) : 0;
       return {
         x: pts[i - 1].x + (pts[i].x - pts[i - 1].x) * t,
         y: pts[i - 1].y + (pts[i].y - pts[i - 1].y) * t,
@@ -3630,6 +3681,10 @@ function polylineMidpoint(pts) {
     acc += seg;
   }
   return { ...pts[0], horizontal: true };
+}
+
+function polylineMidpoint(pts) {
+  return polylinePointAt(pts, pathLength(pts) / 2);
 }
 
 const dist = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
@@ -4854,6 +4909,17 @@ class FlatSVGRenderer {
     // ラベルどうしの重なり回避（§32.8）用: この update() の間に置いたラベルの矩形を溜めていく。
     // model.edges の並び順で先勝ち——決定的（乱数・タイミング依存なし）。
     this._placedLabelRects = [];
+    // §34（2026-09-21・可読性①）: リフトエッジのラベル探索アンカーをどちらの端に寄せるかを
+    // 決めるための「各ノードに何本のリフトエッジが刺さっているか」。layer 数・名前を一切
+    // 見ない汎用の集計（labelAnchorT 参照）。
+    this._liftShare = new Map();
+    for (const e of model.edges) {
+      if (!e.__lifted) continue;
+      for (const ref of [e.from, e.to]) {
+        const id = String(ref).split(':')[0];
+        this._liftShare.set(id, (this._liftShare.get(id) || 0) + 1);
+      }
+    }
     // groups → edges → nodes の順で重ねる（レイヤフィルタ適用）
     for (const g of model.groups) if (this.groupVisible(g)) this.world.appendChild(this.renderGroup(g));
     for (const e of model.edges) {
@@ -4983,7 +5049,22 @@ class FlatSVGRenderer {
     const bcy = tn.y + tn.h / 2 + dyT;
     const enterLeft = fcx <= tcx;
     const bx = enterLeft ? tn.x : tn.x + tn.w; // 相手の左辺 or 右辺へ水平に入る
-    return [{ x: fcx, y: ay }, { x: fcx, y: bcy }, { x: bx, y: bcy }];
+    const cross = [{ x: fcx, y: ay }, { x: fcx, y: bcy }, { x: bx, y: bcy }];
+    // §23.4（2026-09-21 拡張）: 「相手の中心 x（fcx→tcx の列）を経由して相手の左右辺へ入る」
+    // 式は、fn が tn の x 範囲の内側寄りにあると（fcx が tn.x〜tn.x+tn.w に入る配置）、
+    // 水平区間が境界へ抜ける前に tn の内側を通ってしまう（実測: 層 2 の合成データ・
+    // `tools/diagram_engine/scratchpad/adversarial_crossband.json` で depth 80px 相当を再現
+    // ——life の実データはどの図も layerDy を発火させないため、この式は life だけを見ていたら
+    // 一度も検証できなかった）。自分の2端点を実際に貫通しないかここで確かめ、貫通するときだけ
+    // 同じ回避ルータへフォールバックする（貫通しない大多数はこの専用形のまま＝見た目を変えない）。
+    const fRect = { x1: fn.x, y1: fn.y + dyF, x2: fn.x + fn.w, y2: fn.y + fn.h + dyF };
+    const tRect = { x1: tn.x, y1: tn.y + dyT, x2: tn.x + tn.w, y2: tn.y + tn.h + dyT };
+    if (pathHitCount(cross, [fRect, tRect]) === 0) return cross;
+    const aSide = autoSide({ x: fn.x, y: fn.y + dyF, w: fn.w, h: fn.h }, { x: tcx, y: bcy });
+    const bSide = autoSide({ x: tn.x, y: tn.y + dyT, w: tn.w, h: tn.h }, { x: fcx, y: ay });
+    const aPt = { ...portPoint({ x: fn.x, y: fn.y + dyF, w: fn.w, h: fn.h }, { side: aSide, offset: 0.5 }), side: aSide };
+    const bPt = { ...portPoint({ x: tn.x, y: tn.y + dyT, w: tn.w, h: tn.h }, { side: bSide, offset: 0.5 }), side: bSide };
+    return routeAvoiding(aPt, bPt, [fRect, tRect]);
   }
 
   // ラベルを避けるべき矩形（端点も含めた全ノード。エッジはノードより先に描かれるので覆われると消える）。
@@ -4994,6 +5075,24 @@ class FlatSVGRenderer {
       if (!this.nodeVisible(n)) continue;
       const dy = this.dyOf(n.layer), h = n.collapsed ? 28 : n.h;
       out.push({ x1: n.x, y1: n.y + dy, x2: n.x + n.w, y2: n.y + dy + h });
+    }
+    return out;
+  }
+
+  // §34（2026-09-21・可読性①）: ラベルがバスバーのポートの印（renderBusPorts）に重ならないための
+  // 障害物矩形。実測（overview_auto flat）でラベルをブロック付近へ寄せた結果、リフトエッジの
+  // 出口付近に置かれた印とラベルが 1 件重なった（`lift~references~~scope/rules~~scope/epoch` の
+  // ラベルが PUBLISH 帯のポートの丸に重なっていた）——ラベル位置を変える前は各エッジの経路が
+  // てんでばらばらでポート付近に来ることが少なく、気づかれていなかった。印の半径（R_OUTER=6）＋
+  // ティック長（TICK=9）を包む正方形を障害物にする。renderBusPorts と同じ定数を使う。
+  portObstacles() {
+    const ports = busbarPorts(this.model);
+    if (!ports) return [];
+    const M = 9 + 4; // TICK + 余白
+    const out = [];
+    for (const [layerId, p] of ports) {
+      const dy = this.dyOf(layerId);
+      out.push({ x1: p.x - M, y1: p.y + dy - M, x2: p.x + M, y2: p.y + dy + M });
     }
     return out;
   }
@@ -5029,6 +5128,35 @@ class FlatSVGRenderer {
     return out;
   }
 
+  // §34（2026-09-21・可読性①）: リフトエッジのラベルをどちらの端（出元/受取先）寄りに探すか。
+  // ユーザー報告: バスバー導入（§32）で幹をまたぐ線が経路の大部分（スパイン区間）を共有する
+  // ようになった結果、ラベルの「空いている場所」探索が毎回スパイン付近に収束し、ラベルが
+  // 左の縦線の上に縦一列で乱立していた（重なりは §32.8 で 0 にしたが、どの線のラベルか
+  // 分からないままだった）。ユーザー指定の直し方は「出元か受取先のブロック付近に置く」。
+  // ⚠ これはバスバーだけの現象ではない——幹線（trunk・§23.3）に乗る fan-in/fan-out も
+  // 同じ理由で経路の大部分を共有するので、同じ規則を __lifted 全般に適用する（life 実データでは
+  // trunk 単独の辺が overview_auto に残っていないため busbar 経由でしか実測できていないが、
+  // 「経路を共有する線ほど中点に寄せると衝突する」という原理は trunk にも同型に効くはず）。
+  //
+  // 実測（overview_auto・busbar に乗る fan-out 群）: rules→site/epoch/diagram_engine/usv_model/
+  // skills/docs はどれも「出元 rules」を共有する fan-out（rules 側の共有本数 6、相手側は
+  // 1〜2）。中点固定のままだと「共有が少ない側＝相手（受取先）」が本来空いているのに、
+  // 中点はスパイン寄り（rules 側に近い）に落ちやすく、6 本のラベルが rules 付近に集まっていた。
+  // 一方 viewer_private 側は逆（epoch/ls/diagram_engine/usv_model → viewer_private の fan-in、
+  // viewer_private 側の共有本数の方が大きい）。固定で「常に受取先」「常に出元」のどちらかに
+  // 決め打つと、fan-in が優勢な図では今度は受取先に集まってしまう（life の viewer_private が
+  // まさにこの形）。だから**エッジごとに実測**し、共有本数が少ない側（＝そのブロック付近に
+  // 集まる他のラベルが少ない側）へ寄せる。同数（1 対 1 の孤立したリフト辺など）は受取先へ
+  // （矢印の指す先で内容を確かめる、という素直な既定）。
+  labelAnchorT(edge) {
+    if (!edge.__lifted) return 0.5;
+    const fromId = String(edge.from).split(':')[0], toId = String(edge.to).split(':')[0];
+    const fromShare = this._liftShare?.get(fromId) || 0;
+    const toShare = this._liftShare?.get(toId) || 0;
+    if (fromShare === toShare) return 0.85;
+    return fromShare < toShare ? 0.15 : 0.85;
+  }
+
   renderEdge(edge) {
     const pts = this.edgePoints(edge);
     if (!pts) return null;
@@ -5057,7 +5185,7 @@ class FlatSVGRenderer {
       // 16 ラベル中 2 組が重なった）。同じ update() 内で**先に置いたラベルの矩形も障害物に足す**
       // ——freeLabelPoint は矩形を避ける関数なので、ノード矩形とラベル矩形を区別しない。
       const m = edge.__lifted
-        ? freeLabelPoint(pts, [...this.labelObstacles(), ...this._placedLabelRects], w, h)
+        ? freeLabelPoint(pts, [...this.labelObstacles(), ...this._placedLabelRects, ...this.portObstacles()], w, h, this.labelAnchorT(edge))
         : polylineMidpoint(pts);
       this._placedLabelRects.push({ x1: m.x - w / 2, y1: m.y - h / 2, x2: m.x + w / 2, y2: m.y + h / 2 });
       g.appendChild(el('rect', {
@@ -8422,7 +8550,18 @@ class DiagramEditor {
     if (this.entScopeTree) this.entScopeTree.textContent = '';
     if (this.entExtTree) this.entExtTree.textContent = '';
     if (!ents.length) { this.setSubsectionVisible(this.entScopeHead, this.entScopeTree, false); this.setSubsectionVisible(this.entExtHead, this.entExtTree, false); return; }
-    if (!this.entCollapsed) this.entCollapsed = new Set();
+    if (!this.entCollapsed) {
+      // 各セクションの**第1階層は既定で畳む**（2026-09-21・ユーザー要望:「life や EXTERNAL の
+      // 第一階層がデフォルトで折りたたまれていない」）。MODEL は網羅の一覧なので、
+      // 開いた瞬間に全部の子まで見せると（life では 1952 行）目的の階層まで辿り着けない。
+      // ⚠ 「ルートだけ畳む」では駄目だった（実測: life を 1 回開くと 1928 行が一度に出る）。
+      //   **子を持つノードは全部畳む** ＝ 開いた 1 段の直下だけが見える、という
+      //   ふつうのファイルツリーの挙動にする。
+      // 一度でも ▸ を押せば entCollapsed に差分が乗るので、その後はユーザーの操作が勝つ。
+      this.entCollapsed = new Set(
+        ents.filter(e => childEntities(this.project, e.id).length > 0).map(e => e.id),
+      );
+    }
     const q = (this.entSearch?.value || '').trim().toLowerCase();
     if (q) {
       // 検索はセクションを跨いで効かせる（フォルダ／スコープ／外部の全 ents を対象に既にしている）。
