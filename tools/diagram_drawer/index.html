@@ -102,7 +102,20 @@
 .de-grid-line { stroke: var(--de-grid); stroke-width: 1; }
 .de-selected { stroke: var(--de-select) !important; stroke-width: 2 !important; }
 .de-ghost { stroke: var(--de-accent); stroke-dasharray: 5 4; fill: none; stroke-width: 1.4; }
+/* 図の説明は既定で畳む（ユーザー指摘 2026-09-22「図の下の注釈が見苦しい」）。
+   本籍は右ペインのプロパティ「説明」で、キャンバスの ⓘ はその場で思い出すための補助。 */
 .de-caption { fill: var(--de-soft); font-family: var(--de-font); font-size: 12px; font-style: italic; }
+.de-captionbox > .de-caption { display: none; }
+.de-captionbox.de-open > .de-caption { display: block; }
+.de-caption-btn { cursor: pointer; }
+.de-caption-btn circle { fill: none; stroke: var(--de-soft); stroke-width: 1; }
+.de-caption-btn text { fill: var(--de-soft); font-family: var(--de-font); font-size: 11px; font-style: italic; }
+.de-caption-btn:hover circle, .de-caption-btn:focus circle { stroke: var(--de-ink); }
+.de-caption-btn:hover text, .de-caption-btn:focus text { fill: var(--de-ink); }
+.de-captionbox.de-open .de-caption-btn circle { fill: var(--de-soft); }
+.de-captionbox.de-open .de-caption-btn text { fill: var(--de-bg); }
+/* 説明は長文なので 1 行に押し込めず折り返す（他の要約行は 1 行のまま） */
+.de-caption-row .de-inspsum-v { white-space: normal; line-height: 1.5; }
 
 /* ─── エディタ UI ─── */
 .de-app { display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; background: var(--de-bg); color: var(--de-ink); font-family: var(--de-font); }
@@ -677,6 +690,37 @@ function resolveEndpoint(model, ref) {
   return { node, port };
 }
 
+// §37 接地枠（kind:'container'）の pad が、メンバーでない箱に重なる欠陥の修正。
+// 「メンバーの外接矩形＋pad」をそのまま矩形にすると、隣の非メンバーの箱まで pad が届いてしまうこと
+// がある（実測: life の frame_externals_auto が ~ext/* の8箱に水平23pxずつ食い込んでいた）。
+// 枠は「ここまでが自分の持ち物」を表すので、メンバーでない箱には**0pxも**重なってはいけない。
+//
+// 直し方（4辺は独立に詰める）: ある辺の外側に非メンバーの箱があるときだけ、その箱の手前まで
+// その辺の pad を詰める。詰めるのは食い込みが起きている辺だけで、反対側・直交する辺の pad は
+// 変えない（隣に何も無い側は今までどおりの余白のまま＝条件3）。矩形どうしの分離定理により、
+// x軸かy軸のどちらか一方で重なりが無ければ2つの矩形は交わらないので、1つの障害物につき
+// 4辺のうち「実際にその向きにある」辺を1つだけ詰めれば十分（他の辺は一切動かさない）。
+// pad の意味（枠と中身の余白）を保つため、pad を一律に縮める近道は取らない。
+// life 固有の名前・個数は一切参照しない（他プロジェクトのグラフでもそのまま効く）。
+function clampPadToObstacles(bbox, padSides, obstacles) {
+  const pads = { ...padSides };
+  for (const o of obstacles) {
+    const ox1 = o.x, oy1 = o.y, ox2 = o.x + o.w, oy2 = o.y + o.h;
+    const isRight = ox1 >= bbox.x2, isLeft = ox2 <= bbox.x1;
+    const isBelow = oy1 >= bbox.y2, isAbove = oy2 <= bbox.y1;
+    const cand = [];
+    if (isRight) cand.push(['right', ox1 - bbox.x2]);
+    if (isLeft) cand.push(['left', bbox.x1 - ox2]);
+    if (isBelow) cand.push(['bottom', oy1 - bbox.y2]);
+    if (isAbove) cand.push(['top', bbox.y1 - oy2]);
+    if (!cand.length) continue; // 箱がメンバーの生矩形自体と x/y 両方で重なっている＝pad では解決できない（レイアウト側の責務）
+    cand.sort((a, b) => b[1] - a[1]);          // 縮み幅が最小で済む辺（＝最も緩い制約）を選ぶ
+    const [side, limit] = cand[0];
+    pads[side] = Math.max(0, Math.min(pads[side], limit));
+  }
+  return pads;
+}
+
 // グループの実効矩形: x,y,w,h 明示ならそれを、なければ members のバウンディング+pad
 // group.pad があればそれが呼び出し側の既定 pad より優先する（§7.4 入れ子コンテナは、外側ほど
 // 大きい pad を持たせて内側のコンテナとの間に隙間を作る。レンダラごとに pad が違っても形が崩れない）。
@@ -689,7 +733,14 @@ function rawGroupRect(model, group, pad = 24) {
   if (!members.length) return { x: 0, y: 0, w: 200, h: 120 };
   const x1 = Math.min(...members.map(n => n.x)), y1 = Math.min(...members.map(n => n.y));
   const x2 = Math.max(...members.map(n => n.x + n.w)), y2 = Math.max(...members.map(n => n.y + n.h));
-  return { x: x1 - pad, y: y1 - pad - 14, w: x2 - x1 + pad * 2, h: y2 - y1 + pad * 2 + 14 };
+  let pads = { left: pad, right: pad, top: pad + 14, bottom: pad };
+  if (group.kind === 'container') {
+    const memberIds = new Set(group.members);
+    const obstacles = (model.nodes || []).filter(n => !memberIds.has(n.id) &&
+      Number.isFinite(n.x) && Number.isFinite(n.y) && Number.isFinite(n.w) && Number.isFinite(n.h));
+    pads = clampPadToObstacles({ x1, y1, x2, y2 }, pads, obstacles);
+  }
+  return { x: x1 - pads.left, y: y1 - pads.top, w: x2 - x1 + pads.left + pads.right, h: y2 - y1 + pads.top + pads.bottom };
 }
 
 // §23.1 段の帯（platform）は**幅を揃える**。中身の数でそのまま幅が変わると、同じ「段」なのに
@@ -4706,6 +4757,37 @@ function applyNeighbourFocus(world, model, sel) {
   return true;
 }
 
+// ─── §38 図の説明（キャプション）は、既定では出さずに ⓘ ボタンだけ置く ───────
+// ユーザー指摘（2026-09-22）:「図の下に『自動生成：宣言されたスコープ〜』みたいな注釈が
+// いっぱい入っています。見苦しいので、もしコメントを入れるならアイコンボタンを入れて、
+// それを押すと表示されるようにしましょう。基本的には…プロパティのところに Description を
+// つけて、そこに書くべき」。
+//
+// 説明そのものは**右ペインのプロパティ（説明）が本籍**で、ここはその場で思い出すための
+// 補助でしかない。だから既定は畳んだ状態＝図の邪魔をしない。
+//   - ⓘ を押すと本文が開く（もう一度押すと閉じる）
+//   - ホバーでも読めるよう <title> を入れる（SVG の text は折り返さないので、長い説明は
+//     開いても 1 行になる。だから「本籍は右ペイン」という分担にしている）
+// flat と iso の両方から呼ぶ＝同じ挙動を 2 か所に書かないため、ここに 1 つだけ置く。
+function captionBadge(caption, cx, y) {
+  const g = el('g', { class: 'de-captionbox', 'data-kind': 'caption' });
+  const btn = el('g', { class: 'de-caption-btn', role: 'button', tabindex: '0',
+    'aria-label': '図の説明を開く', transform: `translate(${cx}, ${y})` });
+  btn.appendChild(el('circle', { r: 8, cx: 0, cy: 0 }));
+  btn.appendChild(el('text', { x: 0, y: 4, 'text-anchor': 'middle' }, 'i'));
+  btn.appendChild(el('title', {}, caption));
+  const body = el('text', { class: 'de-caption', x: cx, y: y + 22, 'text-anchor': 'middle' }, caption);
+  const toggle = (ev) => {
+    ev.stopPropagation();          // 背景クリック＝選択解除に食われないように
+    g.classList.toggle('de-open');
+    btn.setAttribute('aria-label', g.classList.contains('de-open') ? '図の説明を閉じる' : '図の説明を開く');
+  };
+  btn.addEventListener('click', toggle);
+  btn.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') toggle(ev); });
+  g.appendChild(btn); g.appendChild(body);
+  return g;
+}
+
 // ═══ src/renderers/flat_svg.js ═══
 // flat_svg.js — 2D SVG レンダラ（SysML SAB 風ブロック図）
 // 角丸ブロック + ポートマーカー + 直交エッジ + 矢印。エディタのヒットテスト面も提供する。
@@ -4869,7 +4951,14 @@ class FlatSVGRenderer {
     const ys = members.map(n => n.y + this.dyOf(n.layer));
     const x1 = Math.min(...members.map(n => n.x)), x2 = Math.max(...members.map(n => n.x + n.w));
     const y1 = Math.min(...ys), y2 = Math.max(...members.map(n => n.y + n.h + this.dyOf(n.layer)));
-    return { x: x1 - pad, y: y1 - pad - 14, w: x2 - x1 + pad * 2, h: y2 - y1 + pad * 2 + 14 };
+    // §37 groupRect と同じ規律: メンバーでない箱（段積み後の座標で判定）に pad が重ならないよう、
+    // 重なりが起きる辺だけを詰める（rawGroupRect と同じ clampPadToObstacles を共有）。
+    const memberIds = new Set(group.members);
+    const obstacles = this.model.nodes
+      .filter(n => !memberIds.has(n.id) && this.nodeVisible(n))
+      .map(n => ({ x: n.x, y: n.y + this.dyOf(n.layer), w: n.w, h: n.h }));
+    const pads = clampPadToObstacles({ x1, y1, x2, y2 }, { left: pad, right: pad, top: pad + 14, bottom: pad }, obstacles);
+    return { x: x1 - pads.left, y: y1 - pads.top, w: x2 - x1 + pads.left + pads.right, h: y2 - y1 + pads.top + pads.bottom };
   }
   // 描画・当たり判定・境界計算で必ず同じ矩形を使う（G6 の「描画と判定は 1 本」則）
   rectOf(group) { return this.spanRect(group) || groupRect(this.model, group); }
@@ -4976,7 +5065,7 @@ class FlatSVGRenderer {
     this.renderLayerChips();
     if (model.meta.caption) {
       const b = this.stackedBounds(40);
-      this.world.appendChild(el('text', { class: 'de-caption', x: b.x + b.w / 2, y: b.y + b.h + 8, 'text-anchor': 'middle' }, model.meta.caption));
+      this.world.appendChild(captionBadge(model.meta.caption, b.x + b.w / 2, b.y + b.h + 8));
     }
     this.applySelection();
     this.applyPreview();
@@ -6008,9 +6097,7 @@ class IsoSVGRenderer {
     for (const c of this.containers()) if (c.label) this.world.appendChild(this.renderContainerLabel(c));
     if (model.meta.caption) {
       const b = this.projectedBounds();
-      this.world.appendChild(el('text', {
-        class: 'de-caption', x: (b.x1 + b.x2) / 2, y: b.y2 + 34, 'text-anchor': 'middle',
-      }, model.meta.caption));
+      this.world.appendChild(captionBadge(model.meta.caption, (b.x1 + b.x2) / 2, b.y2 + 34));
     }
     // G17: 再描画で DOM を作り直したら選択表示（と近傍フォーカス）を貼り直す。
     // flat の update() が applySelection() を呼ぶのと同じ理由。
@@ -9313,7 +9400,8 @@ class DiagramEditor {
       + '<b>View ▸ Layout</b>: tree / layered / force / grid / radial ＋ TB・LR ／ <b>Re-layout</b>: 全ノード再配置 ／ <b>Freeze</b>: 座標を保存へ焼く<br>'
       + '<b>View ▸ 文字サイズ</b>: 小 / 標準 / 大 / 特大（箱の幅も一緒に追従する）<br>'
       + '<b>View ▸ ペイン</b>（またはペイン内側の <b>‹ ›</b>）: 左右ペインの開閉。境目のドラッグで幅、ダブルクリックで開閉<br>'
-      + '<b>Fit</b>: 全体表示 ／ ホイール・ピンチ: ズーム ／ 空白ドラッグ: パン'
+      + '<b>Fit</b>: 全体表示 ／ ホイール・ピンチ: ズーム ／ 空白ドラッグ: パン<br>'
+      + '<b>ⓘ</b>（図の下）: <b>その図の説明</b>を開く（既定は畳んである。本文の本籍は右ペインの「説明」）'
       + '<h4>キャンバス</h4>ドラッグ: 移動 ／ ポート→ポート: 結線 ／ ダブルクリック: ラベル編集<br>'
       + '<kbd>Del</kbd> 削除 ／ <kbd>Esc</kbd> 解除（モーダルを閉じる）／ <kbd>O</kbd> 実体を開く ／ <kbd>Ctrl+Z</kbd> 戻す ／ <kbd>Ctrl+Shift+Z</kbd> やり直す<br>'
       + '<kbd>Alt</kbd>+クリック: リンク先の図へ ／ 3D: 1本指=回転 ／ 2本指=ズーム&amp;パン ／ （PC: <kbd>Shift</kbd>+ドラッグ=パン）'
@@ -10459,6 +10547,17 @@ class DiagramEditor {
       lay.direction ? `direction=${lay.direction}` : null,
     ].filter(Boolean).join(' ') || '(既定)') : '(なし)';
     wrap.appendChild(this.summaryRow('layout', layStr));
+    // §38 説明（キャプション）の**本籍はここ**。キャンバス側は ⓘ を押したときだけ出す
+    // （ユーザー指摘 2026-09-22:「図の下に注釈がいっぱい入っていて見苦しい。
+    //  基本的にはプロパティのところに Description をつけて、そこに書くべき」）。
+    // 長文なので summaryRow の 1 行ではなく、折り返す段落として置く。
+    if (d?.meta?.caption) {
+      const row = document.createElement('div'); row.className = 'de-inspsum-row de-caption-row';
+      const k = document.createElement('div'); k.className = 'de-inspsum-k'; k.textContent = '説明';
+      const v = document.createElement('div'); v.className = 'de-inspsum-v de-selectable';
+      v.textContent = d.meta.caption;                      // textContent のみ（§12.4 の不変条件）
+      row.appendChild(k); row.appendChild(v); wrap.appendChild(row);
+    }
     box.appendChild(wrap);
   }
 
