@@ -132,10 +132,10 @@
 .de-menu-item:hover { background: var(--de-accent-soft); }
 .de-menu-sep { height: 1px; margin: 4px 6px; background: var(--de-grid); }
 .de-menu-header { padding: 6px 10px 2px; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--de-soft); }
-/* §39 プロジェクトの短い名前（アイコンバーの右端）。
+/* §39 プロジェクトの短い名前（ヘッダ最上段の右端＝編集時はメニューバー、閲覧時はアイコンバー）。
    かつてはここにパンくず（プロジェクト › 図 › 図…）を出していたが、現在地は VIEWS ツリーの
    強調・掘った先の枠のラベル・← ボタンが既に示しており重複だったので、名前だけに削った。
-   専用行は作らない — 行を足すとキャンバスの高さを常時削る（実測 20px）。 */
+   専用行は作らない — 行を足すとキャンバスの高さを常時削る（実測 18〜20px）。 */
 .de-title {
   margin-left: auto;        /* ボタンより後ろに置いて右端へ。名前の幅が変わってもボタンは動かない */
   flex: 0 1 auto; min-width: 0; padding: 0 2px;
@@ -467,19 +467,9 @@ g[data-origin="extracted"] .de-node-shape { stroke-width: 1.2; }
 g[data-origin="extracted"] .de-edge { stroke-width: 1.1; }
 /* 選択時の強調は来歴より優先（!important は既存の .de-selected が持っている） */
 
-/* 図の内訳バッジ（見出しの右） */
-.de-origin-badge {
-  display: inline-flex; gap: 8px; align-items: center; margin-left: 10px;
-  font-size: 11px; color: var(--de-soft); white-space: nowrap;
-}
-/* アイコンバーの中では縮めない（縮むと「自動 N ／ 手描き N」の数字が読めず、バッジの用を成さない）。 */
-.de-iconbar .de-origin-badge { flex: 0 0 auto; }
-.de-origin-badge b { font-weight: 600; color: var(--de-ink); }
-.de-origin-badge .de-ob-swatch {
-  display: inline-block; width: 14px; height: 0; vertical-align: middle;
-  border-top: 1px solid var(--de-line); margin-right: 3px;
-}
-.de-origin-badge .de-ob-swatch.thick { border-top-width: 3px; }
+/* ⚠ ここに図の内訳バッジ（`28 自動 ／ 4 手描き`）の CSS があった。2026-09-22 に撤去
+   （ユーザー指摘:「28 自動って何ですか？ いらないです」）。来歴そのものは上の線の太さで
+   出し続けている（細線＝自動 / 太線＝手描き）。消したのは数の表示だけ。 */
 
 html, body { margin: 0; height: 100%; overflow: hidden; }
 </style>
@@ -8464,11 +8454,16 @@ class DiagramEditor {
     this.root.classList.add('de-app');
     // ヘッダ（最上部メニューバー → アイコンバー。§39 でパンくず専用行は撤去）
     this.header = document.createElement('div'); this.header.className = 'de-header';
-    if (this.editable) this.header.appendChild(this.buildMenuBar());
+    this.menubar = this.editable ? this.buildMenuBar() : null;
+    if (this.menubar) this.header.appendChild(this.menubar);
     this.iconbar = document.createElement('div'); this.iconbar.className = 'de-iconbar';
     this.toolbar = this.iconbar; // 既存参照（applyPanelState 等）との互換
     this.buildIconBar();
     this.header.appendChild(this.iconbar);
+    // §39 プロジェクト名は**ヘッダの最上段の右端**（メニューバーの Help の右）。
+    // 閲覧専用パッケージにはメニューバーが無いので、そのときだけアイコンバーへ落とす
+    //  ——「どちらか一方にしか出ない」を避けるための fallback で、置き場所は常に**最上段の右端**。
+    (this.menubar || this.iconbar).appendChild(this.buildProjectLabel());
     this.root.appendChild(this.header);
     // メニュー外クリックで閉じる
     document.addEventListener('click', () => this.closeMenus());
@@ -8577,11 +8572,11 @@ class DiagramEditor {
   //   プロジェクト名の副題（"— repository structure map"）は一度も変わらない＝情報量ゼロ。
   //   残す価値があるのは「今どのプロジェクトを開いているか」だけなので、そこまで削った。
   //
-  // 置き場所がアイコンバー**右端**なのは:
-  //   - 行を増やさない（専用行はキャンバスの高さを**常時**削る。実測で 20px。ユーザー指摘で撤回）
-  //   - ボタンより後ろ＝**幅が変わってもボタンの横位置が動かない**（位置を覚えて押すため）
-  //   - メニューバーは mode:'edit' でしか作らないが、アイコンバーは**両モードで作る**ので、
-  //     閲覧専用パッケージにもプロジェクト名が出る（旧実装ではそこが空白だった）
+  // 置き場所は**ヘッダ最上段の右端**（編集時はメニューバーの Help の右、閲覧時はアイコンバー）。
+  //   - 行を増やさない（専用行はキャンバスの高さを**常時**削る。実測 18〜20px。ユーザー指摘で撤回）
+  //   - その行の要素より後ろ＝**幅が変わっても操作系の横位置が動かない**（位置を覚えて押すため）
+  //   - 一度アイコンバーに置いたが「もう一段上げましょう」とのユーザー判断で最上段へ。
+  //     メニューバーは mode:'edit' でしか作らないので、閲覧専用パッケージだけアイコンバーへ落とす
   buildProjectLabel() {
     this.titleEl = document.createElement('span');
     this.titleEl.className = 'de-title';
@@ -8666,10 +8661,6 @@ class DiagramEditor {
       btn('⬆', 'Import（読込）', () => this.loadProjectFile());
       btn('{ }', 'JSON パネル表示切替', () => this.togglePanel('json'), { role: 'toggle-json' });
     }
-    // §39 プロジェクト名は**必ず最後**＝右端（CSS の margin-left:auto で押し出す）。
-    // ボタンより後ろに置くのが要点で、名前の長さが変わってもボタンの横位置が動かない。
-    // ここは editable の分岐の外＝閲覧専用パッケージ（メニューバーが無い）にも出る。
-    ib.appendChild(this.buildProjectLabel());
   }
 
   // テーマ切替（既定=ライト。トグルは light ⇄ dark の明示切替）。
@@ -9485,10 +9476,11 @@ class DiagramEditor {
       + '<b>①</b> 左 <b>VIEWS</b> ツリーが今開いている図を強調する ／ '
       + '<b>②</b> 掘った先では<b>キャンバスに、掘ったものの名前を付けた枠</b>が出る ／ '
       + '<b>③</b> 戻るのは <b>←</b>。<br>'
-      + 'アイコンバー右端の文字は<b>プロジェクトの名前だけ</b>（ホバーで副題まで読める）。'
+      + 'ヘッダ右上の文字は<b>プロジェクトの名前だけ</b>（ホバーで副題まで読める）。'
       + 'かつてここに「プロジェクト › 図 › 図…」と開いた履歴を出していたが、'
       + '<b>①〜③ と重複していて読む理由が無い</b>ので名前だけに削った。<br>'
-      + 'その隣の <b>自動 N ／ 手描き N</b> は、この図が機械の抽出と人の解釈のどちらでできているかの内訳。'
+      + 'この図が機械の抽出と人の解釈のどちらでできているかは、<b>線の太さ</b>で読む'
+      + '（<b>細線＝自動</b>／<b>太線＝手描き</b>）。要素ごとの来歴は右ペインにも出る。'
       + '<h4>左パネル</h4><b>MODEL</b>（graph 全アイテムの木・上下比率はスプリッタでリサイズ）／ 下部タブ <b>VIEWS</b>・Palette・PROPOSALS'
       + '<h4>VIEWS の出どころ（3種類）</h4>'
       + 'VIEWS に並ぶ図は出どころが違う3種類が混ざる。**図を開くとキャプションに必ずどれかが書いてある**ので、'
@@ -9791,43 +9783,18 @@ class DiagramEditor {
     // （どこにいるかは VIEWS ツリーの強調・掘った先の枠のラベル・← の 3 つが既に示している）。
     this.titleEl.textContent = shortProjectName(p.title);
     this.titleEl.title = p.title;   // 副題まで読みたいときはホバー
-    this.renderOriginBadge();
     this.backBtn.disabled = !this.navStack.length;
     this.renderDiagramTree();
     this.renderEntityTree();
     this.updateProjectionButtons();
   }
 
-  // §18: この図が「機械が出した事実」と「人が描いた解釈」のどちらでできているかを見出しに出す。
-  // 要素ごとの線の太さだけだと、図全体としてどれくらい信用できるかが一目で分からない。
-  renderOriginBadge() {
-    this.originBadge?.remove();
-    if (!this.model) return;
-    const { extracted, authored } = originBreakdown(this.model);
-    if (!extracted && !authored) return;
-    const el2 = document.createElement('span');
-    el2.className = 'de-origin-badge';
-    el2.dataset.extracted = String(extracted);
-    el2.dataset.authored = String(authored);
-    const part = (n, cls, text) => {
-      const s2 = document.createElement('span');
-      const sw = document.createElement('i');
-      sw.className = 'de-ob-swatch' + (cls ? ' ' + cls : '');
-      s2.appendChild(sw);
-      const b2 = document.createElement('b'); b2.textContent = String(n);
-      s2.appendChild(b2);
-      s2.appendChild(document.createTextNode(' ' + text));
-      return s2;
-    };
-    if (extracted) el2.appendChild(part(extracted, '', '自動'));
-    if (authored) el2.appendChild(part(authored, 'thick', '手描き'));
-    el2.title = `自動（決定論的に抽出）${extracted} ／ 手描き（人の解釈）${authored}\n`
-      + '細線＝自動・太線＝手描き。自動の分は再抽出のたびに作り直される。';
-    this.originBadge = el2;
-    // §39 プロジェクト名の**手前**に置く。後ろに置くと、名前が右端に張り付いているぶん
-    // バッジがアイコンバーからはみ出し、flex-wrap で 2 行目に落ちる（＝行が増える）。
-    this.titleEl.before(el2);
-  }
+  // §18 ⚠ ここには来歴バッジ（`28 自動 ／ 4 手描き`）があった。2026-09-22 に撤去した
+  //   （ユーザー指摘:「28 自動って何ですか？ いらないです」）。
+  //   読み手にとって意味が取れない数字が、見出しという一等地に常駐していた。
+  //   **来歴そのものは消していない** — §18.1 の線の太さ（細線＝自動 / 太線＝手描き）は
+  //   そのまま残っており、要素ごとの来歴は右ペインの provenance でも読める。
+  //   消したのは「図全体の内訳を数で出す」表示だけ。
 
   btn(label, fn) {
     const b = document.createElement('button');
