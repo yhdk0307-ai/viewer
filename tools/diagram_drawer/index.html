@@ -132,7 +132,16 @@
 .de-menu-item:hover { background: var(--de-accent-soft); }
 .de-menu-sep { height: 1px; margin: 4px 6px; background: var(--de-grid); }
 .de-menu-header { padding: 6px 10px 2px; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--de-soft); }
-.de-title { font-size: 13px; font-weight: 700; letter-spacing: .02em; margin-left: auto; padding: 0 8px; color: var(--de-soft); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46vw; }
+/* §39 パンくず行（アイコンバーの直下・左寄せ）。2026-09-22 にメニューバー右端から移した
+   ——右端は「一番切れやすい場所」で、ドリルダウン中の現在地はここにしか出ないため。 */
+.de-crumbbar { display: flex; align-items: center; gap: 8px; padding: 0 8px 5px; min-width: 0; }
+.de-title { display: flex; align-items: baseline; min-width: 0; font-size: 12px; letter-spacing: .02em; color: var(--de-soft); }
+/* 頭（プロジェクト名＋途中の図）だけを縮める。ellipsis は必ず末尾を削るので、
+   1 要素にまとめると現在地から先に消える。 */
+.de-crumb-head { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 0 1 auto; }
+/* 末尾＝現在の図。`flex-shrink: 0` が要る — 0 1 auto にすると頭と一緒に縮み、
+   実測（携帯 390px）で**両方が切れた**。max-width を超えたときだけ自分の中で省略する。 */
+.de-crumb-cur { flex: 0 0 auto; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: var(--de-ink); }
 
 /* アイコンバー（メニューバー下段・正方形ボタン） */
 .de-iconbar { display: flex; align-items: center; gap: 4px; padding: 5px 8px; flex-wrap: wrap; }
@@ -423,7 +432,12 @@ a.de-btn { text-decoration: none; display: inline-flex; align-items: center; }
 @media (max-width: 720px) {
   .de-iconbar { padding: 4px 6px; gap: 3px; }
   .de-iconbtn { min-width: 28px; height: 28px; font-size: 12px; }
-  .de-title { max-width: 30vw; font-size: 11px; }
+  /* 携帯では `max-width: 30vw` を掛けていたため、パンくずが「life —」だけになって
+     何も伝えていなかった（実測 2026-09-22）。自前の行に移したので幅を絞る理由がない。
+     足りなければ頭から縮み、現在の図名が最後まで残る。 */
+  .de-crumbbar { padding: 0 6px 4px; }
+  .de-title { font-size: 11px; }
+  .de-crumb-cur { max-width: 72vw; }
   /* 狭い画面ではパネルをオーバーレイ化（開いてもキャンバスが覗く）。top はエディタが動的に設定 */
   .de-sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 40; box-shadow: 2px 0 14px var(--de-shadow); }
   .de-jsonpanel { position: fixed; right: 0; top: 0; bottom: 0; left: 18vw; z-index: 40; max-width: none; width: auto; box-shadow: -2px 0 14px var(--de-shadow); }
@@ -462,6 +476,9 @@ g[data-origin="extracted"] .de-edge { stroke-width: 1.1; }
   display: inline-flex; gap: 8px; align-items: center; margin-left: 10px;
   font-size: 11px; color: var(--de-soft); white-space: nowrap;
 }
+/* パンくず行では gap が間を空けるので自前の余白は要らない。パンくずが長くても縮めない
+   （縮むと「自動 N ／ 手描き N」の数字が読めなくなり、バッジの用を成さない）。 */
+.de-crumbbar .de-origin-badge { flex: 0 0 auto; margin-left: 0; }
 .de-origin-badge b { font-weight: 600; color: var(--de-ink); }
 .de-origin-badge .de-ob-swatch {
   display: inline-block; width: 14px; height: 0; vertical-align: middle;
@@ -8412,7 +8429,12 @@ class DiagramEditor {
     this.renderer.setPreview?.(this.preview);   // §11.3 プレビューは再マウントでも張り直す
     const editable = this.canEditGeometry;   // G15: ロック中は掴めないので grab カーソルにする
     this.viewport.style.cursor = editable ? 'default' : 'grab';
-    if (this.editable && this.projection !== 'flat') this.setStatus(`${this.projection} はビュー専用（編集は flat で）`);
+    // ⚠ ここでステータスバーに「iso はビュー専用」と出していた（〜2026-09-22）。やめた理由:
+    //   要約図の既定投影が 2.5D なので**開いた瞬間に出て、次の操作まで消えない**——一番よく使う
+    //   画面でステータスバーが常時それに占領され、本当のメッセージが出ても前のものと区別が付かない
+    //   （ユーザー指摘:「フッターに書いてある『iso は〜』は、ここに書くのが適切ですか？」）。
+    //   しかも既定はロック ON なので、flat でも幾何は編集できない＝「やろうとしていないことの制限」を
+    //   先回りして言っていた。投影の性質は投影ボタンの tooltip（buildIconBar）へ移した。
     this.updateProjectionButtons();
   }
 
@@ -8428,13 +8450,14 @@ class DiagramEditor {
   // レイアウト: 縦に [メニューバー][アイコンバー][本体: 左サイドバー｜キャンバス｜右プロパティ]
   buildUI() {
     this.root.classList.add('de-app');
-    // ヘッダ（最上部メニューバー＋その下のアイコンバー）
+    // ヘッダ（最上部メニューバー → アイコンバー → パンくず行）
     this.header = document.createElement('div'); this.header.className = 'de-header';
     if (this.editable) this.header.appendChild(this.buildMenuBar());
     this.iconbar = document.createElement('div'); this.iconbar.className = 'de-iconbar';
     this.toolbar = this.iconbar; // 既存参照（applyPanelState 等）との互換
     this.buildIconBar();
     this.header.appendChild(this.iconbar);
+    this.header.appendChild(this.buildCrumbBar());
     this.root.appendChild(this.header);
     // メニュー外クリックで閉じる
     document.addEventListener('click', () => this.closeMenus());
@@ -8457,7 +8480,7 @@ class DiagramEditor {
     }
   }
 
-  // 最上部メニューバー（File / Edit / View / Help）＋右にタイトル
+  // 最上部メニューバー（File / Edit / View / Help）。パンくずは buildCrumbBar（アイコンバーの下）へ移した
   buildMenuBar() {
     const bar = document.createElement('div'); bar.className = 'de-menubar';
     const exportRelease = async () => {
@@ -8525,7 +8548,31 @@ class DiagramEditor {
     bar.appendChild(this.buildMenu('Help', [
       ['使い方（Manual）', () => this.showManual()],
     ]));
+    return bar;
+  }
+
+  // §39 パンくず行（アイコンバーの直下・左寄せ）。
+  //
+  // ⚠ 2026-09-22 まではメニューバーの右端に `margin-left:auto` で押し出していた。3 つ問題があった
+  //   （ユーザー指摘:「右上に書いてある『life- 』って何ですか？ ここに書くのが適切ですか？」）:
+  //   ① これは「今どこにいるか」という方向指示なのに、視線が最後に行く場所にあった
+  //   ② `max-width: 46vw`（携帯 30vw）＋ ellipsis で**携帯では真っ先に切れる**。実測で
+  //      「life —」だけが残り、何の情報も伝えていなかった
+  //   ③ §7.4 の仮想ビュー（掘って生まれる図）は VIEWS ツリーに出ないので、**ドリルダウン中の
+  //      現在地はここにしか出ない**。一番切れやすい場所に、一番切れては困る情報が置いてあった
+  //   ついでに、メニューバーは mode:'edit' でしか作らないので、**閲覧専用パッケージには
+  //   パンくずが存在しなかった**（titleEl も作られない）。アイコンバーは両モードで作るので、
+  //   この行へ移したことで閲覧側にも現在地が出る。
+  //
+  // 行を分けたのは、アイコンバーに混ぜると**図を移動するたびにボタンの横位置が動く**ため
+  // （パンくずの幅は図名の長さで変わる）。ボタンの位置は覚えて押すものなので動かさない。
+  buildCrumbBar() {
+    const bar = document.createElement('div'); bar.className = 'de-crumbbar';
     this.titleEl = document.createElement('span'); this.titleEl.className = 'de-title';
+    // 省略は**頭から**。末尾（＝現在の図）は縮めない — 切れて困るのは末尾だから。
+    this.crumbHeadEl = document.createElement('span'); this.crumbHeadEl.className = 'de-crumb-head';
+    this.crumbCurEl = document.createElement('span'); this.crumbCurEl.className = 'de-crumb-cur';
+    this.titleEl.append(this.crumbHeadEl, this.crumbCurEl);
     bar.appendChild(this.titleEl);
     return bar;
   }
@@ -8583,8 +8630,14 @@ class DiagramEditor {
     this.backBtn = btn('←', '前の図へ戻る', () => this.navBack());
     ib.appendChild(sep());
     this.projButtons = {};
-    for (const [p, lbl] of [['flat', '2D'], ['iso', '2.5D'], ['webgl', '3D']]) {
-      const b = btn(lbl, lbl + ' 投影', () => this.setProjection(p), { wide: true }); b.dataset.projection = p; this.projButtons[p] = b;
+    // 投影の性質（どれで何ができるか）は**ここ＝選ぶ場所**に書く。以前はステータスバーへ
+    // 「iso はビュー専用」と出していたが、既定が 2.5D の図では常時居座って邪魔だった（mountRenderer 参照）。
+    for (const [p, lbl, tip] of [
+      ['flat', '2D', '2D 投影 — 箱を掴んで動かせるのはこの投影だけ'],
+      ['iso', '2.5D', '2.5D 投影 — 見るための投影（箱を動かすのは 2D で）'],
+      ['webgl', '3D', '3D 投影 — 見るための投影（箱を動かすのは 2D で）'],
+    ]) {
+      const b = btn(lbl, tip, () => this.setProjection(p), { wide: true }); b.dataset.projection = p; this.projButtons[p] = b;
     }
     btn('Fit', '全体表示', () => this.renderer.fit?.(), { wide: true });
     btn('◐', 'テーマ切替', () => this.toggleTheme());
@@ -9410,6 +9463,11 @@ class DiagramEditor {
       + '<b>Edit</b>: Undo ／ Redo ／ Add Node（パレット）／ 図を追加 ／ entry 設定<br>'
       + '<b>View</b>: 2D ／ 2.5D iso ／ 3D ／ Fit ／ Theme ／ 文字サイズ ／ ペイン ／ Layout<br>'
       + '<b>Help</b>: この使い方'
+      + '<h4>パンくず（アイコンバーの下・左寄せ）</h4>'
+      + '<b>プロジェクト名 › （降りてきた図…） › 今の図</b>。掘って生まれた図は VIEWS ツリーに出ないので、'
+      + '<b>ドリルダウン中の現在地はここだけ</b>が示す（戻るは <b>←</b>）。'
+      + '幅が足りないときは<b>頭から縮み、今の図の名前は最後まで残る</b>。'
+      + '右の <b>自動 N ／ 手描き N</b> は、この図が機械の抽出と人の解釈のどちらでできているかの内訳。'
       + '<h4>左パネル</h4><b>MODEL</b>（graph 全アイテムの木・上下比率はスプリッタでリサイズ）／ 下部タブ <b>VIEWS</b>・Palette・PROPOSALS'
       + '<h4>VIEWS の出どころ（3種類）</h4>'
       + 'VIEWS に並ぶ図は出どころが違う3種類が混ざる。**図を開くとキャプションに必ずどれかが書いてある**ので、'
@@ -9713,8 +9771,13 @@ class DiagramEditor {
     const byId = new Map(this.project.diagrams.map(d => [d.meta.id, d]));
     const trail = [...this.navStack, this.currentId]
       .map(id => byId.get(id)?.meta.title || id);
-    this.titleEl.textContent = [p.title, ...trail].join(' › ');
-    this.titleEl.title = [p.title, ...trail].join(' › ');
+    const full = [p.title, ...trail].join(' › ');
+    // 頭（プロジェクト名＋途中の図）と末尾（現在の図）を別の要素にする。CSS の ellipsis は
+    // 必ず末尾を削るので、1 要素のままだと**現在地が最初に消える**。頭だけを縮める。
+    // textContent を連結すると従来と 1 文字も変わらない（検査がこの文字列を読んでいる）。
+    this.crumbHeadEl.textContent = [p.title, ...trail.slice(0, -1)].join(' › ') + ' › ';
+    this.crumbCurEl.textContent = trail[trail.length - 1];
+    this.titleEl.title = full;
     this.renderOriginBadge();
     this.backBtn.disabled = !this.navStack.length;
     this.renderDiagramTree();
