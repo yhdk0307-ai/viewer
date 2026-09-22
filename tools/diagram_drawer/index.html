@@ -132,16 +132,16 @@
 .de-menu-item:hover { background: var(--de-accent-soft); }
 .de-menu-sep { height: 1px; margin: 4px 6px; background: var(--de-grid); }
 .de-menu-header { padding: 6px 10px 2px; font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--de-soft); }
-/* §39 パンくず行（アイコンバーの直下・左寄せ）。2026-09-22 にメニューバー右端から移した
-   ——右端は「一番切れやすい場所」で、ドリルダウン中の現在地はここにしか出ないため。 */
-.de-crumbbar { display: flex; align-items: center; gap: 8px; padding: 0 8px 5px; min-width: 0; }
-.de-title { display: flex; align-items: baseline; min-width: 0; font-size: 12px; letter-spacing: .02em; color: var(--de-soft); }
-/* 頭（プロジェクト名＋途中の図）だけを縮める。ellipsis は必ず末尾を削るので、
-   1 要素にまとめると現在地から先に消える。 */
-.de-crumb-head { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 0 1 auto; }
-/* 末尾＝現在の図。`flex-shrink: 0` が要る — 0 1 auto にすると頭と一緒に縮み、
-   実測（携帯 390px）で**両方が切れた**。max-width を超えたときだけ自分の中で省略する。 */
-.de-crumb-cur { flex: 0 0 auto; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: var(--de-ink); }
+/* §39 プロジェクトの短い名前（アイコンバーの右端）。
+   かつてはここにパンくず（プロジェクト › 図 › 図…）を出していたが、現在地は VIEWS ツリーの
+   強調・掘った先の枠のラベル・← ボタンが既に示しており重複だったので、名前だけに削った。
+   専用行は作らない — 行を足すとキャンバスの高さを常時削る（実測 20px）。 */
+.de-title {
+  margin-left: auto;        /* ボタンより後ろに置いて右端へ。名前の幅が変わってもボタンは動かない */
+  flex: 0 1 auto; min-width: 0; padding: 0 2px;
+  font-size: 12px; font-weight: 700; letter-spacing: .02em; color: var(--de-soft);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 34vw;
+}
 
 /* アイコンバー（メニューバー下段・正方形ボタン） */
 .de-iconbar { display: flex; align-items: center; gap: 4px; padding: 5px 8px; flex-wrap: wrap; }
@@ -432,12 +432,8 @@ a.de-btn { text-decoration: none; display: inline-flex; align-items: center; }
 @media (max-width: 720px) {
   .de-iconbar { padding: 4px 6px; gap: 3px; }
   .de-iconbtn { min-width: 28px; height: 28px; font-size: 12px; }
-  /* 携帯では `max-width: 30vw` を掛けていたため、パンくずが「life —」だけになって
-     何も伝えていなかった（実測 2026-09-22）。自前の行に移したので幅を絞る理由がない。
-     足りなければ頭から縮み、現在の図名が最後まで残る。 */
-  .de-crumbbar { padding: 0 6px 4px; }
-  .de-title { font-size: 11px; }
-  .de-crumb-cur { max-width: 72vw; }
+  /* 携帯。出すのは短い名前（"life"）だけなので、ここで幅を絞っても切れない。 */
+  .de-title { font-size: 11px; max-width: 40vw; }
   /* 狭い画面ではパネルをオーバーレイ化（開いてもキャンバスが覗く）。top はエディタが動的に設定 */
   .de-sidebar { position: fixed; left: 0; top: 0; bottom: 0; z-index: 40; box-shadow: 2px 0 14px var(--de-shadow); }
   .de-jsonpanel { position: fixed; right: 0; top: 0; bottom: 0; left: 18vw; z-index: 40; max-width: none; width: auto; box-shadow: -2px 0 14px var(--de-shadow); }
@@ -476,9 +472,8 @@ g[data-origin="extracted"] .de-edge { stroke-width: 1.1; }
   display: inline-flex; gap: 8px; align-items: center; margin-left: 10px;
   font-size: 11px; color: var(--de-soft); white-space: nowrap;
 }
-/* パンくず行では gap が間を空けるので自前の余白は要らない。パンくずが長くても縮めない
-   （縮むと「自動 N ／ 手描き N」の数字が読めなくなり、バッジの用を成さない）。 */
-.de-crumbbar .de-origin-badge { flex: 0 0 auto; margin-left: 0; }
+/* アイコンバーの中では縮めない（縮むと「自動 N ／ 手描き N」の数字が読めず、バッジの用を成さない）。 */
+.de-iconbar .de-origin-badge { flex: 0 0 auto; }
 .de-origin-badge b { font-weight: 600; color: var(--de-ink); }
 .de-origin-badge .de-ob-swatch {
   display: inline-block; width: 14px; height: 0; vertical-align: middle;
@@ -7699,6 +7694,23 @@ const NODE_PALETTE = [
   { type: 'pictogram', label: 'Pictogram', icon: 'robot' },
 ];
 
+// §39 見出しに出す「プロジェクトの短い名前」。project.title は
+// `life — repository structure map` のように **名前 — 副題** の形で書かれることが多く、
+// 副題は一度も変わらない＝情報量ゼロなのに、携帯では副題のせいで名前まで切れていた
+// （実測: 表示が「life —」だけになっていた）。最初の区切りまでを名前として採る。
+// 区切りが無ければ題名をそのまま返す＝title の書き方を強制しない。
+// 全文はホバー（title 属性）で読める。
+// em/en ダッシュ・縦棒・空白付きハイフンは**前後に空白**を要求する（`e-mail` を割らない）。
+// コロンだけは前の空白を要求しない（`名前: 副題` と書くのが普通）が、後ろの空白は要る
+// （`10:30` のような時刻を割らないため）。
+const TITLE_SEPARATORS = /\s+[—–|]\s+|\s*[:：]\s+|\s+-\s+/;
+function shortProjectName(title) {
+  const t = String(title ?? '').trim();
+  if (!t) return '';
+  const head = t.split(TITLE_SEPARATORS)[0].trim();
+  return head || t;
+}
+
 const HISTORY_MAX = 100;
 const AUTOSAVE_KEY = 'diagram-engine-autosave';
 // §11.3 判定（✓/✗・却下理由・質問への回答）のブラウザ側作業記憶。キーは「提案ファイル名 :: 提案 id」。
@@ -8450,14 +8462,13 @@ class DiagramEditor {
   // レイアウト: 縦に [メニューバー][アイコンバー][本体: 左サイドバー｜キャンバス｜右プロパティ]
   buildUI() {
     this.root.classList.add('de-app');
-    // ヘッダ（最上部メニューバー → アイコンバー → パンくず行）
+    // ヘッダ（最上部メニューバー → アイコンバー。§39 でパンくず専用行は撤去）
     this.header = document.createElement('div'); this.header.className = 'de-header';
     if (this.editable) this.header.appendChild(this.buildMenuBar());
     this.iconbar = document.createElement('div'); this.iconbar.className = 'de-iconbar';
     this.toolbar = this.iconbar; // 既存参照（applyPanelState 等）との互換
     this.buildIconBar();
     this.header.appendChild(this.iconbar);
-    this.header.appendChild(this.buildCrumbBar());
     this.root.appendChild(this.header);
     // メニュー外クリックで閉じる
     document.addEventListener('click', () => this.closeMenus());
@@ -8480,7 +8491,7 @@ class DiagramEditor {
     }
   }
 
-  // 最上部メニューバー（File / Edit / View / Help）。パンくずは buildCrumbBar（アイコンバーの下）へ移した
+  // 最上部メニューバー（File / Edit / View / Help）。プロジェクト名はアイコンバー右端（§39）
   buildMenuBar() {
     const bar = document.createElement('div'); bar.className = 'de-menubar';
     const exportRelease = async () => {
@@ -8551,30 +8562,31 @@ class DiagramEditor {
     return bar;
   }
 
-  // §39 パンくず行（アイコンバーの直下・左寄せ）。
+  // §39 プロジェクトの短い名前だけを、アイコンバーの右端に置く。
   //
-  // ⚠ 2026-09-22 まではメニューバーの右端に `margin-left:auto` で押し出していた。3 つ問題があった
-  //   （ユーザー指摘:「右上に書いてある『life- 』って何ですか？ ここに書くのが適切ですか？」）:
-  //   ① これは「今どこにいるか」という方向指示なのに、視線が最後に行く場所にあった
-  //   ② `max-width: 46vw`（携帯 30vw）＋ ellipsis で**携帯では真っ先に切れる**。実測で
-  //      「life —」だけが残り、何の情報も伝えていなかった
-  //   ③ §7.4 の仮想ビュー（掘って生まれる図）は VIEWS ツリーに出ないので、**ドリルダウン中の
-  //      現在地はここにしか出ない**。一番切れやすい場所に、一番切れては困る情報が置いてあった
-  //   ついでに、メニューバーは mode:'edit' でしか作らないので、**閲覧専用パッケージには
-  //   パンくずが存在しなかった**（titleEl も作られない）。アイコンバーは両モードで作るので、
-  //   この行へ移したことで閲覧側にも現在地が出る。
+  // ⚠ ここはかつて**パンくず**（`<プロジェクト名> › <降りてきた図…> › <現在の図>`）だった。
+  //   2026-09-22 にユーザーから「こんなに開いたものの履歴を表示する意味がわからない。
+  //   このパンくずを表示することに何のメリットがあるのか。LIFE だけでいいのでは」と問われ、
+  //   調べ直したところ**ほぼ全部が重複**だった:
+  //     - 通常のビュー … 左 VIEWS ツリーが現在の行を強調している（de-navrow.current）
+  //     - 掘った先     … キャンバスに **掘ったノード名のラベル付きの枠**が描かれる
+  //                      （nested~<id> の label ＝ そのノードの name。model.js 参照）
+  //     - 戻る         … ← ボタン
+  //   先に私は「仮想ビューは VIEWS ツリーに出ないので現在地はここにしか出ない」と書いたが、
+  //   **キャンバスの枠とラベルを勘定に入れていなかった**。履歴（› の連なり）は読む理由が無く、
+  //   プロジェクト名の副題（"— repository structure map"）は一度も変わらない＝情報量ゼロ。
+  //   残す価値があるのは「今どのプロジェクトを開いているか」だけなので、そこまで削った。
   //
-  // 行を分けたのは、アイコンバーに混ぜると**図を移動するたびにボタンの横位置が動く**ため
-  // （パンくずの幅は図名の長さで変わる）。ボタンの位置は覚えて押すものなので動かさない。
-  buildCrumbBar() {
-    const bar = document.createElement('div'); bar.className = 'de-crumbbar';
-    this.titleEl = document.createElement('span'); this.titleEl.className = 'de-title';
-    // 省略は**頭から**。末尾（＝現在の図）は縮めない — 切れて困るのは末尾だから。
-    this.crumbHeadEl = document.createElement('span'); this.crumbHeadEl.className = 'de-crumb-head';
-    this.crumbCurEl = document.createElement('span'); this.crumbCurEl.className = 'de-crumb-cur';
-    this.titleEl.append(this.crumbHeadEl, this.crumbCurEl);
-    bar.appendChild(this.titleEl);
-    return bar;
+  // 置き場所がアイコンバー**右端**なのは:
+  //   - 行を増やさない（専用行はキャンバスの高さを**常時**削る。実測で 20px。ユーザー指摘で撤回）
+  //   - ボタンより後ろ＝**幅が変わってもボタンの横位置が動かない**（位置を覚えて押すため）
+  //   - メニューバーは mode:'edit' でしか作らないが、アイコンバーは**両モードで作る**ので、
+  //     閲覧専用パッケージにもプロジェクト名が出る（旧実装ではそこが空白だった）
+  buildProjectLabel() {
+    this.titleEl = document.createElement('span');
+    this.titleEl.className = 'de-title';
+    this.titleEl.dataset.role = 'project-label';
+    return this.titleEl;
   }
 
   // items の要素は3種:
@@ -8641,18 +8653,23 @@ class DiagramEditor {
     }
     btn('Fit', '全体表示', () => this.renderer.fit?.(), { wide: true });
     btn('◐', 'テーマ切替', () => this.toggleTheme());
-    if (!this.editable) return;
-    ib.appendChild(sep());
-    // G15: ロックは最も押しやすい位置に置く（既定 ON なので「解除の入口」が見えている必要がある）
-    this.lockBtn = btn('', '', () => this.toggleLock(), { role: 'toggle-lock' });
-    this.updateLockButton();
-    this.undoBtn = btn('↶', '戻す (Ctrl+Z)', () => this.undo());
-    this.redoBtn = btn('↷', 'やり直す (Ctrl+Shift+Z)', () => this.redo());
-    btn('＋', 'ノード追加（パレット）', () => this.showPaletteTab());
-    ib.appendChild(sep());
-    btn('⬇', 'Project を保存', () => this.saveProjectFile());
-    btn('⬆', 'Import（読込）', () => this.loadProjectFile());
-    btn('{ }', 'JSON パネル表示切替', () => this.togglePanel('json'), { role: 'toggle-json' });
+    if (this.editable) {
+      ib.appendChild(sep());
+      // G15: ロックは最も押しやすい位置に置く（既定 ON なので「解除の入口」が見えている必要がある）
+      this.lockBtn = btn('', '', () => this.toggleLock(), { role: 'toggle-lock' });
+      this.updateLockButton();
+      this.undoBtn = btn('↶', '戻す (Ctrl+Z)', () => this.undo());
+      this.redoBtn = btn('↷', 'やり直す (Ctrl+Shift+Z)', () => this.redo());
+      btn('＋', 'ノード追加（パレット）', () => this.showPaletteTab());
+      ib.appendChild(sep());
+      btn('⬇', 'Project を保存', () => this.saveProjectFile());
+      btn('⬆', 'Import（読込）', () => this.loadProjectFile());
+      btn('{ }', 'JSON パネル表示切替', () => this.togglePanel('json'), { role: 'toggle-json' });
+    }
+    // §39 プロジェクト名は**必ず最後**＝右端（CSS の margin-left:auto で押し出す）。
+    // ボタンより後ろに置くのが要点で、名前の長さが変わってもボタンの横位置が動かない。
+    // ここは editable の分岐の外＝閲覧専用パッケージ（メニューバーが無い）にも出る。
+    ib.appendChild(this.buildProjectLabel());
   }
 
   // テーマ切替（既定=ライト。トグルは light ⇄ dark の明示切替）。
@@ -9317,7 +9334,8 @@ class DiagramEditor {
   }
 
   // 図の親子フォレストを構築。子 = その図のノード link 先の図。entry・非被リンク図がルート。
-  // §7.4: 仮想ビュー（view~<nodeId>）は VIEWS ツリーに出さない（transient＝ナビはパンくずが担う）
+  // §7.4: 仮想ビュー（view~<nodeId>）は VIEWS ツリーに出さない（transient。現在地はキャンバスの枠の
+  // ラベルが名指しし、戻るは ← ボタン。§39 でパンくずは廃止した）
   buildDiagramForest() {
     const real = this.project.diagrams.filter(d => !d.__virtual);
     const byId = new Map(real.map(d => [d.meta.id, d]));
@@ -9463,11 +9481,14 @@ class DiagramEditor {
       + '<b>Edit</b>: Undo ／ Redo ／ Add Node（パレット）／ 図を追加 ／ entry 設定<br>'
       + '<b>View</b>: 2D ／ 2.5D iso ／ 3D ／ Fit ／ Theme ／ 文字サイズ ／ ペイン ／ Layout<br>'
       + '<b>Help</b>: この使い方'
-      + '<h4>パンくず（アイコンバーの下・左寄せ）</h4>'
-      + '<b>プロジェクト名 › （降りてきた図…） › 今の図</b>。掘って生まれた図は VIEWS ツリーに出ないので、'
-      + '<b>ドリルダウン中の現在地はここだけ</b>が示す（戻るは <b>←</b>）。'
-      + '幅が足りないときは<b>頭から縮み、今の図の名前は最後まで残る</b>。'
-      + '右の <b>自動 N ／ 手描き N</b> は、この図が機械の抽出と人の解釈のどちらでできているかの内訳。'
+      + '<h4>今どこにいるか</h4>'
+      + '<b>①</b> 左 <b>VIEWS</b> ツリーが今開いている図を強調する ／ '
+      + '<b>②</b> 掘った先では<b>キャンバスに、掘ったものの名前を付けた枠</b>が出る ／ '
+      + '<b>③</b> 戻るのは <b>←</b>。<br>'
+      + 'アイコンバー右端の文字は<b>プロジェクトの名前だけ</b>（ホバーで副題まで読める）。'
+      + 'かつてここに「プロジェクト › 図 › 図…」と開いた履歴を出していたが、'
+      + '<b>①〜③ と重複していて読む理由が無い</b>ので名前だけに削った。<br>'
+      + 'その隣の <b>自動 N ／ 手描き N</b> は、この図が機械の抽出と人の解釈のどちらでできているかの内訳。'
       + '<h4>左パネル</h4><b>MODEL</b>（graph 全アイテムの木・上下比率はスプリッタでリサイズ）／ 下部タブ <b>VIEWS</b>・Palette・PROPOSALS'
       + '<h4>VIEWS の出どころ（3種類）</h4>'
       + 'VIEWS に並ぶ図は出どころが違う3種類が混ざる。**図を開くとキャプションに必ずどれかが書いてある**ので、'
@@ -9762,22 +9783,14 @@ class DiagramEditor {
     this.setStatus(`図 '${id}' を追加（名前は JSON パネルの meta.id / meta.title で変更）。パレットからノードを配置してください`);
   }
 
-  // パンくず・スイッチャ・戻る・entry マークの更新
+  // 見出し（プロジェクト名）・来歴バッジ・戻る・ツリー・投影ボタンの更新
   refreshChrome() {
     if (!this.project) return;
     const p = this.project.project;
-    // パンくず: プロジェクト › （降りてきた図…） › 現在図。§7.4 の仮想ビューは VIEWS ツリーに
-    // 出さないので、ドリルダウンの現在地はここだけが示す（戻るは ← ボタン / navBack）。
-    const byId = new Map(this.project.diagrams.map(d => [d.meta.id, d]));
-    const trail = [...this.navStack, this.currentId]
-      .map(id => byId.get(id)?.meta.title || id);
-    const full = [p.title, ...trail].join(' › ');
-    // 頭（プロジェクト名＋途中の図）と末尾（現在の図）を別の要素にする。CSS の ellipsis は
-    // 必ず末尾を削るので、1 要素のままだと**現在地が最初に消える**。頭だけを縮める。
-    // textContent を連結すると従来と 1 文字も変わらない（検査がこの文字列を読んでいる）。
-    this.crumbHeadEl.textContent = [p.title, ...trail.slice(0, -1)].join(' › ') + ' › ';
-    this.crumbCurEl.textContent = trail[trail.length - 1];
-    this.titleEl.title = full;
+    // §39 出すのは**プロジェクトの短い名前だけ**。開いた図の履歴は出さない
+    // （どこにいるかは VIEWS ツリーの強調・掘った先の枠のラベル・← の 3 つが既に示している）。
+    this.titleEl.textContent = shortProjectName(p.title);
+    this.titleEl.title = p.title;   // 副題まで読みたいときはホバー
     this.renderOriginBadge();
     this.backBtn.disabled = !this.navStack.length;
     this.renderDiagramTree();
@@ -9811,7 +9824,9 @@ class DiagramEditor {
     el2.title = `自動（決定論的に抽出）${extracted} ／ 手描き（人の解釈）${authored}\n`
       + '細線＝自動・太線＝手描き。自動の分は再抽出のたびに作り直される。';
     this.originBadge = el2;
-    this.titleEl.after(el2);
+    // §39 プロジェクト名の**手前**に置く。後ろに置くと、名前が右端に張り付いているぶん
+    // バッジがアイコンバーからはみ出し、flex-wrap で 2 行目に落ちる（＝行が増える）。
+    this.titleEl.before(el2);
   }
 
   btn(label, fn) {
