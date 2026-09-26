@@ -178,6 +178,30 @@
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 8; overflow: hidden;
 }
 .de-tip-path { margin-top: 3px; color: var(--de-soft); font-family: var(--de-mono); font-size: 10.5px; word-break: break-all; }
+
+/* §40.6 スマホの説明帯。ホバーできない端末で、選んだものの説明を画面下部に出す。
+   ⚠ 既定は display:none。**出すかどうかを決めるのは下のメディアクエリ**＝
+   「ホバーできない端末か、狭い画面のとき」という**環境の宣言**で判定する。
+   JS で UA を見て端末を当てにいかない（当てにいくと必ず外れる端末が出る）。 */
+.de-infobar { display: none; }
+@media (max-width: 720px), (hover: none) {
+  .de-infobar[data-shown="1"] {
+    display: flex; align-items: flex-start; gap: 6px;
+    box-sizing: border-box; flex: 0 0 auto; max-height: 30vh; overflow-y: auto;
+    padding: 8px 10px;
+    background: var(--de-panel); border-top: 1px solid var(--de-grid);
+    font-family: var(--de-font); font-size: 12.5px; line-height: 1.6; color: var(--de-ink);
+  }
+}
+.de-infobar-body { flex: 1 1 auto; min-width: 0; }
+.de-infobar-head { font-weight: 700; word-break: break-word; }
+.de-infobar-desc { margin-top: 2px; }
+.de-infobar-path { margin-top: 2px; color: var(--de-soft); font-family: var(--de-mono); font-size: 10.5px; word-break: break-all; }
+/* ✕ は指で押せる大きさ（44px 四方が目安）を確保する */
+.de-infobar-x {
+  flex: 0 0 auto; appearance: none; border: 0; background: none; color: var(--de-soft);
+  font-size: 18px; line-height: 1; cursor: pointer; padding: 6px 8px; min-width: 32px; min-height: 32px;
+}
 .de-jsonpanel { box-sizing: border-box; width: 380px; min-width: 260px; max-width: 55vw; background: var(--de-panel); border-left: 1px solid var(--de-grid); display: flex; flex-direction: column; min-height: 0; }
 /* JSON タブの textarea 専用。`.de-jsonpanel textarea` と書くと、同じパネルに同居する
    インスペクタの textarea 全部に white-space:pre が漏れて長い説明が折り返さなくなる（G11 実測） */
@@ -8223,6 +8247,7 @@ class DiagramEditor {
     this.syncJSONPanel();
     this.refreshChrome();
     this.renderInspector?.();
+    this.refreshInfoBar();   // 図を変えると選択は外れる＝帯も畳む
   }
 
   goToDiagram(id, { push = true } = {}) {
@@ -8498,9 +8523,13 @@ class DiagramEditor {
     this.tipEl = document.createElement('div'); this.tipEl.className = 'de-tip'; this.tipEl.hidden = true;
     this.tipEl.setAttribute('role', 'tooltip');
     this.viewport.appendChild(this.tipEl);
+    // §40.6 スマホ用の説明帯。ホバーが無い端末では、選んだものの説明をここに出す。
+    // viewport の**外**（下）に置くのが肝で、図の上に重ねると指と吹き出しが場所を取り合う。
+    this.infoBar = document.createElement('div'); this.infoBar.className = 'de-infobar';
+    this.infoBar.dataset.shown = '0';
     this.status = document.createElement('div'); this.status.className = 'de-status';
     this.statusMsg = document.createElement('span'); this.status.appendChild(this.statusMsg);
-    this.main.append(this.viewport, this.status);
+    this.main.append(this.viewport, this.infoBar, this.status);
     this.body.appendChild(this.main);
     if (this.editable) {
       this.body.appendChild(this.buildHSplit('right'));
@@ -9503,8 +9532,10 @@ class DiagramEditor {
       + '「クリック → 画面が狭くなる → 読む → 閉じる」を毎回繰り返さずに済む。<br>'
       + '出るのは<b>説明かパスがあるときだけ</b>（名前しか無い箱では出ない＝箱に書いてあることの重複を出さない）。'
       + '編集したいときは従来どおり<b>クリックして右ペイン</b>。<br>'
-      + '<b>2D / 2.5D で有効</b>（3D は当たり判定を持たないので出ない）。タッチ端末にはホバーが無いので、'
-      + 'そちらはタップ＋右ペインのまま。'
+      + '<b>2D / 2.5D で有効</b>（3D は当たり判定を持たないので出ない）。<br>'
+      + '<b>スマホ（ホバーの無い端末）では、箱をタップすると同じ内容が<b>画面下部の帯</b>に出る。</b>'
+      + '触った点に出すと<b>指で隠れる</b>ので、出し先を変えてある——帯は常に同じ場所なので、'
+      + '箱を順にタップして見ていくときに読む位置が飛ばない。<b>×</b> で選択ごと外れる。'
       + '<h4>今どこにいるか</h4>'
       + '<b>①</b> 左 <b>VIEWS</b> ツリーが今開いている図を強調する ／ '
       + '<b>②</b> 掘った先では<b>キャンバスに、掘ったものの名前を付けた枠</b>が出る ／ '
@@ -10056,10 +10087,17 @@ class DiagramEditor {
 
   // ホバーされた相手から「吹き出しに出す内容」を組む。何も足せないなら null。
   tipContentFor(hit) {
-    if (!hit || (hit.kind !== 'node' && hit.kind !== 'group')) return null;
-    const obj = hit.kind === 'node'
-      ? nodeById(this.model, hit.id)
-      : this.model.groups.find(g => g.id === hit.id);
+    return hit ? this.describeTarget(hit.kind, hit.id) : null;
+  }
+
+  // §40 「この要素について、箱を見ているだけでは分からないこと」。
+  // ホバーの吹き出し（PC）と下部の帯（スマホ・§40.6）が**同じ内容**を出すための 1 本。
+  // 2 か所で別々に組むと、片方だけ直して食い違う。
+  describeTarget(kind, id) {
+    if (kind !== 'node' && kind !== 'group') return null;
+    const obj = kind === 'node'
+      ? nodeById(this.model, id)
+      : this.model.groups.find(g => g.id === id);
     if (!obj) return null;
     // 説明の正本はグラフ側（§2）。図ローカルの props は上書きとして後ろに置く。
     const ent = obj.entityId ? entityById(this.project, obj.entityId) : null;
@@ -10114,6 +10152,77 @@ class DiagramEditor {
     if (this.tipTimer) { clearTimeout(this.tipTimer); this.tipTimer = null; }
     if (this.tipEl) { this.tipEl.hidden = true; delete this.tipEl.dataset.for; }
     if (!opts.keepKey) this.tipKey = '';
+  }
+
+  // ─── §40.6 スマホ: 選んだものの説明を画面下部の帯に出す ───────────────
+  // ホバーという状態がタッチには無いので、**既にしているタップ**に説明を乗せる。
+  // ボタンやモードは増やさない（増やすと「読むために覚えること」が増える）。
+  //
+  // 出し先を吹き出しではなく**下部の帯**にした理由（実測 390x844）:
+  //   ・触った点＝指の下なので、その場に出すと**自分の指で隠れる**
+  //   ・390px では吹き出しが隣の箱を覆い、読む位置がタップごとに飛ぶ。帯は**常に同じ場所**
+  //   ・幅 390px を丸ごと使えるので、折り返しても読める
+  // 出すかどうかは CSS 側（`(max-width: 720px), (hover: none)`）が決める＝
+  // 「ホバーできる端末には出さない」を環境の宣言で判定し、JS で端末を当てにいかない。
+  //
+  // ⚠ 撤去前の実測: スマホで箱をタップしても**説明はどこにも出なかった**。右ペインは既定で
+  //   畳まれており（display:none）、開くと画面の 82% を覆う固定オーバーレイになる。
+  //   つまりスマホは PC より 1 手多く、しかも図がほぼ見えない状態だった。
+  refreshInfoBar() {
+    const bar = this.infoBar;
+    if (!bar) return;
+    const sel = this.selection;
+    const c = sel ? this.describeTarget(sel.kind, sel.id) : null;
+    if (!c) { bar.dataset.shown = '0'; bar.textContent = ''; return; }
+    bar.textContent = '';
+    const body = document.createElement('div'); body.className = 'de-infobar-body';
+    const head = document.createElement('div'); head.className = 'de-infobar-head';
+    head.textContent = (c.sub || '') + c.name;
+    body.appendChild(head);
+    if (c.desc) {
+      const d = document.createElement('div'); d.className = 'de-infobar-desc';
+      d.textContent = c.desc;
+      body.appendChild(d);
+    }
+    if (c.path && c.path !== c.name) {
+      const p = document.createElement('div'); p.className = 'de-infobar-path';
+      p.textContent = c.path;
+      body.appendChild(p);
+    }
+    bar.appendChild(body);
+    // ✕ は**選択そのものを外す**（帯だけ閉じると、選ばれているのに何も出ていない状態になる）。
+    // 図が混んでいると「空きスペースをタップして外す」が難しいので、出口を 1 つ置く。
+    const x = document.createElement('button');
+    x.className = 'de-infobar-x'; x.type = 'button'; x.textContent = '×';
+    x.title = '選択を外す'; x.setAttribute('aria-label', '選択を外す');
+    x.addEventListener('click', () => this.select(null));
+    bar.appendChild(x);
+    bar.dataset.shown = '1';
+    this.keepSelectionAboveInfoBar();
+  }
+
+  // 帯が出ると viewport がその分だけ縮むので、**いま選んだ箱が帯の下に入る**ことがある。
+  // 画面下端は親指が一番届く場所なので、これは稀なケースではなく**よく起きる**。
+  // 隠れた分だけ図を上げる（Fit し直すと全体の見え方が変わってしまうので、必要な分だけ動かす）。
+  keepSelectionAboveInfoBar() {
+    const sel = this.selection;
+    if (!sel || this.infoBar?.dataset.shown !== '1') return;
+    if (!this.renderer?.getView || !this.renderer?.setView) return;
+    // 帯を出した直後はまだレイアウトが確定していないので、1 フレーム待って実寸で測る
+    requestAnimationFrame(() => {
+      if (this.selection !== sel || this.infoBar?.dataset.shown !== '1') return;
+      let el = null;
+      for (const g of this.viewport.querySelectorAll(`[data-kind="${sel.kind}"]`)) {
+        if (g.dataset.id === sel.id) { el = g; break; }
+      }
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const vp = this.viewport.getBoundingClientRect();
+      const over = r.bottom - (vp.bottom - 8);
+      if (over <= 0) return;
+      const v = this.renderer.getView();
+      this.renderer.setView({ ...v, y: v.y - over });
+    });
   }
 
   onPointerMove(e) {
@@ -10337,6 +10446,7 @@ class DiagramEditor {
     this.selection = sel;
     this.renderer.setSelection?.(sel);
     this.renderInspector();
+    this.refreshInfoBar();   // §40.6 スマホの説明帯（PC では CSS が出さない）
     this.drawWaypointHandles();
   }
 
