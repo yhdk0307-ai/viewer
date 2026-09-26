@@ -73,14 +73,9 @@
   position: absolute; right: 10px; top: 7px;
   background: none; border: 1px solid #fff; color: #fff; cursor: pointer; border-radius: 3px;
 }
-/* §13 公開範囲バッジ。private は地の模様（薄い）、public は目を引く（濃い）。
-   G16: 絵文字はフォントがカラーで描いてしまい単色線画の図から浮くので、Tabler の
-   線画アイコン（shield-lock / world）を使う。色はここで図の配色に合わせる。 */
-.de-vis-private, .de-vis-public {
-  fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round;
-}
-.de-vis-private { stroke: var(--de-soft); opacity: .5; }
-.de-vis-public { stroke: var(--de-accent); opacity: 1; }
+/* §13 ⚠ ここには公開範囲バッジ（.de-vis-private / .de-vis-public）の様式があった。
+   2026-09-26 に箱のバッジごと撤去（理由は flat_svg.js の §13 のコメント）。
+   右ペインの「公開範囲」行と §13.2 の露出警告（.de-exposure）は残っている。 */
 .de-port { fill: var(--de-fill); stroke: var(--de-line); stroke-width: 1.2; }
 .de-port:hover { stroke: var(--de-accent); stroke-width: 2; }
 .de-port-label { fill: var(--de-soft); font-family: var(--de-font); font-size: 9px; }
@@ -164,6 +159,25 @@
 .de-title-old { display: none; }
 .de-viewport { flex: 1; position: relative; overflow: hidden; background: var(--de-paper); touch-action: none; }
 .de-viewport svg, .de-viewport canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+/* §40 ホバーの吹き出し。説明を読むために右ペインを開かせないための表示。
+   pointer-events:none が要る——付けないとカーソルの先に自分が居座り、hitTest が吹き出しを
+   掴んでちらつく（出る→下の箱を失う→消える→また出る）。 */
+.de-tip {
+  position: absolute; z-index: 6; pointer-events: none; box-sizing: border-box;
+  max-width: 340px; padding: 7px 9px;
+  background: var(--de-panel); color: var(--de-ink);
+  border: 1px solid var(--de-soft); border-radius: 5px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
+  font-family: var(--de-font); font-size: 12px; line-height: 1.5;
+}
+.de-tip[hidden] { display: none; }
+.de-tip-head { font-weight: 700; word-break: break-word; }
+/* 説明は最大 8 行で打ち切る（長い human 説明で吹き出しが画面を覆わないように） */
+.de-tip-desc {
+  margin-top: 3px; color: var(--de-ink);
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 8; overflow: hidden;
+}
+.de-tip-path { margin-top: 3px; color: var(--de-soft); font-family: var(--de-mono); font-size: 10.5px; word-break: break-all; }
 .de-jsonpanel { box-sizing: border-box; width: 380px; min-width: 260px; max-width: 55vw; background: var(--de-panel); border-left: 1px solid var(--de-grid); display: flex; flex-direction: column; min-height: 0; }
 /* JSON タブの textarea 専用。`.de-jsonpanel textarea` と書くと、同じパネルに同居する
    インスペクタの textarea 全部に white-space:pre が漏れて長い説明が折り返さなくなる（G11 実測） */
@@ -5427,7 +5441,6 @@ class FlatSVGRenderer {
     this.appendPorts(g, node);
     this.appendLinkBadge(g, node);
     this.appendProvenanceBadge(g, node, h);
-    this.appendVisibilityBadge(g, node, h);
     this.appendExpander(g, node, h);
     return g;
   }
@@ -5474,25 +5487,23 @@ class FlatSVGRenderer {
     }, glyph));
   }
 
-  // §13 公開範囲バッジ（node.__visibility）。右下隅。
-  // private は**淡く**（private リポジトリでは大多数がこれ＝地の模様として読ませる）、
-  // public は**強く**（少数＝世界に出ているものが一目で浮く）。この強弱の付け方が要件で、
-  // 両方を同じ濃さで描くと 855 個の鍵に埋もれて 19 個の公開が見えなくなる。
-  // G16: 絵文字（🔒/🌐）をやめて Tabler の線画アイコンにした。絵文字は OS のフォントが
-  // **カラー**で描くため（鍵が黄色くなる）、単色線画で通しているこの図のトンマナから浮く。
-  // 色は CSS 側（.de-vis-*）で --de-soft / --de-accent に寄せる。
-  appendVisibilityBadge(g, node, h) {
-    const v = node.__visibility;
-    if (!v || node.collapsed) return;
-    const S = nodeTextScale();
-    const pub = v === 'public';
-    const size = 13 * S;
-    const bx = node.x + node.w - size - 5 * S, by = node.y + (h ?? node.h) - size - 4 * S;
-    const ig = iconGroup(document, pub ? 'world' : 'shield-lock', pub ? 'de-vis-public' : 'de-vis-private');
-    ig.setAttribute('transform', `translate(${bx},${by}) scale(${size / 24})`);
-    g.appendChild(ig);
-    this.appendTitle(g, `${pub ? '公開: この実体は誰でも読める場所にあります' : '非公開: この実体は公開されていません'}\n${node.sublabel || ''}${node.label || ''}`);
-  }
+  // §13 ⚠ ここには公開範囲バッジ（箱の右下に 🌐 / 🔒）があった。2026-09-26 に撤去した。
+  //
+  // ユーザー指摘「**今、公開/非公開が表示されますが、それはいらないです**」。図を読む目的は
+  // 構造と機能の理解であって、1 箱ずつの公開範囲はそのとき問うていない。private リポジトリでは
+  // ほぼ全部が 🔒 なので、全箱に付く錠は情報量がほぼ 0 のまま右下の隅を占め続けていた
+  // （実データの Directory ビューでは 15/15 が 🔒・🌐 は 0 個だった＝実測）。
+  //
+  // **公開範囲そのものを捨てたわけではない。** 残っているのは、問うたときに答える場所と、
+  // 事故を止める線の 2 つ:
+  //   ・右ペインの「公開範囲」行（§13.1・選んだ 1 件について答える）
+  //   ・§13.2 の露出警告（private を宣言した図が、自分で public と宣言したオリジンから
+  //     配信されているときの赤帯）——これは**装飾ではなく警告**なので残す。実際に
+  //     「private リポジトリの構造図が public な viewer から誰でも読めた」事故があり、
+  //     それを検知するための線として入れたもの（CLAUDE.md 2026-09-18 の記録）。
+  //   ・`public_sync_guard.mjs`（CI が public 配信先の最終状態を検査する）
+  //
+  // 一般化は §39.5 と同じ: **説明の付かない場所に、常時表示の指標を置かない。**
 
   // ↗ バッジの幾何。描画（appendLinkBadge）とヒットテスト（hitTest の kind:'link'）で必ず同じ円を使う。
   // G8: Alt キーの無いタッチ端末では Alt+クリックの遷移経路が使えず、§7.4 の遅延ドリルダウンに潜れなかった。
@@ -7673,6 +7684,11 @@ function renderMarkdown(src, opts = {}) {
 
 
 
+// §40 ホバーの吹き出し。140ms は「図の上を通り過ぎただけでは出ないが、読みたい所では待たされない」
+// 折衷（SVG の `<title>` の約 1 秒は箱を次々に見ていく読み方には遅すぎる）。
+const TIP_DELAY_MS = 140;
+const TIP_GAP = 14;   // ポインタと吹き出しの隙間（重ねるとカーソルで文字が隠れる）
+
 const NODE_PALETTE = [
   { type: 'block', label: 'Block', icon: 'block' },
   { type: 'function', label: 'Function', icon: 'gear' },
@@ -8420,6 +8436,9 @@ class DiagramEditor {
     document.documentElement.dataset.theme = this.resolveTheme();
     this.renderer?.unmount();
     this.viewport.textContent = '';
+    // §40 吹き出しは viewport の子なので、この textContent='' で一緒に消える。別の図・別の投影を
+    // 出す瞬間なので中身は捨てて（hideTip）、器だけ描画後に貼り直す（DOM 順で図の上に来る）。
+    this.hideTip();
     this.renderer = createRenderer(this.projection);
     this.renderer.mount(this.model, this.viewport, {
       onNodePick: id => { // webgl のクリック pick（view は素クリック / edit は Alt 押下時のみ遷移）
@@ -8427,6 +8446,7 @@ class DiagramEditor {
         if (!this.editable || this._altDown) this.activateNode(node);
       },
     });
+    if (this.tipEl) this.viewport.appendChild(this.tipEl);
     this.renderer.setSelection?.(this.selection);
     this.renderer.setPreview?.(this.preview);   // §11.3 プレビューは再マウントでも張り直す
     const editable = this.canEditGeometry;   // G15: ロック中は掴めないので grab カーソルにする
@@ -8473,6 +8493,11 @@ class DiagramEditor {
     if (this.editable) { this.body.appendChild(this.buildSidebar()); this.body.appendChild(this.buildHSplit('left')); }
     this.main = document.createElement('div'); this.main.className = 'de-main';
     this.viewport = document.createElement('div'); this.viewport.className = 'de-viewport';
+    // §40 ホバーの吹き出し。viewport の中に置くので、図のスクロール・ズームと同じ箱の中で座標を
+    // 決められる（body 直下に置くとペインの開閉で基準がずれる）。pointer-events:none は CSS 側。
+    this.tipEl = document.createElement('div'); this.tipEl.className = 'de-tip'; this.tipEl.hidden = true;
+    this.tipEl.setAttribute('role', 'tooltip');
+    this.viewport.appendChild(this.tipEl);
     this.status = document.createElement('div'); this.status.className = 'de-status';
     this.statusMsg = document.createElement('span'); this.status.appendChild(this.statusMsg);
     this.main.append(this.viewport, this.status);
@@ -9472,6 +9497,14 @@ class DiagramEditor {
       + '<b>Edit</b>: Undo ／ Redo ／ Add Node（パレット）／ 図を追加 ／ entry 設定<br>'
       + '<b>View</b>: 2D ／ 2.5D iso ／ 3D ／ Fit ／ Theme ／ 文字サイズ ／ ペイン ／ Layout<br>'
       + '<b>Help</b>: この使い方'
+      + '<h4>説明を読む（まずはホバー）</h4>'
+      + '箱に<b>ポインタを置くだけ</b>で、その要素の<b>説明</b>（と、ファイル／フォルダなら<b>パス</b>）が'
+      + '吹き出しで出る。<b>クリックは要らず、右ペインも開かない</b>——図を順に見ていくときに'
+      + '「クリック → 画面が狭くなる → 読む → 閉じる」を毎回繰り返さずに済む。<br>'
+      + '出るのは<b>説明かパスがあるときだけ</b>（名前しか無い箱では出ない＝箱に書いてあることの重複を出さない）。'
+      + '編集したいときは従来どおり<b>クリックして右ペイン</b>。<br>'
+      + '<b>2D / 2.5D で有効</b>（3D は当たり判定を持たないので出ない）。タッチ端末にはホバーが無いので、'
+      + 'そちらはタップ＋右ペインのまま。'
       + '<h4>今どこにいるか</h4>'
       + '<b>①</b> 左 <b>VIEWS</b> ツリーが今開いている図を強調する ／ '
       + '<b>②</b> 掘った先では<b>キャンバスに、掘ったものの名前を付けた枠</b>が出る ／ '
@@ -9827,6 +9860,9 @@ class DiagramEditor {
     this.viewport.addEventListener('pointercancel', e => { this.pointers.delete(e.pointerId); if (this.pointers.size < 2) this.pinch = null; });
     this.viewport.addEventListener('dblclick', e => this.onDblClick(e));
     this.viewport.addEventListener('wheel', e => this.onWheel(e), { passive: false });
+    // §40 図が動いた・ポインタが外に出た・触った — どれも吹き出しを残す理由がない
+    this.viewport.addEventListener('pointerleave', () => this.hideTip());
+    this.viewport.addEventListener('wheel', () => this.hideTip(), { passive: true });
 
     document.addEventListener('keydown', e => {
       this._altDown = e.altKey;
@@ -9985,8 +10021,107 @@ class DiagramEditor {
     this.drag = { mode: 'pan', start: { x: e.clientX, y: e.clientY }, view: this.renderer.getView() };
   }
 
+  // ─── §40 ホバーの吹き出し ─────────────────────────────────────────────
+  // 目的は「図を見て構造と機能を理解する」ことなので、説明は**箱にポインタを置けば読める**ように
+  // する。右ペインを開いて読む流儀には ① 画面が狭くなる ② クリックという 1 動作が毎回増える、
+  // という代償があり、40 箱を順に理解したいときはそれが 40 回分になる。
+  //
+  // 出すのは「その箱を**見ているだけでは分からないこと**」だけ:
+  //   ・説明（`props.description`。正本はグラフ側のエンティティなので entityId を先に引く）
+  //   ・ファイル／フォルダなら実体のパス（＝どこにあるか）
+  // どちらも無い箱では**出さない**——名前だけの吹き出しは箱のラベルの重複＝ノイズで、
+  // §39.5 で削った 3 つと同じ失敗になる。省略されたラベルの方は、renderer が truncate を
+  // 検知したときに付ける `<title>`（`appendTitle`）が従来どおり受け持つ。
+  //
+  // ⚠ 説明そのものを `<title>` で出す案は採らなかった。出るまで約 1 秒かかり、様式も折返し幅も
+  //   制御できず、端末によっては数秒で消える。箱を次々に見ていく読み方に耐えない。
+  // ⚠ 3D（webgl）には hitTest が無いので吹き出しは出ない。見るための投影なので許容する。
+  onHoverMove(e) {
+    if (typeof this.renderer?.hitTest !== 'function') { this.hideTip(); return; }
+    const hit = this.renderer.hitTest(e.clientX, e.clientY);
+    const key = hit ? `${hit.kind}:${hit.id}` : '';
+    this.tipPos = { x: e.clientX, y: e.clientY };
+    if (key !== this.tipKey) {
+      this.tipKey = key;
+      this.hideTip({ keepKey: true });
+      if (!key) return;
+      const content = this.tipContentFor(hit);
+      if (!content) return;
+      this.tipTimer = setTimeout(() => this.showTip(content), TIP_DELAY_MS);
+      return;
+    }
+    // 同じ相手の上を動いているだけ: 出ているなら位置だけ追う（出ていなければ待ち時間を継続）
+    if (!this.tipEl.hidden) this.placeTip();
+  }
+
+  // ホバーされた相手から「吹き出しに出す内容」を組む。何も足せないなら null。
+  tipContentFor(hit) {
+    if (!hit || (hit.kind !== 'node' && hit.kind !== 'group')) return null;
+    const obj = hit.kind === 'node'
+      ? nodeById(this.model, hit.id)
+      : this.model.groups.find(g => g.id === hit.id);
+    if (!obj) return null;
+    // 説明の正本はグラフ側（§2）。図ローカルの props は上書きとして後ろに置く。
+    const ent = obj.entityId ? entityById(this.project, obj.entityId) : null;
+    const desc = (ent?.props?.description || obj.props?.description || '').trim();
+    const path = (ent?.props?.path || obj.props?.path || '').trim();
+    const name = String(obj.label ?? obj.name ?? obj.id ?? '').trim();
+    const sub = String(obj.sublabel || '').trim();
+    // 箱が既に出している字しか言えないなら出さない（名前だけの吹き出しは重複）
+    if (!desc && !path) return null;
+    return { name, sub, desc, path, id: obj.id };
+  }
+
+  showTip(content) {
+    this.tipTimer = null;
+    const t = this.tipEl;
+    t.textContent = '';
+    t.dataset.for = content.id;
+    const head = document.createElement('div'); head.className = 'de-tip-head';
+    head.textContent = (content.sub || '') + content.name;
+    t.appendChild(head);
+    if (content.desc) {
+      const d = document.createElement('div'); d.className = 'de-tip-desc';
+      d.textContent = content.desc;
+      t.appendChild(d);
+    }
+    // パスは説明の代わりではなく**場所**なので、説明があっても別行で出す（短いので邪魔にならない）
+    if (content.path && content.path !== content.name) {
+      const p = document.createElement('div'); p.className = 'de-tip-path';
+      p.textContent = content.path;
+      t.appendChild(p);
+    }
+    t.hidden = false;
+    this.placeTip();
+  }
+
+  // ポインタの右下に置き、はみ出すなら左／上へ折り返す。viewport 基準の座標で決めるので
+  // ペインの開閉やスクロールでずれない。
+  placeTip() {
+    const t = this.tipEl, p = this.tipPos;
+    if (!p || t.hidden) return;
+    const vr = this.viewport.getBoundingClientRect();
+    const tw = t.offsetWidth, th = t.offsetHeight;
+    let x = p.x - vr.left + TIP_GAP;
+    let y = p.y - vr.top + TIP_GAP;
+    if (x + tw > vr.width - 4) x = Math.max(4, p.x - vr.left - TIP_GAP - tw);
+    if (y + th > vr.height - 4) y = Math.max(4, p.y - vr.top - TIP_GAP - th);
+    t.style.left = `${Math.round(x)}px`;
+    t.style.top = `${Math.round(y)}px`;
+  }
+
+  hideTip(opts = {}) {
+    if (this.tipTimer) { clearTimeout(this.tipTimer); this.tipTimer = null; }
+    if (this.tipEl) { this.tipEl.hidden = true; delete this.tipEl.dataset.for; }
+    if (!opts.keepKey) this.tipKey = '';
+  }
+
   onPointerMove(e) {
     if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    // §40 ドラッグ・ピンチ中は出さない（図が動いている間に追従させても読めない）。
+    // タッチはホバーという状態が無いので対象外＝そちらは従来どおりタップして右ペインで読む。
+    if (this.drag || this.pinch || e.pointerType === 'touch') this.hideTip();
+    else this.onHoverMove(e);
     if (this.pinch && this.pointers.size >= 2 && this.renderer.setView) {
       const [a, b] = [...this.pointers.values()];
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
