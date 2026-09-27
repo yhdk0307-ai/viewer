@@ -113,7 +113,15 @@
 .de-caption-row .de-inspsum-v { white-space: normal; line-height: 1.5; }
 
 /* ─── エディタ UI ─── */
-.de-app { display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; background: var(--de-bg); color: var(--de-ink); font-family: var(--de-font); }
+/* ⚠ 高さは **dvh**（動的ビューポート）で取る。`100vh` は iOS Safari では
+   **下部ツールバーを含まない**大きい方の高さを指すので、レイアウトの下端が常に
+   ツールバーの裏に隠れる。実測 2026-09-27（iPhone・390x844）: 画面下部の説明帯が
+   高さ 59〜79px の箱では**丸ごと隠れて「出ない」ように見え**、99px の箱では 11px＝
+   タイトル 1 行だけが覗き、139px の KAS と 119px の BEM だけがまともに読めていた
+   ——「KAS と BEM は出るが他は出ない」という報告の正体がこれ。
+   `100vh` を先に置いて dvh 非対応ブラウザの保険にする（後勝ちなので dvh が優先）。
+   さらに editor.js の syncAppHeight() が visualViewport で最終的に合わせる。 */
+.de-app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; width: 100vw; overflow: hidden; background: var(--de-bg); color: var(--de-ink); font-family: var(--de-font); }
 .de-header { flex: 0 0 auto; background: var(--de-panel); border-bottom: 1px solid var(--de-grid); z-index: 50; }
 .de-body { flex: 1; display: flex; min-height: 0; min-width: 0; }
 
@@ -187,8 +195,9 @@
 @media (max-width: 720px), (hover: none) {
   .de-infobar[data-shown="1"] {
     display: flex; align-items: flex-start; gap: 6px;
-    box-sizing: border-box; flex: 0 0 auto; max-height: 30vh; overflow-y: auto;
-    padding: 8px 10px;
+    box-sizing: border-box; flex: 0 0 auto; max-height: 30dvh; overflow-y: auto;
+    /* ホームインジケータ（画面下端の横棒）の下に文字が入らないようにする */
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
     background: var(--de-panel); border-top: 1px solid var(--de-grid);
     font-family: var(--de-font); font-size: 12.5px; line-height: 1.6; color: var(--de-ink);
   }
@@ -527,7 +536,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '46a5927';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '165c9a5';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -8494,10 +8503,39 @@ class DiagramEditor {
     this.commit({ rerender: false });
   }
 
+  // §40.8 アプリの高さを「**実際に見えている高さ**」に合わせる。
+  //
+  // ⚠ 実測 2026-09-27（iPhone・390x844）: `.de-app` は `height: 100vh` だったが、iOS Safari の
+  //   `100vh` は**下部ツールバーを含まない大きい方**の高さを指す。つまりレイアウトの下端
+  //   （ステータスバーと §40.6 の説明帯）が**常にツールバーの裏**にあった。帯の高さ別に測ると:
+  //     139px（KAS）→ 51px 見える ／ 119px（BEM）→ 31px ／ 99px の 7 個 → 11px＝タイトルだけ
+  //     ／ 59〜79px の 3 個 → **完全に隠れる**
+  //   これが「KAS と BEM は出るが他は出ない」「出ても見切れてタイトルしか読めない」の正体。
+  //   ステータスバーも同じ理由でずっと隠れていた＝**帯を置いて初めて表に出た古い欠陥**。
+  //
+  // 一次対策は CSS の `height: 100dvh`（dvh はツールバーを除いた動的な高さ）。ここはその保険で、
+  // dvh に対応しない環境（iOS 15.4 未満など）でも visualViewport の実寸に合わせる。
+  // 差が無いときは style を空にする＝CSS に任せる（JS が常に上書きすると dvh の再計算を殺す）。
+  watchAppHeight() {
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    const sync = () => {
+      const want = Math.round(vv ? vv.height : window.innerHeight);
+      if (!want) return;
+      this.root.style.height = '';                       // まず CSS の値に戻して測る
+      const have = Math.round(this.root.getBoundingClientRect().height);
+      if (Math.abs(want - have) > 2) this.root.style.height = `${want}px`;
+    };
+    sync();
+    vv?.addEventListener('resize', sync);
+    window.addEventListener('resize', sync);
+    window.addEventListener('orientationchange', () => setTimeout(sync, 250));
+  }
+
   // ─── UI 構築 ───
   // レイアウト: 縦に [メニューバー][アイコンバー][本体: 左サイドバー｜キャンバス｜右プロパティ]
   buildUI() {
     this.root.classList.add('de-app');
+    this.watchAppHeight();
     // ヘッダ（最上部メニューバー → アイコンバー。§39 でパンくず専用行は撤去）
     this.header = document.createElement('div'); this.header.className = 'de-header';
     this.menubar = this.editable ? this.buildMenuBar() : null;
@@ -10112,9 +10150,17 @@ class DiagramEditor {
     const path = (ent?.props?.path || obj.props?.path || '').trim();
     const name = String(obj.label ?? obj.name ?? obj.id ?? '').trim();
     const sub = String(obj.sublabel || '').trim();
+    // 説明もパスも無い箱でも、**子を持つ箱**なら「何件を束ねているか」は箱を見ても分からない
+    // 事実なので出す。実測 2026-09-27: overview_auto の 13 箱のうち「External services」だけが
+    // これに当たり（§36.12 で `~ext` 根には description を持たせない決まりがある）、
+    // タップしても何も出ない唯一の箱になっていた。件数は派生なので規約と衝突しない。
+    let kids = 0;
+    if (!desc && !path && kind === 'node') {
+      try { kids = childCountOf(this.project, obj.entityId || obj.id) || 0; } catch { kids = 0; }
+    }
     // 箱が既に出している字しか言えないなら出さない（名前だけの吹き出しは重複）
-    if (!desc && !path) return null;
-    return { name, sub, desc, path, id: obj.id };
+    if (!desc && !path && !kids) return null;
+    return { name, sub, desc, path, kids, id: obj.id };
   }
 
   showTip(content) {
@@ -10128,6 +10174,10 @@ class DiagramEditor {
     if (content.desc) {
       const d = document.createElement('div'); d.className = 'de-tip-desc';
       d.textContent = content.desc;
+      t.appendChild(d);
+    } else if (content.kids) {
+      const d = document.createElement('div'); d.className = 'de-tip-desc';
+      d.textContent = `${content.kids} 件を束ねた箱（説明なし）`;
       t.appendChild(d);
     }
     // パスは説明の代わりではなく**場所**なので、説明があっても別行で出す（短いので邪魔にならない）
@@ -10189,6 +10239,10 @@ class DiagramEditor {
     if (c.desc) {
       const d = document.createElement('div'); d.className = 'de-infobar-desc';
       d.textContent = c.desc;
+      body.appendChild(d);
+    } else if (c.kids) {
+      const d = document.createElement('div'); d.className = 'de-infobar-desc';
+      d.textContent = `${c.kids} 件を束ねた箱（説明なし）`;
       body.appendChild(d);
     }
     if (c.path && c.path !== c.name) {
