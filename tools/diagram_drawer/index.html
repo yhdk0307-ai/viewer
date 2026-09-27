@@ -185,6 +185,9 @@
   margin-top: 3px; color: var(--de-ink);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 8; overflow: hidden;
 }
+/* §41 内訳（列名・キー・拡張子の件数）。説明ではなく「数えたら分かること」なので、
+   説明より弱く・パスより強い見た目にして、3 つが混ざらないようにする。 */
+.de-tip-comp { margin-top: 3px; color: var(--de-soft); font-size: 11.5px; }
 .de-tip-path { margin-top: 3px; color: var(--de-soft); font-family: var(--de-mono); font-size: 10.5px; word-break: break-all; }
 
 /* §40.6 スマホの説明帯。ホバーできない端末で、選んだものの説明を画面下部に出す。
@@ -205,6 +208,7 @@
 .de-infobar-body { flex: 1 1 auto; min-width: 0; }
 .de-infobar-head { font-weight: 700; word-break: break-word; }
 .de-infobar-desc { margin-top: 2px; }
+.de-infobar-comp { margin-top: 2px; color: var(--de-soft); font-size: 12px; }
 .de-infobar-path { margin-top: 2px; color: var(--de-soft); font-family: var(--de-mono); font-size: 10.5px; word-break: break-all; }
 /* ✕ は指で押せる大きさ（44px 四方が目安）を確保する */
 .de-infobar-x {
@@ -536,7 +540,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '165c9a5';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '22dd973';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -10148,6 +10152,8 @@ class DiagramEditor {
     const ent = obj.entityId ? entityById(this.project, obj.entityId) : null;
     const desc = (ent?.props?.description || obj.props?.description || '').trim();
     const path = (ent?.props?.path || obj.props?.path || '').trim();
+    // §41 内訳（列名・キー・拡張子の件数）。説明とは別枠で、説明が無い箱でも中身が読める。
+    const comp = (ent?.props?.composition || obj.props?.composition || '').trim();
     const name = String(obj.label ?? obj.name ?? obj.id ?? '').trim();
     const sub = String(obj.sublabel || '').trim();
     // 説明もパスも無い箱でも、**子を持つ箱**なら「何件を束ねているか」は箱を見ても分からない
@@ -10155,12 +10161,12 @@ class DiagramEditor {
     // これに当たり（§36.12 で `~ext` 根には description を持たせない決まりがある）、
     // タップしても何も出ない唯一の箱になっていた。件数は派生なので規約と衝突しない。
     let kids = 0;
-    if (!desc && !path && kind === 'node') {
+    if (!desc && !path && !comp && kind === 'node') {
       try { kids = childCountOf(this.project, obj.entityId || obj.id) || 0; } catch { kids = 0; }
     }
     // 箱が既に出している字しか言えないなら出さない（名前だけの吹き出しは重複）
-    if (!desc && !path && !kids) return null;
-    return { name, sub, desc, path, kids, id: obj.id };
+    if (!desc && !path && !comp && !kids) return null;
+    return { name, sub, desc, path, comp, kids, id: obj.id };
   }
 
   showTip(content) {
@@ -10179,6 +10185,11 @@ class DiagramEditor {
       const d = document.createElement('div'); d.className = 'de-tip-desc';
       d.textContent = `${content.kids} 件を束ねた箱（説明なし）`;
       t.appendChild(d);
+    }
+    if (content.comp) {
+      const c = document.createElement('div'); c.className = 'de-tip-comp';
+      c.textContent = content.comp;
+      t.appendChild(c);
     }
     // パスは説明の代わりではなく**場所**なので、説明があっても別行で出す（短いので邪魔にならない）
     if (content.path && content.path !== content.name) {
@@ -10244,6 +10255,11 @@ class DiagramEditor {
       const d = document.createElement('div'); d.className = 'de-infobar-desc';
       d.textContent = `${c.kids} 件を束ねた箱（説明なし）`;
       body.appendChild(d);
+    }
+    if (c.comp) {
+      const cm = document.createElement('div'); cm.className = 'de-infobar-comp';
+      cm.textContent = c.comp;
+      body.appendChild(cm);
     }
     if (c.path && c.path !== c.name) {
       const p = document.createElement('div'); p.className = 'de-infobar-path';
