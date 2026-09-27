@@ -527,6 +527,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
+window.__DE_BUILD__ = '46a5927';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -9559,6 +9560,12 @@ class DiagramEditor {
       + '**自動更新もされない**ので、実態とずれたら手で直す。<br>'
       + 'どれも他プロジェクトへ持って行ける一般則で、図名を life 固有に決め打ちしていない。'
       + '<h4>右パネル</h4>プロパティ（要約は常時表示・詳細はサブタイトルのクリックで折りたたみ）／ JSON（現在の図・編集すると即反映）'
+      // §40.7 「いま見ているのは新しい版か」を端末側で確かめるための指紋。ヘッダには出さない
+      // （常時表示する理由が無い＝§39.5）。中身から決まる値なので、同じソースなら毎回同じ。
+      + `<h4>この版</h4>ビルド <code data-role="build-id">${String(globalThis.__DE_BUILD__ || 'dev').replace(/[^0-9a-z]/gi, '') || 'dev'}</code><br>`
+      + '<b>新しくしたはずの機能が出ないとき</b>はここを見る。値が変わっていなければ、'
+      + '端末が前の版を掴んでいる（再読み込みで取り直す）。値が同じなのに動きが違うなら、'
+      + 'それは端末差なので直す対象。'
       + '</div>';
     const foot = document.createElement('div'); foot.className = 'de-modal-foot';
     const close = this.btn('閉じる', () => overlay.remove()); close.className = 'de-btn accent';
