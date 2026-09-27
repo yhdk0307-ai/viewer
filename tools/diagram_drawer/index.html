@@ -540,7 +540,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '22dd973';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '3d2fdfc';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -916,8 +916,9 @@ function deriveDrillLinks(proj) {
     if (n.parent) childCount.set(n.parent, (childCount.get(n.parent) || 0) + 1);
     // §17 スコープの中身も「子」として数える。スコープはフォルダ階層と一致しないので
     // parent では繋がっておらず、これが無いとスコープの箱だけ掘れない行き止まりになる。
+    // §42 入れ子のスコープでは、子スコープの成員は親スコープの成員でもある
     const sc = n.props?.scope;
-    if (sc) { const k = SCOPE_PREFIX + sc; childCount.set(k, (childCount.get(k) || 0) + 1); }
+    if (sc) for (const anc of scopeChain(sc)) { const k = SCOPE_PREFIX + anc; childCount.set(k, (childCount.get(k) || 0) + 1); }
   }
   if (!childCount.size) return;
   for (const d of proj.diagrams) {
@@ -996,7 +997,7 @@ function childCountOf(proj, id) {
   let n = 0;
   for (const e of proj?.graph?.nodes || []) {
     if (e.parent === id) n++;
-    else if (scope && e.props?.scope === scope) n++;   // §17 スコープの成員
+    else if (scope && inScope(e.props?.scope, scope)) n++;   // §17/§42 スコープ（と子スコープ）の成員
   }
   return n;
 }
@@ -1111,9 +1112,11 @@ function selectNodeIds(sel, gnodes, gedges) {
   // スコープの中身へ降りる（ドリルダウン）ときに使う。roots は parent 連鎖を辿るので、
   // フォルダ階層と一致しないスコープは roots では表せない。
   if (Array.isArray(sel.scopes) && sel.scopes.length) {
-    const want = new Set(sel.scopes);
-    const inScope = gnodes.filter(n => want.has(n.props?.scope)).map(n => n.id);
-    ids = (roots.length || nbId) ? ids.filter(id => want.has(byId.get(id)?.props?.scope)) : inScope;
+    // §42 子スコープの成員も親スコープの選択に入る（前方一致）
+    const want = [...sel.scopes];
+    const hit = (s) => want.some(w => inScope(s, w));
+    const members = gnodes.filter(n => hit(n.props?.scope)).map(n => n.id);
+    ids = (roots.length || nbId) ? ids.filter(id => hit(byId.get(id)?.props?.scope)) : members;
   }
   // §16 select.ids: 明示的な白リスト。「どれを出すか」の判断を**抽出器が決めて焼く**ための口で、
   // 要約図（summaries）がこれを使う。roots/neighborsOf と併用したときは積（さらに絞る）。
@@ -1211,6 +1214,21 @@ function applyLayerBy(d, ids, byId) {
 const NESTED_GROUP_PREFIX = 'nested~';   // container グループ id: nested~<nodeId>
 const VIRTUAL_VIEW_PREFIX = 'view~';     // 仮想ビュー id: view~<nodeId>（クリック時に生成）
 const SCOPE_PREFIX = '~scope/';          // §17 スコープノード id: ~scope/<id>
+// §42 スコープは入れ子にできる（id は `親/子`）。所属は**前方一致**で見る——
+// `usv_rankine` の箱は `usv_rankine/solver` の成員も含む。区切りまで含めて比べるので
+// `usv_rankine_old` のような別スコープは拾わない。
+function inScope(nodeScope, wantScope) {
+  if (!nodeScope || !wantScope) return false;
+  return nodeScope === wantScope || String(nodeScope).startsWith(`${wantScope}/`);
+}
+// 自分から先祖へ（`a/b/c` → ['a/b/c','a/b','a']）。図に親の箱しか出ていないとき、
+// 子スコープの成員から出る線をその親まで持ち上げるのに使う。
+function scopeChain(full) {
+  const parts = String(full || '').split('/').filter(Boolean);
+  const out = [];
+  for (let i = parts.length; i > 0; i--) out.push(parts.slice(0, i).join('/'));
+  return out;
+}
 const NESTED_PAD_BASE = 20, NESTED_PAD_STEP = 22;
 
 // mode:'nested' の図を「コンテナ＋中のブロック」へ組み替える。
@@ -1357,7 +1375,8 @@ function liftEdges(d, sel, byId, gedges) {
     for (let guard = 0; cur && guard < 1000; guard++) {
       if (shown.has(cur)) return cur;
       const sc = byId.get(cur)?.props?.scope;
-      if (sc && shown.has(SCOPE_PREFIX + sc)) return SCOPE_PREFIX + sc;
+      // §42 図に出ているのが親の箱でも、そこまで持ち上げる
+      if (sc) for (const anc of scopeChain(sc)) if (shown.has(SCOPE_PREFIX + anc)) return SCOPE_PREFIX + anc;
       cur = byId.get(cur)?.parent;
     }
     return null;
@@ -8286,9 +8305,23 @@ class DiagramEditor {
     const origin = this.model;
     // §17 スコープの箱を掘るときは roots（parent 連鎖）ではなく scopes で選ぶ。
     // スコープはフォルダ階層と一致しないので roots では中身を集められない。
-    const select = nodeId.startsWith(SCOPE_PREFIX)
-      ? { scopes: [nodeId.slice(SCOPE_PREFIX.length)], mode: 'nested' }
-      : { roots: [nodeId], depth: 1, mode: 'nested' };
+    // §42 子スコープを持つ箱を掘ったら、**まず子スコープの箱**を出す（ファイルの木ではなく）。
+    // これが sub-scope の要点で、ユーザーの指摘「開いても、いくつのどういうグループに
+    // 分かれているか分からない／その役割が分からない」への答え。役割は宣言された説明が語る。
+    // 子スコープを持たない箱（葉）は従来どおり中身のファイルを nested で見せる。
+    const kidScopes = nodeId.startsWith(SCOPE_PREFIX)
+      ? (this.project.graph?.nodes || []).filter(n => n.parent === nodeId && n.type === 'scope').map(n => n.id)
+      : [];
+    // ⚠ 子スコープの図では `mode:'nested'` を使わない。nested は「箱の中身を container として
+    //   描く」モードで、その代わりに**リフティングの経路に入らない**（applyNested と liftEdges は
+    //   排他）。ここで出す 6 個は中身を見せない**普通の箱**なので、`lift: true` を渡して
+    //   成員どうしの関係（tests → solver の import など）を箱の間の線へ束ねる。
+    //   実測 2026-09-27: nested のままだとグラフに 108 本あるのにビューのエッジは 0 本だった。
+    const select = kidScopes.length
+      ? { ids: kidScopes, lift: true }
+      : nodeId.startsWith(SCOPE_PREFIX)
+        ? { scopes: [nodeId.slice(SCOPE_PREFIX.length)], mode: 'nested' }
+        : { roots: [nodeId], depth: 1, mode: 'nested' };
     if (Array.isArray(origin?.select?.rels) && origin.select.rels.length) select.rels = [...origin.select.rels];
     // ⚠ layout.algorithm は常に 'nested' に固定する（select.mode が常に 'nested' なので、
     // 潜った先には必ず container グループが合成される＝それを配置できるのは nested だけ）。
@@ -8299,7 +8332,9 @@ class DiagramEditor {
     // 見た目の継承（同じ見方のまま潜る）は direction/node サイズ/（元が nested なら）inner だけに絞る。
     const originLayout = origin?.layout || {};
     const layout = {
-      algorithm: 'nested',
+      // 子スコープの図には container が無い（中身を出さない）ので nested では配置できない。
+      // 関係の向きが読める layered にする。
+      algorithm: kidScopes.length ? 'layered' : 'nested',
       inner: (originLayout.algorithm === 'nested' && originLayout.inner) || 'layered',
       direction: originLayout.direction || 'LR',
     };
