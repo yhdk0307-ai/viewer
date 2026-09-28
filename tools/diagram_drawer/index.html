@@ -540,7 +540,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '3d2fdfc';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '253bebc';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -1522,6 +1522,22 @@ function deriveViews(proj) {
     // 要約図は「第1階層の箱」だけを出すので、エッジ（ファイル間の import 等）は**必ず**
     // 両端とも図に載らず 1 本も描かれない＝「箱は出たが関係が見えない」図になる。
     else if (sel.lift) liftEdges(d, sel, byId, gedges);
+    // §43 外枠: 「いま自分はどの箱の中にいるか」を図の上で示す。System Overview の `life` 枠と
+    // 同じ役割で、掘った先でも同じ形に揃える。members は**この図に出ている全ノード**なので、
+    // 「メンバーでない箱に重なる」（§37）は構造上起こり得ない。
+    // 既に同じ id の枠があれば作らない（手置き・生成済みが勝つ）。
+    if (sel.frame && d.nodes.length) {
+      const fid = `frame_${d.meta?.id || 'view'}`;
+      if (!d.groups.some(g => g.id === fid)) {
+        d.groups.push({
+          id: fid, kind: 'container',
+          label: typeof sel.frame === 'string' ? sel.frame : (sel.frame.label || ''),
+          pad: Number.isFinite(sel.frame?.pad) ? sel.frame.pad : 110,
+          members: d.nodes.map(n => n.id),
+          __derived: true,
+        });
+      }
+    }
     // ⚠ 順序が逆だと applyTreePorts が層を知らない（§23.4 で層またぎを見分ける必要がある）。
     applyLayerBy(d, ids, byId);                                 // §7.5
     applyTreePorts(d, new Map(d.nodes.map(n => [n.id, n])));   // §7.2
@@ -8323,6 +8339,10 @@ class DiagramEditor {
         ? { scopes: [nodeId.slice(SCOPE_PREFIX.length)], mode: 'nested' }
         : { roots: [nodeId], depth: 1, mode: 'nested' };
     if (Array.isArray(origin?.select?.rels) && origin.select.rels.length) select.rels = [...origin.select.rels];
+    // §43 掘った先にも「いま居る箱」の枠を出す（System Overview の `life` 枠と同じ形）。
+    // ユーザー指摘: 「System Overview では全体を囲む LIFE というブロックが見える。
+    // 同じ構成で、全体を今見てるブロックで囲うべき」。
+    select.frame = { label: ent.name || nodeId };
     // ⚠ layout.algorithm は常に 'nested' に固定する（select.mode が常に 'nested' なので、
     // 潜った先には必ず container グループが合成される＝それを配置できるのは nested だけ）。
     // 以前はここで origin.layout を丸ごと引き継いでいたため、System Overview（layered）や
