@@ -540,7 +540,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '64750df';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = 'a4331d3';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -8022,6 +8022,79 @@ class DiagramEditor {
 
   tweakCount() { const d = this.tweakDiff(); return d.nodes.length + d.edges.length; }
 
+  // §45 手直しを AI に相談するプロンプト。ループの残り（人 → **AI → 検討** → JSON）の導線。
+  // 位置だけ渡しても AI は「なぜ動かしたか」を推せない。**どの層の何が、誰の近くから誰の近くへ
+  // 動いたか**を添えて、「rules を直す（分け方が違う）／overlay に位置だけ残す／捨てる」を判断させる。
+  // 返答の形は apply.mjs --tweaks の入力そのものに固定する（採った分だけ流し直せば閉じる）。
+  tweakReviewPrompt() {
+    const d = this.tweakDiff();
+    if (!d.nodes.length && !d.edges.length) return null;
+    const viewIdNow = this.model.meta.id;
+    const nodes = this.model.nodes || [];
+    const byId = new Map(nodes.map(n => [n.id, n]));
+    const layerName = (id) => (this.model.layers || []).find(l => l.id === id)?.name || id || '—';
+    const name = (n) => n ? `${n.label || n.name || n.id}` : '?';
+    const moved = new Set(d.nodes.map(n => n.id));
+    // 最寄りの（動かしていない）箱。「誰の近くへ寄せたか」が意図のいちばん強い手がかり
+    const nearest = (id, x, y) => {
+      let best = null, bd = Infinity;
+      for (const m of nodes) {
+        if (m.id === id || moved.has(m.id)) continue;
+        const dd = (m.x - x) ** 2 + (m.y - y) ** 2;
+        if (dd < bd) { bd = dd; best = m; }
+      }
+      return best;
+    };
+    const rows = d.nodes.map((t) => {
+      const n = byId.get(t.id); const b = this.tweakBase.get(`n:${t.id}`);
+      const nb = nearest(t.id, b.x, b.y), na = nearest(t.id, t.x, t.y);
+      const near = nb?.id === na?.id ? `近くの箱は変わらず（${name(na)}）` : `${name(nb)} の近く → ${name(na)} の近く`;
+      return `- \`${t.id}\`「${name(n)}」層=${layerName(n?.layer)} / (${Math.round(b.x)},${Math.round(b.y)}) → (${t.x},${t.y}) / ${near}`;
+    });
+    const edgeRows = d.edges.map((t) => {
+      const e = (this.model.edges || []).find(x => x.id === t.id);
+      const end = (p) => name(byId.get(String(p || '').split(':')[0]));   // 端点は "id:port"
+      return `- \`${t.id}\`（${end(e?.from)} → ${end(e?.to)}${e?.label ? ` / ${e.label}` : ''}）経由点 ${t.waypoints.length} 個`;
+    });
+    const frag = { diagrams: [{ meta: { id: viewIdNow }, ...(d.nodes.length ? { nodes: d.nodes } : {}), ...(d.edges.length ? { edges: d.edges } : {}) }] };
+    return [
+      `# 図の手直しの検討依頼（${this.project?.project?.id || ''} / ${viewIdNow}）`,
+      '',
+      `自動生成の図「${this.model.meta.title || viewIdNow}」を人が手で直しました。`,
+      '生成図は rules（抽出規則）から毎回作り直されます。手直しの 1 件ずつについて、どれに当たるか判断してください。',
+      '',
+      '- **rules**: 分け方・層・所属が違っていた（位置は症状で、原因は規則）。rules のどこをどう直すかを提案する',
+      '- **overlay**: 分け方は正しく、見せ方（配置・線の通り道）だけの好み。位置をそのまま overlay に残す',
+      '- **drop**: 意味のない移動（誤操作・微調整）。残さない',
+      '',
+      `## 動かした箱（${d.nodes.length} 件）`,
+      ...(rows.length ? rows : ['- なし']),
+      '',
+      `## 通り道を変えた線（${d.edges.length} 件）`,
+      ...(edgeRows.length ? edgeRows : ['- なし']),
+      '',
+      '## 返答の形',
+      '1. 表: id / 判定（rules・overlay・drop）/ 理由 1 行',
+      '2. rules と判定したものは、rules（tools/diagram_engine/bin/rules/*.json）への変更案',
+      '3. overlay と判定したものだけを残した JSON（下の断片から drop と rules を除いたもの）。',
+      '   これは `node tools/diagram_engine/bin/apply.mjs --overlay <overlay.json> --tweaks <このJSON>` にそのまま渡します',
+      '',
+      '## 手直しの断片（全件）',
+      '```json',
+      JSON.stringify(frag, null, 1),
+      '```',
+    ].join('\n');
+  }
+
+  // クリップボードへ（スマホでもそのまま AI に貼れる）。使えなければファイルに落とす。
+  async copyTweakReview() {
+    const text = this.tweakReviewPrompt();
+    if (!text) { this.setStatus('手直しがありません（箱や経由点を動かしてから）', true); return null; }
+    try { await navigator.clipboard.writeText(text); this.setStatus('AI への相談文をコピーしました（手直しの意図を rules / overlay / drop に振り分けさせる）'); }
+    catch { downloadText(`${this.model.meta.id}.tweaks.review.md`, text, 'text/markdown'); this.setStatus('コピーできないのでファイルに書き出しました（.tweaks.review.md）'); }
+    return text;
+  }
+
   // overlay 断片として書き出す。**そのまま apply.mjs --tweaks に渡せる形**にする
   // （人が手で貼り替える工程を挟まない＝写し間違いが起きない）。
   exportTweaks() {
@@ -8713,6 +8786,8 @@ class DiagramEditor {
       // §44 人の手直しを持ち帰る口。生成図を動かしたときだけ意味があるので、件数を出しておく
       () => [`Export: 手直し（overlay 断片）${this.tweakCount() ? ` — ${this.tweakCount()} 件` : ''}`,
         () => this.exportTweaks()],
+      // §45 同じ手直しを AI に相談する（意図を rules / overlay / drop に振り分けさせる）
+      ['Copy: 手直しを AI に相談', () => this.copyTweakReview()],
       ['Export: 図 JSON', () => downloadText(`${this.model.meta.id}.json`, toJSON(this.model), 'application/json')],
       ['Export: 図 SVG', () => { const s = this.renderer.exportSVG?.(); if (s) downloadText(`${this.model.meta.id}.svg`, s, 'image/svg+xml'); else this.setStatus('SVG は flat / iso 投影で', true); }],
       ['Export: 図 HTML', async () => downloadText(`${this.model.meta.id}.html`, await exportStandaloneHTML(this.model, this.renderer), 'text/html')],
@@ -9702,6 +9777,13 @@ class DiagramEditor {
       + '流してから再抽出する。これで<b>箱が増えても層が変わっても、人が直した位置だけが残る</b>。<br>'
       + '記録されるのは<b>生成値との差だけ</b>。図全体を焼き込む「複製して手描きにする」とは違い、'
       + '<b>自動更新に追随したまま</b>人の意図を重ねられる。'
+      + '<br><b>AI に相談する:</b> <b>File ▸ Copy: 手直しを AI に相談</b> で、各手直しを'
+      + '「rules（分け方が違う）／overlay（位置だけ残す）／drop（捨てる）」に振り分けさせる依頼文がコピーされる。'
+      + 'AI が overlay と判定した分だけの JSON は、そのまま apply.mjs --tweaks に渡せる。'
+      + '<h4>線を動かす</h4>'
+      + '線を選ぶと区間ごとに <b>○</b> が出る。<b>水平・垂直の区間の ○ を掴むと、その区間ごと平行移動</b>する'
+      + '（箱につながる端は短い足が出て、線は箱から離れない）。'
+      + '<b>Shift＋ドラッグ</b>（と斜めの区間）は折れ点を足す。■ は経由点で、ダブルクリックで消える。'
       + '<h4>今どこにいるか</h4>'
       + '<b>①</b> 左 <b>VIEWS</b> ツリーが今開いている図を強調する ／ '
       + '<b>②</b> 掘った先では<b>キャンバスに、掘ったものの名前を付けた枠</b>が出る ／ '
@@ -10121,6 +10203,9 @@ class DiagramEditor {
     this.drag = null;
     if (!d) return;
     if (d.mode === 'connect') { this.ghost?.remove(); this.ghost = null; }
+    if (d.mode === 'segment' && !d.moved) {      // 掴んだだけなら元の経由点に戻す（実体化した点を残さない）
+      const b = JSON.parse(d.before); if (b) d.edge.waypoints = b; else delete d.edge.waypoints;
+    }
     if (d.mode === 'waypoint' && d.inserted && !d.moved) {
       d.edge.waypoints.splice(d.idx, 1);
       if (!d.edge.waypoints.length) delete d.edge.waypoints;
@@ -10183,6 +10268,10 @@ class DiagramEditor {
     const wh = this.hitWaypointHandle(e.clientX, e.clientY);
     if (wh) {
       const edge = this.wpHandles.edge;
+      // §46 水平・垂直の区間は、掴んだら**区間ごと平行移動**する（頂点を足すと折れ線になるだけ）。
+      //   斜めの区間と Shift＋ドラッグは従来どおり頂点を足す。
+      const seg = wh.type === 'mid' && !e.shiftKey && this.beginSegmentMove(edge, wh.idx);
+      if (seg) { this.drag = seg; return; }
       if (wh.type === 'mid') {
         if (!edge.waypoints || !edge.waypoints.length) {
           // 自動ルートの内部点を実体化してから挿入（形を保ったまま手編集に移行）
@@ -10452,6 +10541,16 @@ class DiagramEditor {
       });
       return;
     }
+    if (this.drag.mode === 'segment') {
+      const p = this.renderer.toLogical(e.clientX, e.clientY);
+      const d = this.drag, g = this.model.meta.grid;
+      const v = snap(d.axis === 'y' ? p.y : p.x, g);
+      for (const i of d.idx) d.edge.waypoints[i][d.axis] = v;
+      d.moved = true;
+      this.renderer.update(this.model);
+      this.drawWaypointHandles();
+      return;
+    }
     if (this.drag.mode === 'waypoint') {
       const p = this.renderer.toLogical(e.clientX, e.clientY);
       const g = this.model.meta.grid;
@@ -10515,6 +10614,10 @@ class DiagramEditor {
       return;
     }
     if (d.mode === 'move' && d.moved) { this.markHandPlaced(nodeById(this.model, d.id)); this.commit(); }
+    if (d.mode === 'segment') {
+      if (d.moved) { this.commit(); this.setStatus('線を平行移動しました（Shift＋ドラッグで折れ点を足す）'); }
+      else { const bw = JSON.parse(d.before); if (bw) d.edge.waypoints = bw; else delete d.edge.waypoints; this.drawWaypointHandles(); }
+    }
     if (d.mode === 'waypoint') {
       // 動かしていない場合は DOM を作り直さない（作り直すとブラウザが dblclick を合成しない）
       if (d.moved) { this.commit(); this.setStatus('経由点を更新（ダブルクリックで削除）'); }
@@ -10678,13 +10781,34 @@ class DiagramEditor {
     for (let i = 0; i < pts.length - 1; i++) {
       const mx = (pts[i].x + pts[i + 1].x) / 2, my = (pts[i].y + pts[i + 1].y) / 2;
       handles.push({ x: mx, y: my, type: 'mid', idx: i });
+      // §46 水平の区間は上下へ、垂直の区間は左右へ平行移動できることをカーソルで示す
+      const horiz = Math.abs(pts[i].y - pts[i + 1].y) < 0.5, vert = Math.abs(pts[i].x - pts[i + 1].x) < 0.5;
       g.appendChild(el('circle', {
         cx: mx, cy: my, r: 4,
-        fill: 'var(--de-bg)', stroke: 'var(--de-select)', 'stroke-width': 1.5, cursor: 'copy',
+        fill: 'var(--de-bg)', stroke: 'var(--de-select)', 'stroke-width': 1.5,
+        cursor: horiz ? 'ns-resize' : vert ? 'ew-resize' : 'copy',
       }));
     }
     this.renderer.world.appendChild(g);
     this.wpHandles = { edge, pts, handles };
+  }
+
+  // §46 区間 i（pts[i]→pts[i+1]）を平行移動する準備。水平/垂直でなければ null（頂点追加に回す）。
+  // 箱につながる端の区間は、端点に同じ点を 1 つ足してから動かす＝ポートから短い足が出て、
+  // 線は箱から離れない。動かすのは区間の両端の経由点の、区間に垂直な座標だけ。
+  beginSegmentMove(edge, i) {
+    const pts = this.wpHandles?.pts;
+    if (!pts || !pts[i + 1]) return null;
+    const a = pts[i], b = pts[i + 1];
+    const axis = Math.abs(a.y - b.y) < 0.5 ? 'y' : Math.abs(a.x - b.x) < 0.5 ? 'x' : null;
+    if (!axis || Math.hypot(a.x - b.x, a.y - b.y) < 1) return null;
+    const before = JSON.stringify(edge.waypoints || null);
+    const wps = pts.slice(1, -1).map(p => ({ x: Math.round(p.x), y: Math.round(p.y) }));
+    let ia = i - 1, ib = i;                          // pts の添字 → waypoints の添字
+    if (i === 0) { wps.unshift({ x: Math.round(a.x), y: Math.round(a.y) }); ia = 0; ib = 1; }
+    if (i + 1 === pts.length - 1) { wps.push({ x: Math.round(b.x), y: Math.round(b.y) }); ib = wps.length - 1; }
+    edge.waypoints = wps;
+    return { mode: 'segment', edge, axis, idx: [ia, ib], before };
   }
 
   hitWaypointHandle(clientX, clientY) {
