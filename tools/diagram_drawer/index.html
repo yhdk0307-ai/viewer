@@ -540,7 +540,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '253bebc';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '64750df';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -7970,18 +7970,73 @@ class DiagramEditor {
     this.updateLockButton();
     this.setStatus(this.locked
       ? 'ロック中 — 図は動かせません（閲覧・選択・展開・ドリルダウンは可）。L で解除'
-      : 'ロック解除 — 箱の移動・結線ができます。L で再ロック');
+      : (this.isGenerated
+        // §44 生成図では「動かせる」だけでなく「動かした分は書き出さないと消える」ことまで言う
+        ? '手直しモード — この図は自動生成なので、動かした分は File ▸ Export: 手直し で書き出してください（そのままでは次の再抽出で消えます）'
+        : 'ロック解除 — 箱の移動・結線ができます。L で再ロック'));
   }
 
   toggleLock() {
-    // 生成図では錠を外させない（外しても canEditGeometry は false のままで、
-    // 「外したのに動かない」という分からない状態になるだけ）。理由と出口を出す。
-    if (this.isGenerated) {
-      this.setStatus('この図は宣言から自動生成されています。直すには rules を直すか、'
-        + '「複製して手描きにする」で自分の図にしてください', true);
-      return;
-    }
+    // §44 生成図の錠を外すと「手直しモード」に入る。
+    //
+    // ⚠ 2026-09-29 まではここで**断っていた**（「外しても動かない状態になるだけ」）。断るのが
+    //   正しかったのは、手で直した結果に**帰る場所が無かった**から——次の再抽出で必ず消えていた。
+    //   overlay は生成図へ id で重ねられる（overlay_merge の mergeDiagramInto）ので、
+    //   「直す → 書き出す → overlay へ入れる → 再抽出でも残る」という道は元から通っていた。
+    //   足りなかったのはブラウザ側の入口だけなので、断るのをやめて**記録する**ようにした。
+    if (this.isGenerated && this.locked) this.beginTweak();
     this.setLocked(!this.locked);
+  }
+
+  // ─── §44 手直し（生成図を人が直し、その差分だけを持ち帰る） ───────────────
+  // 記録するのは**生成された値との差**だけ。図全体を焼き込むと（複製と同じく）その瞬間から
+  // 自動更新に追随しなくなる。差分なら、箱が増えても層が変わっても人の意図だけが残る。
+  beginTweak() {
+    this.tweakBase = new Map();
+    for (const n of this.model.nodes || []) this.tweakBase.set(`n:${n.id}`, { x: n.x, y: n.y });
+    for (const e of this.model.edges || []) {
+      this.tweakBase.set(`e:${e.id}`, JSON.stringify(e.waypoints || null));
+    }
+    this.tweakView = this.model.meta.id;
+  }
+
+  // いま何件ぶん、生成値から動いているか。書き出す中身そのもの。
+  tweakDiff() {
+    if (!this.tweakBase || this.tweakView !== this.model?.meta?.id) return { nodes: [], edges: [] };
+    const nodes = [], edges = [];
+    for (const n of this.model.nodes || []) {
+      const b = this.tweakBase.get(`n:${n.id}`);
+      if (!b) continue;                                   // 手直し開始後に増えた箱は対象外
+      if (Math.round(b.x) !== Math.round(n.x) || Math.round(b.y) !== Math.round(n.y)) {
+        nodes.push({ id: n.id, x: Math.round(n.x), y: Math.round(n.y) });
+      }
+    }
+    for (const e of this.model.edges || []) {
+      const b = this.tweakBase.get(`e:${e.id}`);
+      if (b === undefined) continue;
+      const now = JSON.stringify(e.waypoints || null);
+      if (now !== b) edges.push({ id: e.id, waypoints: structuredClone(e.waypoints || []) });
+    }
+    return { nodes, edges };
+  }
+
+  tweakCount() { const d = this.tweakDiff(); return d.nodes.length + d.edges.length; }
+
+  // overlay 断片として書き出す。**そのまま apply.mjs --tweaks に渡せる形**にする
+  // （人が手で貼り替える工程を挟まない＝写し間違いが起きない）。
+  exportTweaks() {
+    const d = this.tweakDiff();
+    if (!d.nodes.length && !d.edges.length) { this.setStatus('手直しがありません（箱や経由点を動かしてから書き出してください）', true); return null; }
+    const viewIdNow = this.model.meta.id;
+    const doc = {
+      _comment: `${this.project.project.id} / ${viewIdNow} の手直し（GRAPH_CONTRACT.md §44）。`
+        + `node bin/apply.mjs --overlay <overlay.json> --tweaks <このファイル> で overlay へ入り、`
+        + `再抽出しても残る。位置は生成値との差だけを持つ。`,
+      diagrams: [{ meta: { id: viewIdNow }, ...(d.nodes.length ? { nodes: d.nodes } : {}), ...(d.edges.length ? { edges: d.edges } : {}) }],
+    };
+    downloadText(`${viewIdNow}.tweaks.json`, JSON.stringify(doc, null, 1), 'application/json');
+    this.setStatus(`手直し ${d.nodes.length + d.edges.length} 件を書き出しました（apply.mjs --tweaks で overlay へ）`);
+    return doc;
   }
 
   // §18.2 出口②: 生成図を複製して手描き図（authored）にする。
@@ -8041,7 +8096,9 @@ class DiagramEditor {
 
   // キャンバス上で形を編集してよいか。ロック中はここが false になり、
   // 移動 / 結線 / 経由点 / ノード追加 / ラベル直接編集がすべて発火しない。
-  get canEditGeometry() { return this.editable && this.projection === 'flat' && !this.locked && !this.isGenerated; }
+  // §44 生成図でも、錠を外していれば幾何は触れる（差分は手直しとして持ち帰れるため）。
+  // 触れないのは 2.5D/3D（見るための投影）と、閲覧専用パッケージのとき。
+  get canEditGeometry() { return this.editable && this.projection === 'flat' && !this.locked; }
 
   // §24 右ペインの編集欄を出すかどうか。**幾何とは別の判定**にする ——
   // 箱を掴んで動かせるのは flat だけだが、ラベル・種別・説明を直すのは 2.5D を見ながらでも
@@ -8653,6 +8710,9 @@ class DiagramEditor {
       ['Export decisions ⬇（判定を書き出す）', () => this.exportDecisions()],
       '---',
       ['Export: Release HTML', exportRelease],
+      // §44 人の手直しを持ち帰る口。生成図を動かしたときだけ意味があるので、件数を出しておく
+      () => [`Export: 手直し（overlay 断片）${this.tweakCount() ? ` — ${this.tweakCount()} 件` : ''}`,
+        () => this.exportTweaks()],
       ['Export: 図 JSON', () => downloadText(`${this.model.meta.id}.json`, toJSON(this.model), 'application/json')],
       ['Export: 図 SVG', () => { const s = this.renderer.exportSVG?.(); if (s) downloadText(`${this.model.meta.id}.svg`, s, 'image/svg+xml'); else this.setStatus('SVG は flat / iso 投影で', true); }],
       ['Export: 図 HTML', async () => downloadText(`${this.model.meta.id}.html`, await exportStandaloneHTML(this.model, this.renderer), 'text/html')],
@@ -9634,6 +9694,14 @@ class DiagramEditor {
       + '<b>スマホ（ホバーの無い端末）では、箱をタップすると同じ内容が<b>画面下部の帯</b>に出る。</b>'
       + '触った点に出すと<b>指で隠れる</b>ので、出し先を変えてある——帯は常に同じ場所なので、'
       + '箱を順にタップして見ていくときに読む位置が飛ばない。<b>×</b> で選択ごと外れる。'
+      + '<h4>自動生成の図を手で直す（手直し）</h4>'
+      + '要約図など<b>自動生成の図</b>は既定でロックされている。錠を外すと<b>手直しモード</b>に入り、'
+      + '箱の位置や線の経由点を動かせる（2D のみ）。<br>'
+      + '⚠ <b>動かしただけでは次の再抽出で消える。</b> 直したら <b>File ▸ Export: 手直し（overlay 断片）</b> で'
+      + '書き出し、<code>node bin/apply.mjs --overlay &lt;overlay.json&gt; --tweaks &lt;書き出したファイル&gt;</code> を'
+      + '流してから再抽出する。これで<b>箱が増えても層が変わっても、人が直した位置だけが残る</b>。<br>'
+      + '記録されるのは<b>生成値との差だけ</b>。図全体を焼き込む「複製して手描きにする」とは違い、'
+      + '<b>自動更新に追随したまま</b>人の意図を重ねられる。'
       + '<h4>今どこにいるか</h4>'
       + '<b>①</b> 左 <b>VIEWS</b> ツリーが今開いている図を強調する ／ '
       + '<b>②</b> 掘った先では<b>キャンバスに、掘ったものの名前を付けた枠</b>が出る ／ '
