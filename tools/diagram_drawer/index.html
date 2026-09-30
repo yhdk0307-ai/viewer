@@ -541,7 +541,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = 'b532452';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = 'ee4e65a';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -8074,17 +8074,36 @@ class DiagramEditor {
       `## 通り道を変えた線（${d.edges.length} 件）`,
       ...(edgeRows.length ? edgeRows : ['- なし']),
       '',
-      '## 返答の形',
-      '1. 表: id / 判定（rules・overlay・drop）/ 理由 1 行',
-      '2. rules と判定したものは、rules（tools/diagram_engine/bin/rules/*.json）への変更案',
-      '3. overlay と判定したものだけを残した JSON（下の断片から drop と rules を除いたもの）。',
-      '   これは `node tools/diagram_engine/bin/apply.mjs --overlay <overlay.json> --tweaks <このJSON>` にそのまま渡します',
+      ...this.tweakReviewSteps(),
       '',
       '## 手直しの断片（全件）',
       '```json',
       JSON.stringify(frag, null, 1),
       '```',
     ].join('\n');
+  }
+
+  // §47 相談文の「やること」。貼られた AI（リポジトリを触れる Claude Code を想定）が
+  // **判定 → overlay 分の反映 → 再抽出 → PR** までやりきる手順にする。人が JSON を受け取って
+  // もう一度渡す往復をなくすため。rules の変更だけは構造の判断なので、提案で止めて人に返す。
+  // パスは graph が持つ project.rebuild（extract.mjs が作ったときの引数）から引く。
+  // 無ければ置き場を推測させず <…> のまま渡す（別リポジトリへ持ち出したツールでも嘘を書かない）。
+  tweakReviewSteps() {
+    const rb = this.project?.project?.rebuild;
+    const apply = rb ? `${rb.extract.replace(/extract\.mjs$/, 'apply.mjs')}` : 'bin/apply.mjs';
+    const extractCmd = rb
+      ? `node ${rb.extract} . ${rb.rules ? `--rules ${rb.rules} ` : ''}--overlay ${rb.overlay} --out ${rb.out}`
+      : 'node bin/extract.mjs <repo> --rules <rules.json> --overlay <overlay.json> --out <graph.json>';
+    return [
+      '## やること（このリポジトリで最後まで実行してください）',
+      '1. 1 件ずつ判定し、表にする: id / 判定（rules・overlay・drop）/ 理由 1 行',
+      `2. **overlay** と判定したものだけを残した JSON を作業用ファイルに保存し、overlay へ入れる:`,
+      `   \`node ${apply} --overlay ${rb?.overlay || '<overlay.json>'} --tweaks <作業用ファイル>\``,
+      `3. 再抽出する: \`${extractCmd}\``,
+      '4. 図の検証を流し、ブランチにコミットして PR を作る（マージは人の確認を待つ）',
+      `5. **rules** と判定したものは**変更せず**、${rb?.rules ? `\`${rb.rules}\` の` : 'rules の'}どこをどう直すかの提案だけを返す（構造の判断は人がする）`,
+      '6. **drop** は捨てる。すべて drop なら何も変更せず、その旨だけ返す',
+    ];
   }
 
   // クリップボードへ（スマホでもそのまま AI に貼れる）。使えなければファイルに落とす。
