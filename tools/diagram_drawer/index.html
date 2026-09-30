@@ -152,6 +152,7 @@
 .de-iconbtn:hover { border-color: var(--de-ink); }
 .de-iconbtn.active { background: var(--de-ink); color: var(--de-bg); border-color: var(--de-ink); }
 .de-iconbtn-wide { font-size: 11px; letter-spacing: .02em; }
+.de-iconbtn[hidden] { display: none; }   /* inline-flex が hidden 属性を打ち消すため（§45 生成図だけに出すボタン） */
 /* G16: アイコンバーに線画アイコンを置くとき用（iconSVG はクラスを付けないので、
    ここで fill:none を与えないと塗り潰された黒い四角になる）。色は currentColor に
    追従させるので、.active（反転）でも自然に白抜きになる。 */
@@ -540,7 +541,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = 'a4331d3';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = 'b532452';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -8156,9 +8157,12 @@ class DiagramEditor {
     b.textContent = '';
     b.appendChild(iconSVG(document, this.locked ? 'shield-lock' : 'lock-open', 17));
     b.classList.toggle('active', this.locked);
+    if (this.askAiBtn) this.askAiBtn.hidden = !this.isGenerated;
     if (this.isGenerated) {
-      b.title = 'この図は宣言から自動生成されています（編集不可）。'
-        + '直すには rules を直すか、File ▸「複製して手描きにする」';
+      // §44 以後、生成図も錠を外せる（手直しモード）。旧文言「編集不可」は §44 で嘘になっていた
+      b.title = this.locked
+        ? '自動生成の図（ロック中）。L で外すと手直しモード — 直した位置は書き出さないと次の再抽出で消える'
+        : '手直しモード: 箱や線を動かせる。File ▸ Export: 手直し で書き出す（L でロック）';
       b.dataset.generated = '1';
     } else {
       b.title = this.locked ? 'ロック中: 図は動かせない（L で解除）' : 'ロック解除中: 箱を動かせる（L でロック）';
@@ -8425,6 +8429,7 @@ class DiagramEditor {
     this.mountRenderer();
     this.syncJSONPanel();
     this.refreshChrome();
+    this.updateLockButton();   // 生成図か手描きかで錠の説明と「AI に相談」の有無が変わる
     this.renderInspector?.();
     this.refreshInfoBar();   // 図を変えると選択は外れる＝帯も畳む
   }
@@ -8939,6 +8944,10 @@ class DiagramEditor {
       ib.appendChild(sep());
       // G15: ロックは最も押しやすい位置に置く（既定 ON なので「解除の入口」が見えている必要がある）
       this.lockBtn = btn('', '', () => this.toggleLock(), { role: 'toggle-lock' });
+      // §45 ロックの右隣: 手直しを AI に相談（生成図だけで意味があるので、生成図のときだけ出す）
+      this.askAiBtn = btn('', '手直しを AI に相談（rules / overlay / drop に振り分ける依頼文をコピー）',
+        () => this.copyTweakReview(), { role: 'ask-ai-tweaks' });
+      this.askAiBtn.appendChild(iconSVG(document, 'robot', 17));
       this.updateLockButton();
       this.undoBtn = btn('↶', '戻す (Ctrl+Z)', () => this.undo());
       this.redoBtn = btn('↷', 'やり直す (Ctrl+Shift+Z)', () => this.redo());
@@ -10203,13 +10212,8 @@ class DiagramEditor {
     this.drag = null;
     if (!d) return;
     if (d.mode === 'connect') { this.ghost?.remove(); this.ghost = null; }
-    if (d.mode === 'segment' && !d.moved) {      // 掴んだだけなら元の経由点に戻す（実体化した点を残さない）
-      const b = JSON.parse(d.before); if (b) d.edge.waypoints = b; else delete d.edge.waypoints;
-    }
-    if (d.mode === 'waypoint' && d.inserted && !d.moved) {
-      d.edge.waypoints.splice(d.idx, 1);
-      if (!d.edge.waypoints.length) delete d.edge.waypoints;
-    }
+    if (d.mode === 'segment' && !d.moved) this.restoreWaypoints(d.edge, d.before);   // 掴んだだけなら戻す
+    if (d.mode === 'waypoint' && d.inserted && !d.moved) this.restoreWaypoints(d.edge, d.before);
     this.renderer.update?.(this.model);
     this.drawWaypointHandles();
   }
@@ -10273,12 +10277,13 @@ class DiagramEditor {
       const seg = wh.type === 'mid' && !e.shiftKey && this.beginSegmentMove(edge, wh.idx);
       if (seg) { this.drag = seg; return; }
       if (wh.type === 'mid') {
+        const before = JSON.stringify(edge.waypoints || null);   // 動かさずに離したら丸ごと戻す
         if (!edge.waypoints || !edge.waypoints.length) {
           // 自動ルートの内部点を実体化してから挿入（形を保ったまま手編集に移行）
           edge.waypoints = this.wpHandles.pts.slice(1, -1).map(p => ({ x: Math.round(p.x), y: Math.round(p.y) }));
         }
         edge.waypoints.splice(wh.idx, 0, { x: wh.x, y: wh.y });
-        this.drag = { mode: 'waypoint', edge, idx: wh.idx, inserted: true };
+        this.drag = { mode: 'waypoint', edge, idx: wh.idx, inserted: true, before };
       } else {
         this.drag = { mode: 'waypoint', edge, idx: wh.idx };
       }
@@ -10616,12 +10621,12 @@ class DiagramEditor {
     if (d.mode === 'move' && d.moved) { this.markHandPlaced(nodeById(this.model, d.id)); this.commit(); }
     if (d.mode === 'segment') {
       if (d.moved) { this.commit(); this.setStatus('線を平行移動しました（Shift＋ドラッグで折れ点を足す）'); }
-      else { const bw = JSON.parse(d.before); if (bw) d.edge.waypoints = bw; else delete d.edge.waypoints; this.drawWaypointHandles(); }
+      else { this.restoreWaypoints(d.edge, d.before); this.drawWaypointHandles(); }
     }
     if (d.mode === 'waypoint') {
       // 動かしていない場合は DOM を作り直さない（作り直すとブラウザが dblclick を合成しない）
       if (d.moved) { this.commit(); this.setStatus('経由点を更新（ダブルクリックで削除）'); }
-      else if (d.inserted) { d.edge.waypoints.splice(d.idx, 1); if (!d.edge.waypoints.length) delete d.edge.waypoints; }
+      else if (d.inserted) this.restoreWaypoints(d.edge, d.before);
     }
     if (d.mode === 'connect') {
       this.ghost?.remove(); this.ghost = null;
@@ -10791,6 +10796,14 @@ class DiagramEditor {
     }
     this.renderer.world.appendChild(g);
     this.wpHandles = { edge, pts, handles };
+  }
+
+  // 掴んだだけで離したとき、経由点を掴む前へ戻す。⚠ 挿入した 1 点だけ消すのでは足りない:
+  //   自動ルートの線は掴んだ瞬間に内部点を経由点へ実体化するので、それが残って
+  //   「動かしていない線」が手直し（§44）として数えられていた（2026-09-29 実データで 15 本）。
+  restoreWaypoints(edge, before) {
+    const b = before === undefined ? null : JSON.parse(before);
+    if (b) edge.waypoints = b; else delete edge.waypoints;
   }
 
   // §46 区間 i（pts[i]→pts[i+1]）を平行移動する準備。水平/垂直でなければ null（頂点追加に回す）。
