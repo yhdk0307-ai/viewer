@@ -523,6 +523,14 @@ g[data-origin="extracted"] .de-edge { stroke-width: 1.1; }
    （ユーザー指摘:「28 自動って何ですか？ いらないです」）。来歴そのものは上の線の太さで
    出し続けている（細線＝自動 / 太線＝手描き）。消したのは数の表示だけ。 */
 
+/* §48 人が描いた図を AI に渡すダイアログ */
+.de-handoff-field { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; font-size: 11px; color: var(--de-soft); }
+.de-handoff-field input { font: 13px var(--de-font); color: var(--de-ink); background: var(--de-fill); border: 1px solid var(--de-soft); border-radius: 4px; padding: 6px 8px; }
+.de-handoff-dest { display: flex; gap: 8px; align-items: flex-start; padding: 8px; margin: 6px 0; border: 1px solid var(--de-grid); border-radius: 6px; cursor: pointer; line-height: 1.5; }
+.de-handoff-dest:has(input:disabled) { opacity: .5; cursor: not-allowed; }
+.de-handoff-dest small { color: var(--de-soft); }
+.de-handoff-err { color: #c0392b; font-size: 12px; min-height: 1.4em; }
+
 html, body { margin: 0; height: 100%; overflow: hidden; }
 </style>
 <div id="app"></div>
@@ -541,7 +549,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = 'ee4e65a';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '8a1bccb';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -8106,6 +8114,117 @@ class DiagramEditor {
     ];
   }
 
+  askAi() { return this.isGenerated ? this.copyTweakReview() : this.openHandoffDialog(); }
+
+  // ─── §48 人が描いた図を AI に渡す ─────────────────────────────────
+  // 流れ: ＋ で図を作る → パレットで描く → 🤖 → 保存先と名前を選ぶ → 依頼文をコピー → AI に貼る。
+  // 保存先は 2 つ。① この構造図（overlay の diagrams[]）に足す ② 独立した図として 1 ファイルにする。
+  // パスは graph の project.rebuild から引く（§47）。無ければ ② だけを、置き場所未定のまま出す。
+  handoffTargets() {
+    const rb = this.project?.project?.rebuild;
+    if (!rb) return { overlay: null, dir: null };
+    const dir = rb.out.includes('/') ? rb.out.slice(0, rb.out.lastIndexOf('/')) : '.';
+    return { overlay: rb.overlay, dir };
+  }
+
+  openHandoffDialog() {
+    if (!this.model?.nodes?.length) { this.setStatus('図が空です（パレットから箱を置いてから）', true); return null; }
+    this.closeMenus?.();
+    document.querySelector('.de-modal-overlay')?.remove();
+    const t = this.handoffTargets();
+    const overlay = document.createElement('div'); overlay.className = 'de-modal-overlay'; overlay.dataset.role = 'handoff';
+    const box = document.createElement('div'); box.className = 'de-modal';
+    const head = document.createElement('div'); head.className = 'de-modal-head';
+    head.innerHTML = '<b>この図を AI に渡す</b>';
+    const body = document.createElement('div'); body.className = 'de-modal-body de-handoff';
+    const field = (label, input) => { const l = document.createElement('label'); l.className = 'de-handoff-field'; l.append(label, input); return l; };
+    const title = document.createElement('input'); title.type = 'text'; title.value = this.model.meta.title || this.model.meta.id; title.dataset.role = 'handoff-title';
+    const id = document.createElement('input'); id.type = 'text'; id.value = this.model.meta.id; id.dataset.role = 'handoff-id';
+    id.placeholder = '英数字と _ -（ファイル名・URL に使う）';
+    const radio = (value, text, hint, enabled) => {
+      const l = document.createElement('label'); l.className = 'de-handoff-dest';
+      const r = document.createElement('input'); r.type = 'radio'; r.name = 'de-handoff-dest'; r.value = value; r.disabled = !enabled;
+      const span = document.createElement('span'); span.innerHTML = `<b>${text}</b><br><small>${hint}</small>`;
+      l.append(r, span); return { l, r };
+    };
+    const inOverlay = this.project.project.rebuild && !this.isGenerated;
+    const dA = radio('overlay', 'この構造図に追加', t.overlay ? `<code>${t.overlay}</code> の diagrams[]。VIEWS に並び、既存の箱とつなげられる` : '保存先が分からない（graph に rebuild が無い）', !!inOverlay);
+    const dB = radio('file', '独立した図として保存', t.dir ? `<code>${t.dir}/&lt;id&gt;.json</code>。この構造図と関係のない話題向け` : '置き場所は AI に決めてもらう', true);
+    (inOverlay ? dA.r : dB.r).checked = true;
+    const err = document.createElement('div'); err.className = 'de-handoff-err'; err.dataset.role = 'handoff-err';
+    body.append(field('名前（図のタイトル）', title), field('id', id), dA.l, dB.l, err);
+    const foot = document.createElement('div'); foot.className = 'de-modal-foot';
+    const cancel = this.btn('やめる', () => overlay.remove());
+    const go = this.btn('依頼文をコピー', async () => {
+      const dest = dA.r.checked ? 'overlay' : 'file';
+      const text = this.viewHandoffPrompt({ dest, id: id.value.trim(), title: title.value.trim() });
+      if (typeof text !== 'string') { err.textContent = text.error; return; }
+      overlay.remove();
+      await this.copyOrDownload(text, `${id.value.trim()}.handoff.md`, 'AI への取り込み依頼をコピーしました（Claude Code に貼ると、保存して PR まで進めます）');
+    });
+    go.className = 'de-btn accent'; go.dataset.role = 'handoff-copy';
+    foot.append(cancel, go);
+    box.append(head, body, foot); overlay.appendChild(box);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  // 依頼文。{ error } を返したら人に直してもらう（AI に誤った名前を渡さない）
+  viewHandoffPrompt({ dest, id, title }) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(id || '')) return { error: 'id は英数字・_・- だけにしてください（ファイル名と URL に使います）' };
+    if (id !== this.model.meta.id && this.project.diagrams.some(d => d.meta.id === id)) return { error: `id '${id}' は既にあります` };
+    const t = this.handoffTargets();
+    const rb = this.project?.project?.rebuild;
+    const view = JSON.parse(toJSON(this.model));
+    view.meta = { ...view.meta, id, title: title || id };
+    delete view.meta.generated;
+    const byId = new Map(view.nodes.map(n => [n.id, n]));
+    const nm = (ref) => { const n = byId.get(String(ref || '').split(':')[0]); return n ? (n.label || n.id) : '?'; };
+    const boxes = view.nodes.map(n => `- ${n.label || n.id}${n.sublabel ? `（${n.sublabel}）` : ''}`);
+    const lines = (view.edges || []).map(e => `- ${nm(e.from)} → ${nm(e.to)}${e.label ? `：${e.label}` : ''}`);
+    const replacing = this.loadedViewIds?.has(this.model.meta.id) && id === this.model.meta.id;
+    let steps, payload;
+    if (dest === 'overlay') {
+      const apply = rb.extract.replace(/extract\.mjs$/, 'apply.mjs');
+      payload = { diagrams: [view] };
+      steps = [
+        `1. 下の JSON を作業用ファイルに保存し、overlay へ入れる: \`node ${apply} --overlay ${t.overlay} --views <作業用ファイル>${replacing ? ' --replace' : ''}\``,
+        replacing ? '   （この図は既にあるので描き直し＝ --replace で置き換える）' : '   （同じ id が既にあると断られる。そのときは id を変えるか、描き直しなら --replace）',
+        `2. 再抽出する: \`node ${rb.extract} . ${rb.rules ? `--rules ${rb.rules} ` : ''}--overlay ${rb.overlay} --out ${rb.out}\``,
+      ];
+    } else {
+      const path = t.dir ? `${t.dir}/${id}.json` : `<置き場所>/${id}.json`;
+      payload = { project: { id: `DGP-${id.toUpperCase()}`, title: title || id, entry: id }, diagrams: [view] };
+      steps = [
+        `1. 下の JSON をそのまま \`${path}\` として保存する${t.dir ? '' : '（置き場所はリポジトリの規約に従って決め、理由を一言添える）'}`,
+        '   （同名のファイルが既にあれば上書きせず、別の id を提案して止まる）',
+      ];
+    }
+    return [
+      `# 図の取り込み依頼（${title || id}）`,
+      '',
+      `ブラウザで人が描いた図です。${dest === 'overlay' ? 'この構造図の VIEWS に 1 枚として足してください。' : '独立した図として保存してください。'}`,
+      '',
+      `## 箱（${boxes.length} 個）`, ...boxes, '',
+      `## 線（${lines.length} 本）`, ...(lines.length ? lines : ['- なし']), '',
+      '## やること（このリポジトリで最後まで実行してください）',
+      '0. まず保存先が合っているかを確かめる。図の中身が保存先に合わない（例: このリポジトリと関係のない話題なのに構造図へ足そうとしている）なら、**何も変更せず**、理由と別の置き場所を提案して止まる',
+      ...steps,
+      `${dest === 'overlay' ? '3' : '2'}. 検証を流し、ブランチにコミットして PR を作る（マージは人の確認を待つ）`,
+      `${dest === 'overlay' ? '4' : '3'}. 箱の名前や線の向きに明らかな誤りがあれば、直さずに指摘だけ返す（図は人の意図そのもの）`,
+      '',
+      '## 図の JSON',
+      '```json', JSON.stringify(payload, null, 1), '```',
+    ].join('\n');
+  }
+
+  async copyOrDownload(text, filename, okMsg) {
+    try { await navigator.clipboard.writeText(text); this.setStatus(okMsg); }
+    catch { downloadText(filename, text, 'text/markdown'); this.setStatus(`コピーできないのでファイルに書き出しました（${filename}）`); }
+    return text;
+  }
+
   // クリップボードへ（スマホでもそのまま AI に貼れる）。使えなければファイルに落とす。
   async copyTweakReview() {
     const text = this.tweakReviewPrompt();
@@ -8176,7 +8295,11 @@ class DiagramEditor {
     b.textContent = '';
     b.appendChild(iconSVG(document, this.locked ? 'shield-lock' : 'lock-open', 17));
     b.classList.toggle('active', this.locked);
-    if (this.askAiBtn) this.askAiBtn.hidden = !this.isGenerated;
+    if (this.askAiBtn) {
+      this.askAiBtn.title = this.isGenerated
+        ? '手直しを AI に相談（rules / overlay / drop に振り分ける依頼文をコピー）'
+        : 'この図を AI に渡す（保存先を選んで、取り込み依頼文をコピー）';
+    }
     if (this.isGenerated) {
       // §44 以後、生成図も錠を外せる（手直しモード）。旧文言「編集不可」は §44 で嘘になっていた
       b.title = this.locked
@@ -8367,6 +8490,9 @@ class DiagramEditor {
       for (const d of rawDiagrams) if (d?.meta?.theme && d?.meta?.id) this.explicitTheme.add(d.meta.id);
     }
     this.project = normalizeProject(raw);
+    // §48 読み込んだ時点で既にあった図。AI へ渡すとき「新しく描いた」か「描き直した」かを分ける
+    // （後者だけ apply --replace を付ける＝黙った上書きを相談文の側でも起こさない）
+    if (!fromHistory) this.loadedViewIds = new Set(this.project.diagrams.map(d => d.meta.id));
     this.navStack = [];
     this.setStatus(warnings.length ? `警告: ${warnings[0]}` : '');
     this.openDiagram(raw.__current || this.project.project.entry);
@@ -8963,9 +9089,8 @@ class DiagramEditor {
       ib.appendChild(sep());
       // G15: ロックは最も押しやすい位置に置く（既定 ON なので「解除の入口」が見えている必要がある）
       this.lockBtn = btn('', '', () => this.toggleLock(), { role: 'toggle-lock' });
-      // §45 ロックの右隣: 手直しを AI に相談（生成図だけで意味があるので、生成図のときだけ出す）
-      this.askAiBtn = btn('', '手直しを AI に相談（rules / overlay / drop に振り分ける依頼文をコピー）',
-        () => this.copyTweakReview(), { role: 'ask-ai-tweaks' });
+      // §45/§48 ロックの右隣: AI に渡す。生成図なら手直しの相談、人が描いた図なら図そのものの引き渡し
+      this.askAiBtn = btn('', '', () => this.askAi(), { role: 'ask-ai-tweaks' });
       this.askAiBtn.appendChild(iconSVG(document, 'robot', 17));
       this.updateLockButton();
       this.undoBtn = btn('↶', '戻す (Ctrl+Z)', () => this.undo());
@@ -9808,6 +9933,10 @@ class DiagramEditor {
       + '<br><b>AI に相談する:</b> <b>File ▸ Copy: 手直しを AI に相談</b> で、各手直しを'
       + '「rules（分け方が違う）／overlay（位置だけ残す）／drop（捨てる）」に振り分けさせる依頼文がコピーされる。'
       + 'AI が overlay と判定した分だけの JSON は、そのまま apply.mjs --tweaks に渡せる。'
+      + '<h4>新しい図を描いて AI に渡す</h4>'
+      + 'Diagram タブの <b>＋</b> で白紙の図を作り、<b>Palette</b> から箱を置いて線でつなぐ。'
+      + '描けたら <b>🤖（ロックの右隣）</b>を押し、名前と保存先（<b>この構造図に追加</b>／<b>独立した図</b>）を選ぶと'
+      + '取り込み依頼文がコピーされる。Claude Code に貼れば、保存 → 再抽出 → PR まで進む（マージは人が決める）。'
       + '<h4>線を動かす</h4>'
       + '線を選ぶと区間ごとに <b>○</b> が出る。<b>水平・垂直の区間の ○ を掴むと、その区間ごと平行移動</b>する'
       + '（箱につながる端は短い足が出て、線は箱から離れない）。'
@@ -10118,7 +10247,7 @@ class DiagramEditor {
     this.project.diagrams.push(dia);
     this.goToDiagram(id);
     this.pushHistory();
-    this.setStatus(`図 '${id}' を追加（名前は JSON パネルの meta.id / meta.title で変更）。パレットからノードを配置してください`);
+    this.setStatus(`図 '${id}' を追加しました。パレットから箱を置き、描けたら 🤖（ロックの右隣）で AI に渡せます（名前と保存先はそこで決める）`);
   }
 
   // 見出し（プロジェクト名）・来歴バッジ・戻る・ツリー・投影ボタンの更新
