@@ -247,6 +247,8 @@
 .de-palette button:hover { border-color: var(--de-accent); }
 .de-palette button.armed { border-color: var(--de-accent); background: var(--de-accent-soft); }
 .de-palette svg { width: 22px; height: 22px; stroke: var(--de-ink); fill: none; stroke-width: 1.5; }
+.de-edge-glyph { font-family: var(--de-mono); font-size: 14px; letter-spacing: -1px; line-height: 22px; height: 22px; color: var(--de-ink); }   /* §49 線の形をそのまま見せる */
+.de-section h3 + .de-palette + h3 { margin-top: 14px; }
 .de-iconpicker { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
 .de-iconpicker button { padding: 5px; border: 1px solid var(--de-grid); border-radius: 3px; background: var(--de-fill); cursor: pointer; }
 .de-iconpicker button:hover, .de-iconpicker button.selected { border-color: var(--de-accent); }
@@ -549,7 +551,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '8a1bccb';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '8c02347';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -7782,6 +7784,21 @@ const NODE_PALETTE = [
   { type: 'pictogram', label: 'Pictogram', icon: 'robot' },
 ];
 
+// §49 コネクタのパレット。preset（見た目の語彙・model.js の EDGE_PRESETS）を、形の記号と日本語の一言で並べる。
+// 箱と同じ「選ぶ → クリック」で引けるようにする（ポートの小さな ○ を狙ってドラッグしなくてよい）。
+const EDGE_PALETTE = [
+  { preset: 'flow', glyph: '──▶', label: '流れ' },
+  { preset: 'dependency', glyph: '┄┄▷', label: '依存' },
+  { preset: 'signal', glyph: '⋯⋯▶', label: '信号・イベント' },
+  { preset: 'association', glyph: '───', label: '関連（向きなし）' },
+  { preset: 'generalization', glyph: '──△', label: '汎化（〜の一種）' },
+  { preset: 'realization', glyph: '┄┄△', label: '実現' },
+  { preset: 'composition', glyph: '◆──', label: '全体–部分（強）' },
+  { preset: 'aggregation', glyph: '◇──', label: '全体–部分（弱）' },
+  { preset: 'bus', glyph: '━━━', label: 'バス・幹線' },
+  { preset: 'item-flow', glyph: '──●', label: 'もの・データの流れ' },
+];
+
 // §39 見出しに出す「プロジェクトの短い名前」。project.title は
 // `life — repository structure map` のように **名前 — 副題** の形で書かれることが多く、
 // 副題は一度も変わらない＝情報量ゼロなのに、携帯では副題のせいで名前まで切れていた
@@ -7900,6 +7917,8 @@ class DiagramEditor {
     this.projection = 'flat';
     this.selection = null;      // {kind, id}
     this.armedType = null;      // パレットで選択中の追加タイプ
+    this.armedEdge = null;      // §49 パレットで選択中のコネクタ（preset 名）
+    this.edgeSource = null;     // §49 コネクタの「つなぐ元」（1 回目にクリックした箱）
     this.drag = null;
     this.navStack = [];         // ドリルダウンの戻り先 diagram ID
     this.virtualSpecs = new Map();  // §7.4 仮想ビュー（view~<nodeId>）の生成元 spec（保存されない）
@@ -9215,7 +9234,13 @@ class DiagramEditor {
     // §11.3「タブを離れたらプレビューは消える」。提案の選択自体も解いて右ペインを元へ戻す
     if (leaving) this.selectProposal(null);
   }
-  showPaletteTab() { if (this.panelState?.sidebar) this.togglePanel('sidebar'); this.setLeftTab('palette'); }
+  // §49 アイコンバーの ＋ から呼ぶ。左ペインは既定で畳んであり（レール）、畳んだままタブだけ
+  // 切り替えても何も見えない＝押しても無反応に見えていた。畳んでいれば開く。
+  showPaletteTab() {
+    if (this.panelState?.sidebar) this.togglePanel('sidebar');
+    if (this.paneLayout?.rails?.left) this.toggleRail('left');
+    this.setLeftTab('palette');
+  }
 
   // ════════════════ §11 対話層 P1 — 提案（proposal）/ 判定（decision）/ プレビュー ════════════════
   // 「AI は外にいる。会話はファイル（JSON）で往復する」。ブラウザは **提案を見せて判定を記録するだけ**で、
@@ -9798,22 +9823,82 @@ class DiagramEditor {
   buildPalette() {
     const sec = document.createElement('div');
     sec.className = 'de-section';
-    sec.innerHTML = '<h3>Add Node</h3>';
+    sec.innerHTML = '<h3>ノード（箱）</h3>';
     const pal = document.createElement('div'); pal.className = 'de-palette';
     for (const item of NODE_PALETTE) {
       const b = document.createElement('button');
       b.appendChild(iconSVG(document, item.icon, 22));
       b.appendChild(document.createTextNode(item.label));
       b.addEventListener('click', () => {
-        this.armedType = this.armedType === item.type ? null : item.type;
-        for (const x of pal.children) x.classList.toggle('armed', x === b && this.armedType);
-        this.setStatus(this.armedType ? `キャンバスをクリックして ${item.label} を配置` : '');
+        const next = this.armedType === item.type ? null : item.type;
+        this.disarm();
+        this.armedType = next;
+        b.classList.toggle('armed', !!next);
+        this.setStatus(next ? `キャンバスをクリックして ${item.label} を配置` : '');
       });
       pal.appendChild(b);
     }
     this.paletteEl = pal;
     sec.appendChild(pal);
+    // §49 コネクタ: 選ぶ → つなぐ元の箱 → つなぐ先の箱。選んだままなら続けて何本でも引ける（Esc か再押下で解除）
+    const h = document.createElement('h3'); h.textContent = 'コネクタ（線）'; sec.appendChild(h);
+    const epal = document.createElement('div'); epal.className = 'de-palette de-edge-palette';
+    for (const item of EDGE_PALETTE) {
+      const b = document.createElement('button');
+      b.dataset.preset = item.preset; b.title = `${item.label}（${item.preset}）`;
+      const g = document.createElement('span'); g.className = 'de-edge-glyph'; g.textContent = item.glyph;
+      b.append(g, document.createTextNode(item.label));
+      b.addEventListener('click', () => {
+        const next = this.armedEdge === item.preset ? null : item.preset;
+        this.disarm();
+        if (next) this.armEdge(next);
+      });
+      epal.appendChild(b);
+    }
+    this.edgePaletteEl = epal;
+    sec.appendChild(epal);
     return sec;
+  }
+
+  armEdge(preset) {
+    this.armedEdge = preset; this.edgeSource = null;
+    for (const x of this.edgePaletteEl?.children || []) x.classList.toggle('armed', x.dataset.preset === preset);
+    const item = EDGE_PALETTE.find(i => i.preset === preset);
+    this.setStatus(`${item?.label || preset}: つなぐ元の箱をクリック（Esc で終了）`);
+  }
+
+  // §49 コネクタ選択中のクリック。1 回目＝元、2 回目＝先。空白をクリックしたら元を取り消す。
+  edgeClick(e) {
+    const hit = this.renderer.hitTest?.(e.clientX, e.clientY);
+    const nodeId = hit && (hit.kind === 'node' || hit.kind === 'link' || hit.kind === 'port') ? hit.id : null;
+    const label = EDGE_PALETTE.find(i => i.preset === this.armedEdge)?.label || this.armedEdge;
+    if (!nodeId) {
+      if (this.edgeSource) { this.edgeSource = null; this.select(null); this.setStatus(`${label}: 取り消しました。つなぐ元の箱をクリック`); }
+      return;
+    }
+    if (!this.edgeSource) {
+      this.edgeSource = nodeId; this.select({ kind: 'node', id: nodeId });
+      this.setStatus(`${label}: つなぐ先の箱をクリック（空白で取り消し）`);
+      return;
+    }
+    if (nodeId === this.edgeSource) { this.setStatus('同じ箱どうしはつなげません。別の箱をクリック', true); return; }
+    const id = this.addEdge(this.edgeSource, nodeId, this.armedEdge);
+    this.edgeSource = null;
+    this.setStatus(`${label} を引きました（続けて元の箱をクリックすれば次の線。Esc で終了）`);
+    return id;
+  }
+
+  // 線を 1 本足す。preset の見た目を明示値として焼く（normalize を通らない追加でも描画が決まるように）
+  addEdge(from, to, preset = 'flow') {
+    const id = freshId(this.model, 'e');
+    const look = EDGE_PRESETS[preset] || EDGE_PRESETS.flow;
+    this.model.edges.push({
+      id, from, to, kind: 'orthogonal', preset,
+      arrowStart: look.arrowStart || 'none', arrowEnd: look.arrowEnd || 'none', line: look.line || 'solid',
+    });
+    this.select({ kind: 'edge', id });
+    this.commit();
+    return id;
   }
 
   // Help → 使い方（Manual）: 操作説明＋「このツールは何か／他のプロジェクトへどう持って行くか」。
@@ -9933,6 +10018,12 @@ class DiagramEditor {
       + '<br><b>AI に相談する:</b> <b>File ▸ Copy: 手直しを AI に相談</b> で、各手直しを'
       + '「rules（分け方が違う）／overlay（位置だけ残す）／drop（捨てる）」に振り分けさせる依頼文がコピーされる。'
       + 'AI が overlay と判定した分だけの JSON は、そのまま apply.mjs --tweaks に渡せる。'
+      + '<h4>箱と線を描く（Palette）</h4>'
+      + '<b>ノード（箱）</b>: 種類を押してからキャンバスをクリック。<b>コネクタ（線）</b>: 種類（流れ・依存・全体–部分…）を押し、'
+      + '<b>つなぐ元の箱 → つなぐ先の箱</b>の順にクリック。選んだままなら続けて何本でも引ける（Esc か同じボタンで終了）。'
+      + '箱のふちの ○ からドラッグしても引ける。<br>'
+      + '<b>文字やプロパティを変える</b>: 箱をダブルクリックでその場で書き換え、または選んで右の <b>Inspector</b>'
+      + '（label・アイコン・線の preset など）。どちらもロックを外しているときだけ。'
       + '<h4>新しい図を描いて AI に渡す</h4>'
       + 'Diagram タブの <b>＋</b> で白紙の図を作り、<b>Palette</b> から箱を置いて線でつなぐ。'
       + '描けたら <b>🤖（ロックの右隣）</b>を押し、名前と保存先（<b>この構造図に追加</b>／<b>独立した図</b>）を選ぶと'
@@ -10335,8 +10426,9 @@ class DiagramEditor {
   }
 
   disarm() {
-    this.armedType = null;
+    this.armedType = null; this.armedEdge = null; this.edgeSource = null;
     if (this.paletteEl) for (const x of this.paletteEl.children) x.classList.remove('armed');
+    if (this.edgePaletteEl) for (const x of this.edgePaletteEl.children) x.classList.remove('armed');
   }
 
   onWheel(e) {
@@ -10390,6 +10482,7 @@ class DiagramEditor {
       // パレットで追加タイプを選んだままロックされていると、押しても何も起きない死んだ UI になる。
       // 黙って無視せず、解除方法を出して武装を解く。
       if (this.armedType && this.locked) { this.disarm(); this.setStatus('ロック中はノードを追加できません（L キーまたは錠アイコンで解除）', true); return; }
+      if (this.armedEdge && this.locked) { this.disarm(); this.setStatus('ロック中は線を引けません（L キーまたは錠アイコンで解除）', true); return; }
       // G15: ロック中の編集モードでも「選択」は残す。選択できないとインスペクタが開かず、
       // 説明も 開く も読めない＝ロックが閲覧そのものを殺してしまう（ロックは形の編集だけを止める）。
       if (this.editable && this.renderer.hitTest) {
@@ -10416,6 +10509,8 @@ class DiagramEditor {
       this.disarm();
       return;
     }
+    // §49 コネクタ選択中: 箱を 2 回クリックして線を引く
+    if (this.armedEdge) { this.edgeClick(e); return; }
     // 選択中エッジの waypoint ハンドル（最優先）
     const wh = this.hitWaypointHandle(e.clientX, e.clientY);
     if (wh) {
@@ -10781,11 +10876,8 @@ class DiagramEditor {
       const hit = this.renderer.hitTest(e.clientX, e.clientY);
       const to = hit?.kind === 'port' ? `${hit.id}:${hit.portId}` : (hit?.kind === 'node' || hit?.kind === 'link') ? hit.id : null;   // バッジへのドロップもノードへの結線
       if (to && to.split(':')[0] !== d.from.split(':')[0]) {
-        const id = freshId(this.model, 'e');
-        this.model.edges.push({ id, from: d.from, to, kind: 'orthogonal', arrowStart: 'none', arrowEnd: 'arrow', line: 'solid' });
-        this.select({ kind: 'edge', id });
-        this.commit();
-        this.setStatus(`エッジ ${id} を作成`);
+        const id = this.addEdge(d.from, to, 'flow');
+        this.setStatus(`エッジ ${id} を作成（線の種類は右の Inspector の preset で変えられる）`);
       } else {
         this.renderer.update(this.model);
         this.setStatus(to ? '同一ノードへは結線できません' : '');
