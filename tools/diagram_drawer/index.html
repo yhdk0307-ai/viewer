@@ -544,6 +544,14 @@ g[data-origin="extracted"] .de-edge { stroke-width: 1.1; }
 .de-color-row input[type="color"] { width: 36px; height: 26px; padding: 0; border: 1px solid var(--de-soft); border-radius: 4px; background: none; }
 .de-color-state { font: 11px var(--de-mono); color: var(--de-soft); min-width: 56px; }
 
+/* §53 Palette はアイコンだけ（名前はホバー）。1 行に 4 個並べて詰める */
+.de-palette { grid-template-columns: repeat(4, 1fr); }
+.de-palette button { padding: 8px 2px; min-height: 40px; justify-content: center; }
+.de-edge-palette .de-edge-glyph { font-size: 13px; }
+/* §53 範囲選択の枠とサイズ変更ハンドル */
+.de-marquee { fill: var(--de-accent-soft); fill-opacity: .35; stroke: var(--de-accent); stroke-width: 1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; pointer-events: none; }
+.de-rs-handle { fill: var(--de-bg); stroke: var(--de-select); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+
 html, body { margin: 0; height: 100%; overflow: hidden; }
 </style>
 <div id="app"></div>
@@ -562,7 +570,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '48987f3';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '5ed12d1';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -5215,6 +5223,7 @@ class FlatSVGRenderer {
     this.applySelection();
     this.applyPreview();
     this.drawGrid();
+    this.afterUpdate?.();   // §53 エディタが描き直しのたびに足すもの（サイズ変更ハンドル）。world は毎回空になる
   }
 
   // ─── §11.3 提案プレビュー（派生・保存しない・履歴も積まない） ───
@@ -5730,10 +5739,17 @@ class FlatSVGRenderer {
   }
 
   // ─── 選択表示 ───
-  setSelection(sel) { this.selection = sel; this.applySelection(); }
+  setSelection(sel, multi = null) { this.selection = sel; this.multiSel = multi; this.applySelection(); }
   applySelection() {
     for (const e of this.world.querySelectorAll('.de-selected')) e.classList.remove('de-selected');
     for (const e of this.world.querySelectorAll('.de-faded')) e.classList.remove('de-faded');
+    // §53 複数選択: 全員に選択の印を付ける（近傍フォーカスの薄めはしない＝どれが選ばれているかが読めなくなる）
+    if (this.multiSel?.length > 1) {
+      for (const id of this.multiSel) {
+        this.world.querySelector(`[data-kind="node"][data-id="${CSS.escape(id)}"]`)?.querySelector('.de-node-shape, .de-text-shape')?.classList.add('de-selected');
+      }
+      return;
+    }
     if (!this.selection) return;
     const { kind, id } = this.selection;
     const g = this.world.querySelector(`[data-kind="${kind}"][data-id="${CSS.escape(id)}"]`);
@@ -8933,6 +8949,7 @@ class DiagramEditor {
     // 出す瞬間なので中身は捨てて（hideTip）、器だけ描画後に貼り直す（DOM 順で図の上に来る）。
     this.hideTip();
     this.renderer = createRenderer(this.projection);
+    this.renderer.afterUpdate = () => this.drawResizeHandles();   // §53
     this.renderer.mount(this.model, this.viewport, {
       onNodePick: id => { // webgl のクリック pick（view は素クリック / edit は Alt 押下時のみ遷移）
         const node = nodeById(this.model, id);
@@ -8940,7 +8957,7 @@ class DiagramEditor {
       },
     });
     if (this.tipEl) this.viewport.appendChild(this.tipEl);
-    this.renderer.setSelection?.(this.selection);
+    this.renderer.setSelection?.(this.selection, this.multi);
     this.renderer.setPreview?.(this.preview);   // §11.3 プレビューは再マウントでも張り直す
     const editable = this.canEditGeometry;   // G15: ロック中は掴めないので grab カーソルにする
     this.viewport.style.cursor = editable ? 'default' : 'grab';
@@ -9927,8 +9944,9 @@ class DiagramEditor {
     const addNodeButton = (item, glyph) => {
       const b = document.createElement('button');
       b.dataset.type = item.type;
+      // §53 アイコンだけ。名前はホバー（title）と読み上げ（aria-label）で出す
+      b.title = item.label; b.setAttribute('aria-label', item.label);
       b.appendChild(glyph);
-      b.appendChild(document.createTextNode(item.label));
       // §50 キャンバスへドラッグ＆ドロップでも置ける（クリック → クリックも残す）
       b.addEventListener('pointerdown', (e) => this.beginPaletteDrag(e, item, b));
       b.addEventListener('click', () => {
@@ -9963,7 +9981,8 @@ class DiagramEditor {
       const key = item.key || item.preset;
       b.dataset.preset = key; b.title = `${item.label}（${item.preset}${item.kind ? `・${item.kind}` : ''}）`;
       const g = document.createElement('span'); g.className = 'de-edge-glyph'; g.textContent = item.glyph;
-      b.append(g, document.createTextNode(item.label));
+      b.setAttribute('aria-label', item.label);
+      b.append(g);   // §53 形の記号だけ。名前はホバー（title）
       b.addEventListener('click', () => {
         const next = this.armedEdge === key ? null : key;
         this.disarm();
@@ -10169,6 +10188,9 @@ class DiagramEditor {
       + 'または <b>コネクタ（線）</b>の種類を押し、<b>つなぐ元の箱 → つなぐ先の箱</b>の順にクリック'
       + '（選んだままなら続けて引ける・Esc で終了）。箱のふちの ○ からドラッグしても引ける。<br>'
       + '新しく作った図（＋）は<b>ロックを外した状態</b>で始まる。<br>'
+      + '<b>大きさ</b>: 選んだ箱の周りの ■ をドラッグ（円は真円のまま）。'
+      + '<b>複数選択</b>: Ctrl（Mac は ⌘）＋クリック、または Shift＋クリックで足す・外す。Shift＋空白ドラッグで囲んで選ぶ。'
+      + '選んだものはまとめて動かせ、Delete でまとめて消え、右の書式もまとめて効く。<br>'
       + '<b>文字やプロパティを変える</b>: 箱をダブルクリックでその場で書き換え、または選んで右の <b>Inspector</b>'
       + '（label・アイコン・線の preset など）。どちらもロックを外しているときだけ。'
       + '<h4>新しい図を描いて AI に渡す</h4>'
@@ -10681,6 +10703,13 @@ class DiagramEditor {
       }
       return;
     }
+    // §53 選んだ箱のサイズ変更ハンドル（8 方向）
+    const rh = this.hitResizeHandle(e.clientX, e.clientY);
+    if (rh) {
+      const n = nodeById(this.model, rh.id);
+      this.drag = { mode: 'resize', id: rh.id, dir: rh.dir, orig: { x: n.x, y: n.y, w: n.w, h: n.h }, moved: false };
+      return;
+    }
     const hit = this.renderer.hitTest(e.clientX, e.clientY);
     if (hit?.kind === 'expander') { this.toggleExpanded(hit.id); return; }   // §7.3 ▸/▾
     if (hit?.kind === 'link') { this.activateNode(nodeById(this.model, hit.id)); return; }   // ↗ バッジ: Alt 不要（タッチ端末の §7.4 ドリルダウン）
@@ -10694,17 +10723,25 @@ class DiagramEditor {
       // §50 Shift＋ドラッグ＝箱から線を引く（ポートの小さな ○ を狙わなくてよい）。
       // 線の種類はパレットで選んでいるコネクタ、無ければ「流れ」。
       const n = nodeById(this.model, hit.id);
-      this.drag = { mode: 'connect', from: hit.id, fromPoint: { x: n.x + n.w / 2, y: n.y + n.h / 2 }, preset: this.armedEdge || 'flow' };
+      this.drag = { mode: 'connect', from: hit.id, fromPoint: { x: n.x + n.w / 2, y: n.y + n.h / 2 }, preset: this.armedEdge || 'flow', shiftClick: { x: e.clientX, y: e.clientY } };
       this.ghost = el('path', { class: 'de-ghost' });
       this.renderer.world.appendChild(this.ghost);
       this.setStatus('線を引いています… つなぐ先の箱で離す');
       return;
     }
+    if (hit?.kind === 'node' && (e.ctrlKey || e.metaKey)) { this.toggleMulti(hit.id); return; }   // §53 追加・解除
     if (hit?.kind === 'node') {
       const n = nodeById(this.model, hit.id);
       if (e.altKey && this.activateNode(n)) return; // Alt+クリックでリンク遷移
-      this.select({ kind: 'node', id: hit.id });
       const p = this.renderer.toLogical(e.clientX, e.clientY);
+      // §53 複数選択中にその一員を掴んだら、全員を同じだけ動かす
+      if (this.multi?.includes(hit.id)) {
+        const group = this.multi.map(id => { const m = nodeById(this.model, id); return { id, dx: p.x - m.x, dy: p.y - m.y }; });
+        this.select({ kind: 'node', id: hit.id }, { keepMulti: true });
+        this.drag = { mode: 'move', id: hit.id, dx: p.x - n.x, dy: p.y - n.y, moved: false, group };
+        return;
+      }
+      this.select({ kind: 'node', id: hit.id });
       this.drag = { mode: 'move', id: hit.id, dx: p.x - n.x, dy: p.y - n.y, moved: false };
       return;
     }
@@ -10716,6 +10753,14 @@ class DiagramEditor {
       return;
     }
     if (hit) { this.select({ kind: hit.kind, id: hit.id }); return; }
+    // §53 Shift＋空白ドラッグ＝範囲選択（素の空白ドラッグはこれまでどおりパン）
+    if (e.shiftKey && this.renderer.world) {
+      const p = this.renderer.toLogical(e.clientX, e.clientY);
+      const rect = el('rect', { class: 'de-marquee', x: p.x, y: p.y, width: 0, height: 0 });
+      this.renderer.world.appendChild(rect);
+      this.drag = { mode: 'marquee', start: p, rect, add: [...(this.multi || (this.selection?.kind === 'node' ? [this.selection.id] : []))] };
+      return;
+    }
     this.select(null);
     this.drag = { mode: 'pan', start: { x: e.clientX, y: e.clientY }, view: this.renderer.getView() };
   }
@@ -10971,10 +11016,22 @@ class DiagramEditor {
       const n = nodeById(this.model, this.drag.id);
       const p = this.renderer.toLogical(e.clientX, e.clientY);
       const g = this.model.meta.grid;
-      n.x = snap(p.x - this.drag.dx, g);
-      n.y = snap(p.y - this.drag.dy, g);
+      if (this.drag.group) {
+        for (const m of this.drag.group) { const mn = nodeById(this.model, m.id); if (mn) { mn.x = snap(p.x - m.dx, g); mn.y = snap(p.y - m.dy, g); } }
+      } else {
+        n.x = snap(p.x - this.drag.dx, g);
+        n.y = snap(p.y - this.drag.dy, g);
+      }
       this.drag.moved = true;
       this.renderer.update(this.model);
+      return;
+    }
+    if (this.drag.mode === 'resize') { this.resizeTo(e); return; }
+    if (this.drag.mode === 'marquee') {
+      const p = this.renderer.toLogical(e.clientX, e.clientY), a = this.drag.start;
+      const x = Math.min(a.x, p.x), y = Math.min(a.y, p.y), w = Math.abs(p.x - a.x), h = Math.abs(p.y - a.y);
+      Object.entries({ x, y, width: w, height: h }).forEach(([k, v]) => this.drag.rect.setAttribute(k, v));
+      this.drag.box = { x, y, w, h };
       return;
     }
     if (this.drag.mode === 'connect') {
@@ -11020,7 +11077,20 @@ class DiagramEditor {
       }
       return;
     }
-    if (d.mode === 'move' && d.moved) { this.markHandPlaced(nodeById(this.model, d.id)); this.commit(); }
+    if (d.mode === 'move' && d.moved) {
+      for (const id of d.group ? d.group.map(m => m.id) : [d.id]) this.markHandPlaced(nodeById(this.model, id));
+      this.commit();
+    }
+    if (d.mode === 'resize' && d.moved) { this.markHandPlaced(nodeById(this.model, d.id)); this.commit(); this.renderInspector(); }
+    if (d.mode === 'marquee') {
+      d.rect.remove();
+      const b = d.box;
+      if (b && (b.w > 3 || b.h > 3)) {
+        const inside = this.model.nodes.filter(n => n.x >= b.x && n.y >= b.y && n.x + n.w <= b.x + b.w && n.y + n.h <= b.y + b.h).map(n => n.id);
+        this.setMulti([...new Set([...d.add, ...inside])]);
+      }
+      return;
+    }
     if (d.mode === 'segment') {
       if (d.moved) { this.commit(); this.setStatus('線を平行移動しました（Shift＋ドラッグで折れ点を足す）'); }
       else { this.restoreWaypoints(d.edge, d.before); this.drawWaypointHandles(); }
@@ -11029,6 +11099,12 @@ class DiagramEditor {
       // 動かしていない場合は DOM を作り直さない（作り直すとブラウザが dblclick を合成しない）
       if (d.moved) { this.commit(); this.setStatus('経由点を更新（ダブルクリックで削除）'); }
       else if (d.inserted) this.restoreWaypoints(d.edge, d.before);
+    }
+    if (d.mode === 'connect' && d.shiftClick && Math.hypot(e.clientX - d.shiftClick.x, e.clientY - d.shiftClick.y) < 5) {
+      // §53 Shift＋クリック（動かさずに離した）＝複数選択に足す・外す。Shift＋ドラッグは従来どおり線
+      this.ghost?.remove(); this.ghost = null;
+      this.toggleMulti(d.from);
+      return;
     }
     if (d.mode === 'connect') {
       this.ghost?.remove(); this.ghost = null;
@@ -11137,6 +11213,15 @@ class DiagramEditor {
 
   deleteSelection() {
     if (!this.selection) return;
+    if (this.multi?.length > 1) {   // §53 複数選択はまとめて消す（線も、その箱につながるものは一緒に）
+      const ids = new Set(this.multi);
+      this.model.nodes = this.model.nodes.filter(n => !ids.has(n.id));
+      this.model.edges = this.model.edges.filter(e => !ids.has(e.from.split(':')[0]) && !ids.has(e.to.split(':')[0]));
+      for (const g of this.model.groups) g.members = g.members.filter(m => !ids.has(m));
+      this.select(null);
+      this.commit();
+      return;
+    }
     const { kind, id } = this.selection;
     if (kind === 'node') {
       this.model.nodes = this.model.nodes.filter(n => n.id !== id);
@@ -11151,9 +11236,11 @@ class DiagramEditor {
     this.commit();
   }
 
-  select(sel) {
+  select(sel, { keepMulti = false } = {}) {
+    if (!keepMulti) this.multi = null;
     this.selection = sel;
-    this.renderer.setSelection?.(sel);
+    this.renderer.setSelection?.(sel, this.multi);
+    this.drawResizeHandles();   // §53 ハンドルは「いま選んでいる 1 個」に付ける（描画を待たない）
     this.renderInspector();
     this.refreshInfoBar();   // §40.6 スマホの説明帯（PC では CSS が出さない）
     this.drawWaypointHandles();
@@ -11207,6 +11294,85 @@ class DiagramEditor {
     if (b) edge.waypoints = b; else delete edge.waypoints;
   }
 
+  // ─── §53 複数選択 ──────────────────────────────────────────────
+  // multi は 2 個以上のときだけ持つ（1 個なら普通の単一選択）。selection は「最後に触った 1 個」を指し続ける。
+  setMulti(ids) {
+    const live = ids.filter(id => nodeById(this.model, id));
+    if (!live.length) { this.select(null); return; }
+    if (live.length === 1) { this.select({ kind: 'node', id: live[0] }); return; }
+    this.multi = live;
+    this.select({ kind: 'node', id: live[live.length - 1] }, { keepMulti: true });
+    this.setStatus(`${live.length} 個を選択中（ドラッグでまとめて移動・Delete でまとめて削除・書式はまとめて変わる）`);
+  }
+
+  toggleMulti(id) {
+    const cur = this.multi ? [...this.multi] : (this.selection?.kind === 'node' ? [this.selection.id] : []);
+    this.setMulti(cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id]);
+  }
+
+  selectedNodes() {
+    return (this.multi || (this.selection?.kind === 'node' ? [this.selection.id] : [])).map(id => nodeById(this.model, id)).filter(Boolean);
+  }
+
+  // ─── §53 サイズ変更ハンドル（選んだ 1 個の箱・2D・編集可のとき）───────────────────────
+  resizeHandleSpots(n) {
+    const dy = this.renderer.dyOf?.(n.layer) || 0;
+    const x0 = n.x, y0 = n.y + dy, x1 = n.x + n.w, y1 = n.y + n.h + dy, xm = (x0 + x1) / 2, ym = (y0 + y1) / 2;
+    return [['nw', x0, y0], ['n', xm, y0], ['ne', x1, y0], ['e', x1, ym], ['se', x1, y1], ['s', xm, y1], ['sw', x0, y1], ['w', x0, ym]];
+  }
+
+  drawResizeHandles() {
+    this.renderer?.world?.querySelector('#de-rs-handles')?.remove();
+    this.rsHandles = null;
+    if (!this.editable || !this.canEditGeometry || this.projection !== 'flat' || this.multi?.length > 1) return;
+    if (this.selection?.kind !== 'node') return;
+    const n = nodeById(this.model, this.selection.id);
+    if (!n || n.__derived || n.collapsed) return;
+    const k = this.renderer.getView?.().k || 1, s = 8 / k;
+    const g = el('g', { id: 'de-rs-handles' });
+    const CUR = { nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize', n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize' };
+    for (const [dir, x, y] of this.resizeHandleSpots(n)) {
+      g.appendChild(el('rect', { class: 'de-rs-handle', 'data-dir': dir, x: x - s / 2, y: y - s / 2, width: s, height: s, cursor: CUR[dir] }));
+    }
+    this.renderer.world.appendChild(g);
+    this.rsHandles = { id: n.id };
+  }
+
+  hitResizeHandle(clientX, clientY) {
+    if (!this.rsHandles) return null;
+    const n = nodeById(this.model, this.rsHandles.id);
+    if (!n) return null;
+    const p = this.renderer.toLogical(clientX, clientY);
+    const tol = 7 / (this.renderer.getView?.().k || 1);
+    for (const [dir, x, y] of this.resizeHandleSpots(n)) {
+      if (Math.abs(p.x - x) <= tol && Math.abs(p.y - y) <= tol) return { id: n.id, dir };
+    }
+    return null;
+  }
+
+  // 掴んだ辺・角だけを動かす（反対側は固定）。最小 20。円は真円のまま（大きい方の変化に合わせる）
+  resizeTo(e) {
+    const d = this.drag, n = nodeById(this.model, d.id), o = d.orig;
+    const p = this.renderer.toLogical(e.clientX, e.clientY);
+    const g = this.model.meta.grid, MIN = 20;
+    let x0 = o.x, y0 = o.y, x1 = o.x + o.w, y1 = o.y + o.h;
+    const dy = this.renderer.dyOf?.(n.layer) || 0, py = p.y - dy;
+    if (d.dir.includes('w')) x0 = Math.min(snap(p.x, g), x1 - MIN);
+    if (d.dir.includes('e')) x1 = Math.max(snap(p.x, g), x0 + MIN);
+    if (d.dir.includes('n')) y0 = Math.min(snap(py, g), y1 - MIN);
+    if (d.dir.includes('s')) y1 = Math.max(snap(py, g), y0 + MIN);
+    let w = x1 - x0, h = y1 - y0;
+    if (n.type === 'circle') {
+      const side = (d.dir.length === 1 ? (d.dir === 'n' || d.dir === 's' ? h : w) : Math.max(w, h));
+      if (d.dir.includes('w')) x0 = x1 - side; else x1 = x0 + side;
+      if (d.dir.includes('n')) y0 = y1 - side; else y1 = y0 + side;
+      w = h = side;
+    }
+    Object.assign(n, { x: x0, y: y0, w, h });
+    d.moved = true;
+    this.renderer.update(this.model);
+  }
+
   // §46 区間 i（pts[i]→pts[i+1]）を平行移動する準備。水平/垂直でなければ null（頂点追加に回す）。
   // 箱につながる端の区間は、端点に同じ点を 1 つ足してから動かす＝ポートから短い足が出て、
   // 線は箱から離れない。動かすのは区間の両端の経由点の、区間に垂直な座標だけ。
@@ -11253,6 +11419,28 @@ class DiagramEditor {
     }
     if (!this.selection) {
       this.renderViewSummary(box);
+      return;
+    }
+    // §53 複数選択: 書式だけを出し、全員にまとめて効かせる（値の表示は最後に選んだ 1 個のもの）
+    if (this.multi?.length > 1) {
+      const nodes = this.selectedNodes();
+      const prim = nodeById(this.model, this.selection.id) || nodes[0];
+      box.insertAdjacentHTML('beforeend', `<div class="de-help" data-role="multi-count"><b>${nodes.length} 個</b>を選択中。ここでの書式は全部に効きます</div>`);
+      if (this.canEditContent && prim) {
+        const field = (label, value, apply, tag = 'input', opts = null) => {
+          const l = document.createElement('label'); l.textContent = label;
+          const i = document.createElement(tag);
+          if (tag === 'select') for (const o of opts) {
+            const e = document.createElement('option'); e.value = o; e.textContent = o || '(none)';
+            if (o === (value ?? '')) e.selected = true;
+            i.appendChild(e);
+          } else i.value = value ?? '';
+          i.addEventListener('change', () => { apply(i.value); nodes.forEach(n => this.markHandPlaced(n)); this.commit(); this.renderInspector(); });
+          box.append(l, i);
+        };
+        this.renderFormat(box, 'node', prim, field, nodes);
+      }
+      this.makeInspectorCollapsible(box);
       return;
     }
     const { kind, id } = this.selection;
@@ -11401,10 +11589,10 @@ class DiagramEditor {
   // ─── §52 書式（PowerPoint の「図形の書式」に当たるもの）────────────────────────
   // 値は style に持つ（fill / stroke / strokeWidth / dash / textColor / fontSize / bold）。描画は flat_svg の
   // paint() がインラインスタイルで当てる（CSS のクラス指定に負けないように）。3D も fill / stroke を引き継ぐ。
-  renderFormat(box, kind, obj, field) {
+  renderFormat(box, kind, obj, field, targets = [obj]) {   // §53 targets＝複数選択ならまとめて効く
     box.insertAdjacentHTML('beforeend', '<h3>書式</h3>');
-    const st = () => (obj.style = obj.style || {});
-    const setStyle = (key, v) => { if (v === '' || v === undefined || v === null) { if (obj.style) delete obj.style[key]; } else st()[key] = v; };
+    const stOf = (t) => (t.style = t.style || {});
+    const setStyle = (key, v) => targets.forEach(t => { if (v === '' || v === undefined || v === null) { if (t.style) delete t.style[key]; } else stOf(t)[key] = v; });
     const color = (label, key, dflt, { none = false } = {}) => {
       const l = document.createElement('label'); l.textContent = label;
       const row = document.createElement('div'); row.className = 'de-color-row';
@@ -11413,13 +11601,13 @@ class DiagramEditor {
       i.value = /^#[0-9a-f]{6}$/i.test(cur || '') ? cur : dflt;
       const state = document.createElement('span'); state.className = 'de-color-state';
       state.textContent = cur ? (cur === 'none' ? 'なし' : cur) : '既定';
-      i.addEventListener('input', () => { st()[key] = i.value; state.textContent = i.value; this.renderer.update(this.model); });
-      i.addEventListener('change', () => { st()[key] = i.value; this.commit(); });
+      i.addEventListener('input', () => { setStyle(key, i.value); state.textContent = i.value; this.renderer.update(this.model); });
+      i.addEventListener('change', () => { setStyle(key, i.value); this.commit(); });
       const reset = this.btn('既定', () => { setStyle(key, ''); this.commit(); this.renderInspector(); });
       reset.classList.add('de-btn-mini');
       row.append(i, state, reset);
       if (none) {
-        const nb = this.btn('なし', () => { st()[key] = 'none'; this.commit(); this.renderInspector(); });
+        const nb = this.btn('なし', () => { setStyle(key, 'none'); this.commit(); this.renderInspector(); });
         nb.classList.add('de-btn-mini'); row.append(nb);
       }
       box.append(l, row);
@@ -11427,8 +11615,8 @@ class DiagramEditor {
     const DASH = { '実線': '', '破線': '6 4', '点線': '2 3' };
     const dashName = (v) => Object.keys(DASH).find(k => DASH[k] === (v || '')) || '実線';
     if (kind === 'node') {
-      field('図形', obj.type || 'block', v => obj.type = v, 'select', NODE_TYPES_LIST);
-      field('テキスト', obj.label, v => obj.label = v);
+      field('図形', obj.type || 'block', v => targets.forEach(t => t.type = v), 'select', NODE_TYPES_LIST);
+      if (targets.length === 1) field('テキスト', obj.label, v => obj.label = v);
       color('塗り', 'fill', '#ffffff', { none: true });
       color('線の色', 'stroke', '#333333', { none: true });
       field('線の太さ', String(obj.style?.strokeWidth ?? ''), v => setStyle('strokeWidth', v === '' ? '' : Number(v)), 'select', ['', '0.5', '1', '1.5', '2', '3', '4', '6']);
@@ -11436,8 +11624,8 @@ class DiagramEditor {
       color('文字の色', 'textColor', '#222222');
       field('文字サイズ', String(obj.style?.fontSize ?? ''), v => setStyle('fontSize', v === '' ? '' : Number(v)), 'select', ['', '10', '12', '14', '16', '18', '20', '24', '28', '32', '40']);
       field('太字', obj.style?.bold ? 'はい' : 'いいえ', v => setStyle('bold', v === 'はい' ? true : ''), 'select', ['いいえ', 'はい']);
-      field('幅', obj.w, v => obj.w = +v || obj.w);
-      field('高さ', obj.h, v => obj.h = +v || obj.h);
+      field('幅', obj.w, v => targets.forEach(t => { t.w = +v || t.w; }));
+      field('高さ', obj.h, v => targets.forEach(t => { t.h = +v || t.h; }));
     } else {
       field('種類', obj.preset || '', v => {
         if (v) { obj.preset = v; Object.assign(obj, { arrowStart: 'none', arrowEnd: 'none', line: 'solid' }, EDGE_PRESETS[v]); }
