@@ -537,6 +537,13 @@ g[data-origin="extracted"] .de-edge { stroke-width: 1.1; }
 /* §50 パレットからドラッグ中に指先へ付いてくる札 */
 .de-drag-ghost { position: fixed; z-index: 300; pointer-events: none; padding: 4px 10px; border: 1px solid var(--de-accent); border-radius: 4px; background: var(--de-accent-soft); color: var(--de-ink); font: 12px var(--de-font); }
 
+/* §52 Palette の小見出し（基本図形 / システム部品）と、書式の色の行 */
+.de-palette-head { grid-column: 1 / -1; font-size: 10px; letter-spacing: .08em; color: var(--de-soft); margin: 6px 0 0; }
+.de-palette svg path, .de-palette svg rect, .de-palette svg circle, .de-palette svg ellipse { stroke: var(--de-ink); fill: none; stroke-width: 1.5; }
+.de-color-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.de-color-row input[type="color"] { width: 36px; height: 26px; padding: 0; border: 1px solid var(--de-soft); border-radius: 4px; background: none; }
+.de-color-state { font: 11px var(--de-mono); color: var(--de-soft); min-width: 56px; }
+
 html, body { margin: 0; height: 100%; overflow: hidden; }
 </style>
 <div id="app"></div>
@@ -555,12 +562,13 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = 'e538edd';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '48987f3';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
 
-const NODE_TYPES = ['block', 'function', 'actor', 'db', 'server', 'device', 'note', 'pictogram', 'circle'];
+const NODE_TYPES = ['block', 'function', 'actor', 'db', 'server', 'device', 'note', 'pictogram', 'circle',
+  'rect', 'rounded', 'ellipse', 'diamond', 'triangle', 'text'];   // §52 基本図形
 // 抽出器（bin/extract.mjs + rules）が付ける type 群。描画は block と同じだが、インスペクタの type
 // select がこれらを知らないと folder ノードを選んだとき先頭の 'block' が表示され、触ると block へ
 // 上書きされてしまう（G5 で報告した既知の落とし穴）。UI 用の語彙としてここで一元管理する。
@@ -4940,6 +4948,22 @@ function fitFontPx(h, showSub) {
 }
 
 // 幅に収まるまで末尾を削って … を付ける（textWidthPx と同じ尺度で測る）
+// §52 書式（塗り・線・文字）は**インラインスタイル**で当てる。theme.css の `.de-node-shape { fill: … }` などは
+// CSS 宣言なので、SVG の属性（fill= / stroke=）より必ず勝つ＝属性で渡した色は画面に出ていなかった。
+function paint(elm, style = {}, { text = false } = {}) {
+  if (!elm || !style) return elm;
+  const set = (k, v) => { if (v !== undefined && v !== null && v !== '') elm.style.setProperty(k, String(v)); };
+  if (text) {
+    set('fill', style.textColor);
+    if (style.fontSize) set('font-size', `${style.fontSize}px`);
+    if (style.bold) set('font-weight', '700');
+  } else {
+    set('fill', style.fill); set('stroke', style.stroke);
+    set('stroke-width', style.strokeWidth); set('stroke-dasharray', style.dash); set('opacity', style.opacity);
+  }
+  return elm;
+}
+
 function ellipsize(text, maxW, fontPx = getNodeFontPx()) {
   const s = String(text == null ? '' : text);
   if (textWidthPx(s, fontPx) <= maxW) return s;
@@ -5421,6 +5445,7 @@ class FlatSVGRenderer {
       stroke: style.stroke, 'stroke-width': style.strokeWidth ?? ls.width,
       'stroke-dasharray': style.dash ?? ls.dash, opacity: style.opacity,
     });
+    paint(path, { stroke: style.stroke, strokeWidth: style.strokeWidth, opacity: style.opacity });   // §52 CSS より勝たせる
     if (edge.arrowEnd && edge.arrowEnd !== 'none') path.setAttribute('marker-end', `url(#${markerId(edge.arrowEnd, accent)})`);
     if (edge.arrowStart && edge.arrowStart !== 'none') path.setAttribute('marker-start', `url(#${markerId(edge.arrowStart, accent)})`);
     g.appendChild(el('path', { class: 'de-edge-hit', d }));
@@ -5466,15 +5491,25 @@ class FlatSVGRenderer {
     // 形状（type 別）
     if (node.type === 'db') {
       const ry = Math.min(10, h * 0.14);
-      g.appendChild(el('path', { ...attrs, d: `M${node.x},${node.y + ry} a${node.w / 2},${ry} 0 0 1 ${node.w},0 v${h - ry * 2} a${node.w / 2},${ry} 0 0 1 -${node.w},0 z` }));
+      g.appendChild(paint(el('path', { ...attrs, d: `M${node.x},${node.y + ry} a${node.w / 2},${ry} 0 0 1 ${node.w},0 v${h - ry * 2} a${node.w / 2},${ry} 0 0 1 -${node.w},0 z` }), style));
       g.appendChild(el('path', { ...attrs, fill: 'none', d: `M${node.x},${node.y + ry} a${node.w / 2},${ry} 0 0 0 ${node.w},0` }));
     } else if (node.type === 'circle') {
       // §51 真円。w と h が違っても短い方を直径にする（引き伸ばして楕円にしない）
       const r = Math.min(node.w, h) / 2;
-      g.appendChild(el('circle', { ...attrs, cx: node.x + node.w / 2, cy: node.y + h / 2, r }));
+      g.appendChild(paint(el('circle', { ...attrs, cx: node.x + node.w / 2, cy: node.y + h / 2, r }), style));
+    } else if (node.type === 'ellipse') {
+      g.appendChild(paint(el('ellipse', { ...attrs, cx: node.x + node.w / 2, cy: node.y + h / 2, rx: node.w / 2, ry: h / 2 }), style));
+    } else if (node.type === 'diamond') {
+      const cx = node.x + node.w / 2, cy = node.y + h / 2;
+      g.appendChild(paint(el('path', { ...attrs, d: `M${cx},${node.y} L${node.x + node.w},${cy} L${cx},${node.y + h} L${node.x},${cy} Z` }), style));
+    } else if (node.type === 'triangle') {
+      g.appendChild(paint(el('path', { ...attrs, d: `M${node.x + node.w / 2},${node.y} L${node.x + node.w},${node.y + h} L${node.x},${node.y + h} Z` }), style));
+    } else if (node.type === 'text') {
+      // §52 枠なしの文字だけ（掴めるように透明な面だけ置く）。塗り・線を指定すればそれで描く
+      g.appendChild(paint(el('rect', { class: 'de-text-shape', x: node.x, y: node.y, width: node.w, height: h, fill: 'transparent', stroke: 'none' }), style));
     } else if (node.type === 'note') {
       const f = 10;
-      g.appendChild(el('path', { ...attrs, class: 'de-note-shape', d: `M${node.x},${node.y} h${node.w - f} l${f},${f} v${h - f} h${-node.w} z` }));
+      g.appendChild(paint(el('path', { ...attrs, class: 'de-note-shape', d: `M${node.x},${node.y} h${node.w - f} l${f},${f} v${h - f} h${-node.w} z` }), style));
       g.appendChild(el('path', { ...attrs, class: 'de-note-shape', fill: 'none', d: `M${node.x + node.w - f},${node.y} v${f} h${f}` }));
     } else if (node.type === 'actor' || node.type === 'pictogram') {
       // 枠なし: アイコン大 + 下ラベル
@@ -5489,8 +5524,8 @@ class FlatSVGRenderer {
       this.appendProvenanceBadge(g, node, h);
       return g;
     } else {
-      const rx = node.type === 'function' ? Math.min(14, h / 3) : 3;
-      g.appendChild(el('rect', { ...attrs, x: node.x, y: node.y, width: node.w, height: h, rx }));
+      const rx = node.type === 'function' ? Math.min(14, h / 3) : node.type === 'rect' ? 0 : node.type === 'rounded' ? Math.min(16, h / 4) : 3;
+      g.appendChild(paint(el('rect', { ...attrs, x: node.x, y: node.y, width: node.w, height: h, rx }), style));
       if (node.type === 'device') {
         g.appendChild(el('rect', { class: cls, fill: 'none', x: node.x + 3.5, y: node.y + 3.5, width: node.w - 7, height: h - 7, rx: Math.max(0, rx - 2), 'stroke-width': 0.8 }));
       }
@@ -5542,9 +5577,10 @@ class FlatSVGRenderer {
     }
     if (node.label) {
       const cy = node.collapsed ? node.y + h / 2 + 4.5 * S * fitS : node.y + h / 2 + (showSub ? 8 : 4.5) * S * fitS;
+      const cyT = node.type === 'triangle' ? cy + h * 0.16 : cy;   // §52 三角は重心（下寄り）に文字を置く
       // 入る行数: サブラベルを描いたぶんを引いた高さ / 行高（最低 1 行）
       const maxLines = Math.max(1, Math.floor((h - (showSub ? 20 : 8) * S * fitS) / lineH(fitPx)));
-      this.appendLabel(g, node, textCx, cy, textW, maxLines, fitPx);
+      this.appendLabel(g, node, textCx, cyT, textW, maxLines, fitPx);
     }
     if (!showSub && node.sublabel && !node.collapsed) this.appendTitle(g, `${node.sublabel}${node.label || ''}`);
     this.appendPorts(g, node);
@@ -5644,7 +5680,8 @@ class FlatSVGRenderer {
   // fontPx: G15 の収まり縮小後のラベル px（既定＝現在の文字サイズ）。折り返し・省略・行送りを
   // すべてこの px で測る（測る尺度と描く尺度がずれると「幅は足りているのに … が出る」に戻る）。
   appendLabel(g, node, cx, cy, maxW, maxLines = 0, fontPx = getNodeFontPx()) {
-    const shrunk = fontPx < getNodeFontPx() - 0.01;
+    if (node.style?.fontSize) fontPx = Number(node.style.fontSize);   // §52 書式で決めた文字サイズが最優先
+    const shrunk = !node.style?.fontSize && fontPx < getNodeFontPx() - 0.01;
     let lines = wrapText(node.label, Math.max(4, Math.floor(maxW / wrapCharPx(fontPx))));
     let truncated = false;
     if (maxLines > 0 && lines.length > maxLines) {
@@ -5668,6 +5705,7 @@ class FlatSVGRenderer {
       // ⚠ 属性ではなく**インラインスタイル**。theme.css の `.de-node-label { font-size: … }` は
       //   CSS 宣言なので、SVG のプレゼンテーション属性より必ず優先される（属性で渡すと無視される）。
       if (shrunk) t.style.fontSize = `${fontPx.toFixed(2)}px`;
+      paint(t, node.style, { text: true });
       g.appendChild(t);
     });
   }
@@ -6695,8 +6733,28 @@ class WebGLThreeRenderer {
     const P = (x, y, elev) => new T.Vector3((x - this.cx) * S, elev * S, (y - this.cy) * S);
     this.P = P;
 
-    const box = (cx, cy, w, h, elev, height, color, edgeColor, topColor) => {
+    // §52 基本図形は 3D でもその形の「柱」にする（円→円柱・楕円→楕円柱・ひし形→四角柱を 45°・三角→三角柱）。
+    // 2D で描いたものがそのまま立体になる、がこのツールの強み。四角と既存の部品は従来どおりの箱。
+    const PRISM = { circle: 48, ellipse: 48, diamond: 4, triangle: 3 };
+    const box = (cx, cy, w, h, elev, height, color, edgeColor, topColor, shape) => {
       const g = new T.Group();
+      const segs = PRISM[shape];
+      if (segs) {
+        const d = shape === 'circle' ? Math.min(w, h) : null;
+        const geo = new T.CylinderGeometry(0.5, 0.5, height * S, segs);
+        const mesh = new T.Mesh(geo, new T.MeshBasicMaterial({ color }));
+        const edges = new T.LineSegments(new T.EdgesGeometry(geo, segs > 8 ? 40 : 1), new T.LineBasicMaterial({ color: edgeColor }));
+        const pos = P(cx, cy, elev + height / 2);
+        // 三角柱は頂点を画面の上（-z）へ向け、外接箱が w×h になるよう寸法を合わせる
+        const sx = (d ?? w) * S * (shape === 'triangle' ? 1 / 0.866 : 1);
+        const sz = (d ?? h) * S * (shape === 'triangle' ? 1 / 0.75 : 1);
+        for (const o of [mesh, edges]) {
+          o.position.copy(pos); o.scale.set(sx, 1, sz);
+          if (shape === 'triangle') o.rotation.y = Math.PI;
+          g.add(o);
+        }
+        return g;
+      }
       const geo = new T.BoxGeometry(w * S, height * S, h * S);
       // topColor 指定時は上面(+Y=index2)だけ別色。BoxGeometry の面順: +x,-x,+y,-y,+z,-z
       const mat = topColor
@@ -6868,9 +6926,11 @@ class WebGLThreeRenderer {
         continue;
       }
       const h = WG_BOX_H;
-      const color = n.style?.accent ? accent.clone().lerp(fill, 0.75) : fill;
-      const edgeColor = n.style?.accent ? accent : ink;
-      const b = box(n.x + n.w / 2, n.y + n.h / 2, n.w, n.h, elev, h, color, edgeColor);
+      // §52 書式の塗り・線の色は 3D にも引き継ぐ（'none' や解釈できない値は既定色）
+      const tc = (v) => { if (!v || v === 'none' || v === 'transparent') return null; try { return new T.Color(v); } catch { return null; } };
+      const color = tc(n.style?.fill) || (n.style?.accent ? accent.clone().lerp(fill, 0.75) : fill);
+      const edgeColor = tc(n.style?.stroke) || (n.style?.accent ? accent : ink);
+      const b = box(n.x + n.w / 2, n.y + n.h / 2, n.w, n.h, elev, n.type === 'text' ? 1 : h, color, edgeColor, undefined, n.type);
       b.traverse(o => { o.userData.nodeId = n.id; });
       this.root.add(b);
       setTop(n, h);
@@ -7807,8 +7867,20 @@ const NODE_PALETTE = [
   { type: 'device', label: 'Device', icon: 'cpu' },
   { type: 'note', label: 'Note', icon: 'note' },
   { type: 'pictogram', label: 'Pictogram', icon: 'robot' },
-  { type: 'circle', label: 'Circle', icon: null },   // §51 真円（ボタンの絵は円を直に描く）
 ];
+
+// §52 基本図形（PowerPoint の「図形」に当たるもの）。Palette の先頭に置く。絵は SVG で直に描く。
+// 3D では四角＝箱、円・楕円＝円柱、ひし形＝四角柱、三角＝三角柱になる（webgl_three.js の PRISM）。
+const BASIC_SHAPES = [
+  { type: 'rect', label: '四角', glyph: '<rect x="3" y="6" width="18" height="12"/>' },
+  { type: 'rounded', label: '角丸', glyph: '<rect x="3" y="6" width="18" height="12" rx="4"/>' },
+  { type: 'circle', label: '円', glyph: '<circle cx="12" cy="12" r="8"/>' },
+  { type: 'ellipse', label: '楕円', glyph: '<ellipse cx="12" cy="12" rx="10" ry="6"/>' },
+  { type: 'diamond', label: 'ひし形', glyph: '<path d="M12 3 L21 12 L12 21 L3 12 Z"/>' },
+  { type: 'triangle', label: '三角', glyph: '<path d="M12 4 L21 19 L3 19 Z"/>' },
+  { type: 'text', label: 'テキスト', glyph: '<path d="M6 6 H18 M12 6 V19" />' },
+];
+const BASIC_SIZE = { rect: [140, 70], rounded: [140, 70], circle: [90, 90], ellipse: [140, 84], diamond: [110, 110], triangle: [110, 96], text: [140, 40] };
 
 // §49 コネクタのパレット。preset（見た目の語彙・model.js の EDGE_PRESETS）を、形の記号と日本語の一言で並べる。
 // 箱と同じ「選ぶ → クリック」で引けるようにする（ポートの小さな ○ を狙ってドラッグしなくてよい）。
@@ -7887,7 +7959,7 @@ const KIND_LABELS = {
 // GRAPH_CONTRACT.md §8 は全詳細セクション（基本含む）を既定 closed としたいが、'基本' は
 // verify.mjs の既存回帰テストが Playwright ロケータで直接 .fill() するため既定 open のまま残す
 // （makeInspectorCollapsible 参照）。
-const DEFAULT_OPEN_INSPSECS = new Set();
+const DEFAULT_OPEN_INSPSECS = new Set(['書式']);   // §52 描く図では書式を開いた状態で出す
 
 // GRAPH_CONTRACT.md §12: ノードの実体を開く。表示方法（kind）の日本語と、テキストを載せる上限。
 const OPEN_KIND_TEXT = { html: 'HTML（サンドボックス表示）', image: '画像', text: 'テキスト', preview: '抜粋（preview）' };
@@ -9851,18 +9923,11 @@ class DiagramEditor {
   buildPalette() {
     const sec = document.createElement('div');
     sec.className = 'de-section';
-    sec.innerHTML = '<h3>ノード（箱）</h3>';
     const pal = document.createElement('div'); pal.className = 'de-palette';
-    for (const item of NODE_PALETTE) {
+    const addNodeButton = (item, glyph) => {
       const b = document.createElement('button');
-      if (item.icon) b.appendChild(iconSVG(document, item.icon, 22));
-      else {
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('width', '22'); svg.setAttribute('height', '22');
-        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-        c.setAttribute('cx', '12'); c.setAttribute('cy', '12'); c.setAttribute('r', '9'); svg.appendChild(c);
-        b.appendChild(svg);
-      }
+      b.dataset.type = item.type;
+      b.appendChild(glyph);
       b.appendChild(document.createTextNode(item.label));
       // §50 キャンバスへドラッグ＆ドロップでも置ける（クリック → クリックも残す）
       b.addEventListener('pointerdown', (e) => this.beginPaletteDrag(e, item, b));
@@ -9875,7 +9940,19 @@ class DiagramEditor {
         this.setStatus(next ? `キャンバスをクリックして ${item.label} を配置` : '');
       });
       pal.appendChild(b);
+    };
+    // §52 先頭は基本図形（普通の図を描くための形）。システム部品（SysML 寄り）はその下
+    const head = (text) => { const h = document.createElement('div'); h.className = 'de-palette-head'; h.textContent = text; pal.appendChild(h); };
+    head('基本図形');
+    for (const item of BASIC_SHAPES) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('width', '22'); svg.setAttribute('height', '22');
+      svg.innerHTML = item.glyph;
+      addNodeButton(item, svg);
     }
+    head('システム部品');
+    for (const item of NODE_PALETTE) addNodeButton(item, iconSVG(document, item.icon, 22));
+    sec.insertAdjacentHTML('afterbegin', '<h3>ノード（箱）</h3>');
     this.paletteEl = pal;
     sec.appendChild(pal);
     // §49 コネクタ: 選ぶ → つなぐ元の箱 → つなぐ先の箱。選んだままなら続けて何本でも引ける（Esc か再押下で解除）
@@ -11033,13 +11110,15 @@ class DiagramEditor {
   // ─── モデル操作 ───
   addNode(type, p) {
     const g = this.model.meta.grid;
-    const size = type === 'actor' || type === 'pictogram' || type === 'circle' ? { w: 90, h: 90 } : type === 'note' ? { w: 150, h: 80 } : { w: 150, h: 70 };
+    const bs = BASIC_SIZE[type];
+    const size = bs ? { w: bs[0], h: bs[1] } : type === 'actor' || type === 'pictogram' ? { w: 90, h: 90 } : type === 'note' ? { w: 150, h: 80 } : { w: 150, h: 70 };
     const id = freshId(this.model, 'n');
     const node = {
-      id, type, label: type.charAt(0).toUpperCase() + type.slice(1),
+      // §52 基本図形は PowerPoint と同じく文字なしで置く（テキストだけは「テキスト」）。部品は種類名
+      id, type, label: BASIC_SIZE[type] ? (type === 'text' ? 'テキスト' : '') : type.charAt(0).toUpperCase() + type.slice(1),
       x: snap(p.x - size.w / 2, g), y: snap(p.y - size.h / 2, g), ...size,
       layer: this.model.layers[0].id,
-      ports: type === 'note' || type === 'actor' || type === 'pictogram' ? [] : [
+      ports: type === 'note' || type === 'actor' || type === 'pictogram' || type === 'text' ? [] : [
         { id: 'in', side: 'left', offset: 0.5, kind: 'in' },
         { id: 'out', side: 'right', offset: 0.5, kind: 'out' },
       ],
@@ -11182,7 +11261,11 @@ class DiagramEditor {
       : this.model.groups.find(g => g.id === id);
     if (!obj) return;
     // GRAPH_CONTRACT.md §8: 要約4項目（種類/階層/種別/説明）は常時表示・先頭固定（折りたためない）。
-    this.renderSummary(box, kind, id, obj);
+    // §52 例外: 人が描いている図（手描き・錠を外している）では先頭を「書式」にし、要約は末尾の「情報」へ回す。
+    //   描いている人にとって「エンティティ / 階層 / 公開範囲」は先頭に要らない（実測: 円を置くと最初に出ていた）。
+    // 「描く図」＝graph から選ぶ図（select を持つ: dir / imports など）でも生成図でもない、純粋に手で描いた図
+    const drawing = this.canEditContent && !this.isGenerated && !this.model.select && (kind === 'node' || kind === 'edge');
+    if (!drawing) this.renderSummary(box, kind, id, obj);
 
     const field = (label, value, apply, tag = 'input', opts = null) => {
       const l = document.createElement('label'); l.textContent = label;
@@ -11217,10 +11300,18 @@ class DiagramEditor {
       return;
     }
 
-    box.insertAdjacentHTML('beforeend', '<h3>基本</h3>');
+    if (drawing) this.renderFormat(box, kind, obj, field);
+    box.insertAdjacentHTML('beforeend', drawing ? (kind === 'node' ? '<h3>3D・アイコン</h3>' : '<h3>詳細</h3>') : '<h3>基本</h3>');
     box.insertAdjacentHTML('beforeend', `<div class="de-help">${kind}: <b>${id}</b></div>`);
-    field('label', obj.label, v => obj.label = v);
-    if (kind === 'node') {
+    if (!drawing) field('label', obj.label, v => obj.label = v);
+    if (kind === 'node' && drawing) {
+      // 3D・アイコン → 詳細 の順。図形・文字・色・サイズは上の「書式」
+      this.iconPicker(box, obj);
+      field('shape3d（3D形状）', obj.shape3d || '', v => obj.shape3d = v || undefined, 'select', ['', ...SHAPE3D_NAMES]);
+      box.insertAdjacentHTML('beforeend', '<h3>詳細</h3>');
+      field('sublabel', obj.sublabel, v => obj.sublabel = v || undefined);
+    }
+    if (kind === 'node' && !drawing) {
       field('sublabel', obj.sublabel, v => obj.sublabel = v || undefined);
       // §24 type の正本は台帳（graph.nodes）側。裏打ちのあるノードでは「台帳エンティティ」に
       // 同じ `type` が出るので、ここには出さない（同じ名前の欄が 2 つあり、片方は
@@ -11233,6 +11324,8 @@ class DiagramEditor {
       field('shape3d（3D形状）', obj.shape3d || '', v => obj.shape3d = v || undefined, 'select', ['', ...SHAPE3D_NAMES]);
       field('w', obj.w, v => obj.w = +v || obj.w);
       field('h', obj.h, v => obj.h = +v || obj.h);
+    }
+    if (kind === 'node') {
       field('accent', obj.style?.accent ? 'yes' : 'no', v => {
         obj.style = obj.style || {};
         obj.style.accent = v === 'yes' || undefined;
@@ -11274,7 +11367,7 @@ class DiagramEditor {
           delete obj.rel;
         }
       }, 'select', ['', ...REL_NAMES]);
-      field('preset（見た目）', obj.preset || '', v => {
+      if (!drawing) field('preset（見た目）', obj.preset || '', v => {
         if (v) {
           obj.preset = v;
           Object.assign(obj, { arrowStart: 'none', arrowEnd: 'none', line: 'solid' }, EDGE_PRESETS[v]);
@@ -11282,10 +11375,12 @@ class DiagramEditor {
           delete obj.preset;
         }
       }, 'select', ['', ...EDGE_PRESET_NAMES]);
-      field('kind（経路）', obj.kind, v => obj.kind = v, 'select', ['orthogonal', 'straight', 'curve']);
-      field('arrowStart', obj.arrowStart, v => { obj.arrowStart = v; delete obj.preset; }, 'select', ARROW_HEAD_NAMES);
-      field('arrowEnd', obj.arrowEnd, v => { obj.arrowEnd = v; delete obj.preset; }, 'select', ARROW_HEAD_NAMES);
-      field('line', obj.line, v => { obj.line = v; delete obj.preset; }, 'select', LINE_STYLE_NAMES);
+      if (!drawing) {
+        field('kind（経路）', obj.kind, v => obj.kind = v, 'select', ['orthogonal', 'straight', 'curve']);
+        field('arrowStart', obj.arrowStart, v => { obj.arrowStart = v; delete obj.preset; }, 'select', ARROW_HEAD_NAMES);
+        field('arrowEnd', obj.arrowEnd, v => { obj.arrowEnd = v; delete obj.preset; }, 'select', ARROW_HEAD_NAMES);
+        field('line', obj.line, v => { obj.line = v; delete obj.preset; }, 'select', LINE_STYLE_NAMES);
+      }
       field('accent', obj.style?.accent ? 'yes' : 'no', v => {
         obj.style = obj.style || {};
         obj.style.accent = v === 'yes' || undefined;
@@ -11299,7 +11394,63 @@ class DiagramEditor {
       }
       this.renderEdgePromote(box, obj);
     }
+    if (drawing) { box.insertAdjacentHTML('beforeend', '<h3>情報</h3>'); this.renderSummary(box, kind, id, obj); }
     this.makeInspectorCollapsible(box);
+  }
+
+  // ─── §52 書式（PowerPoint の「図形の書式」に当たるもの）────────────────────────
+  // 値は style に持つ（fill / stroke / strokeWidth / dash / textColor / fontSize / bold）。描画は flat_svg の
+  // paint() がインラインスタイルで当てる（CSS のクラス指定に負けないように）。3D も fill / stroke を引き継ぐ。
+  renderFormat(box, kind, obj, field) {
+    box.insertAdjacentHTML('beforeend', '<h3>書式</h3>');
+    const st = () => (obj.style = obj.style || {});
+    const setStyle = (key, v) => { if (v === '' || v === undefined || v === null) { if (obj.style) delete obj.style[key]; } else st()[key] = v; };
+    const color = (label, key, dflt, { none = false } = {}) => {
+      const l = document.createElement('label'); l.textContent = label;
+      const row = document.createElement('div'); row.className = 'de-color-row';
+      const i = document.createElement('input'); i.type = 'color'; i.dataset.styleKey = key;
+      const cur = obj.style?.[key];
+      i.value = /^#[0-9a-f]{6}$/i.test(cur || '') ? cur : dflt;
+      const state = document.createElement('span'); state.className = 'de-color-state';
+      state.textContent = cur ? (cur === 'none' ? 'なし' : cur) : '既定';
+      i.addEventListener('input', () => { st()[key] = i.value; state.textContent = i.value; this.renderer.update(this.model); });
+      i.addEventListener('change', () => { st()[key] = i.value; this.commit(); });
+      const reset = this.btn('既定', () => { setStyle(key, ''); this.commit(); this.renderInspector(); });
+      reset.classList.add('de-btn-mini');
+      row.append(i, state, reset);
+      if (none) {
+        const nb = this.btn('なし', () => { st()[key] = 'none'; this.commit(); this.renderInspector(); });
+        nb.classList.add('de-btn-mini'); row.append(nb);
+      }
+      box.append(l, row);
+    };
+    const DASH = { '実線': '', '破線': '6 4', '点線': '2 3' };
+    const dashName = (v) => Object.keys(DASH).find(k => DASH[k] === (v || '')) || '実線';
+    if (kind === 'node') {
+      field('図形', obj.type || 'block', v => obj.type = v, 'select', NODE_TYPES_LIST);
+      field('テキスト', obj.label, v => obj.label = v);
+      color('塗り', 'fill', '#ffffff', { none: true });
+      color('線の色', 'stroke', '#333333', { none: true });
+      field('線の太さ', String(obj.style?.strokeWidth ?? ''), v => setStyle('strokeWidth', v === '' ? '' : Number(v)), 'select', ['', '0.5', '1', '1.5', '2', '3', '4', '6']);
+      field('線の種類', dashName(obj.style?.dash), v => setStyle('dash', DASH[v]), 'select', Object.keys(DASH));
+      color('文字の色', 'textColor', '#222222');
+      field('文字サイズ', String(obj.style?.fontSize ?? ''), v => setStyle('fontSize', v === '' ? '' : Number(v)), 'select', ['', '10', '12', '14', '16', '18', '20', '24', '28', '32', '40']);
+      field('太字', obj.style?.bold ? 'はい' : 'いいえ', v => setStyle('bold', v === 'はい' ? true : ''), 'select', ['いいえ', 'はい']);
+      field('幅', obj.w, v => obj.w = +v || obj.w);
+      field('高さ', obj.h, v => obj.h = +v || obj.h);
+    } else {
+      field('種類', obj.preset || '', v => {
+        if (v) { obj.preset = v; Object.assign(obj, { arrowStart: 'none', arrowEnd: 'none', line: 'solid' }, EDGE_PRESETS[v]); }
+        else delete obj.preset;
+      }, 'select', ['', ...EDGE_PRESET_NAMES]);
+      field('経路', obj.kind, v => obj.kind = v, 'select', ['orthogonal', 'straight', 'curve']);
+      field('ラベル', obj.label, v => obj.label = v);
+      color('線の色', 'stroke', '#333333');
+      field('線の太さ', String(obj.style?.strokeWidth ?? ''), v => setStyle('strokeWidth', v === '' ? '' : Number(v)), 'select', ['', '0.5', '1', '1.5', '2', '3', '4', '6']);
+      field('線の種類', obj.line, v => { obj.line = v; delete obj.preset; }, 'select', LINE_STYLE_NAMES);
+      field('始点の矢印', obj.arrowStart, v => { obj.arrowStart = v; delete obj.preset; }, 'select', ARROW_HEAD_NAMES);
+      field('終点の矢印', obj.arrowEnd, v => { obj.arrowEnd = v; delete obj.preset; }, 'select', ARROW_HEAD_NAMES);
+    }
   }
 
   // ─── Summary（GRAPH_CONTRACT.md §8）: 種類/階層/種別/説明を常時表示・先頭固定（折りたたまない） ───
@@ -12012,7 +12163,7 @@ class DiagramEditor {
 
 // インスペクタ/台帳エディタの type select 候補。パレットの 8 種に加えて抽出器（bin/extract.mjs）が
 // 付ける型も並べる＝folder ノードを選んだとき select が先頭の 'block' を表示する誤解を防ぐ。
-const NODE_TYPES_LIST = [...NODE_PALETTE.map(p => p.type), ...EXTRACTOR_NODE_TYPES];
+const NODE_TYPES_LIST = [...BASIC_SHAPES.map(p => p.type), ...NODE_PALETTE.map(p => p.type), ...EXTRACTOR_NODE_TYPES];
 
 function sep() {
   const s = document.createElement('span');
