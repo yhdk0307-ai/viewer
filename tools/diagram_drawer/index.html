@@ -555,12 +555,12 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '43dd5aa';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = 'e538edd';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
 
-const NODE_TYPES = ['block', 'function', 'actor', 'db', 'server', 'device', 'note', 'pictogram'];
+const NODE_TYPES = ['block', 'function', 'actor', 'db', 'server', 'device', 'note', 'pictogram', 'circle'];
 // 抽出器（bin/extract.mjs + rules）が付ける type 群。描画は block と同じだが、インスペクタの type
 // select がこれらを知らないと folder ノードを選んだとき先頭の 'block' が表示され、触ると block へ
 // 上書きされてしまう（G5 で報告した既知の落とし穴）。UI 用の語彙としてここで一元管理する。
@@ -3840,8 +3840,25 @@ function polylinePath(pts, kind = 'orthogonal', radius = 8) {
   if (!pts || pts.length < 2) return '';
   if (kind === 'curve' && pts.length === 2) {
     const [a, b] = pts;
+    // §51 離れている向きに沿って曲げる（横に離れていれば横 S、縦に離れていれば縦 S）。
+    // 以前は常に横 S だったので、上下に並んだ箱どうしだと線が横へ膨らんでから戻っていた。
+    if (Math.abs(b.y - a.y) > Math.abs(b.x - a.x)) {
+      const my = (a.y + b.y) / 2;
+      return `M${a.x},${a.y} C${a.x},${my} ${b.x},${my} ${b.x},${b.y}`;
+    }
     const mx = (a.x + b.x) / 2;
     return `M${a.x},${a.y} C${mx},${a.y} ${mx},${b.y} ${b.x},${b.y}`;
+  }
+  if (kind === 'curve') {
+    // §51 経由点つきの曲線は、点を通るなめらかな線（Catmull-Rom → 3 次ベジエ）
+    let d = `M${pts[0].x},${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      const c1 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 };
+      const c2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
+      d += ` C${c1.x},${c1.y} ${c2.x},${c2.y} ${p2.x},${p2.y}`;
+    }
+    return d;
   }
   if (kind !== 'orthogonal' || pts.length === 2) {
     return 'M' + pts.map(p => `${p.x},${p.y}`).join(' L');
@@ -5451,6 +5468,10 @@ class FlatSVGRenderer {
       const ry = Math.min(10, h * 0.14);
       g.appendChild(el('path', { ...attrs, d: `M${node.x},${node.y + ry} a${node.w / 2},${ry} 0 0 1 ${node.w},0 v${h - ry * 2} a${node.w / 2},${ry} 0 0 1 -${node.w},0 z` }));
       g.appendChild(el('path', { ...attrs, fill: 'none', d: `M${node.x},${node.y + ry} a${node.w / 2},${ry} 0 0 0 ${node.w},0` }));
+    } else if (node.type === 'circle') {
+      // §51 真円。w と h が違っても短い方を直径にする（引き伸ばして楕円にしない）
+      const r = Math.min(node.w, h) / 2;
+      g.appendChild(el('circle', { ...attrs, cx: node.x + node.w / 2, cy: node.y + h / 2, r }));
     } else if (node.type === 'note') {
       const f = 10;
       g.appendChild(el('path', { ...attrs, class: 'de-note-shape', d: `M${node.x},${node.y} h${node.w - f} l${f},${f} v${h - f} h${-node.w} z` }));
@@ -7786,12 +7807,15 @@ const NODE_PALETTE = [
   { type: 'device', label: 'Device', icon: 'cpu' },
   { type: 'note', label: 'Note', icon: 'note' },
   { type: 'pictogram', label: 'Pictogram', icon: 'robot' },
+  { type: 'circle', label: 'Circle', icon: null },   // §51 真円（ボタンの絵は円を直に描く）
 ];
 
 // §49 コネクタのパレット。preset（見た目の語彙・model.js の EDGE_PRESETS）を、形の記号と日本語の一言で並べる。
 // 箱と同じ「選ぶ → クリック」で引けるようにする（ポートの小さな ○ を狙ってドラッグしなくてよい）。
+const edgePaletteItem = (key) => EDGE_PALETTE.find(i => (i.key || i.preset) === key);
 const EDGE_PALETTE = [
   { preset: 'flow', glyph: '──▶', label: '流れ' },
+  { key: 'curve', preset: 'flow', kind: 'curve', glyph: '╭─▶', label: '曲線（流れ）' },   // §51 経路が曲線。種類は Inspector で変えられる
   { preset: 'dependency', glyph: '┄┄▷', label: '依存' },
   { preset: 'signal', glyph: '⋯⋯▶', label: '信号・イベント' },
   { preset: 'association', glyph: '───', label: '関連（向きなし）' },
@@ -9831,7 +9855,14 @@ class DiagramEditor {
     const pal = document.createElement('div'); pal.className = 'de-palette';
     for (const item of NODE_PALETTE) {
       const b = document.createElement('button');
-      b.appendChild(iconSVG(document, item.icon, 22));
+      if (item.icon) b.appendChild(iconSVG(document, item.icon, 22));
+      else {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('width', '22'); svg.setAttribute('height', '22');
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', '12'); c.setAttribute('cy', '12'); c.setAttribute('r', '9'); svg.appendChild(c);
+        b.appendChild(svg);
+      }
       b.appendChild(document.createTextNode(item.label));
       // §50 キャンバスへドラッグ＆ドロップでも置ける（クリック → クリックも残す）
       b.addEventListener('pointerdown', (e) => this.beginPaletteDrag(e, item, b));
@@ -9852,11 +9883,12 @@ class DiagramEditor {
     const epal = document.createElement('div'); epal.className = 'de-palette de-edge-palette';
     for (const item of EDGE_PALETTE) {
       const b = document.createElement('button');
-      b.dataset.preset = item.preset; b.title = `${item.label}（${item.preset}）`;
+      const key = item.key || item.preset;
+      b.dataset.preset = key; b.title = `${item.label}（${item.preset}${item.kind ? `・${item.kind}` : ''}）`;
       const g = document.createElement('span'); g.className = 'de-edge-glyph'; g.textContent = item.glyph;
       b.append(g, document.createTextNode(item.label));
       b.addEventListener('click', () => {
-        const next = this.armedEdge === item.preset ? null : item.preset;
+        const next = this.armedEdge === key ? null : key;
         this.disarm();
         if (next) this.armEdge(next);
       });
@@ -9895,7 +9927,7 @@ class DiagramEditor {
   armEdge(preset) {
     this.armedEdge = preset; this.edgeSource = null;
     for (const x of this.edgePaletteEl?.children || []) x.classList.toggle('armed', x.dataset.preset === preset);
-    const item = EDGE_PALETTE.find(i => i.preset === preset);
+    const item = edgePaletteItem(preset);
     this.setStatus(`${item?.label || preset}: つなぐ元の箱をクリック（Esc で終了）`);
   }
 
@@ -9903,7 +9935,7 @@ class DiagramEditor {
   edgeClick(e) {
     const hit = this.renderer.hitTest?.(e.clientX, e.clientY);
     const nodeId = hit && (hit.kind === 'node' || hit.kind === 'link' || hit.kind === 'port') ? hit.id : null;
-    const label = EDGE_PALETTE.find(i => i.preset === this.armedEdge)?.label || this.armedEdge;
+    const label = edgePaletteItem(this.armedEdge)?.label || this.armedEdge;
     if (!nodeId) {
       if (this.edgeSource) { this.edgeSource = null; this.select(null); this.setStatus(`${label}: 取り消しました。つなぐ元の箱をクリック`); }
       return;
@@ -9921,11 +9953,14 @@ class DiagramEditor {
   }
 
   // 線を 1 本足す。preset の見た目を明示値として焼く（normalize を通らない追加でも描画が決まるように）
-  addEdge(from, to, preset = 'flow') {
+  // key はパレットの項目（'curve' など）でも preset 名でもよい。kind（経路）は項目が持てば従う
+  addEdge(from, to, key = 'flow') {
     const id = freshId(this.model, 'e');
+    const item = edgePaletteItem(key);
+    const preset = item?.preset || key;
     const look = EDGE_PRESETS[preset] || EDGE_PRESETS.flow;
     this.model.edges.push({
-      id, from, to, kind: 'orthogonal', preset,
+      id, from, to, kind: item?.kind || 'orthogonal', preset,
       arrowStart: look.arrowStart || 'none', arrowEnd: look.arrowEnd || 'none', line: look.line || 'solid',
     });
     this.select({ kind: 'edge', id });
@@ -10998,7 +11033,7 @@ class DiagramEditor {
   // ─── モデル操作 ───
   addNode(type, p) {
     const g = this.model.meta.grid;
-    const size = type === 'actor' || type === 'pictogram' ? { w: 90, h: 90 } : type === 'note' ? { w: 150, h: 80 } : { w: 150, h: 70 };
+    const size = type === 'actor' || type === 'pictogram' || type === 'circle' ? { w: 90, h: 90 } : type === 'note' ? { w: 150, h: 80 } : { w: 150, h: 70 };
     const id = freshId(this.model, 'n');
     const node = {
       id, type, label: type.charAt(0).toUpperCase() + type.slice(1),
