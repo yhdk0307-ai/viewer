@@ -552,6 +552,11 @@ g[data-origin="extracted"] .de-edge { stroke-width: 1.1; }
 .de-marquee { fill: var(--de-accent-soft); fill-opacity: .35; stroke: var(--de-accent); stroke-width: 1; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; pointer-events: none; }
 .de-rs-handle { fill: var(--de-bg); stroke: var(--de-select); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 
+/* §54 配置（整列・等間隔・重なり順）のボタン列 */
+.de-arrange-row { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 6px; }
+.de-arrange-row .de-btn-mini { min-width: 30px; font-size: 14px; }
+.de-arrange-row .de-btn-mini:disabled { opacity: .35; cursor: not-allowed; }
+
 html, body { margin: 0; height: 100%; overflow: hidden; }
 </style>
 <div id="app"></div>
@@ -570,7 +575,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '5ed12d1';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '4d900f8';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -7975,7 +7980,7 @@ const KIND_LABELS = {
 // GRAPH_CONTRACT.md §8 は全詳細セクション（基本含む）を既定 closed としたいが、'基本' は
 // verify.mjs の既存回帰テストが Playwright ロケータで直接 .fill() するため既定 open のまま残す
 // （makeInspectorCollapsible 参照）。
-const DEFAULT_OPEN_INSPSECS = new Set(['書式']);   // §52 描く図では書式を開いた状態で出す
+const DEFAULT_OPEN_INSPSECS = new Set(['書式', '配置']);   // §52/§54 描く図では書式と配置を開いた状態で出す
 
 // GRAPH_CONTRACT.md §12: ノードの実体を開く。表示方法（kind）の日本語と、テキストを載せる上限。
 const OPEN_KIND_TEXT = { html: 'HTML（サンドボックス表示）', image: '画像', text: 'テキスト', preview: '抜粋（preview）' };
@@ -9087,6 +9092,14 @@ class DiagramEditor {
       ['Undo（戻す）', () => this.undo()],
       ['Redo（やり直す）', () => this.redo()],
       '---',
+      // §54 コピー＆貼り付け・整列・重なり順（キーは Ctrl/⌘ + C / V / D / ] / [）
+      ['コピー (Ctrl+C)', () => this.copySelection()],
+      ['貼り付け (Ctrl+V)', () => this.pasteClipboard()],
+      ['複製 (Ctrl+D)', () => { if (this.copySelection()) this.pasteClipboard(); }],
+      ['左揃え', () => this.align('left')], ['上揃え', () => this.align('top')],
+      ['左右に等間隔', () => this.align('hspace')], ['上下に等間隔', () => this.align('vspace')],
+      ['最前面へ (Ctrl+Shift+])', () => this.reorder('front')], ['最背面へ (Ctrl+Shift+[)', () => this.reorder('back')],
+      '---',
       ['Add Node…（パレット）', () => this.showPaletteTab()],
       ['図を追加', () => this.addDiagram()],
       ['この図を entry に設定', () => { this.project.project.entry = this.currentId; this.refreshChrome(); this.pushHistory(); this.setStatus(`entry を '${this.currentId}' に設定`); }],
@@ -10191,6 +10204,8 @@ class DiagramEditor {
       + '<b>大きさ</b>: 選んだ箱の周りの ■ をドラッグ（円は真円のまま）。'
       + '<b>複数選択</b>: Ctrl（Mac は ⌘）＋クリック、または Shift＋クリックで足す・外す。Shift＋空白ドラッグで囲んで選ぶ。'
       + '選んだものはまとめて動かせ、Delete でまとめて消え、右の書式もまとめて効く。<br>'
+      + '<b>コピー＆貼り付け</b>: Ctrl+C / Ctrl+V（貼るたびに少しずらす）、Ctrl+D で複製。'
+      + '<b>整列・等間隔・重なり順</b>: 右の「配置」か Edit メニュー。前面へ Ctrl+]（最前面は Ctrl+Shift+]）、背面へ Ctrl+[。<br>'
       + '<b>文字やプロパティを変える</b>: 箱をダブルクリックでその場で書き換え、または選んで右の <b>Inspector</b>'
       + '（label・アイコン・線の preset など）。どちらもロックを外しているときだけ。'
       + '<h4>新しい図を描いて AI に渡す</h4>'
@@ -10588,6 +10603,12 @@ class DiagramEditor {
       if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { this.undo(); e.preventDefault(); return; }
       if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) { this.redo(); e.preventDefault(); return; }
       if ((e.key === 'Delete' || e.key === 'Backspace') && !this.locked) { this.deleteSelection(); e.preventDefault(); }
+      // §54 コピー＆貼り付け・複製・重なり順（ロック中は貼らない＝図を壊さない。コピーだけは読みながらでもできる）
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'c') { if (this.copySelection()) e.preventDefault(); return; }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'v' && this.canEditGeometry) { if (this.pasteClipboard()) e.preventDefault(); return; }
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'd' && this.canEditGeometry) { if (this.copySelection() && this.pasteClipboard()) e.preventDefault(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === ']' && this.canEditGeometry) { this.reorder(e.shiftKey ? 'front' : 'forward'); e.preventDefault(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === '[' && this.canEditGeometry) { this.reorder(e.shiftKey ? 'back' : 'backward'); e.preventDefault(); return; }
       if (e.key === 'Escape') { this.select(null); this.disarm(); }
     });
     document.addEventListener('keyup', e => { this._altDown = e.altKey; });
@@ -11314,6 +11335,118 @@ class DiagramEditor {
     return (this.multi || (this.selection?.kind === 'node' ? [this.selection.id] : [])).map(id => nodeById(this.model, id)).filter(Boolean);
   }
 
+  // ─── §54 コピー＆貼り付け ─────────────────────────────────────────
+  // 選んだ箱と、選んだ箱どうしをつなぐ線をまとめて写す。貼るたびに 20 ずつずらし、貼ったものを選んだ状態にする
+  // （PowerPoint と同じ: Ctrl+V を続けると階段状に増える）。クリップボードはこのタブの中だけ（OS には出さない）。
+  copySelection() {
+    const nodes = this.selectedNodes();
+    if (!nodes.length) return false;
+    const ids = new Set(nodes.map(n => n.id));
+    const edges = this.model.edges.filter(e => ids.has(String(e.from).split(':')[0]) && ids.has(String(e.to).split(':')[0]));
+    this.clipboard = { nodes: structuredClone(nodes), edges: structuredClone(edges), pasted: 0 };
+    this.setStatus(`${nodes.length} 個をコピーしました（Ctrl+V で貼り付け）`);
+    return true;
+  }
+
+  pasteClipboard() {
+    const c = this.clipboard;
+    if (!c?.nodes?.length) return false;
+    c.pasted += 1;
+    const off = 20 * c.pasted, map = new Map();
+    for (const src of c.nodes) {
+      const n = structuredClone(src);
+      for (const k of Object.keys(n)) if (k.startsWith('__')) delete n[k];   // 派生・自動配置の印は写さない
+      delete n.entityId;                                                     // 台帳の実体は 1 つ。写しは図だけの箱
+      n.id = freshId(this.model, 'n'); n.x = src.x + off; n.y = src.y + off;
+      map.set(src.id, n.id);
+      this.model.nodes.push(n);
+    }
+    const remap = (ref) => { const [id, port] = String(ref).split(':'); return port ? `${map.get(id)}:${port}` : map.get(id); };
+    for (const src of c.edges) {
+      const e = structuredClone(src);
+      for (const k of Object.keys(e)) if (k.startsWith('__')) delete e[k];
+      e.id = freshId(this.model, 'e'); e.from = remap(src.from); e.to = remap(src.to);
+      if (e.waypoints) e.waypoints = e.waypoints.map(w => ({ x: w.x + off, y: w.y + off }));
+      this.model.edges.push(e);
+    }
+    this.commit();
+    this.setMulti([...map.values()]);
+    this.setStatus(`${map.size} 個を貼り付けました`);
+    return true;
+  }
+
+  // ─── §54 整列（2 個以上）・等間隔（3 個以上）─────────────────────────────
+  // 基準は選んだ箱全体の外接矩形（PowerPoint の「選択したオブジェクトを揃える」と同じ）。
+  align(how) {
+    const ns = this.selectedNodes();
+    if (ns.length < 2 || !this.canEditGeometry) return false;
+    const L = Math.min(...ns.map(n => n.x)), R = Math.max(...ns.map(n => n.x + n.w));
+    const T = Math.min(...ns.map(n => n.y)), B = Math.max(...ns.map(n => n.y + n.h));
+    const by = {
+      left: n => { n.x = L; }, right: n => { n.x = R - n.w; }, center: n => { n.x = Math.round((L + R) / 2 - n.w / 2); },
+      top: n => { n.y = T; }, bottom: n => { n.y = B - n.h; }, middle: n => { n.y = Math.round((T + B) / 2 - n.h / 2); },
+    };
+    if (how === 'hspace' || how === 'vspace') {
+      if (ns.length < 3) return false;
+      const H = how === 'hspace', key = H ? 'x' : 'y', size = H ? 'w' : 'h';
+      const sorted = [...ns].sort((a, b) => a[key] - b[key]);
+      const first = sorted[0], last = sorted[sorted.length - 1];
+      const span = last[key] + last[size] - first[key];
+      const gap = (span - sorted.reduce((s, n) => s + n[size], 0)) / (sorted.length - 1);
+      let cur = first[key];
+      for (const n of sorted) { n[key] = Math.round(cur); cur += n[size] + gap; }
+    } else if (by[how]) ns.forEach(by[how]);
+    else return false;
+    ns.forEach(n => this.markHandPlaced(n));
+    this.commit();
+    this.renderInspector();
+    return true;
+  }
+
+  // ─── §54 重なり順（同じ層の中の並び順＝描画順）─────────────────────────────
+  // front / back は端まで、forward / backward は 1 つずつ。複数選択はまとめて（互いの順は保つ）。
+  reorder(how) {
+    const ns = this.selectedNodes();
+    if (!ns.length) return false;
+    const sel = new Set(ns.map(n => n.id));
+    const arr = this.model.nodes;
+    if (how === 'front' || how === 'back') {
+      const picked = arr.filter(n => sel.has(n.id)), rest = arr.filter(n => !sel.has(n.id));
+      this.model.nodes = how === 'front' ? [...rest, ...picked] : [...picked, ...rest];
+    } else {
+      const step = how === 'forward' ? 1 : -1;
+      const idx = arr.map((n, i) => (sel.has(n.id) ? i : -1)).filter(i => i >= 0);
+      for (const i of step > 0 ? idx.reverse() : idx) {
+        const j = i + step;
+        if (j < 0 || j >= arr.length || sel.has(arr[j].id)) continue;
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+    this.commit();
+    this.renderer.setSelection?.(this.selection, this.multi);
+    this.setStatus({ front: '最前面へ', back: '最背面へ', forward: '1 つ前へ', backward: '1 つ後ろへ' }[how] || '');
+    return true;
+  }
+
+  // Inspector に出す「配置」の区画（整列は 2 個以上・等間隔は 3 個以上で押せる）
+  renderArrange(box, count) {
+    box.insertAdjacentHTML('beforeend', '<h3>配置</h3>');
+    const row = (items) => {
+      const r = document.createElement('div'); r.className = 'de-arrange-row';
+      for (const [glyph, title, fn, on] of items) {
+        const b = this.btn(glyph, fn); b.title = title; b.classList.add('de-btn-mini'); b.disabled = !on;
+        b.dataset.arrange = title; r.appendChild(b);
+      }
+      box.appendChild(r);
+    };
+    const two = count >= 2, three = count >= 3;
+    row([['⇤', '左揃え', () => this.align('left'), two], ['↔', '左右中央', () => this.align('center'), two], ['⇥', '右揃え', () => this.align('right'), two],
+      ['⤒', '上揃え', () => this.align('top'), two], ['↕', '上下中央', () => this.align('middle'), two], ['⤓', '下揃え', () => this.align('bottom'), two]]);
+    row([['⋯', '左右に等間隔', () => this.align('hspace'), three], ['⋮', '上下に等間隔', () => this.align('vspace'), three]]);
+    row([['⇈', '最前面へ (Ctrl+Shift+])', () => this.reorder('front'), true], ['↑', '1 つ前へ (Ctrl+])', () => this.reorder('forward'), true],
+      ['↓', '1 つ後ろへ (Ctrl+[)', () => this.reorder('backward'), true], ['⇊', '最背面へ (Ctrl+Shift+[)', () => this.reorder('back'), true]]);
+  }
+
   // ─── §53 サイズ変更ハンドル（選んだ 1 個の箱・2D・編集可のとき）───────────────────────
   resizeHandleSpots(n) {
     const dy = this.renderer.dyOf?.(n.layer) || 0;
@@ -11439,6 +11572,7 @@ class DiagramEditor {
           box.append(l, i);
         };
         this.renderFormat(box, 'node', prim, field, nodes);
+        this.renderArrange(box, nodes.length);
       }
       this.makeInspectorCollapsible(box);
       return;
@@ -11489,6 +11623,7 @@ class DiagramEditor {
     }
 
     if (drawing) this.renderFormat(box, kind, obj, field);
+    if (drawing && kind === 'node') this.renderArrange(box, 1);   // §54 1 個でも重なり順は使う
     box.insertAdjacentHTML('beforeend', drawing ? (kind === 'node' ? '<h3>3D・アイコン</h3>' : '<h3>詳細</h3>') : '<h3>基本</h3>');
     box.insertAdjacentHTML('beforeend', `<div class="de-help">${kind}: <b>${id}</b></div>`);
     if (!drawing) field('label', obj.label, v => obj.label = v);
