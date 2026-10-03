@@ -557,9 +557,7 @@ g[data-origin="extracted"] .de-edge { stroke-width: 1.1; }
 .de-arrange-row .de-btn-mini { min-width: 30px; font-size: 14px; }
 .de-arrange-row .de-btn-mini:disabled { opacity: .35; cursor: not-allowed; }
 
-/* §55 パレット先頭の ＋（新しい図）と、線の経路（カギ線・直線・曲線）の選択 */
-.de-palette-new { width: 100%; height: 34px; margin: 0 0 8px; border: 1px dashed var(--de-soft); border-radius: 6px; background: var(--de-fill); color: var(--de-ink); font-size: 18px; cursor: pointer; }
-.de-palette-new:hover { border-color: var(--de-accent); }
+/* §55 線の経路（カギ線・直線・曲線）の選択 */
 .de-route-palette { grid-template-columns: repeat(3, 1fr); margin-bottom: 6px; }
 .de-route-palette svg path { stroke: var(--de-ink); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .de-route-palette button.current { border-color: var(--de-ink); box-shadow: inset 0 0 0 1px var(--de-ink); }
@@ -582,7 +580,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '998d564';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '7b65c39';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -9997,12 +9995,7 @@ class DiagramEditor {
     head('システム部品');
     for (const item of NODE_PALETTE) addNodeButton(item, iconSVG(document, item.icon, 22));
     sec.insertAdjacentHTML('afterbegin', '<h3>ノード（箱）</h3>');
-    // §55 新しい図（ページ）もパレットから作れる（Diagram タブの ＋ と同じ）
-    const nb = document.createElement('button');
-    nb.className = 'de-palette-new'; nb.dataset.role = 'palette-new-diagram'; nb.textContent = '＋';
-    nb.title = '新しい図を作る'; nb.setAttribute('aria-label', '新しい図を作る');
-    nb.addEventListener('click', () => this.addDiagram());
-    sec.prepend(nb);
+    // §57 Palette の ＋（新しい図）は撤去（ユーザー判断）。新しい図は Diagram タブの ＋ か Edit ▸ 図を追加
     this.paletteEl = pal;
     sec.appendChild(pal);
     // §49 コネクタ: 選ぶ → つなぐ元の箱 → つなぐ先の箱。1 本引いたら選択は外れる（§56）。続けて引くなら Shift＋ドラッグ
