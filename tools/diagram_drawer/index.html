@@ -557,6 +557,13 @@ g[data-origin="extracted"] .de-edge { stroke-width: 1.1; }
 .de-arrange-row .de-btn-mini { min-width: 30px; font-size: 14px; }
 .de-arrange-row .de-btn-mini:disabled { opacity: .35; cursor: not-allowed; }
 
+/* §55 パレット先頭の ＋（新しい図）と、線の経路（カギ線・直線・曲線）の選択 */
+.de-palette-new { width: 100%; height: 34px; margin: 0 0 8px; border: 1px dashed var(--de-soft); border-radius: 6px; background: var(--de-fill); color: var(--de-ink); font-size: 18px; cursor: pointer; }
+.de-palette-new:hover { border-color: var(--de-accent); }
+.de-route-palette { grid-template-columns: repeat(3, 1fr); margin-bottom: 6px; }
+.de-route-palette svg path { stroke: var(--de-ink); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.de-route-palette button.current { border-color: var(--de-ink); box-shadow: inset 0 0 0 1px var(--de-ink); }
+
 html, body { margin: 0; height: 100%; overflow: hidden; }
 </style>
 <div id="app"></div>
@@ -575,7 +582,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '4d900f8';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '998d564';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -7906,9 +7913,14 @@ const BASIC_SIZE = { rect: [140, 70], rounded: [140, 70], circle: [90, 90], elli
 // §49 コネクタのパレット。preset（見た目の語彙・model.js の EDGE_PRESETS）を、形の記号と日本語の一言で並べる。
 // 箱と同じ「選ぶ → クリック」で引けるようにする（ポートの小さな ○ を狙ってドラッグしなくてよい）。
 const edgePaletteItem = (key) => EDGE_PALETTE.find(i => (i.key || i.preset) === key);
+// §55 線の経路（形）。種類（意味・矢印）とは独立に選ぶ。パレットの先頭にアイコンで並べる
+const EDGE_ROUTES = [
+  { kind: 'orthogonal', label: 'カギ線', glyph: '<path d="M3 19 H11 V5 H19"/><path d="M16 2 L19 5 L16 8"/>' },
+  { kind: 'straight', label: '直線', glyph: '<path d="M4 19 L19 5"/><path d="M13 5 H19 V11"/>' },
+  { kind: 'curve', label: '曲線', glyph: '<path d="M3 19 C12 19 10 5 19 5"/><path d="M16 2 L19 5 L16 8"/>' },
+];
 const EDGE_PALETTE = [
   { preset: 'flow', glyph: '──▶', label: '流れ' },
-  { key: 'curve', preset: 'flow', kind: 'curve', glyph: '╭─▶', label: '曲線（流れ）' },   // §51 経路が曲線。種類は Inspector で変えられる
   { preset: 'dependency', glyph: '┄┄▷', label: '依存' },
   { preset: 'signal', glyph: '⋯⋯▶', label: '信号・イベント' },
   { preset: 'association', glyph: '───', label: '関連（向きなし）' },
@@ -8040,6 +8052,7 @@ class DiagramEditor {
     this.armedType = null;      // パレットで選択中の追加タイプ
     this.armedEdge = null;      // §49 パレットで選択中のコネクタ（preset 名）
     this.edgeSource = null;     // §49 コネクタの「つなぐ元」（1 回目にクリックした箱）
+    this.edgeRoute = 'orthogonal';   // §55 これから引く線の経路（カギ線・直線・曲線）
     this.drag = null;
     this.navStack = [];         // ドリルダウンの戻り先 diagram ID
     this.virtualSpecs = new Map();  // §7.4 仮想ビュー（view~<nodeId>）の生成元 spec（保存されない）
@@ -9984,10 +9997,35 @@ class DiagramEditor {
     head('システム部品');
     for (const item of NODE_PALETTE) addNodeButton(item, iconSVG(document, item.icon, 22));
     sec.insertAdjacentHTML('afterbegin', '<h3>ノード（箱）</h3>');
+    // §55 新しい図（ページ）もパレットから作れる（Diagram タブの ＋ と同じ）
+    const nb = document.createElement('button');
+    nb.className = 'de-palette-new'; nb.dataset.role = 'palette-new-diagram'; nb.textContent = '＋';
+    nb.title = '新しい図を作る'; nb.setAttribute('aria-label', '新しい図を作る');
+    nb.addEventListener('click', () => this.addDiagram());
+    sec.prepend(nb);
     this.paletteEl = pal;
     sec.appendChild(pal);
-    // §49 コネクタ: 選ぶ → つなぐ元の箱 → つなぐ先の箱。選んだままなら続けて何本でも引ける（Esc か再押下で解除）
+    // §49 コネクタ: 選ぶ → つなぐ元の箱 → つなぐ先の箱。1 本引いたら選択は外れる（§56）。続けて引くなら Shift＋ドラッグ
     const h = document.createElement('h3'); h.textContent = 'コネクタ（線）'; sec.appendChild(h);
+    // §55 経路（カギ線・直線・曲線）を先頭にアイコンで。押すとその経路で引く状態になる（種類は選んでいるもの、無ければ流れ）
+    const rpal = document.createElement('div'); rpal.className = 'de-palette de-route-palette';
+    for (const r of EDGE_ROUTES) {
+      const b = document.createElement('button');
+      b.dataset.route = r.kind; b.title = `${r.label}で引く`; b.setAttribute('aria-label', r.label);
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 22 22'); svg.setAttribute('width', '22'); svg.setAttribute('height', '22');
+      svg.innerHTML = r.glyph; b.appendChild(svg);
+      b.classList.toggle('current', r.kind === this.edgeRoute);
+      b.addEventListener('click', () => {
+        this.edgeRoute = r.kind;
+        for (const x of rpal.children) x.classList.toggle('current', x.dataset.route === r.kind);
+        const preset = this.armedEdge || this.lastEdgePreset || 'flow';
+        this.disarm(); this.armEdge(preset);
+      });
+      rpal.appendChild(b);
+    }
+    this.routePaletteEl = rpal;
+    sec.appendChild(rpal);
     const epal = document.createElement('div'); epal.className = 'de-palette de-edge-palette';
     for (const item of EDGE_PALETTE) {
       const b = document.createElement('button');
@@ -10028,16 +10066,25 @@ class DiagramEditor {
       if (!this.canEditGeometry) { this.setStatus('ロック中は箱を置けません（L キーまたは錠アイコンで解除。2D 投影のみ）', true); return; }
       this.disarm();
       this.addNode(item.type, this.renderer.toLogical(ev.clientX, ev.clientY));
+      this.closeDrawerOnPhone();
       this.setStatus(`${item.label} を置きました（ドラッグで移動・Shift＋ドラッグで線・ダブルクリックで名前）`);
     };
     document.addEventListener('pointermove', move); document.addEventListener('pointerup', up);
   }
 
+  // §55 スマホ（≤720px）では左ペインが画面の 6 割を覆うオーバーレイなので、箱を置いたら閉じて図を空ける。
+  // 開いたままだと、置いた箱がペインの下に隠れたり、指でつかめる範囲が狭くなったりして「動かせない」になる。
+  closeDrawerOnPhone() {
+    if (!matchMedia('(max-width: 720px)').matches) return;
+    if (!this.panelState?.sidebar) this.togglePanel('sidebar');
+  }
+
   armEdge(preset) {
-    this.armedEdge = preset; this.edgeSource = null;
+    this.armedEdge = preset; this.edgeSource = null; this.lastEdgePreset = preset;
     for (const x of this.edgePaletteEl?.children || []) x.classList.toggle('armed', x.dataset.preset === preset);
     const item = edgePaletteItem(preset);
-    this.setStatus(`${item?.label || preset}: つなぐ元の箱をクリック（Esc で終了）`);
+    const route = EDGE_ROUTES.find(r => r.kind === this.edgeRoute)?.label || '';
+    this.setStatus(`${item?.label || preset}（${route}）: つなぐ元の箱をクリック（Esc で終了）`);
   }
 
   // §49 コネクタ選択中のクリック。1 回目＝元、2 回目＝先。空白をクリックしたら元を取り消す。
@@ -10056,8 +10103,10 @@ class DiagramEditor {
     }
     if (nodeId === this.edgeSource) { this.setStatus('同じ箱どうしはつなげません。別の箱をクリック', true); return; }
     const id = this.addEdge(this.edgeSource, nodeId, this.armedEdge);
-    this.edgeSource = null;
-    this.setStatus(`${label} を引きました（続けて元の箱をクリックすれば次の線。Esc で終了）`);
+    // §56 1 本引いたら普通の操作に戻す（PowerPoint と同じ）。選んだままだと、箱をつかんでも移動にならず
+    //   「次の線の元」になってしまい、ユーザーには「線をつなぐと箱が動かせない」に見えていた。続けて引くなら Shift＋ドラッグ
+    this.disarm();
+    this.setStatus(`${label} を引きました（続けて引くなら、もう一度コネクタを選ぶか、箱を Shift＋ドラッグ）`);
     return id;
   }
 
@@ -10069,7 +10118,7 @@ class DiagramEditor {
     const preset = item?.preset || key;
     const look = EDGE_PRESETS[preset] || EDGE_PRESETS.flow;
     this.model.edges.push({
-      id, from, to, kind: item?.kind || 'orthogonal', preset,
+      id, from, to, kind: item?.kind || this.edgeRoute || 'orthogonal', preset,   // §55 経路はパレットで選んだもの
       arrowStart: look.arrowStart || 'none', arrowEnd: look.arrowEnd || 'none', line: look.line || 'solid',
     });
     this.select({ kind: 'edge', id });
@@ -10199,7 +10248,9 @@ class DiagramEditor {
       + '置いた箱は<b>ドラッグで移動</b>。<br>'
       + '<b>線</b>: 箱を <b>Shift＋ドラッグ</b>してつなぐ先の箱で離す（種類はコネクタで選んでいるもの、無ければ「流れ」）。'
       + 'または <b>コネクタ（線）</b>の種類を押し、<b>つなぐ元の箱 → つなぐ先の箱</b>の順にクリック'
-      + '（選んだままなら続けて引ける・Esc で終了）。箱のふちの ○ からドラッグしても引ける。<br>'
+      + '（1 本引くと選択は外れる。続けて引くなら Shift＋ドラッグ）。箱のふちの ○ からドラッグしても引ける。<br>'
+      + '線の<b>経路</b>（カギ線・直線・曲線）はコネクタの先頭のアイコンで選ぶ。どの引き方にも効く。<br>'
+      + '<b>スマホ</b>: 箱を置くと左ペインが閉じる。1 本指で箱をドラッグ＝移動、空白をドラッグ＝画面移動、2 本指＝拡大縮小。<br>'
       + '新しく作った図（＋）は<b>ロックを外した状態</b>で始まる。<br>'
       + '<b>大きさ</b>: 選んだ箱の周りの ■ をドラッグ（円は真円のまま）。'
       + '<b>複数選択</b>: Ctrl（Mac は ⌘）＋クリック、または Shift＋クリックで足す・外す。Shift＋空白ドラッグで囲んで選ぶ。'
@@ -10651,6 +10702,7 @@ class DiagramEditor {
   }
 
   onPointerDown(e) {
+    this._pointerType = e.pointerType;   // §55 指のときはハンドルを大きく・当たりを広く
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     // G13: パン／ノード移動のドラッグで UI の文字が青く選択されるのを止める。CSS の user-select:none
     // だけでは、ドラッグがキャンバス外へ抜けた瞬間にヘッダやツリーの文字を掴んでしまうことがある。
@@ -10698,11 +10750,17 @@ class DiagramEditor {
     if (this.armedType) {
       const p = this.renderer.toLogical(e.clientX, e.clientY);
       this.addNode(this.armedType, p);
+      this.closeDrawerOnPhone();
       this.disarm();
       return;
     }
     // §49 コネクタ選択中: 箱を 2 回クリックして線を引く
-    if (this.armedEdge && !e.shiftKey) { this.edgeClick(e); return; }   // Shift 中は下の Shift＋ドラッグへ（選んだ種類で引く）
+    if (this.armedEdge && !e.shiftKey) {   // Shift 中は下の Shift＋ドラッグへ（選んだ種類で引く）
+      // §56 箱の上で押したら、離すまで「クリックか、ドラッグか」を保留する。動かせば移動、動かさなければ線の元・先
+      const hit0 = this.renderer.hitTest(e.clientX, e.clientY);
+      if (hit0?.kind === 'node' || hit0?.kind === 'link') { this.drag = { mode: 'armpick', id: hit0.id, sx: e.clientX, sy: e.clientY }; return; }
+      this.edgeClick(e); return;
+    }
     // 選択中エッジの waypoint ハンドル（最優先）
     const wh = this.hitWaypointHandle(e.clientX, e.clientY);
     if (wh) {
@@ -11048,6 +11106,15 @@ class DiagramEditor {
       return;
     }
     if (this.drag.mode === 'resize') { this.resizeTo(e); return; }
+    if (this.drag.mode === 'armpick') {
+      if (Math.hypot(e.clientX - this.drag.sx, e.clientY - this.drag.sy) < 5) return;
+      // §56 コネクタを選んでいても、箱をドラッグしたら移動（線の元にはしない）
+      const n = nodeById(this.model, this.drag.id);
+      const p0 = this.renderer.toLogical(this.drag.sx, this.drag.sy);
+      this.select({ kind: 'node', id: n.id });
+      this.drag = { mode: 'move', id: n.id, dx: p0.x - n.x, dy: p0.y - n.y, moved: false };
+      return this.onPointerMove(e);
+    }
     if (this.drag.mode === 'marquee') {
       const p = this.renderer.toLogical(e.clientX, e.clientY), a = this.drag.start;
       const x = Math.min(a.x, p.x), y = Math.min(a.y, p.y), w = Math.abs(p.x - a.x), h = Math.abs(p.y - a.y);
@@ -11102,6 +11169,7 @@ class DiagramEditor {
       for (const id of d.group ? d.group.map(m => m.id) : [d.id]) this.markHandPlaced(nodeById(this.model, id));
       this.commit();
     }
+    if (d.mode === 'armpick') { this.edgeClick({ clientX: d.sx, clientY: d.sy }); return; }   // §56 動かさずに離した＝クリック
     if (d.mode === 'resize' && d.moved) { this.markHandPlaced(nodeById(this.model, d.id)); this.commit(); this.renderInspector(); }
     if (d.mode === 'marquee') {
       d.rect.remove();
@@ -11461,7 +11529,7 @@ class DiagramEditor {
     if (this.selection?.kind !== 'node') return;
     const n = nodeById(this.model, this.selection.id);
     if (!n || n.__derived || n.collapsed) return;
-    const k = this.renderer.getView?.().k || 1, s = 8 / k;
+    const k = this.renderer.getView?.().k || 1, s = (this._pointerType === 'touch' ? 16 : 8) / k;
     const g = el('g', { id: 'de-rs-handles' });
     const CUR = { nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize', n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize' };
     for (const [dir, x, y] of this.resizeHandleSpots(n)) {
@@ -11476,7 +11544,7 @@ class DiagramEditor {
     const n = nodeById(this.model, this.rsHandles.id);
     if (!n) return null;
     const p = this.renderer.toLogical(clientX, clientY);
-    const tol = 7 / (this.renderer.getView?.().k || 1);
+    const tol = (this._pointerType === 'touch' ? 18 : 7) / (this.renderer.getView?.().k || 1);
     for (const [dir, x, y] of this.resizeHandleSpots(n)) {
       if (Math.abs(p.x - x) <= tol && Math.abs(p.y - y) <= tol) return { id: n.id, dir };
     }
