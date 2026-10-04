@@ -579,6 +579,8 @@ g[data-origin="extracted"] .de-edge { stroke-width: 1.1; }
 .de-template-palette svg { width: 26px; height: 26px; }
 .de-template-palette button { min-height: 46px; }
 
+.de-tab[hidden] { display: none !important; }   /* §60 PROPOSALS タブは提案を読んだときだけ */
+
 html, body { margin: 0; height: 100%; overflow: hidden; }
 </style>
 <div id="app"></div>
@@ -597,7 +599,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = 'a076155';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '12ff125';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -9517,6 +9519,8 @@ class DiagramEditor {
       b.addEventListener('click', () => this.setLeftTab(k));
       this.lowTabBtns[k] = b; tabs.appendChild(b);
     }
+    // §60 PROPOSALS タブは普段は隠す（AI とのやり取りは 🤖 の受け渡しが主）。File ▸ Open proposals… で提案を読んだときだけ出す
+    this.lowTabBtns.proposals.hidden = true;
     // VIEWS ペイン（+図/entry ヘッダ + 図ツリー）
     this.diagramPane = document.createElement('div'); this.diagramPane.className = 'de-tabpane de-lowpane'; this.diagramPane.dataset.tab = 'diagram';
     const navHead = document.createElement('div'); navHead.className = 'de-sechead';
@@ -9625,6 +9629,7 @@ class DiagramEditor {
       this.proposalSel = null;
       this.preview = null; this.renderer?.setPreview?.(null);
       this.renderProposalList();
+      this.lowTabBtns.proposals.hidden = false;   // §60 提案を読んだときだけタブを出す
       this.setLeftTab('proposals');
       if (this.panelState?.sidebar) this.togglePanel('sidebar');
       this.renderInspector();
@@ -10557,7 +10562,7 @@ class DiagramEditor {
       + '<b>①〜③ と重複していて読む理由が無い</b>ので名前だけに削った。<br>'
       + 'この図が機械の抽出と人の解釈のどちらでできているかは、<b>線の太さ</b>で読む'
       + '（<b>細線＝自動</b>／<b>太線＝手描き</b>）。要素ごとの来歴は右ペインにも出る。'
-      + '<h4>左パネル</h4><b>MODEL</b>（graph 全アイテムの木・上下比率はスプリッタでリサイズ）／ 下部タブ <b>VIEWS</b>・Palette・PROPOSALS'
+      + '<h4>左パネル</h4><b>MODEL</b>（graph 全アイテムの木・上下比率はスプリッタでリサイズ）／ 下部タブ <b>VIEWS</b>・Palette（PROPOSALS は提案を読んだときだけ出る）'
       + '<h4>VIEWS の出どころ（3種類）</h4>'
       + 'VIEWS に並ぶ図は出どころが違う3種類が混ざる。**図を開くとキャプションに必ずどれかが書いてある**ので、'
       + '並び順やアイコンではなくキャプションで見分ける:<br>'
