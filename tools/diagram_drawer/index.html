@@ -440,7 +440,7 @@ a.de-btn { text-decoration: none; display: inline-flex; align-items: center; }
 
 .de-status { padding: 4px 12px; font-size: 11px; color: var(--de-soft); background: var(--de-panel); border-top: 1px solid var(--de-grid); display: flex; gap: 16px; }
 .de-status .err { color: var(--de-danger); }
-.de-inline-edit { position: absolute; border: 1px solid var(--de-accent); background: var(--de-bg); color: var(--de-ink); font-family: var(--de-font); font-size: var(--de-node-font); font-weight: 600; text-align: center; outline: none; border-radius: 3px; padding: 2px 4px; z-index: 30; }
+.de-inline-edit { position: absolute; box-sizing: border-box; margin: 0; border: none; background: transparent; color: var(--de-ink); font-family: var(--de-font); font-weight: 600; text-align: center; outline: none; resize: none; overflow: hidden; padding: 0 4px; z-index: 30; caret-color: var(--de-accent); white-space: pre-wrap; }   /* §59 箱にそのまま書く（枠・背景なし） */
 .de-help { font-size: 10.5px; color: var(--de-soft); line-height: 1.7; }
 .de-help kbd { border: 1px solid var(--de-muted); border-radius: 3px; padding: 0 4px; font-family: var(--de-mono); font-size: 9.5px; }
 
@@ -562,6 +562,23 @@ g[data-origin="extracted"] .de-edge { stroke-width: 1.1; }
 .de-route-palette svg path { stroke: var(--de-ink); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .de-route-palette button.current { border-color: var(--de-ink); box-shadow: inset 0 0 0 1px var(--de-ink); }
 
+/* §59 Palette のモード切り替え（Basic / System / Templates）と Basic の線種・先端 */
+.de-palmode { display: flex; gap: 0; margin: 0 0 10px; border: 1px solid var(--de-grid); border-radius: 6px; overflow: hidden; }
+.de-palmode button { flex: 1; padding: 6px 2px; border: none; background: var(--de-fill); color: var(--de-soft); font-size: 11px; font-family: var(--de-font); cursor: pointer; }
+.de-palmode button + button { border-left: 1px solid var(--de-grid); }
+.de-palmode button.active { background: var(--de-accent-soft); color: var(--de-ink); font-weight: 600; }
+.de-palpart[hidden] { display: none !important; }
+.de-palpart > h3 { margin-top: 10px; }
+.de-palpart:first-of-type > h3 { margin-top: 0; }
+.de-route-palette { grid-template-columns: repeat(4, 1fr); }
+.de-line-palette svg path, .de-head-palette svg path, .de-head-palette svg circle, .de-template-palette svg * { stroke: var(--de-ink); fill: none; }
+.de-line-palette svg path[stroke-width="3"] { stroke-width: 3; }
+.de-line-palette svg path[stroke-width="1"] { stroke-width: 1; }
+.de-head-palette svg .fill { fill: var(--de-ink); }
+.de-line-palette button.current, .de-head-palette button.current { border-color: var(--de-ink); box-shadow: inset 0 0 0 1px var(--de-ink); }
+.de-template-palette svg { width: 26px; height: 26px; }
+.de-template-palette button { min-height: 46px; }
+
 html, body { margin: 0; height: 100%; overflow: hidden; }
 </style>
 <div id="app"></div>
@@ -580,7 +597,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '7b65c39';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = 'a076155';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -4523,6 +4540,8 @@ const LINE_STYLES = {
   dashed: { dash: '7 5' },
   dotted: { dash: '2 4' },
   thick:  { width: 2.6 },
+  thin:   { width: 1 },          // §59 Basic モードの線種
+  longdash: { dash: '12 5' },
 };
 const LINE_STYLE_NAMES = Object.keys(LINE_STYLES);
 
@@ -5464,7 +5483,7 @@ class FlatSVGRenderer {
       stroke: style.stroke, 'stroke-width': style.strokeWidth ?? ls.width,
       'stroke-dasharray': style.dash ?? ls.dash, opacity: style.opacity,
     });
-    paint(path, { stroke: style.stroke, strokeWidth: style.strokeWidth, opacity: style.opacity });   // §52 CSS より勝たせる
+    paint(path, { stroke: style.stroke, strokeWidth: style.strokeWidth ?? ls.width, dash: style.dash ?? ls.dash, opacity: style.opacity });   // §52/§59 CSS より勝たせる（線種の太さ・破線も）
     if (edge.arrowEnd && edge.arrowEnd !== 'none') path.setAttribute('marker-end', `url(#${markerId(edge.arrowEnd, accent)})`);
     if (edge.arrowStart && edge.arrowStart !== 'none') path.setAttribute('marker-start', `url(#${markerId(edge.arrowStart, accent)})`);
     g.appendChild(el('path', { class: 'de-edge-hit', d }));
@@ -7895,39 +7914,192 @@ const NODE_PALETTE = [
   { type: 'pictogram', label: 'Pictogram', icon: 'robot' },
 ];
 
-// §52 基本図形（PowerPoint の「図形」に当たるもの）。Palette の先頭に置く。絵は SVG で直に描く。
+// §52 基本図形（PowerPoint の「図形」に当たるもの）。絵は SVG で直に描く。§59 表示名は英語
 // 3D では四角＝箱、円・楕円＝円柱、ひし形＝四角柱、三角＝三角柱になる（webgl_three.js の PRISM）。
 const BASIC_SHAPES = [
-  { type: 'rect', label: '四角', glyph: '<rect x="3" y="6" width="18" height="12"/>' },
-  { type: 'rounded', label: '角丸', glyph: '<rect x="3" y="6" width="18" height="12" rx="4"/>' },
-  { type: 'circle', label: '円', glyph: '<circle cx="12" cy="12" r="8"/>' },
-  { type: 'ellipse', label: '楕円', glyph: '<ellipse cx="12" cy="12" rx="10" ry="6"/>' },
-  { type: 'diamond', label: 'ひし形', glyph: '<path d="M12 3 L21 12 L12 21 L3 12 Z"/>' },
-  { type: 'triangle', label: '三角', glyph: '<path d="M12 4 L21 19 L3 19 Z"/>' },
-  { type: 'text', label: 'テキスト', glyph: '<path d="M6 6 H18 M12 6 V19" />' },
+  { type: 'rect', label: 'Rectangle', glyph: '<rect x="3" y="6" width="18" height="12"/>' },
+  { type: 'rounded', label: 'Rounded rectangle', glyph: '<rect x="3" y="6" width="18" height="12" rx="4"/>' },
+  { type: 'circle', label: 'Circle', glyph: '<circle cx="12" cy="12" r="8"/>' },
+  { type: 'ellipse', label: 'Ellipse', glyph: '<ellipse cx="12" cy="12" rx="10" ry="6"/>' },
+  { type: 'diamond', label: 'Diamond', glyph: '<path d="M12 3 L21 12 L12 21 L3 12 Z"/>' },
+  { type: 'triangle', label: 'Triangle', glyph: '<path d="M12 4 L21 19 L3 19 Z"/>' },
+  { type: 'text', label: 'Text', glyph: '<path d="M6 6 H18 M12 6 V19" />' },
 ];
 const BASIC_SIZE = { rect: [140, 70], rounded: [140, 70], circle: [90, 90], ellipse: [140, 84], diamond: [110, 110], triangle: [110, 96], text: [140, 40] };
 
-// §49 コネクタのパレット。preset（見た目の語彙・model.js の EDGE_PRESETS）を、形の記号と日本語の一言で並べる。
-// 箱と同じ「選ぶ → クリック」で引けるようにする（ポートの小さな ○ を狙ってドラッグしなくてよい）。
-const edgePaletteItem = (key) => EDGE_PALETTE.find(i => (i.key || i.preset) === key);
-// §55 線の経路（形）。種類（意味・矢印）とは独立に選ぶ。パレットの先頭にアイコンで並べる
+// §59 Palette のモード。一番上の切り替えで出し分ける（端末に記憶）
+const PALETTE_MODES = [['basic', 'Basic'], ['system', 'System'], ['templates', 'Templates']];
+const PALETTE_MODE_KEY = 'de-palette-mode';
+
+// §49 コネクタのパレット（System モード）。preset（見た目の語彙・model.js の EDGE_PRESETS）を形の記号で並べる。
+// 'line' は §59 Basic モードの「素の線」（preset なし。経路・線種・先端を Palette で選んだもの）
+const LINE_ITEM = { key: 'line', label: 'Line' };
+const edgePaletteItem = (key) => key === 'line' ? LINE_ITEM : EDGE_PALETTE.find(i => (i.key || i.preset) === key);
+// §55/§59 線の経路（形）。種類（意味・矢印）とは独立に選ぶ
 const EDGE_ROUTES = [
-  { kind: 'orthogonal', label: 'カギ線', glyph: '<path d="M3 19 H11 V5 H19"/><path d="M16 2 L19 5 L16 8"/>' },
-  { kind: 'straight', label: '直線', glyph: '<path d="M4 19 L19 5"/><path d="M13 5 H19 V11"/>' },
-  { kind: 'curve', label: '曲線', glyph: '<path d="M3 19 C12 19 10 5 19 5"/><path d="M16 2 L19 5 L16 8"/>' },
+  { kind: 'straight', label: 'Straight', glyph: '<path d="M4 18 L18 4"/>' },
+  { kind: 'elbow', label: 'Elbow', glyph: '<path d="M3 18 H11 V4 H19"/>' },
+  { kind: 'orthogonal', label: 'Rounded elbow', glyph: '<path d="M3 18 H7 Q11 18 11 14 V8 Q11 4 15 4 H19"/>' },
+  { kind: 'curve', label: 'Curve', glyph: '<path d="M3 18 C12 18 10 4 19 4"/>' },
+];
+const EDGE_KINDS = EDGE_ROUTES.map(r => r.kind);
+// §59 Basic モードの線種と先端（markers.js の LINE_STYLES / ARROW_HEADS の名前）
+const LINE_KINDS = [
+  { line: 'thin', label: 'Thin', glyph: '<path d="M3 11 H19" stroke-width="1"/>' },
+  { line: 'thick', label: 'Thick', glyph: '<path d="M3 11 H19" stroke-width="3"/>' },
+  { line: 'dashed', label: 'Dashed', glyph: '<path d="M3 11 H19" stroke-dasharray="3 2.5"/>' },
+  { line: 'longdash', label: 'Long dash', glyph: '<path d="M3 11 H19" stroke-dasharray="6 3"/>' },
+];
+const HEAD_KINDS = [
+  { head: 'none', label: 'No arrowhead', glyph: '<path d="M3 11 H19"/>' },
+  { head: 'arrow', label: 'Arrow', glyph: '<path d="M3 11 H18"/><path d="M13 6 L19 11 L13 16 Z" class="fill"/>' },
+  { head: 'arrow-open', label: 'Open arrow', glyph: '<path d="M3 11 H18 M13 6 L19 11 L13 16"/>' },
+  { head: 'triangle', label: 'Triangle', glyph: '<path d="M3 11 H13"/><path d="M13 5 L20 11 L13 17 Z" class="fill"/>' },
+  { head: 'triangle-open', label: 'Open triangle', glyph: '<path d="M3 11 H13 M13 5 L20 11 L13 17 Z"/>' },
+  { head: 'diamond', label: 'Diamond', glyph: '<path d="M3 11 H11"/><path d="M11 11 L15 7 L19 11 L15 15 Z" class="fill"/>' },
+  { head: 'circle', label: 'Dot', glyph: '<path d="M3 11 H14"/><circle cx="16.5" cy="11" r="3" class="fill"/>' },
 ];
 const EDGE_PALETTE = [
-  { preset: 'flow', glyph: '──▶', label: '流れ' },
-  { preset: 'dependency', glyph: '┄┄▷', label: '依存' },
-  { preset: 'signal', glyph: '⋯⋯▶', label: '信号・イベント' },
-  { preset: 'association', glyph: '───', label: '関連（向きなし）' },
-  { preset: 'generalization', glyph: '──△', label: '汎化（〜の一種）' },
-  { preset: 'realization', glyph: '┄┄△', label: '実現' },
-  { preset: 'composition', glyph: '◆──', label: '全体–部分（強）' },
-  { preset: 'aggregation', glyph: '◇──', label: '全体–部分（弱）' },
-  { preset: 'bus', glyph: '━━━', label: 'バス・幹線' },
-  { preset: 'item-flow', glyph: '──●', label: 'もの・データの流れ' },
+  { preset: 'flow', glyph: '──▶', label: 'Flow' },
+  { preset: 'dependency', glyph: '┄┄▷', label: 'Dependency' },
+  { preset: 'signal', glyph: '⋯⋯▶', label: 'Signal / event' },
+  { preset: 'association', glyph: '───', label: 'Association' },
+  { preset: 'generalization', glyph: '──△', label: 'Generalization' },
+  { preset: 'realization', glyph: '┄┄△', label: 'Realization' },
+  { preset: 'composition', glyph: '◆──', label: 'Composition' },
+  { preset: 'aggregation', glyph: '◇──', label: 'Aggregation' },
+  { preset: 'bus', glyph: '━━━', label: 'Bus' },
+  { preset: 'item-flow', glyph: '──●', label: 'Item flow' },
+];
+
+// §59 テンプレート（Palette ▸ Templates）。build() はひな形の箱と線を相対座標で返す。
+// 箱 { k, type, label, x, y, w, h, style? } / 線 { from, to, kind, line, head, label }（from/to は k）。
+// insertTemplate が既存の中身の右へずらし、id を振って置く。どれも普通の箱と線なので、置いた後は自由に直せる
+const TEMPLATES = [
+  {
+    id: 'logic-tree', label: 'Logic tree',
+    glyph: '<rect x="2" y="10" width="5" height="4"/><rect x="10" y="3" width="5" height="4"/><rect x="10" y="17" width="5" height="4"/><rect x="17" y="10" width="5" height="4"/><path d="M7 12 H8.5 V5 H10 M8.5 12 V19 H10 M15 19 H16 V12 H17"/>',
+    build() {
+      const nodes = [{ k: 'r', type: 'rect', label: 'Issue', x: 0, y: 190, w: 140, h: 60 }], edges = [];
+      ['A', 'B', 'C'].forEach((c, i) => {
+        const y = 20 + i * 170;
+        nodes.push({ k: c, type: 'rect', label: `Factor ${c}`, x: 220, y, w: 140, h: 60 });
+        edges.push({ from: 'r', to: c, kind: 'elbow' });
+        [1, 2].forEach(j => {
+          nodes.push({ k: c + j, type: 'rect', label: `${c}-${j}`, x: 440, y: y - 40 + (j - 1) * 80, w: 140, h: 60 });
+          edges.push({ from: c, to: c + j, kind: 'elbow' });
+        });
+      });
+      return { nodes, edges };
+    },
+  },
+  {
+    id: 'flowchart', label: 'Control flow',
+    glyph: '<rect x="2" y="9" width="6" height="6"/><path d="M14 6 L19 12 L14 18 L9 12 Z"/><rect x="20" y="9" width="3" height="6"/><path d="M8 12 H9 M19 12 H20"/>',
+    build() {
+      const nodes = [
+        { k: 's', type: 'rounded', label: 'Start', x: 0, y: 0, w: 140, h: 50 },
+        { k: 'p', type: 'rect', label: 'Process', x: 0, y: 100, w: 140, h: 60 },
+        { k: 'd', type: 'diamond', label: 'Condition?', x: 10, y: 210, w: 120, h: 120 },
+        { k: 'y', type: 'rect', label: 'Action', x: 0, y: 380, w: 140, h: 60 },
+        { k: 'n', type: 'rect', label: 'Other action', x: 220, y: 240, w: 140, h: 60 },
+        { k: 'e', type: 'rounded', label: 'End', x: 0, y: 490, w: 140, h: 50 },
+      ];
+      const f = (from, to, label) => ({ from, to, kind: 'elbow', head: 'arrow', ...(label ? { label } : {}) });
+      return { nodes, edges: [f('s', 'p'), f('p', 'd'), f('d', 'y', 'Yes'), f('d', 'n', 'No'), f('y', 'e')] };
+    },
+  },
+  {
+    id: 'sequence', label: 'Sequence diagram',
+    glyph: '<rect x="2" y="2" width="6" height="4"/><rect x="16" y="2" width="6" height="4"/><path d="M5 6 V22 M19 6 V22" stroke-dasharray="2 2"/><path d="M5 11 H18 M16 9 L19 11 L16 13 M19 17 H6 M8 15 L5 17 L8 19"/>',
+    build() {
+      const names = ['User', 'Front end', 'Server'], nodes = [], edges = [];
+      const cx = (i) => 70 + i * 220, bottom = 430;
+      names.forEach((n, i) => {
+        nodes.push({ k: `h${i}`, type: 'rect', label: n, x: cx(i) - 70, y: 0, w: 140, h: 50 });
+        nodes.push({ k: `b${i}`, type: 'text', label: '', x: cx(i) - 2, y: bottom, w: 4, h: 4 });
+        edges.push({ from: `h${i}`, to: `b${i}`, kind: 'straight', line: 'dashed' });   // ライフライン
+      });
+      const msgs = [[0, 1, 'request', 'solid'], [1, 2, 'query', 'solid'], [2, 1, 'result', 'dashed'], [1, 0, 'response', 'dashed']];
+      msgs.forEach(([a, b, label, line], m) => {
+        const y = 100 + m * 75;
+        nodes.push({ k: `m${m}a`, type: 'text', label: '', x: cx(a) - 2, y, w: 4, h: 4 });
+        nodes.push({ k: `m${m}b`, type: 'text', label: '', x: cx(b) - 2, y, w: 4, h: 4 });
+        edges.push({ from: `m${m}a`, to: `m${m}b`, kind: 'straight', line, head: 'arrow-open', label });
+      });
+      return { nodes, edges };
+    },
+  },
+  {
+    id: 'knowledge-graph', label: 'Knowledge graph',
+    glyph: '<circle cx="12" cy="12" r="3"/><circle cx="4" cy="5" r="2.2"/><circle cx="20" cy="5" r="2.2"/><circle cx="4" cy="19" r="2.2"/><circle cx="20" cy="19" r="2.2"/><path d="M6 6.5 L10 10 M18 6.5 L14 10 M6 17.5 L10 14 M18 17.5 L14 14 M6.2 5 H17.8"/>',
+    build() {
+      const nodes = [{ k: 'c', type: 'circle', label: 'Core', x: 200, y: 180, w: 100, h: 100 }], edges = [];
+      const n = 6;
+      for (let i = 0; i < n; i++) {
+        const a = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+        nodes.push({ k: `c${i}`, type: 'circle', label: `Concept ${i + 1}`, x: 210 + Math.cos(a) * 210, y: 190 + Math.sin(a) * 180, w: 80, h: 80 });
+        edges.push({ from: 'c', to: `c${i}`, kind: 'straight' });
+      }
+      edges.push({ from: 'c0', to: 'c1', kind: 'straight' }, { from: 'c2', to: 'c3', kind: 'straight' }, { from: 'c4', to: 'c5', kind: 'straight' });
+      return { nodes, edges };
+    },
+  },
+  {
+    id: 'mind-map', label: 'Mind map',
+    glyph: '<ellipse cx="12" cy="12" rx="4.5" ry="3"/><path d="M7.5 12 C5 12 5 5 2 5 M7.5 12 C5 12 5 19 2 19 M16.5 12 C19 12 19 5 22 5 M16.5 12 C19 12 19 19 22 19"/>',
+    build() {
+      const nodes = [{ k: 'c', type: 'ellipse', label: 'Theme', x: 250, y: 170, w: 160, h: 80 }], edges = [];
+      const ys = [40, 180, 320];
+      ys.forEach((y, i) => {
+        nodes.push({ k: `l${i}`, type: 'rounded', label: `Idea ${i + 1}`, x: 0, y, w: 130, h: 44 });
+        nodes.push({ k: `r${i}`, type: 'rounded', label: `Idea ${i + 4}`, x: 530, y, w: 130, h: 44 });
+        edges.push({ from: 'c', to: `l${i}`, kind: 'curve' }, { from: 'c', to: `r${i}`, kind: 'curve' });
+      });
+      return { nodes, edges };
+    },
+  },
+  {
+    id: 'storyboard', label: 'Storyboard',
+    glyph: '<rect x="2" y="3" width="6" height="5"/><rect x="9" y="3" width="6" height="5"/><rect x="16" y="3" width="6" height="5"/><rect x="2" y="13" width="6" height="5"/><rect x="9" y="13" width="6" height="5"/><rect x="16" y="13" width="6" height="5"/><path d="M2 10 H8 M9 10 H15 M16 10 H22 M2 20 H8 M9 20 H15 M16 20 H22"/>',
+    build() {
+      const nodes = [], edges = [];
+      for (let i = 0; i < 6; i++) {
+        const x = (i % 3) * 230, y = Math.floor(i / 3) * 210;
+        nodes.push({ k: `f${i}`, type: 'rect', label: '', x, y, w: 200, h: 130 });
+        nodes.push({ k: `t${i}`, type: 'text', label: `${i + 1}. Scene`, x, y: y + 140, w: 200, h: 30 });
+      }
+      return { nodes, edges };
+    },
+  },
+  {
+    id: 'swimlane', label: 'Swimlane workflow',
+    glyph: '<rect x="2" y="3" width="20" height="18"/><path d="M2 9 H22 M2 15 H22 M6 3 V21"/><rect x="8" y="4.5" width="4" height="3"/><rect x="14" y="10.5" width="4" height="3"/><path d="M12 6 H16 V10.5"/>',
+    build() {
+      const lanes = ['Customer', 'Sales', 'Operations'], nodes = [], edges = [];
+      lanes.forEach((n, i) => {
+        nodes.push({ k: `lane${i}`, type: 'rect', label: '', x: 0, y: i * 130, w: 780, h: 130 });
+        nodes.push({ k: `name${i}`, type: 'text', label: n, x: 10, y: i * 130 + 45, w: 100, h: 40, style: { bold: true } });
+      });
+      const steps = [['s1', 0, 140, 'Request'], ['s2', 1, 300, 'Check'], ['s3', 1, 460, 'Quote'], ['s4', 2, 620, 'Deliver']];
+      for (const [k, lane, x, label] of steps) nodes.push({ k, type: 'rounded', label, x, y: lane * 130 + 40, w: 130, h: 50 });
+      for (let i = 0; i < steps.length - 1; i++) edges.push({ from: steps[i][0], to: steps[i + 1][0], kind: 'elbow', head: 'arrow' });
+      return { nodes, edges };
+    },
+  },
+  {
+    id: 'app-screen', label: 'App screen',
+    glyph: '<rect x="5" y="2" width="14" height="20" rx="2.5"/><rect x="7.5" y="6" width="3.5" height="3.5" rx="1"/><rect x="13" y="6" width="3.5" height="3.5" rx="1"/><rect x="7.5" y="12" width="3.5" height="3.5" rx="1"/><rect x="13" y="12" width="3.5" height="3.5" rx="1"/>',
+    build() {
+      const nodes = [{ k: 'frame', type: 'rounded', label: '', x: 0, y: 0, w: 300, h: 520 }];
+      nodes.push({ k: 'title', type: 'text', label: 'App', x: 20, y: 20, w: 260, h: 40, style: { bold: true } });
+      for (let i = 0; i < 9; i++) {
+        nodes.push({ k: `t${i}`, type: 'rounded', label: `Item ${i + 1}`, x: 20 + (i % 3) * 90, y: 80 + Math.floor(i / 3) * 90, w: 80, h: 80 });
+      }
+      nodes.push({ k: 'bar', type: 'rounded', label: 'Button', x: 20, y: 440, w: 260, h: 50 });
+      return { nodes, edges: [] };
+    },
+  },
 ];
 
 // §39 見出しに出す「プロジェクトの短い名前」。project.title は
@@ -7990,7 +8162,7 @@ const KIND_LABELS = {
 // GRAPH_CONTRACT.md §8 は全詳細セクション（基本含む）を既定 closed としたいが、'基本' は
 // verify.mjs の既存回帰テストが Playwright ロケータで直接 .fill() するため既定 open のまま残す
 // （makeInspectorCollapsible 参照）。
-const DEFAULT_OPEN_INSPSECS = new Set(['書式', '配置']);   // §52/§54 描く図では書式と配置を開いた状態で出す
+const DEFAULT_OPEN_INSPSECS = new Set(['Format', 'Arrange']);   // §52/§54 描く図では書式と配置を開いた状態で出す
 
 // GRAPH_CONTRACT.md §12: ノードの実体を開く。表示方法（kind）の日本語と、テキストを載せる上限。
 const OPEN_KIND_TEXT = { html: 'HTML（サンドボックス表示）', image: '画像', text: 'テキスト', preview: '抜粋（preview）' };
@@ -8050,7 +8222,9 @@ class DiagramEditor {
     this.armedType = null;      // パレットで選択中の追加タイプ
     this.armedEdge = null;      // §49 パレットで選択中のコネクタ（preset 名）
     this.edgeSource = null;     // §49 コネクタの「つなぐ元」（1 回目にクリックした箱）
-    this.edgeRoute = 'orthogonal';   // §55 これから引く線の経路（カギ線・直線・曲線）
+    this.edgeRoute = 'orthogonal';   // §55 これから引く線の経路（直線・カギ線・角丸カギ線・曲線）
+    this.lineStyle = { line: 'thin', head: 'arrow' };   // §59 Basic モードの「素の線」の線種・先端
+    this.paletteMode = (() => { try { const m = localStorage.getItem(PALETTE_MODE_KEY); return PALETTE_MODES.some(([x]) => x === m) ? m : 'basic'; } catch { return 'basic'; } })();
     this.drag = null;
     this.navStack = [];         // ドリルダウンの戻り先 diagram ID
     this.virtualSpecs = new Map();  // §7.4 仮想ビュー（view~<nodeId>）の生成元 spec（保存されない）
@@ -9100,22 +9274,22 @@ class DiagramEditor {
     }
     bar.appendChild(this.buildMenu('File', fileItems));
     bar.appendChild(this.buildMenu('Edit', [
-      ['Undo（戻す）', () => this.undo()],
-      ['Redo（やり直す）', () => this.redo()],
+      ['Undo (Ctrl+Z)', () => this.undo()],
+      ['Redo (Ctrl+Y)', () => this.redo()],
       '---',
       // §54 コピー＆貼り付け・整列・重なり順（キーは Ctrl/⌘ + C / V / D / ] / [）
-      ['コピー (Ctrl+C)', () => this.copySelection()],
-      ['貼り付け (Ctrl+V)', () => this.pasteClipboard()],
-      ['複製 (Ctrl+D)', () => { if (this.copySelection()) this.pasteClipboard(); }],
-      ['左揃え', () => this.align('left')], ['上揃え', () => this.align('top')],
-      ['左右に等間隔', () => this.align('hspace')], ['上下に等間隔', () => this.align('vspace')],
-      ['最前面へ (Ctrl+Shift+])', () => this.reorder('front')], ['最背面へ (Ctrl+Shift+[)', () => this.reorder('back')],
+      ['Copy (Ctrl+C)', () => this.copySelection()],
+      ['Paste (Ctrl+V)', () => this.pasteClipboard()],
+      ['Duplicate (Ctrl+D)', () => { if (this.copySelection()) this.pasteClipboard(); }],
+      ['Align left', () => this.align('left')], ['Align top', () => this.align('top')],
+      ['Distribute horizontally', () => this.align('hspace')], ['Distribute vertically', () => this.align('vspace')],
+      ['Bring to front (Ctrl+Shift+])', () => this.reorder('front')], ['Send to back (Ctrl+Shift+[)', () => this.reorder('back')],
       '---',
-      ['Add Node…（パレット）', () => this.showPaletteTab()],
-      ['図を追加', () => this.addDiagram()],
-      ['この図を entry に設定', () => { this.project.project.entry = this.currentId; this.refreshChrome(); this.pushHistory(); this.setStatus(`entry を '${this.currentId}' に設定`); }],
+      ['Add shape… (Palette)', () => this.showPaletteTab()],
+      ['New diagram', () => this.addDiagram()],
+      ['Set as entry diagram', () => { this.project.project.entry = this.currentId; this.refreshChrome(); this.pushHistory(); this.setStatus(`entry を '${this.currentId}' に設定`); }],
       // §18.2 生成図の出口②。生成図を開いているときだけ押せる
-      () => [this.isGenerated ? '複製して手描きにする' : '複製して手描きにする（生成図のみ）',
+      () => [this.isGenerated ? 'Duplicate as hand-drawn' : 'Duplicate as hand-drawn (generated views only)',
         () => this.forkGeneratedView()],
     ]));
     bar.appendChild(this.buildMenu('View', [
@@ -9963,14 +10137,38 @@ class DiagramEditor {
 
   buildPalette() {
     const sec = document.createElement('div');
-    sec.className = 'de-section';
-    const pal = document.createElement('div'); pal.className = 'de-palette';
-    const addNodeButton = (item, glyph) => {
+    sec.className = 'de-section de-palette-root';
+    this.paletteRoot = sec;
+    const svgOf = (glyph, vb = 24) => {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', `0 0 ${vb} ${vb}`); svg.setAttribute('width', '22'); svg.setAttribute('height', '22');
+      svg.innerHTML = glyph; return svg;
+    };
+    const grid = (cls = '') => { const g = document.createElement('div'); g.className = `de-palette ${cls}`.trim(); return g; };
+    // §59 モードごとの区画。data-modes に出すモードを書き、applyPaletteMode が hidden を切り替える
+    const part = (modes, ...children) => { const d = document.createElement('div'); d.className = 'de-palpart'; d.dataset.modes = modes; d.append(...children); sec.appendChild(d); return d; };
+    const h3 = (text) => { const h = document.createElement('h3'); h.textContent = text; return h; };
+    const sub = (text) => { const h = document.createElement('div'); h.className = 'de-palette-head'; h.textContent = text; return h; };
+    const iconBtn = (title, glyph, data) => {
       const b = document.createElement('button');
-      b.dataset.type = item.type;
-      // §53 アイコンだけ。名前はホバー（title）と読み上げ（aria-label）で出す
-      b.title = item.label; b.setAttribute('aria-label', item.label);
+      Object.assign(b.dataset, data);
+      b.title = title; b.setAttribute('aria-label', title);   // §53 アイコンだけ。名前はホバーと読み上げ
       b.appendChild(glyph);
+      return b;
+    };
+
+    // ── 一番上: モード切り替え（Basic / System / Templates）
+    const sw = document.createElement('div'); sw.className = 'de-palmode'; sw.setAttribute('role', 'tablist');
+    for (const [mode, label] of PALETTE_MODES) {
+      const b = document.createElement('button'); b.dataset.mode = mode; b.textContent = label; b.setAttribute('role', 'tab');
+      b.addEventListener('click', () => this.setPaletteMode(mode));
+      sw.appendChild(b);
+    }
+    sec.appendChild(sw);
+
+    // ── 箱（Basic＝基本図形 / System＝システム部品）
+    const addNodeButton = (pal, item, glyph) => {
+      const b = iconBtn(item.label, glyph, { type: item.type });
       // §50 キャンバスへドラッグ＆ドロップでも置ける（クリック → クリックも残す）
       b.addEventListener('pointerdown', (e) => this.beginPaletteDrag(e, item, b));
       b.addEventListener('click', () => {
@@ -9979,54 +10177,63 @@ class DiagramEditor {
         this.disarm();
         this.armedType = next;
         b.classList.toggle('armed', !!next);
-        this.setStatus(next ? `キャンバスをクリックして ${item.label} を配置` : '');
+        this.setStatus(next ? `Click the canvas to place: ${item.label}` : '');
       });
       pal.appendChild(b);
     };
-    // §52 先頭は基本図形（普通の図を描くための形）。システム部品（SysML 寄り）はその下
-    const head = (text) => { const h = document.createElement('div'); h.className = 'de-palette-head'; h.textContent = text; pal.appendChild(h); };
-    head('基本図形');
-    for (const item of BASIC_SHAPES) {
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('width', '22'); svg.setAttribute('height', '22');
-      svg.innerHTML = item.glyph;
-      addNodeButton(item, svg);
-    }
-    head('システム部品');
-    for (const item of NODE_PALETTE) addNodeButton(item, iconSVG(document, item.icon, 22));
-    sec.insertAdjacentHTML('afterbegin', '<h3>ノード（箱）</h3>');
-    // §57 Palette の ＋（新しい図）は撤去（ユーザー判断）。新しい図は Diagram タブの ＋ か Edit ▸ 図を追加
-    this.paletteEl = pal;
-    sec.appendChild(pal);
-    // §49 コネクタ: 選ぶ → つなぐ元の箱 → つなぐ先の箱。1 本引いたら選択は外れる（§56）。続けて引くなら Shift＋ドラッグ
-    const h = document.createElement('h3'); h.textContent = 'コネクタ（線）'; sec.appendChild(h);
-    // §55 経路（カギ線・直線・曲線）を先頭にアイコンで。押すとその経路で引く状態になる（種類は選んでいるもの、無ければ流れ）
-    const rpal = document.createElement('div'); rpal.className = 'de-palette de-route-palette';
+    const shapes = grid();
+    for (const item of BASIC_SHAPES) addNodeButton(shapes, item, svgOf(item.glyph));
+    part('basic', h3('Shapes'), shapes);
+    const parts = grid();
+    for (const item of NODE_PALETTE) addNodeButton(parts, item, iconSVG(document, item.icon, 22));
+    part('system', h3('System parts'), parts);
+
+    // ── 線: 経路（両モード共通）→ Basic は線種・先端、System は意味の種類
+    const rpal = grid('de-route-palette');
     for (const r of EDGE_ROUTES) {
-      const b = document.createElement('button');
-      b.dataset.route = r.kind; b.title = `${r.label}で引く`; b.setAttribute('aria-label', r.label);
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('viewBox', '0 0 22 22'); svg.setAttribute('width', '22'); svg.setAttribute('height', '22');
-      svg.innerHTML = r.glyph; b.appendChild(svg);
+      const b = iconBtn(r.label, svgOf(r.glyph, 22), { route: r.kind });
       b.classList.toggle('current', r.kind === this.edgeRoute);
       b.addEventListener('click', () => {
         this.edgeRoute = r.kind;
         for (const x of rpal.children) x.classList.toggle('current', x.dataset.route === r.kind);
-        const preset = this.armedEdge || this.lastEdgePreset || 'flow';
+        const preset = this.paletteMode === 'basic' ? 'line' : (this.armedEdge && this.armedEdge !== 'line' ? this.armedEdge : this.lastEdgePreset && this.lastEdgePreset !== 'line' ? this.lastEdgePreset : 'flow');
         this.disarm(); this.armEdge(preset);
       });
       rpal.appendChild(b);
     }
     this.routePaletteEl = rpal;
-    sec.appendChild(rpal);
-    const epal = document.createElement('div'); epal.className = 'de-palette de-edge-palette';
+    part('basic system', h3('Connector'), rpal);
+    // §59 Basic: 線種と先端。押すとその見た目の「素の線」を引く状態になる（preset は付けない）
+    const lpal = grid('de-line-palette');
+    for (const l of LINE_KINDS) {
+      const b = iconBtn(l.label, svgOf(l.glyph, 22), { line: l.line });
+      b.classList.toggle('current', l.line === this.lineStyle.line);
+      b.addEventListener('click', () => {
+        this.lineStyle.line = l.line;
+        for (const x of lpal.children) x.classList.toggle('current', x.dataset.line === l.line);
+        this.disarm(); this.armEdge('line');
+      });
+      lpal.appendChild(b);
+    }
+    const hpal = grid('de-head-palette');
+    for (const hd of HEAD_KINDS) {
+      const b = iconBtn(hd.label, svgOf(hd.glyph, 22), { head: hd.head });
+      b.classList.toggle('current', hd.head === this.lineStyle.head);
+      b.addEventListener('click', () => {
+        this.lineStyle.head = hd.head;
+        for (const x of hpal.children) x.classList.toggle('current', x.dataset.head === hd.head);
+        this.disarm(); this.armEdge('line');
+      });
+      hpal.appendChild(b);
+    }
+    this.linePaletteEl = lpal; this.headPaletteEl = hpal;
+    part('basic', sub('Line'), lpal, sub('Arrowhead'), hpal);
+    // §49 System: 意味の種類（流れ・依存…）。選ぶ → つなぐ元 → つなぐ先。1 本引いたら選択は外れる（§56）
+    const epal = grid('de-edge-palette');
     for (const item of EDGE_PALETTE) {
-      const b = document.createElement('button');
       const key = item.key || item.preset;
-      b.dataset.preset = key; b.title = `${item.label}（${item.preset}${item.kind ? `・${item.kind}` : ''}）`;
       const g = document.createElement('span'); g.className = 'de-edge-glyph'; g.textContent = item.glyph;
-      b.setAttribute('aria-label', item.label);
-      b.append(g);   // §53 形の記号だけ。名前はホバー（title）
+      const b = iconBtn(item.label, g, { preset: key });
       b.addEventListener('click', () => {
         const next = this.armedEdge === key ? null : key;
         this.disarm();
@@ -10035,8 +10242,78 @@ class DiagramEditor {
       epal.appendChild(b);
     }
     this.edgePaletteEl = epal;
-    sec.appendChild(epal);
+    part('system', sub('Relation'), epal);
+
+    // ── §59 Templates: 押すとひな形を図に作る
+    const tpal = grid('de-template-palette');
+    for (const t of TEMPLATES) {
+      const b = iconBtn(t.label, svgOf(t.glyph), { template: t.id });
+      b.addEventListener('click', () => this.insertTemplate(t.id));
+      tpal.appendChild(b);
+    }
+    part('templates', h3('Templates'), tpal);
+    this.applyPaletteMode();
     return sec;
+  }
+
+  // §59 Palette のモード（basic / system / templates）。端末に記憶する
+  setPaletteMode(mode) {
+    if (!PALETTE_MODES.some(([m]) => m === mode)) return;
+    this.paletteMode = mode;
+    try { localStorage.setItem(PALETTE_MODE_KEY, mode); } catch { /* ストレージ不可でも動く */ }
+    this.disarm();
+    this.applyPaletteMode();
+  }
+
+  applyPaletteMode() {
+    const root = this.paletteRoot; if (!root) return;
+    for (const b of root.querySelectorAll('.de-palmode button')) {
+      const on = b.dataset.mode === this.paletteMode;
+      b.classList.toggle('active', on); b.setAttribute('aria-selected', String(on));
+    }
+    for (const p of root.querySelectorAll('.de-palpart')) p.hidden = !p.dataset.modes.split(' ').includes(this.paletteMode);
+  }
+
+  // §59 テンプレートをひな形として置く。手で描く図でなければ新しい図を作ってから置く。
+  // 既存の中身の右に並べ、置いたもの全部を選んだ状態にする（そのままドラッグで動かせる）
+  insertTemplate(id) {
+    const t = TEMPLATES.find(x => x.id === id);
+    if (!t || !this.editable || !this.model) return false;
+    if (this.isGenerated || this.model.select) this.addDiagram();
+    if (this.locked) this.setLocked(false, { persist: false });
+    if (this.projection !== 'flat') this.setProjection('flat');
+    this.disarm();
+    const { nodes, edges } = t.build();
+    const ns = this.model.nodes;
+    const g = this.model.meta.grid;
+    const x0 = snap(ns.length ? Math.max(...ns.map(n => n.x + n.w)) + 80 : 40, g);
+    const y0 = snap(ns.length ? Math.min(...ns.map(n => n.y)) : 40, g);
+    const ids = new Map();
+    for (const s of nodes) {
+      const nid = freshId(this.model, 'n');
+      ids.set(s.k, nid);
+      const noPorts = ['text', 'note', 'actor', 'pictogram'].includes(s.type) || s.w < 20;
+      const node = {
+        id: nid, type: s.type, label: s.label ?? '', x: snap(x0 + s.x, g), y: snap(y0 + s.y, g), w: s.w, h: s.h,
+        layer: this.model.layers[0].id,
+        ports: noPorts ? [] : [{ id: 'in', side: 'left', offset: 0.5, kind: 'in' }, { id: 'out', side: 'right', offset: 0.5, kind: 'out' }],
+      };
+      if (s.w < 20) { node.x = x0 + s.x; node.y = y0 + s.y; }   // 線の端の小さな点はグリッドに吸わせない（線がずれる）
+      if (s.style) node.style = { ...s.style };
+      this.model.nodes.push(node);
+    }
+    for (const s of edges) {
+      this.model.edges.push({
+        id: freshId(this.model, 'e'), from: ids.get(s.from), to: ids.get(s.to), kind: s.kind || 'orthogonal',
+        line: s.line || 'solid', arrowStart: 'none', arrowEnd: s.head || 'none', ...(s.label ? { label: s.label } : {}),
+      });
+    }
+    this.commit();
+    this.setMulti([...ids.values()]);
+    this.renderer.fit?.();
+    this.closeDrawerOnPhone();
+    this.setStatus(`${t.label}: template placed. Drag to move, double-click a box (or just type) to write in it`);
+    return true;
   }
 
   // §50 パレットの箱をキャンバスへドラッグ＆ドロップで置く。動かした距離が小さければ従来のクリック扱い。
@@ -10075,9 +10352,14 @@ class DiagramEditor {
   armEdge(preset) {
     this.armedEdge = preset; this.edgeSource = null; this.lastEdgePreset = preset;
     for (const x of this.edgePaletteEl?.children || []) x.classList.toggle('armed', x.dataset.preset === preset);
+    for (const x of this.routePaletteEl?.children || []) x.classList.toggle('armed', x.dataset.route === this.edgeRoute);
+    if (preset === 'line') {   // §59 Basic の素の線: いま選んでいる線種・先端が「選択中」
+      for (const x of this.linePaletteEl?.children || []) x.classList.toggle('armed', x.dataset.line === this.lineStyle.line);
+      for (const x of this.headPaletteEl?.children || []) x.classList.toggle('armed', x.dataset.head === this.lineStyle.head);
+    }
     const item = edgePaletteItem(preset);
     const route = EDGE_ROUTES.find(r => r.kind === this.edgeRoute)?.label || '';
-    this.setStatus(`${item?.label || preset}（${route}）: つなぐ元の箱をクリック（Esc で終了）`);
+    this.setStatus(`${item?.label || preset} (${route}): click the source box (Esc to cancel)`);
   }
 
   // §49 コネクタ選択中のクリック。1 回目＝元、2 回目＝先。空白をクリックしたら元を取り消す。
@@ -10107,6 +10389,12 @@ class DiagramEditor {
   // key はパレットの項目（'curve' など）でも preset 名でもよい。kind（経路）は項目が持てば従う
   addEdge(from, to, key = 'flow') {
     const id = freshId(this.model, 'e');
+    if (key === 'line') {   // §59 Basic の素の線（preset なし。Palette で選んだ経路・線種・先端）
+      this.model.edges.push({ id, from, to, kind: this.edgeRoute || 'orthogonal', line: this.lineStyle.line, arrowStart: 'none', arrowEnd: this.lineStyle.head });
+      this.select({ kind: 'edge', id });
+      this.commit();
+      return id;
+    }
     const item = edgePaletteItem(key);
     const preset = item?.preset || key;
     const look = EDGE_PRESETS[preset] || EDGE_PRESETS.flow;
@@ -10636,6 +10924,14 @@ class DiagramEditor {
         const ov = this.root.querySelector('.de-modal-overlay');
         if (ov) { ov.remove(); e.preventDefault(); return; }
       }
+      // §59 箱を選んで打つ＝箱に書く（L / O などの 1 文字ショートカットより先に見る。打った文字は 1 文字目になる）。
+      // Enter / F2 は今の文字を全選択して編集。日本語入力（IME）の最初のキーは 'Process' で来るので、空で開いて変換を受ける
+      if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+        const n = this.canTypeInto();
+        if (n && (e.key.length === 1 && e.key !== ' ')) { e.preventDefault(); this.inlineEdit(n, e.key); return; }
+        if (n && (e.key === 'Enter' || e.key === 'F2')) { e.preventDefault(); this.inlineEdit(n); return; }
+        if (n && (e.key === 'Process' || e.isComposing)) { this.inlineEdit(n, ''); return; }
+      }
       if (!e.ctrlKey && !e.metaKey && !e.altKey && e.key.toLowerCase() === 'o') {
         if (this.selection?.kind === 'node' && !this.root.querySelector('.de-modal-overlay')) {
           this.openSelectedNode(); e.preventDefault(); return;
@@ -10663,8 +10959,7 @@ class DiagramEditor {
 
   disarm() {
     this.armedType = null; this.armedEdge = null; this.edgeSource = null;
-    if (this.paletteEl) for (const x of this.paletteEl.children) x.classList.remove('armed');
-    if (this.edgePaletteEl) for (const x of this.edgePaletteEl.children) x.classList.remove('armed');
+    for (const x of this.paletteRoot?.querySelectorAll('.armed') || []) x.classList.remove('armed');
   }
 
   onWheel(e) {
@@ -10795,7 +11090,7 @@ class DiagramEditor {
       // §50 Shift＋ドラッグ＝箱から線を引く（ポートの小さな ○ を狙わなくてよい）。
       // 線の種類はパレットで選んでいるコネクタ、無ければ「流れ」。
       const n = nodeById(this.model, hit.id);
-      this.drag = { mode: 'connect', from: hit.id, fromPoint: { x: n.x + n.w / 2, y: n.y + n.h / 2 }, preset: this.armedEdge || 'flow', shiftClick: { x: e.clientX, y: e.clientY } };
+      this.drag = { mode: 'connect', from: hit.id, fromPoint: { x: n.x + n.w / 2, y: n.y + n.h / 2 }, preset: this.armedEdge || (this.paletteMode === 'basic' ? 'line' : 'flow'), shiftClick: { x: e.clientX, y: e.clientY } };
       this.ghost = el('path', { class: 'de-ghost' });
       this.renderer.world.appendChild(this.ghost);
       this.setStatus('線を引いています… つなぐ先の箱で離す');
@@ -11236,33 +11531,69 @@ class DiagramEditor {
     if (hit?.kind === 'edge') {
       const edge = this.model.edges.find(x => x.id === hit.id);
       let label = null;
-      try { label = prompt('エッジラベル', edge.label || ''); } catch {
+      try { label = prompt('Connector label', edge.label || ''); } catch {
         this.setStatus('この環境ではダイアログを使えません。ラベルはインスペクタで編集してください', true);
       }
       if (label !== null) { edge.label = label; this.commit(); }
     }
   }
 
-  inlineEdit(node) {
+  // §59 箱に直接書く。箱と同じ位置・大きさの透明な textarea を重ね、元の文字は隠す（枠も背景も出さない）。
+  // Enter で確定・Shift+Enter で改行・Esc で取り消し・外をクリックで確定。日本語の変換中の Enter は確定に使わない。
+  // initial を渡すと、その文字で書き始める（箱を選んでそのまま打ったとき）
+  inlineEdit(node, initial = null) {
+    if (!node) return;
+    this.viewport.querySelector('.de-inline-edit')?.remove();
     const v = this.renderer.getView();
-    const input = document.createElement('input');
-    input.className = 'de-inline-edit';
-    input.value = node.label || '';
-    input.style.left = `${v.x + (node.x + 4) * v.k}px`;
-    input.style.top = `${v.y + (node.y + node.h / 2 - 12) * v.k}px`;
-    input.style.width = `${(node.w - 8) * v.k}px`;
-    this.viewport.appendChild(input);
-    input.focus(); input.select();
-    const done = ok => {
-      if (ok) { node.label = input.value; this.markHandPlaced(node); this.commit(); }
-      input.remove();
-    };
-    input.addEventListener('keydown', ev => {
-      if (ev.key === 'Enter') done(true);
-      if (ev.key === 'Escape') done(false);
-      ev.stopPropagation();
+    const dy = this.renderer.dyOf?.(node.layer) || 0;
+    const g = this.renderer.world?.querySelector?.(`g[data-kind="node"][data-id="${CSS.escape(node.id)}"]`);
+    const texts = g ? [...g.querySelectorAll('text')] : [];
+    const fs = (node.style?.fontSize || parseFloat(texts[0] ? getComputedStyle(texts[0]).fontSize : '') || 15) * v.k;
+    const ta = document.createElement('textarea');
+    ta.className = 'de-inline-edit';
+    ta.rows = 1; ta.spellcheck = false;
+    ta.value = initial ?? (node.label || '');
+    const W = node.w * v.k, H = node.h * v.k;
+    Object.assign(ta.style, {
+      left: `${v.x + node.x * v.k}px`, top: `${v.y + (node.y + dy) * v.k}px`, width: `${W}px`, height: `${H}px`,
+      fontSize: `${fs}px`, lineHeight: `${fs * 1.25}px`,
     });
-    input.addEventListener('blur', () => done(true));
+    if (node.style?.bold) ta.style.fontWeight = '700';
+    if (node.style?.textColor) ta.style.color = node.style.textColor;
+    const center = () => {   // 縦も真ん中に（textarea は縦中央に寄せられないので上の余白で合わせる）
+      const lines = Math.max(1, ta.value.split('\n').length);
+      ta.style.paddingTop = `${Math.max(0, (H - lines * fs * 1.25) / 2)}px`;
+    };
+    center();
+    for (const t of texts) t.style.visibility = 'hidden';
+    this.viewport.appendChild(ta);
+    ta.focus();
+    if (initial === null) ta.select(); else ta.setSelectionRange(ta.value.length, ta.value.length);
+    let finished = false;
+    const done = ok => {
+      if (finished) return; finished = true;
+      ta.remove();
+      for (const t of texts) t.style.visibility = '';
+      if (ok && ta.value !== (node.label || '')) { node.label = ta.value; this.markHandPlaced(node); this.commit(); }
+      this.viewport.focus?.({ preventScroll: true });
+    };
+    ta.addEventListener('input', center);
+    ta.addEventListener('keydown', ev => {
+      ev.stopPropagation();
+      if (ev.isComposing || ev.keyCode === 229) return;   // 変換中（IME）の Enter / Esc は変換のためのもの
+      if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); done(true); }
+      if (ev.key === 'Escape') { ev.preventDefault(); done(false); }
+    });
+    ta.addEventListener('blur', () => done(true));
+    this.inlineEditor = ta;
+  }
+
+  // §59 箱を 1 つ選んで文字キーを打ったら、そのまま箱に書き始める（PowerPoint と同じ）。描く図・錠を外した 2D だけ
+  canTypeInto() {
+    if (!this.canEditGeometry || !this.canEditContent || this.model?.select || this.root.querySelector('.de-modal-overlay')) return null;
+    if (this.selection?.kind !== 'node' || this.multi?.length > 1) return null;
+    const n = nodeById(this.model, this.selection.id);
+    return n && !n.__derived ? n : null;
   }
 
   // ─── モデル操作 ───
@@ -11273,7 +11604,7 @@ class DiagramEditor {
     const id = freshId(this.model, 'n');
     const node = {
       // §52 基本図形は PowerPoint と同じく文字なしで置く（テキストだけは「テキスト」）。部品は種類名
-      id, type, label: BASIC_SIZE[type] ? (type === 'text' ? 'テキスト' : '') : type.charAt(0).toUpperCase() + type.slice(1),
+      id, type, label: BASIC_SIZE[type] ? (type === 'text' ? 'Text' : '') : type.charAt(0).toUpperCase() + type.slice(1),
       x: snap(p.x - size.w / 2, g), y: snap(p.y - size.h / 2, g), ...size,
       layer: this.model.layers[0].id,
       ports: type === 'note' || type === 'actor' || type === 'pictogram' || type === 'text' ? [] : [
@@ -11491,7 +11822,7 @@ class DiagramEditor {
 
   // Inspector に出す「配置」の区画（整列は 2 個以上・等間隔は 3 個以上で押せる）
   renderArrange(box, count) {
-    box.insertAdjacentHTML('beforeend', '<h3>配置</h3>');
+    box.insertAdjacentHTML('beforeend', '<h3>Arrange</h3>');
     const row = (items) => {
       const r = document.createElement('div'); r.className = 'de-arrange-row';
       for (const [glyph, title, fn, on] of items) {
@@ -11501,11 +11832,11 @@ class DiagramEditor {
       box.appendChild(r);
     };
     const two = count >= 2, three = count >= 3;
-    row([['⇤', '左揃え', () => this.align('left'), two], ['↔', '左右中央', () => this.align('center'), two], ['⇥', '右揃え', () => this.align('right'), two],
-      ['⤒', '上揃え', () => this.align('top'), two], ['↕', '上下中央', () => this.align('middle'), two], ['⤓', '下揃え', () => this.align('bottom'), two]]);
-    row([['⋯', '左右に等間隔', () => this.align('hspace'), three], ['⋮', '上下に等間隔', () => this.align('vspace'), three]]);
-    row([['⇈', '最前面へ (Ctrl+Shift+])', () => this.reorder('front'), true], ['↑', '1 つ前へ (Ctrl+])', () => this.reorder('forward'), true],
-      ['↓', '1 つ後ろへ (Ctrl+[)', () => this.reorder('backward'), true], ['⇊', '最背面へ (Ctrl+Shift+[)', () => this.reorder('back'), true]]);
+    row([['⇤', 'Align left', () => this.align('left'), two], ['↔', 'Align center', () => this.align('center'), two], ['⇥', 'Align right', () => this.align('right'), two],
+      ['⤒', 'Align top', () => this.align('top'), two], ['↕', 'Align middle', () => this.align('middle'), two], ['⤓', 'Align bottom', () => this.align('bottom'), two]]);
+    row([['⋯', 'Distribute horizontally', () => this.align('hspace'), three], ['⋮', 'Distribute vertically', () => this.align('vspace'), three]]);
+    row([['⇈', 'Bring to front (Ctrl+Shift+])', () => this.reorder('front'), true], ['↑', 'Bring forward (Ctrl+])', () => this.reorder('forward'), true],
+      ['↓', 'Send backward (Ctrl+[)', () => this.reorder('backward'), true], ['⇊', 'Send to back (Ctrl+Shift+[)', () => this.reorder('back'), true]]);
   }
 
   // ─── §53 サイズ変更ハンドル（選んだ 1 個の箱・2D・編集可のとき）───────────────────────
@@ -11619,7 +11950,7 @@ class DiagramEditor {
     if (this.multi?.length > 1) {
       const nodes = this.selectedNodes();
       const prim = nodeById(this.model, this.selection.id) || nodes[0];
-      box.insertAdjacentHTML('beforeend', `<div class="de-help" data-role="multi-count"><b>${nodes.length} 個</b>を選択中。ここでの書式は全部に効きます</div>`);
+      box.insertAdjacentHTML('beforeend', `<div class="de-help" data-role="multi-count"><b>${nodes.length} selected</b> — formatting here applies to all of them</div>`);
       if (this.canEditContent && prim) {
         const field = (label, value, apply, tag = 'input', opts = null) => {
           const l = document.createElement('label'); l.textContent = label;
@@ -11685,14 +12016,14 @@ class DiagramEditor {
 
     if (drawing) this.renderFormat(box, kind, obj, field);
     if (drawing && kind === 'node') this.renderArrange(box, 1);   // §54 1 個でも重なり順は使う
-    box.insertAdjacentHTML('beforeend', drawing ? (kind === 'node' ? '<h3>3D・アイコン</h3>' : '<h3>詳細</h3>') : '<h3>基本</h3>');
+    box.insertAdjacentHTML('beforeend', drawing ? (kind === 'node' ? '<h3>3D &amp; Icon</h3>' : '<h3>Details</h3>') : '<h3>基本</h3>');
     box.insertAdjacentHTML('beforeend', `<div class="de-help">${kind}: <b>${id}</b></div>`);
     if (!drawing) field('label', obj.label, v => obj.label = v);
     if (kind === 'node' && drawing) {
       // 3D・アイコン → 詳細 の順。図形・文字・色・サイズは上の「書式」
       this.iconPicker(box, obj);
       field('shape3d（3D形状）', obj.shape3d || '', v => obj.shape3d = v || undefined, 'select', ['', ...SHAPE3D_NAMES]);
-      box.insertAdjacentHTML('beforeend', '<h3>詳細</h3>');
+      box.insertAdjacentHTML('beforeend', '<h3>Details</h3>');
       field('sublabel', obj.sublabel, v => obj.sublabel = v || undefined);
     }
     if (kind === 'node' && !drawing) {
@@ -11760,7 +12091,7 @@ class DiagramEditor {
         }
       }, 'select', ['', ...EDGE_PRESET_NAMES]);
       if (!drawing) {
-        field('kind（経路）', obj.kind, v => obj.kind = v, 'select', ['orthogonal', 'straight', 'curve']);
+        field('kind（経路）', obj.kind, v => obj.kind = v, 'select', EDGE_KINDS);
         field('arrowStart', obj.arrowStart, v => { obj.arrowStart = v; delete obj.preset; }, 'select', ARROW_HEAD_NAMES);
         field('arrowEnd', obj.arrowEnd, v => { obj.arrowEnd = v; delete obj.preset; }, 'select', ARROW_HEAD_NAMES);
         field('line', obj.line, v => { obj.line = v; delete obj.preset; }, 'select', LINE_STYLE_NAMES);
@@ -11778,7 +12109,7 @@ class DiagramEditor {
       }
       this.renderEdgePromote(box, obj);
     }
-    if (drawing) { box.insertAdjacentHTML('beforeend', '<h3>情報</h3>'); this.renderSummary(box, kind, id, obj); }
+    if (drawing) { box.insertAdjacentHTML('beforeend', '<h3>Info</h3>'); this.renderSummary(box, kind, id, obj); }
     this.makeInspectorCollapsible(box);
   }
 
@@ -11786,7 +12117,7 @@ class DiagramEditor {
   // 値は style に持つ（fill / stroke / strokeWidth / dash / textColor / fontSize / bold）。描画は flat_svg の
   // paint() がインラインスタイルで当てる（CSS のクラス指定に負けないように）。3D も fill / stroke を引き継ぐ。
   renderFormat(box, kind, obj, field, targets = [obj]) {   // §53 targets＝複数選択ならまとめて効く
-    box.insertAdjacentHTML('beforeend', '<h3>書式</h3>');
+    box.insertAdjacentHTML('beforeend', '<h3>Format</h3>');
     const stOf = (t) => (t.style = t.style || {});
     const setStyle = (key, v) => targets.forEach(t => { if (v === '' || v === undefined || v === null) { if (t.style) delete t.style[key]; } else stOf(t)[key] = v; });
     const color = (label, key, dflt, { none = false } = {}) => {
@@ -11796,44 +12127,44 @@ class DiagramEditor {
       const cur = obj.style?.[key];
       i.value = /^#[0-9a-f]{6}$/i.test(cur || '') ? cur : dflt;
       const state = document.createElement('span'); state.className = 'de-color-state';
-      state.textContent = cur ? (cur === 'none' ? 'なし' : cur) : '既定';
+      state.textContent = cur ? (cur === 'none' ? 'None' : cur) : 'Default';
       i.addEventListener('input', () => { setStyle(key, i.value); state.textContent = i.value; this.renderer.update(this.model); });
       i.addEventListener('change', () => { setStyle(key, i.value); this.commit(); });
-      const reset = this.btn('既定', () => { setStyle(key, ''); this.commit(); this.renderInspector(); });
+      const reset = this.btn('Default', () => { setStyle(key, ''); this.commit(); this.renderInspector(); });
       reset.classList.add('de-btn-mini');
       row.append(i, state, reset);
       if (none) {
-        const nb = this.btn('なし', () => { setStyle(key, 'none'); this.commit(); this.renderInspector(); });
+        const nb = this.btn('None', () => { setStyle(key, 'none'); this.commit(); this.renderInspector(); });
         nb.classList.add('de-btn-mini'); row.append(nb);
       }
       box.append(l, row);
     };
-    const DASH = { '実線': '', '破線': '6 4', '点線': '2 3' };
-    const dashName = (v) => Object.keys(DASH).find(k => DASH[k] === (v || '')) || '実線';
+    const DASH = { Solid: '', Dashed: '6 4', Dotted: '2 3', 'Long dash': '12 5' };
+    const dashName = (v) => Object.keys(DASH).find(k => DASH[k] === (v || '')) || 'Solid';
     if (kind === 'node') {
-      field('図形', obj.type || 'block', v => targets.forEach(t => t.type = v), 'select', NODE_TYPES_LIST);
-      if (targets.length === 1) field('テキスト', obj.label, v => obj.label = v);
-      color('塗り', 'fill', '#ffffff', { none: true });
-      color('線の色', 'stroke', '#333333', { none: true });
-      field('線の太さ', String(obj.style?.strokeWidth ?? ''), v => setStyle('strokeWidth', v === '' ? '' : Number(v)), 'select', ['', '0.5', '1', '1.5', '2', '3', '4', '6']);
-      field('線の種類', dashName(obj.style?.dash), v => setStyle('dash', DASH[v]), 'select', Object.keys(DASH));
-      color('文字の色', 'textColor', '#222222');
-      field('文字サイズ', String(obj.style?.fontSize ?? ''), v => setStyle('fontSize', v === '' ? '' : Number(v)), 'select', ['', '10', '12', '14', '16', '18', '20', '24', '28', '32', '40']);
-      field('太字', obj.style?.bold ? 'はい' : 'いいえ', v => setStyle('bold', v === 'はい' ? true : ''), 'select', ['いいえ', 'はい']);
-      field('幅', obj.w, v => targets.forEach(t => { t.w = +v || t.w; }));
-      field('高さ', obj.h, v => targets.forEach(t => { t.h = +v || t.h; }));
+      field('Shape', obj.type || 'block', v => targets.forEach(t => t.type = v), 'select', NODE_TYPES_LIST);
+      if (targets.length === 1) field('Text', obj.label, v => obj.label = v);
+      color('Fill', 'fill', '#ffffff', { none: true });
+      color('Line color', 'stroke', '#333333', { none: true });
+      field('Line width', String(obj.style?.strokeWidth ?? ''), v => setStyle('strokeWidth', v === '' ? '' : Number(v)), 'select', ['', '0.5', '1', '1.5', '2', '3', '4', '6']);
+      field('Line style', dashName(obj.style?.dash), v => setStyle('dash', DASH[v]), 'select', Object.keys(DASH));
+      color('Text color', 'textColor', '#222222');
+      field('Font size', String(obj.style?.fontSize ?? ''), v => setStyle('fontSize', v === '' ? '' : Number(v)), 'select', ['', '10', '12', '14', '16', '18', '20', '24', '28', '32', '40']);
+      field('Bold', obj.style?.bold ? 'Yes' : 'No', v => setStyle('bold', v === 'Yes' ? true : ''), 'select', ['No', 'Yes']);
+      field('Width', obj.w, v => targets.forEach(t => { t.w = +v || t.w; }));
+      field('Height', obj.h, v => targets.forEach(t => { t.h = +v || t.h; }));
     } else {
-      field('種類', obj.preset || '', v => {
+      field('Relation', obj.preset || '', v => {
         if (v) { obj.preset = v; Object.assign(obj, { arrowStart: 'none', arrowEnd: 'none', line: 'solid' }, EDGE_PRESETS[v]); }
         else delete obj.preset;
       }, 'select', ['', ...EDGE_PRESET_NAMES]);
-      field('経路', obj.kind, v => obj.kind = v, 'select', ['orthogonal', 'straight', 'curve']);
-      field('ラベル', obj.label, v => obj.label = v);
-      color('線の色', 'stroke', '#333333');
-      field('線の太さ', String(obj.style?.strokeWidth ?? ''), v => setStyle('strokeWidth', v === '' ? '' : Number(v)), 'select', ['', '0.5', '1', '1.5', '2', '3', '4', '6']);
-      field('線の種類', obj.line, v => { obj.line = v; delete obj.preset; }, 'select', LINE_STYLE_NAMES);
-      field('始点の矢印', obj.arrowStart, v => { obj.arrowStart = v; delete obj.preset; }, 'select', ARROW_HEAD_NAMES);
-      field('終点の矢印', obj.arrowEnd, v => { obj.arrowEnd = v; delete obj.preset; }, 'select', ARROW_HEAD_NAMES);
+      field('Route', obj.kind, v => obj.kind = v, 'select', EDGE_KINDS);
+      field('Label', obj.label, v => obj.label = v);
+      color('Line color', 'stroke', '#333333');
+      field('Line width', String(obj.style?.strokeWidth ?? ''), v => setStyle('strokeWidth', v === '' ? '' : Number(v)), 'select', ['', '0.5', '1', '1.5', '2', '3', '4', '6']);
+      field('Line style', obj.line, v => { obj.line = v; delete obj.preset; }, 'select', LINE_STYLE_NAMES);
+      field('Start arrow', obj.arrowStart, v => { obj.arrowStart = v; delete obj.preset; }, 'select', ARROW_HEAD_NAMES);
+      field('End arrow', obj.arrowEnd, v => { obj.arrowEnd = v; delete obj.preset; }, 'select', ARROW_HEAD_NAMES);
     }
   }
 
