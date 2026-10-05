@@ -599,7 +599,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = 'cae4759';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '1f831ca';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -3833,7 +3833,9 @@ function edgePolyline(model, edge) {
     return [{ x: aGeom.x, y: aGeom.y }, ...edge.waypoints.map(w => ({ x: w.x, y: w.y })), { x: bGeom.x, y: bGeom.y }];
   }
   if (edge.kind === 'straight' || edge.kind === 'curve') {
-    return [{ x: aGeom.x, y: aGeom.y }, { x: bGeom.x, y: bGeom.y }];
+    // §62 ポートを名指しした曲線は、その辺の向きに出入りする（左右のポートなら横 S）。名指しが無ければ従来どおり離れた向きで決める
+    const sideOf = (ref, g) => (String(ref).includes(':') && edge.kind === 'curve' ? { side: g.side } : {});
+    return [{ x: aGeom.x, y: aGeom.y, ...sideOf(edge.from, aGeom) }, { x: bGeom.x, y: bGeom.y, ...sideOf(edge.to, bGeom) }];
   }
   // §7.4 リフトエッジ（枠をまたぐ集約線）だけ障害物回避ルータを使う。
   // 通常の派生/手置きエッジの経路は一切変えない（既存 JSON・検証の幾何は不変）。
@@ -3887,7 +3889,9 @@ function polylinePath(pts, kind = 'orthogonal', radius = 8) {
     const [a, b] = pts;
     // §51 離れている向きに沿って曲げる（横に離れていれば横 S、縦に離れていれば縦 S）。
     // 以前は常に横 S だったので、上下に並んだ箱どうしだと線が横へ膨らんでから戻っていた。
-    if (Math.abs(b.y - a.y) > Math.abs(b.x - a.x)) {
+    const side = a.side || b.side;
+    const vertical = side ? side === 'top' || side === 'bottom' : Math.abs(b.y - a.y) > Math.abs(b.x - a.x);
+    if (vertical) {
       const my = (a.y + b.y) / 2;
       return `M${a.x},${a.y} C${a.x},${my} ${b.x},${my} ${b.x},${b.y}`;
     }
@@ -8051,13 +8055,13 @@ const TEMPLATES = [
   {
     id: 'mind-map', label: 'Mind map',
     glyph: '<ellipse cx="12" cy="12" rx="4.5" ry="3"/><path d="M7.5 12 C5 12 5 5 2 5 M7.5 12 C5 12 5 19 2 19 M16.5 12 C19 12 19 5 22 5 M16.5 12 C19 12 19 19 22 19"/>',
-    build() {
+    build() {   // §62 枝はすべて楕円。中央の左右の辺から出て、枝の内側の辺へ横向きの曲線で入る
       const nodes = [{ k: 'c', type: 'ellipse', label: 'Theme', x: 250, y: 170, w: 160, h: 80 }], edges = [];
       const ys = [40, 180, 320];
       ys.forEach((y, i) => {
-        nodes.push({ k: `l${i}`, type: 'rounded', label: `Idea ${i + 1}`, x: 0, y, w: 130, h: 44 });
-        nodes.push({ k: `r${i}`, type: 'rounded', label: `Idea ${i + 4}`, x: 530, y, w: 130, h: 44 });
-        edges.push({ from: 'c', to: `l${i}`, kind: 'curve' }, { from: 'c', to: `r${i}`, kind: 'curve' });
+        nodes.push({ k: `l${i}`, type: 'ellipse', label: `Idea ${i + 1}`, x: 0, y: y - 8, w: 140, h: 60 });
+        nodes.push({ k: `r${i}`, type: 'ellipse', label: `Idea ${i + 4}`, x: 520, y: y - 8, w: 140, h: 60 });
+        edges.push({ from: 'c', fromPort: 'in', to: `l${i}`, toPort: 'out', kind: 'curve' }, { from: 'c', fromPort: 'out', to: `r${i}`, toPort: 'in', kind: 'curve' });
       });
       return { nodes, edges };
     },
@@ -10312,7 +10316,7 @@ class DiagramEditor {
     }
     for (const s of edges) {
       this.model.edges.push({
-        id: freshId(this.model, 'e'), from: ids.get(s.from) + (s.ports ? ':out' : ''), to: ids.get(s.to) + (s.ports ? ':in' : ''), kind: s.kind || 'orthogonal',
+        id: freshId(this.model, 'e'), from: ids.get(s.from) + (s.fromPort ? `:${s.fromPort}` : s.ports ? ':out' : ''), to: ids.get(s.to) + (s.toPort ? `:${s.toPort}` : s.ports ? ':in' : ''), kind: s.kind || 'orthogonal',
         line: s.line || 'solid', arrowStart: 'none', arrowEnd: s.head || 'none', ...(s.label ? { label: s.label } : {}),
       });
     }
