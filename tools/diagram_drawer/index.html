@@ -599,7 +599,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '12ff125';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = 'cae4759';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -7980,16 +7980,17 @@ const EDGE_PALETTE = [
 const TEMPLATES = [
   {
     id: 'logic-tree', label: 'Logic tree',
-    glyph: '<rect x="2" y="10" width="5" height="4"/><rect x="10" y="3" width="5" height="4"/><rect x="10" y="17" width="5" height="4"/><rect x="17" y="10" width="5" height="4"/><path d="M7 12 H8.5 V5 H10 M8.5 12 V19 H10 M15 19 H16 V12 H17"/>',
-    build() {
-      const nodes = [{ k: 'r', type: 'rect', label: 'Issue', x: 0, y: 190, w: 140, h: 60 }], edges = [];
+    glyph: '<rect x="9.5" y="2" width="5" height="4"/><rect x="2" y="17" width="5" height="4"/><rect x="9.5" y="17" width="5" height="4"/><rect x="17" y="17" width="5" height="4"/><path d="M12 6 V11.5 M4.5 17 V11.5 H19.5 V17 M12 11.5 V17"/>',
+    build() {   // §61 上から下へ（課題 → 要因 → 細目）
+      const W = 120, H = 56, GAP = 20, LEAF = 2 * W + GAP, COL = LEAF + 40;
+      const nodes = [{ k: 'r', type: 'rect', label: 'Issue', x: (3 * COL - 40) / 2 - W / 2, y: 0, w: W, h: H, tb: true }], edges = [];
       ['A', 'B', 'C'].forEach((c, i) => {
-        const y = 20 + i * 170;
-        nodes.push({ k: c, type: 'rect', label: `Factor ${c}`, x: 220, y, w: 140, h: 60 });
-        edges.push({ from: 'r', to: c, kind: 'elbow' });
+        const x0 = i * COL;
+        nodes.push({ k: c, type: 'rect', label: `Factor ${c}`, x: x0 + LEAF / 2 - W / 2, y: 140, w: W, h: H, tb: true });
+        edges.push({ from: 'r', to: c, kind: 'elbow', ports: true });
         [1, 2].forEach(j => {
-          nodes.push({ k: c + j, type: 'rect', label: `${c}-${j}`, x: 440, y: y - 40 + (j - 1) * 80, w: 140, h: 60 });
-          edges.push({ from: c, to: c + j, kind: 'elbow' });
+          nodes.push({ k: c + j, type: 'rect', label: `${c}-${j}`, x: x0 + (j - 1) * (W + GAP), y: 280, w: W, h: H, tb: true });
+          edges.push({ from: c, to: c + j, kind: 'elbow', ports: true });
         });
       });
       return { nodes, edges };
@@ -10301,7 +10302,9 @@ class DiagramEditor {
       const node = {
         id: nid, type: s.type, label: s.label ?? '', x: snap(x0 + s.x, g), y: snap(y0 + s.y, g), w: s.w, h: s.h,
         layer: this.model.layers[0].id,
-        ports: noPorts ? [] : [{ id: 'in', side: 'left', offset: 0.5, kind: 'in' }, { id: 'out', side: 'right', offset: 0.5, kind: 'out' }],
+        ports: noPorts ? [] : s.tb   // §61 上下に流れる図（ロジックツリー）は上で受けて下から出す
+          ? [{ id: 'in', side: 'top', offset: 0.5, kind: 'in' }, { id: 'out', side: 'bottom', offset: 0.5, kind: 'out' }]
+          : [{ id: 'in', side: 'left', offset: 0.5, kind: 'in' }, { id: 'out', side: 'right', offset: 0.5, kind: 'out' }],
       };
       if (s.w < 20) { node.x = x0 + s.x; node.y = y0 + s.y; }   // 線の端の小さな点はグリッドに吸わせない（線がずれる）
       if (s.style) node.style = { ...s.style };
@@ -10309,7 +10312,7 @@ class DiagramEditor {
     }
     for (const s of edges) {
       this.model.edges.push({
-        id: freshId(this.model, 'e'), from: ids.get(s.from), to: ids.get(s.to), kind: s.kind || 'orthogonal',
+        id: freshId(this.model, 'e'), from: ids.get(s.from) + (s.ports ? ':out' : ''), to: ids.get(s.to) + (s.ports ? ':in' : ''), kind: s.kind || 'orthogonal',
         line: s.line || 'solid', arrowStart: 'none', arrowEnd: s.head || 'none', ...(s.label ? { label: s.label } : {}),
       });
     }
