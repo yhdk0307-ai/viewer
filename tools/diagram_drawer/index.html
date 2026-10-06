@@ -599,7 +599,7 @@ window.__DE_THREE_NS__={ACESFilmicToneMapping:et,AddEquation:y,AddOperation:J,Ad
 })();
 </script>
 <script type="module">
-window.__DE_BUILD__ = '1f831ca';   // §40.7 版の指紋（Help に出る）
+window.__DE_BUILD__ = '5d0e256';   // §40.7 版の指紋（Help に出る）
 // ═══ src/model.js ═══
 // model.js — ダイアグラムモデルのロード/検証/正規化/参照解決
 // JSON が単一の真実。ここで正規化したモデルを全レンダラ・エディタが共有する。
@@ -8068,42 +8068,52 @@ const TEMPLATES = [
   },
   {
     id: 'storyboard', label: 'Storyboard',
-    glyph: '<rect x="2" y="3" width="6" height="5"/><rect x="9" y="3" width="6" height="5"/><rect x="16" y="3" width="6" height="5"/><rect x="2" y="13" width="6" height="5"/><rect x="9" y="13" width="6" height="5"/><rect x="16" y="13" width="6" height="5"/><path d="M2 10 H8 M9 10 H15 M16 10 H22 M2 20 H8 M9 20 H15 M16 20 H22"/>',
-    build() {
+    glyph: '<path d="M2 4 H6 M2 11 H6 M2 18 H6"/><rect x="8" y="2" width="6" height="4"/><rect x="16" y="2" width="6" height="4"/><rect x="8" y="9" width="6" height="4"/><rect x="8" y="16" width="6" height="4"/><rect x="16" y="16" width="6" height="4"/>',
+    build() {   // §63 章を縦に並べ、章ごとにスライドを横へ（おすすめの章立て: 概要 → 目的 → 内容 → まとめ）
+      const chapters = [
+        ['1. Overview', ['Title', 'Agenda']],
+        ['2. Purpose', ['Background', 'Goal']],
+        ['3. Content', ['Point 1', 'Point 2', 'Point 3']],
+        ['4. Summary', ['Key takeaways', 'Next steps']],
+      ];
       const nodes = [], edges = [];
-      for (let i = 0; i < 6; i++) {
-        const x = (i % 3) * 230, y = Math.floor(i / 3) * 210;
-        nodes.push({ k: `f${i}`, type: 'rect', label: '', x, y, w: 200, h: 130 });
-        nodes.push({ k: `t${i}`, type: 'text', label: `${i + 1}. Scene`, x, y: y + 140, w: 200, h: 30 });
-      }
+      chapters.forEach(([title, slides], i) => {
+        const y = i * 200;
+        nodes.push({ k: `ch${i}`, type: 'text', label: title, x: 0, y: y + 40, w: 140, h: 40, style: { bold: true } });
+        slides.forEach((cap, j) => {
+          const x = 160 + j * 220;
+          nodes.push({ k: `f${i}_${j}`, type: 'rect', label: '', x, y, w: 200, h: 120 });
+          nodes.push({ k: `t${i}_${j}`, type: 'text', label: cap, x, y: y + 130, w: 200, h: 40 });
+        });
+      });
       return { nodes, edges };
     },
   },
   {
     id: 'swimlane', label: 'Swimlane workflow',
     glyph: '<rect x="2" y="3" width="20" height="18"/><path d="M2 9 H22 M2 15 H22 M6 3 V21"/><rect x="8" y="4.5" width="4" height="3"/><rect x="14" y="10.5" width="4" height="3"/><path d="M12 6 H16 V10.5"/>',
-    build() {
-      const lanes = ['Customer', 'Sales', 'Operations'], nodes = [], edges = [];
+    build() {   // §63 レーンの高さはグリッド（20）の倍数＝置いても隙間ができない。レーンは塗らない＝後ろの矢印が隠れない
+      const H = 140, lanes = ['Customer', 'Sales', 'Operations'], nodes = [], edges = [];
       lanes.forEach((n, i) => {
-        nodes.push({ k: `lane${i}`, type: 'rect', label: '', x: 0, y: i * 130, w: 780, h: 130 });
-        nodes.push({ k: `name${i}`, type: 'text', label: n, x: 10, y: i * 130 + 45, w: 100, h: 40, style: { bold: true } });
+        nodes.push({ k: `lane${i}`, type: 'rect', label: '', x: 0, y: i * H, w: 780, h: H, style: { fill: 'none' } });
+        nodes.push({ k: `name${i}`, type: 'text', label: n, x: 10, y: i * H + 50, w: 100, h: 40, style: { bold: true } });
       });
       const steps = [['s1', 0, 140, 'Request'], ['s2', 1, 300, 'Check'], ['s3', 1, 460, 'Quote'], ['s4', 2, 620, 'Deliver']];
-      for (const [k, lane, x, label] of steps) nodes.push({ k, type: 'rounded', label, x, y: lane * 130 + 40, w: 130, h: 50 });
-      for (let i = 0; i < steps.length - 1; i++) edges.push({ from: steps[i][0], to: steps[i + 1][0], kind: 'elbow', head: 'arrow' });
+      for (const [k, lane, x, label] of steps) nodes.push({ k, type: 'rounded', label, x, y: lane * H + 40, w: 120, h: 60, top: true });
+      // 同じレーンは右→左、下のレーンへは右から出て上から入る（横線がレーンの境界に重ならない）
+      for (let i = 0; i < steps.length - 1; i++) {
+        const down = steps[i + 1][1] !== steps[i][1];
+        edges.push({ from: steps[i][0], fromPort: 'out', to: steps[i + 1][0], toPort: down ? 'top' : 'in', kind: 'elbow', head: 'arrow' });
+      }
       return { nodes, edges };
     },
   },
   {
     id: 'app-screen', label: 'App screen',
-    glyph: '<rect x="5" y="2" width="14" height="20" rx="2.5"/><rect x="7.5" y="6" width="3.5" height="3.5" rx="1"/><rect x="13" y="6" width="3.5" height="3.5" rx="1"/><rect x="7.5" y="12" width="3.5" height="3.5" rx="1"/><rect x="13" y="12" width="3.5" height="3.5" rx="1"/>',
-    build() {
-      const nodes = [{ k: 'frame', type: 'rounded', label: '', x: 0, y: 0, w: 300, h: 520 }];
-      nodes.push({ k: 'title', type: 'text', label: 'App', x: 20, y: 20, w: 260, h: 40, style: { bold: true } });
-      for (let i = 0; i < 9; i++) {
-        nodes.push({ k: `t${i}`, type: 'rounded', label: `Item ${i + 1}`, x: 20 + (i % 3) * 90, y: 80 + Math.floor(i / 3) * 90, w: 80, h: 80 });
-      }
-      nodes.push({ k: 'bar', type: 'rounded', label: 'Button', x: 20, y: 440, w: 260, h: 50 });
+    glyph: '<rect x="3" y="3" width="5" height="5" rx="1.2"/><rect x="9.5" y="3" width="5" height="5" rx="1.2"/><rect x="16" y="3" width="5" height="5" rx="1.2"/><rect x="3" y="9.5" width="5" height="5" rx="1.2"/><rect x="9.5" y="9.5" width="5" height="5" rx="1.2"/><rect x="16" y="9.5" width="5" height="5" rx="1.2"/><rect x="3" y="16" width="5" height="5" rx="1.2"/><rect x="9.5" y="16" width="5" height="5" rx="1.2"/><rect x="16" y="16" width="5" height="5" rx="1.2"/>',
+    build() {   // §63 アプリの箱 9 個だけ（3×3・等間隔。寸法も間隔もグリッドの倍数＝置いても間隔が崩れない）
+      const nodes = [];
+      for (let i = 0; i < 9; i++) nodes.push({ k: `t${i}`, type: 'rounded', label: `App ${i + 1}`, x: (i % 3) * 120, y: Math.floor(i / 3) * 120, w: 100, h: 100 });
       return { nodes, edges: [] };
     },
   },
@@ -10306,7 +10316,9 @@ class DiagramEditor {
       const node = {
         id: nid, type: s.type, label: s.label ?? '', x: snap(x0 + s.x, g), y: snap(y0 + s.y, g), w: s.w, h: s.h,
         layer: this.model.layers[0].id,
-        ports: noPorts ? [] : s.tb   // §61 上下に流れる図（ロジックツリー）は上で受けて下から出す
+        ports: noPorts ? [] : s.top   // §63 上にも受け口（右から出て下の段の箱へ上から入る）
+          ? [{ id: 'in', side: 'left', offset: 0.5, kind: 'in' }, { id: 'out', side: 'right', offset: 0.5, kind: 'out' }, { id: 'top', side: 'top', offset: 0.5, kind: 'in' }]
+          : s.tb   // §61 上下に流れる図（ロジックツリー）は上で受けて下から出す
           ? [{ id: 'in', side: 'top', offset: 0.5, kind: 'in' }, { id: 'out', side: 'bottom', offset: 0.5, kind: 'out' }]
           : [{ id: 'in', side: 'left', offset: 0.5, kind: 'in' }, { id: 'out', side: 'right', offset: 0.5, kind: 'out' }],
       };
